@@ -34,7 +34,7 @@ While there are already great open-source CAD solutions available, such as Libre
 
 - **Built from the Ground Up**: By starting from scratch, we have the opportunity to design and implement the core functionalities with a modern and optimized approach.
 
-- **Affordable Professional Solution**: Our long-term vision is to develop GreyhoundCAD into a professional-grade CAD program that can compete with costly proprietary solutions. By being open source and community-driven, we aim to provide a powerful CAD tool without the need for exorbitant pricing.
+- **Free Forever**: Our long-term vision is to develop GreyhoundCAD into a professional-grade CAD program that can compete with costly proprietary solutions. By being open source and community-driven, we aim to provide a powerful CAD tool free of charge, eliminating the need for exorbitant pricing
 
 ## License
 
