@@ -38,7 +38,7 @@ While there are already great open-source CAD solutions available, such as Libre
 
 ## License
 
-GreyhoundCAD is licensed under the GNU General Public License v3.0 (GPL-3.0). You can find the full license text in the [LICENSE](./LICENSE) file.
+GreyhoundCAD is licensed under the GNU General Public License v3.0 (GPL-3.0). You can find the full license text in the [licence](./LICENSE) file.
 
 ## Contributing
 
