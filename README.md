@@ -2,18 +2,32 @@
 
 GreyhoundCAD is an open-source 2D CAD project that aims to provide a lightweight, user-friendly, and extendable CAD solution. The project is currently in its early stages of development, focusing on setting up the program structure and core classes. 
 
-## Features (Planned)
+## Features
 
-The following features are planned for inclusion in GreyhoundCAD:
+The following features have now been implemented: TBC
 
-- Basic drawing tools (lines, circles, rectangles, etc.)
-- Layer management
-- Snap and grid functionality
-- Object selection and manipulation
-- Undo/Redo functionality
-- Export to common file formats (DXF, SVG, etc.)
-- Customizable user interface
-- Plugin system for extending functionality
+## Roadmap
+
+The following roadmap outlines the planned features for GreyhoundCAD:
+
+1. Basic drawing tools (lines, circles, rectangles, etc.): The initial phase will focus on implementing essential drawing tools to enable users to create geometric shapes and objects.
+
+2. Layer management: A layer management system will be introduced to allow users to organize and control the visibility and editing of different elements within their drawings.
+
+3. Snap and grid functionality: To enhance precision and alignment, snap and grid functionality will be incorporated, enabling users to easily align and position objects based on predefined increments.
+
+4. Object selection and manipulation: This feature will enable users to select individual or multiple objects within their drawings and perform various operations such as moving, scaling, rotating, and modifying their attributes.
+
+5. Undo/Redo functionality: Users will be able to undo and redo their actions, providing them with the flexibility to experiment and correct mistakes during the design process.
+
+6. Export to common file formats (DXF, SVG, etc.): GreyhoundCAD will support exporting drawings to popular file formats such as DXF (AutoCAD) and SVG (Scalable Vector Graphics), ensuring compatibility with other design software.
+
+7. Customizable user interface: Users will have the option to customize the interface according to their preferences, allowing them to arrange tools, panels, and menus to create a personalized workspace.
+
+8. Plugin system for extending functionality: A plugin system will be implemented, empowering users to extend the capabilities of GreyhoundCAD by integrating additional tools, features, or integrations developed by third-party developers.
+
+Please note that this roadmap is subject to change as priorities may shift based on user feedback and emerging industry trends. We are committed to continuously improving GreyhoundCAD and delivering a comprehensive CAD software solution.
+
 
 ## Dependencies
 
