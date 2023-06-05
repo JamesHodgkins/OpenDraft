@@ -26,6 +26,8 @@ The following roadmap outlines the planned features for GreyhoundCAD:
 
 8. Plugin system for extending functionality: A plugin system will be implemented, empowering users to extend the capabilities of GreyhoundCAD by integrating additional tools, features, or integrations developed by third-party developers.
 
+9. Extensive block library of common engineering components including fastenings, piping, electrical etc.
+
 Please note that this roadmap is subject to change as priorities may shift based on user feedback and emerging industry trends. We are committed to continuously improving GreyhoundCAD and delivering a comprehensive CAD software solution.
 
 
