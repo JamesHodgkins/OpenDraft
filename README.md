@@ -50,6 +50,12 @@ We value your feedback and appreciate any bug reports, feature requests, or gene
 
 ## Acknowledgments
 
-We would like to express our gratitude to the creators and contributors of existing open-source CAD solutions, as they have paved the way for projects like GreyhoundCAD to exist.
+We would like to express our sincere gratitude to the creators and contributors of existing open-source CAD solutions, whose invaluable contributions have played a pivotal role in shaping and advancing the field of computer-aided design. Their dedication, expertise, and innovation have paved the way for projects like GreyhoundCAD to exist.
 
-Thank you for your interest in GreyhoundCAD! We hope to create a CAD program that meets your needs and exceeds your expectations.
+Throughout the development of GreyhoundCAD, we have strived to leverage the collective knowledge and expertise of the open-source community. In doing so, we have consciously utilized certain portions of code from these projects to enhance our software's capabilities and provide a comprehensive CAD experience. We would like to acknowledge that we have knowingly incorporated and adapted code from various open-source CAD projects.
+
+Wherever possible, we have made every effort to ensure that appropriate credit is given to the original creators and contributors of the code we have utilized. We believe that acknowledging their efforts is not only a sign of respect but also a way to foster collaboration and promote the continued growth of the open-source community.
+
+We extend our deepest appreciation to all those who have generously shared their code, ideas, and expertise, enabling us to build upon their work and create GreyhoundCAD. Without their contributions, our journey would have been significantly more challenging, and our software would not be what it is today.
+
+Thank you for your interest in GreyhoundCAD! We are committed to developing a CAD program that not only meets your needs but also exceeds your expectations.
