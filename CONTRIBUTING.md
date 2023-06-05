@@ -58,4 +58,6 @@ Please note that GreyhoundCAD follows a code of conduct. We expect all contribut
 
 ## Get Help
 
-If you need any assistance or have
+If you need any assistance or have questions regarding the contribution process, feel free to reach out to the project maintainers or the community. You can refer to the project's documentation for contact information and support channels.
+
+Thank you for your interest in contributing to our project. We appreciate your valuable contributions and look forward to working with you to make GreyhoundCAD even better.
