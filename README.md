@@ -60,9 +60,15 @@ GreyhoundCAD is licensed under the GNU General Public License v3.0 (GPL-3.0). Yo
 
 We welcome contributions to GreyhoundCAD! If you would like to contribute, please review the [contribution guidelines](./CONTRIBUTING.md) for more information.
 
-## Feedback and Support
+## Feedback, Support and Contact
 
-We value your feedback and appreciate any bug reports, feature requests, or general comments. Please open an issue in the [issue tracker](https://github.com/JamesHodgkins/GreyhoundCAD/issues) if you encounter any problems or have suggestions for improvement.
+If you have any queries or feedback regarding GreyhoundCAD, we would love to hear from you. Feel free to reach out to us through the following channels:
+
+If you encounter any problems or have suggestions for improvement it would help us if you create an issue in the [issue tracker](https://github.com/JamesHodgkins/GreyhoundCAD/issues)
+
+Email: You can also contact James via email at jhodgkins@proton.me.
+
+Don't hesitate to get in touch with us. We look forward to hearing from you!
 
 ## Acknowledgments
 
