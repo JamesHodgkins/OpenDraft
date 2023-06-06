@@ -1,30 +1,17 @@
-#include "glfw/glfw3.h"
-
+#include "System/GrCore.h"
 
 // Main code
 int main(int, char**)
 {
-	//glfwSetErrorCallback(glfw_error_callback);
-	if (!glfwInit())
-		return 1;
-
-	// Create window with graphics context
-	GLFWwindow* window = glfwCreateWindow(1280, 720, "GreyhoundCAD", nullptr, nullptr);
-	if (window == nullptr)
-		return 1;
-
-	glfwMakeContextCurrent(window);
-	glfwSwapInterval(1); // Enable vsync
+	GrApplication* app = new GrApplication();
 
 	// Main loop
-	while (!glfwWindowShouldClose(window))
+	while (app->isRunning())
 	{
-		glfwPollEvents();
-		glfwSwapBuffers(window);
+		app->update();
 	}
 
-	glfwDestroyWindow(window);
-	glfwTerminate();
+	delete app;
 
 	return 0;
 }

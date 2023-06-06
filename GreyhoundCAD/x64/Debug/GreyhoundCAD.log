@@ -1,0 +1,8 @@
+﻿  main.cpp
+D:\CPP Projects\GreyhoundCAD\Graphics\UI\GrUIButton.h(23,51): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+D:\CPP Projects\GreyhoundCAD\Graphics\UI\GrUIButton.h(23,43): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+D:\CPP Projects\GreyhoundCAD\Graphics\UI\GrUIButton.h(23,35): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+D:\CPP Projects\GreyhoundCAD\Graphics\UI\GrUIButton.h(23,23): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+D:\CPP Projects\GreyhoundCAD\Graphics\GrWindow.h(82,45): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+D:\CPP Projects\GreyhoundCAD\Graphics\GrWindow.h(83,45): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+  GreyhoundCAD.vcxproj -> D:\CPP Projects\GreyhoundCAD\GreyhoundCAD\x64\Debug\GreyhoundCAD.exe
