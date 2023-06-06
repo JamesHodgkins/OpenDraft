@@ -95,9 +95,9 @@ public:
 			switch (key)
 			{
 			case GLFW_KEY_A: map->keys.aKey.changeState(action == GLFW_PRESS);
-			case GLFW_KEY_B: map->keys.bKey.changeState(action == GLFW_PRESS);
-			case GLFW_KEY_C: map->keys.cKey.changeState(action == GLFW_PRESS);
-			case GLFW_KEY_D: map->keys.dKey.changeState(action == GLFW_PRESS);
+			//case GLFW_KEY_B: map->keys.bKey.changeState(action == GLFW_PRESS);
+			//case GLFW_KEY_C: map->keys.cKey.changeState(action == GLFW_PRESS);
+			//case GLFW_KEY_D: map->keys.dKey.changeState(action == GLFW_PRESS);
 
 
 			}
