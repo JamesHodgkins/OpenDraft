@@ -91,17 +91,26 @@ public:
 
 			GrInputMap* map = &windowInstance->input;
 
-			// Check which key was presswed and store the value in instance
-			switch (key)
-			{
-			case GLFW_KEY_A: map->keys.aKey.changeState(action == GLFW_PRESS);
-			//case GLFW_KEY_B: map->keys.bKey.changeState(action == GLFW_PRESS);
-			//case GLFW_KEY_C: map->keys.cKey.changeState(action == GLFW_PRESS);
-			//case GLFW_KEY_D: map->keys.dKey.changeState(action == GLFW_PRESS);
-
-
+			if (map->keys.find(key) == map->keys.end()) {
+				std::cout << "KEY NOT MAPPED" << std::endl;
+				return;
 			}
 
+			if (action == GLFW_PRESS)
+				map->keys[key].changeState(true);
+
+			if (action == GLFW_RELEASE)
+				map->keys[key].changeState(false);
+		
+			if (map->keys[key].isPressed())
+			{
+				std::cout << "Key " << key << " is pressed"  << std::endl;
+			}
+			else if (map->keys[key].isReleased())
+			{
+				std::cout << "Key " << key << " is released" << std::endl;
+			}
+			
 		}
 	}
 

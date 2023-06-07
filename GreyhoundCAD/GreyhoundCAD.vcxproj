@@ -111,6 +111,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>D:\CPP Projects\GreyhoundCAD\Libraries\glfw\includes;D:\CPP Projects\GreyhoundCAD\Libraries\glew\include;D:\CPP Projects\GreyhoundCAD\Libraries\nanovg\src;D:\CPP Projects\GreyhoundCAD\</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -128,6 +129,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>D:\CPP Projects\GreyhoundCAD\Libraries\glfw\includes;D:\CPP Projects\GreyhoundCAD\Libraries\glew\include;D:\CPP Projects\GreyhoundCAD\Libraries\nanovg\src;D:\CPP Projects\GreyhoundCAD\</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
