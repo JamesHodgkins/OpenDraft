@@ -62,6 +62,7 @@ public:
 
 		// Set the callback function for mouse movement
 		glfwSetCursorPosCallback(glfwHandle, mousePositionEventCallback);
+		glfwSetMouseButtonCallback(glfwHandle, mouseClickEventCallback);
 		glfwSetKeyCallback(glfwHandle, keyEventCallback);
 	}
 
@@ -73,6 +74,38 @@ public:
 			// Access the instance and store the mouse position
 			windowInstance->input.mouse.position.x = xpos;
 			windowInstance->input.mouse.position.y = ypos;
+		}
+	}
+
+	// Callback function for mouse clicks
+	static void mouseClickEventCallback(GLFWwindow* window, int button, int action, int mods)
+	{
+		GrWindow* windowInstance = static_cast<GrWindow*>(glfwGetWindowUserPointer(window));
+		if (windowInstance)
+		{
+			switch (button)
+			{
+			case 0:
+				if (action == GLFW_PRESS)
+					windowInstance->input.mouse.leftButton.changeState(true);
+				if (action == GLFW_RELEASE)
+					windowInstance->input.mouse.leftButton.changeState(false);
+				break;
+
+			case 1:
+				if (action == GLFW_PRESS)
+					windowInstance->input.mouse.rightButton.changeState(true);
+				if (action == GLFW_RELEASE)
+					windowInstance->input.mouse.rightButton.changeState(false);
+				break;
+
+			case 2:
+				if (action == GLFW_PRESS)
+					windowInstance->input.mouse.middleButton.changeState(true);
+				if (action == GLFW_RELEASE)
+					windowInstance->input.mouse.middleButton.changeState(false);
+				break;
+			}
 		}
 	}
 
@@ -163,5 +196,16 @@ public:
 		{
 			control->processEvents(&input);
 		}
+
+		// Once the current input states are filtered through all the components
+		// reset the 'pressed'/'released' states to prevent double trigger
+		if (input.mouse.leftButton.isDown())
+			input.mouse.leftButton.changeState(true);
+
+		if (input.mouse.middleButton.isDown())
+			input.mouse.middleButton.changeState(true);
+
+		if (input.mouse.rightButton.isDown())
+			input.mouse.rightButton.changeState(true);
 	}
 };

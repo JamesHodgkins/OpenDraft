@@ -15,15 +15,6 @@ public:
 
 	void changeState(bool newState)
 	{
-		if (newState == true)
-		{
-			std::cout << "state = true" << std::endl;
-		}
-		else
-		{
-			std::cout << "state = false" << std::endl;
-		}
-
 		pressed = (!down && newState);
 		released = (down && !newState);
 		down = newState;

@@ -26,6 +26,7 @@ protected:
 	bool mouseOver = false;
 	bool mouseEnter = false;
 	bool mouseLeave = false;
+	bool mouseDown = false;
 
 
 public:
@@ -83,6 +84,14 @@ public:
 				// Handle mouse leave event
 			}
 		}
+
+
+		if (mouseOver && input->mouse.leftButton.isPressed())
+			mouseDown = true;
+		
+		if (!input->mouse.leftButton.isDown())
+			mouseDown = false;
+
 	}
 
 };
