@@ -34,9 +34,9 @@ Please note that this roadmap is subject to change as priorities may shift based
 ## Dependencies
 
 GreyhoundCAD currently has the following dependencies, which are included within the project:
-
-- GLFW
-- NanoVG
+- (https://github.com/nigels-com/glew)[The OpenGL Extension Wrangler Libary (GLEW)]
+- (https://www.glfw.org)[GLFW]
+- (https://github.com/memononen/nanovg)[NanoVG]
 
 ## Why Another CAD Package?
 
