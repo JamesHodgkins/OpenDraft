@@ -44,16 +44,17 @@ private:
 		int x;
 	} position;
 
+	
+public:
+
+	std::unordered_map<int, GrKeyInput>keys;
 	struct MouseStruct
 	{
 		GrKeyInput leftButton;
 		GrKeyInput middleButton;
 		GrKeyInput rightButton;
 		PositionStruct position;
-	};
-public:
-
-	std::unordered_map<int, GrKeyInput>keys;
+	} mouse;
 
 	GrInputMap()
 	{
@@ -97,7 +98,8 @@ public:
 		};
 	}
 
-	MouseStruct mouse;
+
+	
 
 };
 

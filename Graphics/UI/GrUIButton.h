@@ -29,6 +29,17 @@ public:
 
 		nvgFill(vg);
 		nvgClosePath(vg);
+
+		nvgBeginPath(vg);
+
+		nvgFillColor(vg, nvgRGBA(0, 0, 0, 255));
+		nvgFill(vg);
+		nvgCreateFont(vg, "sans", ".\\OpenSans.ttf");
+		nvgFontSize(vg, 18.0f);
+		nvgFontFace(vg, "sans");
+		nvgText(vg, location.x + 20, location.y + 40, "Hello World", nullptr);
+
+		nvgClosePath(vg);
 	}
 
 

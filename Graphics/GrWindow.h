@@ -17,50 +17,45 @@
 #include "Graphics/UI/GrInput.h"
 #include "Graphics/UI/GrUIComponents.h"
 
-
+// Class representing a window
 class GrWindow
 {
 private:
-	GLFWwindow* glfwHandle = nullptr;
-	struct Context* context = nullptr;		// Declare the context
-	GrInputMap input;
+	GLFWwindow* glfwHandle = nullptr;		// Handle to the GLFW window
+	struct Context* context = nullptr;		// NanoVG context
+	GrInputMap input;						// Input map for storing user input
 
-	std::vector<GrUIComponent*>controls;
-	
+	std::vector<GrUIComponent*> controls;	// Vector to store UI components
 
 public:
-	int width;
-	int height;
+	int width;								// Width of the window
+	int height;								// Height of the window
 
-
+	// Constructor
 	GrWindow(int aWidth, int aHeight, const char* title)
 	{
 		width = aWidth;
 		height = aHeight;
 		input = GrInputMap();
 
-		// glfwSetErrorCallback(glfw_error_callback);
+		// Initialize GLFW
 		if (!glfwInit())
 			return;
 
-		
-		// Create window with graphics context: glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+		// Create window with graphics context
 		glfwHandle = glfwCreateWindow(width, height, title, nullptr, nullptr);
-
 		if (glfwHandle == nullptr)
 			return;
 
 		glfwMakeContextCurrent(glfwHandle);		// Set context as current
 		glfwSwapInterval(1);					// Enable vsync
-		glewInit();								// Initialise glew
-
+		glewInit();								// Initialize glew
 
 		// Initialize NanoVG context (OpenGL backend)
 		context = nvgCreateGL3(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
 		if (context == nullptr) {
 			return;
 		}
-
 
 		// Bind this instance of GrWindow to the glfw window instance for static callbacks
 		glfwSetWindowUserPointer(glfwHandle, this);
@@ -70,86 +65,79 @@ public:
 		glfwSetKeyCallback(glfwHandle, keyEventCallback);
 	}
 
-
-	//
-	// Bind callbacks to update window states
-	//
+	// Callback function for mouse movement
 	static void mousePositionEventCallback(GLFWwindow* window, double xpos, double ypos)
 	{
 		GrWindow* windowInstance = static_cast<GrWindow*>(glfwGetWindowUserPointer(window));
 		if (windowInstance) {
-			// Access the instance and store the value
+			// Access the instance and store the mouse position
 			windowInstance->input.mouse.position.x = xpos;
 			windowInstance->input.mouse.position.y = ypos;
 		}
 	}
 
+	// Callback function for key events
 	static void keyEventCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
 		GrWindow* windowInstance = static_cast<GrWindow*>(glfwGetWindowUserPointer(window));
 		if (windowInstance) {
-
 			GrInputMap* map = &windowInstance->input;
 
-			if (map->keys.find(key) == map->keys.end()) {
-				std::cout << "KEY NOT MAPPED" << std::endl;
+			if (map->keys.find(key) == map->keys.end())
 				return;
-			}
 
+			// Change button state to down
 			if (action == GLFW_PRESS)
 				map->keys[key].changeState(true);
 
+			// Change button state to up
 			if (action == GLFW_RELEASE)
 				map->keys[key].changeState(false);
-		
-			if (map->keys[key].isPressed())
-			{
-				std::cout << "Key " << key << " is pressed"  << std::endl;
-			}
-			else if (map->keys[key].isReleased())
-			{
-				std::cout << "Key " << key << " is released" << std::endl;
-			}
-			
+
 		}
 	}
 
-
-
+	// Check if the window is still running
 	bool isRunning()
 	{
 		return !glfwWindowShouldClose(glfwHandle);
 	}
 
+	// Set the current context
 	void makeCurrentContext()
 	{
-		glfwMakeContextCurrent(glfwHandle);		// Set context as current
+		glfwMakeContextCurrent(glfwHandle);
 	}
 
+	// Get the NanoVG context
 	NVGcontext* getContext()
 	{
 		return context;
 	}
 
+	// Close the window and clean up resources
 	void close()
 	{
 		glfwDestroyWindow(glfwHandle);
 		glfwTerminate();
 
+		// Delete UI components
 		for (GrUIComponent* control : controls) {
 			delete control;
 		}
 	}
 
+	// Initialize the window and UI components
 	void initialise()
 	{
-		GrUIButton* btn = new GrUIButton(300,300);
+		GrUIButton* btn = new GrUIButton(300, 300);
 		controls.push_back(btn);
 
 		GrUIButton* btn2 = new GrUIButton(300, 50);
 		controls.push_back(btn2);
 	}
 
+	// Render the window and UI components
 	void render()
 	{
 		glClearColor(0.3f, 0.3f, 0.32f, 1.0f);
@@ -157,6 +145,7 @@ public:
 
 		nvgBeginFrame(context, 1280, 720, 1);
 
+		// Render UI components
 		for (GrUIComponent* control : controls) {
 			control->render(context);
 		}
@@ -167,7 +156,7 @@ public:
 		glfwSwapBuffers(glfwHandle);
 	}
 
-
+	// Process events for UI components
 	void startEventsChain()
 	{
 		for (GrUIComponent* control : controls)
@@ -175,5 +164,4 @@ public:
 			control->processEvents(&input);
 		}
 	}
-
 };
