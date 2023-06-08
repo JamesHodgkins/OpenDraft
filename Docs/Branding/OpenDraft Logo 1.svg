@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 379 72" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <g transform="matrix(1.36895,0,0,1.36895,-49.7665,-445.112)">
+        <text x="156.119px" y="364.348px" style="font-family:'Poppins-Bold', 'Poppins';font-weight:700;font-size:50px;">D<tspan x="190.019px 208.969px 240.469px 256.019px " y="364.348px 364.348px 364.348px 364.348px ">raft</tspan></text>
+    </g>
+    <g transform="matrix(1.36895,0,0,1.36895,-217.416,-445.112)">
+        <text x="156.119px" y="364.348px" style="font-family:'Poppins-ExtraLight', 'Poppins';font-weight:275;font-size:50px;">O<tspan x="192.469px 222.969px 251.069px " y="364.348px 364.348px 364.348px ">pen</tspan></text>
+    </g>
+    <g transform="matrix(6.12323e-17,1,-1,6.12323e-17,633.229,-567.436)">
+        <path d="M617.905,258.128L621.1,254.933L621.1,302.448L573.585,302.448L576.958,299.074L578.89,301.006L580.764,299.131L578.833,297.2L580.865,295.167L582.797,297.099L584.672,295.224L582.74,293.293L584.773,291.26L586.704,293.192L588.579,291.317L586.647,289.385L588.68,287.353L590.611,289.284L592.486,287.41L590.554,285.478L592.587,283.446L594.518,285.377L596.393,283.503L594.462,281.571L596.494,279.539L598.426,281.47L600.3,279.595L598.369,277.664L600.401,275.631L602.333,277.563L604.207,275.688L602.276,273.757L604.308,271.724L606.24,273.656L608.115,271.781L606.183,269.85L608.216,267.817L610.147,269.749L612.022,267.874L610.09,265.942L612.123,263.91L614.054,265.841L615.929,263.967L613.997,262.035L616.03,260.003L617.962,261.934L619.836,260.06L617.905,258.128ZM611.856,276.826L611.856,293.204L595.478,293.204L611.856,276.826Z"/>
+    </g>
+</svg>
