@@ -1,6 +1,6 @@
-# GreyhoundCAD
+# OpenDraft
 
-GreyhoundCAD is an open-source 2D CAD project that aims to provide a lightweight, user-friendly, and extendable CAD solution. The project is currently in its early stages of development, focusing on setting up the program structure and core classes. 
+OpenDraft is an open-source 2D CAD project that aims to provide a lightweight, user-friendly, and extendable CAD solution. The project is currently in its early stages of development, focusing on setting up the program structure and core classes. 
 
 ## Features
 
@@ -8,7 +8,7 @@ The following features have now been implemented: TBC
 
 ## Roadmap
 
-The following roadmap outlines the planned features for GreyhoundCAD:
+The following roadmap outlines the planned features for OpenDraft:
 
 1. Basic drawing tools (lines, circles, rectangles, etc.): The initial phase will focus on implementing essential drawing tools to enable users to create geometric shapes and objects.
 
@@ -74,7 +74,7 @@ Don't hesitate to get in touch with us. We look forward to hearing from you!
 
 We would like to express our sincere gratitude to the creators and contributors of existing open-source CAD solutions, whose invaluable contributions have played a pivotal role in shaping and advancing the field of computer-aided design. Their dedication, expertise, and innovation have paved the way for projects like GreyhoundCAD to exist.
 
-Throughout the development of GreyhoundCAD, we have strived to leverage the collective knowledge and expertise of the open-source community. In doing so, we have consciously utilized certain portions of code from these projects to enhance our software's capabilities and provide a comprehensive CAD experience. We would like to acknowledge that we have knowingly incorporated and adapted code from various open-source CAD projects.
+Throughout the development of OpenDraft, we have strived to leverage the collective knowledge and expertise of the open-source community. In doing so, we have consciously utilized certain portions of code from these projects to enhance our software's capabilities and provide a comprehensive CAD experience. We would like to acknowledge that we have knowingly incorporated and adapted code from various open-source CAD projects.
 
 Wherever possible, we have made every effort to ensure that appropriate credit is given to the original creators and contributors of the code we have utilized. We believe that acknowledging their efforts is not only a sign of respect but also a way to foster collaboration and promote the continued growth of the open-source community.
 
