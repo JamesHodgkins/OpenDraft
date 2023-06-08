@@ -1,7 +1,6 @@
+# Code of Conduct for OpenDraft
 
-# Code of Conduct for GreyhoundCAD
-
-GreyhoundCAD is an open-source project committed to providing a respectful and inclusive environment for all contributors, users, and participants. We value diversity and aim to foster a welcoming and collaborative community. To ensure a positive experience for everyone involved, we have established the following Code of Conduct that applies to all interactions within the GreyhoundCAD project.
+OpenDraft is an open-source project committed to providing a respectful and inclusive environment for all contributors, users, and participants. We value diversity and aim to foster a welcoming and collaborative community. To ensure a positive experience for everyone involved, we have established the following Code of Conduct that applies to all interactions within the OpenDraft project.
 
 ## 1. Inclusivity and Respect:
    - Treat all individuals with respect, kindness, and empathy, regardless of their identity, background, or experience level.
@@ -33,6 +32,6 @@ GreyhoundCAD is an open-source project committed to providing a respectful and i
    - Project maintainers reserve the right to remove, edit, or reject any contributions or comments that violate this Code of Conduct.
    - In severe cases of misconduct, temporary or permanent bans from the project community may be imposed.
 
-Remember, as a contributor or user of GreyhoundCAD, you are responsible for upholding and promoting these principles. By adhering to this Code of Conduct, we can create a supportive and inclusive environment that benefits everyone involved.
+Remember, as a contributor or user of OpenDraft, you are responsible for upholding and promoting these principles. By adhering to this Code of Conduct, we can create a supportive and inclusive environment that benefits everyone involved.
 
 Note: This Code of Conduct is adapted and inspired by the Contributor Covenant (https://www.contributor-covenant.org/), version 2.1.
