@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Graphics/GrGraphics.h"	// Include Greyhound Graphics
+#include "Graphics/GrGraphics.h"	// Include Graphics
 
 class GrApplication
 {
@@ -12,7 +12,7 @@ public:
 
 	GrApplication()
 	{		
-		mainWindow = new GrWindow(1280,720, "GreyhoundCAD");
+		mainWindow = new GrWindow(1280,720, "OpenDraft");
 		mainWindow->initialise();
 		running = true;
 
