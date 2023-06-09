@@ -1,9 +1,9 @@
-#include "System/GrCore.h"
+#include "System/OdSyApplication.h"
 
 // Main code
 int main(int, char**)
 {
-	GrApplication* app = new GrApplication();
+	OdGrApplication* app = new OdGrApplication();
 
 	// Main loop
 	while (app->isRunning())

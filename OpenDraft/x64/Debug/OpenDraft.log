@@ -1,10 +1,10 @@
 ﻿  main.cpp
-D:\CPP Projects\OpenDraft\Graphics\UI\GrUIWindow.h(68,45): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-D:\CPP Projects\OpenDraft\Graphics\UI\GrUIWindow.h(69,45): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-D:\CPP Projects\OpenDraft\Graphics\UI\GrUIButton.h(23,51): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-D:\CPP Projects\OpenDraft\Graphics\UI\GrUIButton.h(23,43): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-D:\CPP Projects\OpenDraft\Graphics\UI\GrUIButton.h(23,35): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-D:\CPP Projects\OpenDraft\Graphics\UI\GrUIButton.h(23,23): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-D:\CPP Projects\OpenDraft\Graphics\UI\GrUIButton.h(45,49): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-D:\CPP Projects\OpenDraft\Graphics\UI\GrUIButton.h(45,26): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+D:\CPP Projects\OpenDraft\Graphics\UI\OdGrUiWindow.h(68,45): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+D:\CPP Projects\OpenDraft\Graphics\UI\OdGrUiWindow.h(69,45): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+D:\CPP Projects\OpenDraft\Graphics\UI\OdGrUiButton.h(34,51): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+D:\CPP Projects\OpenDraft\Graphics\UI\OdGrUiButton.h(34,43): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+D:\CPP Projects\OpenDraft\Graphics\UI\OdGrUiButton.h(34,35): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+D:\CPP Projects\OpenDraft\Graphics\UI\OdGrUiButton.h(34,23): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+D:\CPP Projects\OpenDraft\Graphics\UI\OdGrUiButton.h(64,49): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+D:\CPP Projects\OpenDraft\Graphics\UI\OdGrUiButton.h(64,26): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
   OpenDraft.vcxproj -> D:\CPP Projects\OpenDraft\OpenDraft\x64\Debug\OpenDraft.exe

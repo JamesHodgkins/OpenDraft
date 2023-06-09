@@ -35,37 +35,43 @@
       <Filter>Libraries\nanovg</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="..\Graphics\GrGraphics.cpp">
+    <ClCompile Include="..\Graphics\OdGrGraphics.cpp">
       <Filter>Graphics</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\System\Entities\Entity.h">
+    <ClInclude Include="..\System\Entities\OdSyEntity.h">
       <Filter>System\Entities</Filter>
     </ClInclude>
-    <ClInclude Include="..\System\GrCore.h">
+    <ClInclude Include="..\System\OdSyCore.h">
       <Filter>System</Filter>
     </ClInclude>
-    <ClInclude Include="..\Graphics\GrGraphics.h">
+    <ClInclude Include="..\Graphics\OdGrGraphics.h">
       <Filter>Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="..\Graphics\GrMainWindow.h">
+    <ClInclude Include="..\Graphics\OdGrMainWindow.h">
       <Filter>Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="..\Graphics\UI\GrUIButton.h">
+    <ClInclude Include="..\Graphics\UI\OdGrUiButton.h">
       <Filter>Graphics\UI</Filter>
     </ClInclude>
-    <ClInclude Include="..\Graphics\UI\GrUIComponent.h">
+    <ClInclude Include="..\Graphics\UI\OdGrUiComponent.h">
       <Filter>Graphics\UI</Filter>
     </ClInclude>
-    <ClInclude Include="..\Graphics\UI\GrUIComponents.h">
+    <ClInclude Include="..\Graphics\UI\OdGrUiComponents.h">
       <Filter>Graphics\UI</Filter>
     </ClInclude>
-    <ClInclude Include="..\Graphics\UI\GrInput.h">
+    <ClInclude Include="..\Graphics\UI\OdGrUiInput.h">
       <Filter>Graphics\UI</Filter>
     </ClInclude>
-    <ClInclude Include="..\Graphics\UI\GrUIWindow.h">
+    <ClInclude Include="..\Graphics\UI\OdGrUiWindow.h">
       <Filter>Graphics\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\System\Kernel\OdSyColour.h">
+      <Filter>System\Kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\System\OdSyApplication.h">
+      <Filter>System</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

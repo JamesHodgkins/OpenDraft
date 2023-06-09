@@ -141,20 +141,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\Graphics\GrGraphics.cpp" />
+    <ClCompile Include="..\Graphics\OdGrGraphics.cpp" />
     <ClCompile Include="..\Libraries\nanovg\src\nanovg.c" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Graphics\GrGraphics.h" />
-    <ClInclude Include="..\Graphics\UI\GrUIButton.h" />
-    <ClInclude Include="..\Graphics\GrMainWindow.h" />
-    <ClInclude Include="..\Graphics\UI\GrUIComponent.h" />
-    <ClInclude Include="..\Graphics\UI\GrUIComponents.h" />
-    <ClInclude Include="..\Graphics\UI\GrInput.h" />
-    <ClInclude Include="..\Graphics\UI\GrUIWindow.h" />
-    <ClInclude Include="..\System\Entities\Entity.h" />
-    <ClInclude Include="..\System\GrCore.h" />
+    <ClInclude Include="..\Graphics\OdGrGraphics.h" />
+    <ClInclude Include="..\Graphics\UI\OdGrUiButton.h" />
+    <ClInclude Include="..\Graphics\OdGrMainWindow.h" />
+    <ClInclude Include="..\Graphics\UI\OdGrUiComponent.h" />
+    <ClInclude Include="..\Graphics\UI\OdGrUiComponents.h" />
+    <ClInclude Include="..\Graphics\UI\OdGrUiInput.h" />
+    <ClInclude Include="..\Graphics\UI\OdGrUiWindow.h" />
+    <ClInclude Include="..\System\Entities\OdSyEntity.h" />
+    <ClInclude Include="..\System\Kernel\OdSyColour.h" />
+    <ClInclude Include="..\System\OdSyApplication.h" />
+    <ClInclude Include="..\System\OdSyCore.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
