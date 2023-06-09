@@ -1,6 +1,22 @@
 #pragma once
 
+/**************************************************************************************
+* OpenDraft:    System Colour Class                                                   *
+*-------------------------------------------------------------------------------------*
+* Filename:     OdSyColour.h                                                          *
+* Contributors: James Hodgkins                                                        *
+* Date:         June 9, 2023                                                          *
+* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+*-------------------------------------------------------------------------------------*
+* Description:                                                                        *
+*   A colour class for the OpenDraft framework.                                       *
+***************************************************************************************/
+
+
+
 #include <nanovg.h>
+
+
 
 class OdSyColour
 {

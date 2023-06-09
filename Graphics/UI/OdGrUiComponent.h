@@ -1,9 +1,24 @@
 #pragma once
 
+/**************************************************************************************
+* OpenDraft:    GUI Component Base Class                                              *
+*-------------------------------------------------------------------------------------*
+* Filename:     OdGrUiComponent.h                                                     *
+* Contributors: James Hodgkins                                                        *
+* Date:         June 9, 2023                                                          *
+* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+*-------------------------------------------------------------------------------------*
+* Description:                                                                        *
+*   Base class for GUI components.                                                    *
+***************************************************************************************/
+
+
+
 #include "string"
 #include "System/OdSyCore.h"
 #include "Graphics/UI/OdGrUiInput.h"
 #include <nanovg.h>
+
 
 
 class OdGrUiComponent

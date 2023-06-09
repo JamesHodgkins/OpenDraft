@@ -1,6 +1,22 @@
 #pragma once
 
+/**************************************************************************************
+* OpenDraft:    GUI Button Class                                                      *
+*-------------------------------------------------------------------------------------*
+* Filename:     OdGrUiButton.h                                                        *
+* Contributors: James Hodgkins                                                        *
+* Date:         June 9, 2023                                                          *
+* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+*-------------------------------------------------------------------------------------*
+* Description:                                                                        *
+*   A GUI button class derived by OdGrComponent                                       *
+***************************************************************************************/
+
+
+
 #include "Graphics/UI/OdGrUiComponent.h"
+
+
 
 class OdGrUiButton : public OdGrUiComponent
 {
