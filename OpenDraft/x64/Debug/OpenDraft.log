@@ -1,4 +1,10 @@
-﻿glew32s.lib(glew.obj) : warning LNK4099: PDB 'vc120.pdb' was not found with 'glew32s.lib(glew.obj)' or at 'D:\CPP Projects\OpenDraft\OpenDraft\x64\Debug\vc120.pdb'; linking object as if no debug info
-LINK : warning LNK4098: defaultlib 'LIBCMT' conflicts with use of other libs; use /NODEFAULTLIB:library
-LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
+﻿  main.cpp
+D:\CPP Projects\OpenDraft\Graphics\UI\GrUIWindow.h(68,45): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+D:\CPP Projects\OpenDraft\Graphics\UI\GrUIWindow.h(69,45): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+D:\CPP Projects\OpenDraft\Graphics\UI\GrUIButton.h(23,51): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+D:\CPP Projects\OpenDraft\Graphics\UI\GrUIButton.h(23,43): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+D:\CPP Projects\OpenDraft\Graphics\UI\GrUIButton.h(23,35): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+D:\CPP Projects\OpenDraft\Graphics\UI\GrUIButton.h(23,23): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+D:\CPP Projects\OpenDraft\Graphics\UI\GrUIButton.h(45,49): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+D:\CPP Projects\OpenDraft\Graphics\UI\GrUIButton.h(45,26): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
   OpenDraft.vcxproj -> D:\CPP Projects\OpenDraft\OpenDraft\x64\Debug\OpenDraft.exe

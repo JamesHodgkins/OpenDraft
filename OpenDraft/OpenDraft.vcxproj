@@ -148,10 +148,11 @@
   <ItemGroup>
     <ClInclude Include="..\Graphics\GrGraphics.h" />
     <ClInclude Include="..\Graphics\UI\GrUIButton.h" />
-    <ClInclude Include="..\Graphics\GrWindow.h" />
+    <ClInclude Include="..\Graphics\GrMainWindow.h" />
     <ClInclude Include="..\Graphics\UI\GrUIComponent.h" />
     <ClInclude Include="..\Graphics\UI\GrUIComponents.h" />
     <ClInclude Include="..\Graphics\UI\GrInput.h" />
+    <ClInclude Include="..\Graphics\UI\GrUIWindow.h" />
     <ClInclude Include="..\System\Entities\Entity.h" />
     <ClInclude Include="..\System\GrCore.h" />
   </ItemGroup>

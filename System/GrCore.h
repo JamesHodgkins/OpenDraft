@@ -1,18 +1,19 @@
 #pragma once
 
 #include "Graphics/GrGraphics.h"	// Include Graphics
+#include "Graphics/GrMainWindow.h"
 
 class GrApplication
 {
 private:
 	bool running = false;
-	GrWindow* mainWindow = nullptr;
+	GrMainWindow* mainWindow = nullptr;
 
 public:
 
 	GrApplication()
 	{		
-		mainWindow = new GrWindow(1280,720, "OpenDraft");
+		mainWindow = new GrMainWindow(1280,720, "OpenDraft");
 		mainWindow->initialise();
 		running = true;
 
@@ -25,7 +26,7 @@ public:
 	}
 
 
-	GrWindow* getMainWindow()
+	GrMainWindow* getMainWindow()
 	{
 		return mainWindow;
 	}

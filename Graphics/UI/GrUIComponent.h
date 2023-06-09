@@ -1,6 +1,6 @@
 #pragma once
 
-#include "nanovg.h"					// Include core nanovg library
+//#include "nanovg.h"					// Include core nanovg library
 #include "Graphics/UI/GrInput.h"
 
 struct GrColour
