@@ -1,9 +1,23 @@
 #pragma once
 
+/**************************************************************************************
+* OpenDraft:    UI Input Class                                                        *
+*-------------------------------------------------------------------------------------*
+* Filename:     OdGrUiInput.h                                                         *
+* Contributors: James Hodgkins                                                        *
+* Date:         June 9, 2023                                                          *
+* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+*-------------------------------------------------------------------------------------*
+* Description:                                                                        *
+*   Inptut map to store the state of inputs against a glfw window instance            *
+***************************************************************************************/
+
+
+
 #include <unordered_map>
 #include "glfw/glfw3.h"
-
 #include <iostream>
+
 
 
 class OdGrKeyInput

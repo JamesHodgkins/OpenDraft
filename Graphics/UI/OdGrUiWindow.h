@@ -1,5 +1,18 @@
 #pragma once
-#pragma once
+
+/**************************************************************************************
+* OpenDraft:    GUI Window Class                                                      *
+*-------------------------------------------------------------------------------------*
+* Filename:     OdGrWindow.h                                                          *
+* Contributors: James Hodgkins                                                        *
+* Date:         June 9, 2023                                                          *
+* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+*-------------------------------------------------------------------------------------*
+* Description:                                                                        *
+*   A GUI base window class                                                           *
+***************************************************************************************/
+
+
 
 #include <vector>
 #include <iostream>
@@ -9,6 +22,8 @@
 
 #include "Graphics/UI/OdGrUiInput.h"
 #include "Graphics/UI/OdGrUiComponents.h"
+
+
 
 // Class representing a window
 class OdGrUiWindow
