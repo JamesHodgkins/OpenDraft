@@ -1,5 +1,19 @@
 #pragma once
 
+/**************************************************************************************
+* OpenDraft:    System Application Class                                              *
+*-------------------------------------------------------------------------------------*
+* Filename:     OdSyApplication.h                                                     *
+* Contributors: James Hodgkins                                                        *
+* Date:         June 10, 2023                                                         *
+* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+*-------------------------------------------------------------------------------------*
+* Description:                                                                        *
+*   Root application class                                                            *
+***************************************************************************************/
+
+
+
 #include "Graphics/OdGrGraphics.h"	// Include Graphics
 #include "Graphics/OdGrMainWindow.h"
 

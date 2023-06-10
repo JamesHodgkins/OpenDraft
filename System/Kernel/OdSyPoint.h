@@ -16,19 +16,13 @@
 
 class OdSyPoint {
 private:
-	double x, y;
 
 public:
+	double x, y;
+
 	// Default constructor
 	OdSyPoint() : x(0.0), y(0.0) {}
 
 	// Custom constructor
 	OdSyPoint(double xCoord, double yCoord) : x(xCoord), y(yCoord) {}
-
-	// Getters and setters
-	double getX() const { return x; }
-	void setX(double xCoord) { x = xCoord; }
-
-	double getY() const { return y; }
-	void setY(double yCoord) { y = yCoord; }
 };

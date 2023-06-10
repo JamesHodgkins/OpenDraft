@@ -76,5 +76,8 @@
     <ClInclude Include="..\System\Kernel\OdSyPoint.h">
       <Filter>System\Kernel</Filter>
     </ClInclude>
+    <ClInclude Include="..\System\Kernel\OdSyFont.h">
+      <Filter>System\Kernel</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

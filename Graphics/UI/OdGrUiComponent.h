@@ -25,16 +25,6 @@ class OdGrUiComponent
 {
 protected:
 
-	struct Location
-	{
-		int x, y;
-	};
-
-	struct Size
-	{
-		int x, y;
-	};
-
 	bool mouseOver = false;
 	bool mouseEnter = false;
 	bool mouseLeave = false;
@@ -46,9 +36,9 @@ public:
 	bool enabled;				// Control is enabled or disabled.
 	void* font;					// Font of the text displayed by the control.
 	OdSyColour foreColour;		// Foreground color of the control.
-	Location location = {0,0};	// Location of component
+	OdSyPoint location = {0,0};	// Location of component
 	std::string name;			// Name of the control.
-	Location size = {50,50};	// Location of component
+	OdSyPoint size = {50,50};	// Location of component
 	int TabIndex;				// Tab order of the control within its container.
 	std::string text;			// Text associated with the control.
 	bool show;					// Visible or hidden.
@@ -62,12 +52,12 @@ public:
 		location.y = aY;
 	}
 
-	Location getLocation()
+	OdSyPoint getLocation()
 	{
 		return location;
 	}
 
-	Location getSize()
+	OdSyPoint getSize()
 	{
 		return size;
 	}

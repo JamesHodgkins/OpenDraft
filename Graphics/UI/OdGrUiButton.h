@@ -28,7 +28,13 @@ protected:
 
 public:
 
-	OdGrUiButton(int x=0, int y=0, int width=150, int height=30)
+	/**
+	 * \brief Constructs a Button object with the specified attributes.
+	 * \param location (OdSyPoint) The position of the button.
+	 * \param size (OdSyPoint) The size of the button.
+	 * \param text (std::string) The text displayed on the button.
+	 */
+	OdGrUiButton(int x=0, int y=0, int width=150, int height=30, std::string t="Button")
 	{
 		location.x = x;
 		location.y = y;
@@ -42,8 +48,15 @@ public:
 		foreColour = OdSyColour(255, 255, 255, 200);
 		foreColourHover = OdSyColour(25, 25, 25, 255);
 		foreColourActive = OdSyColour(255, 255, 25, 255);
+
+		text = t;
 	}
 
+
+	/**
+	 * \brief Renders a default OD-GUI Button to a given NanoVG context (NVGContext) with the specified attributes.
+	 * \param vg (NVGcontext*) The nanovg pointer for rendering.
+	 */
 	virtual void const onFrame(NVGcontext* vg) override
 	{
 		nvgBeginPath(vg);
