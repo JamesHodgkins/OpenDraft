@@ -43,7 +43,7 @@ public:
 	int getAlpha() const { return a; }
 	void setAlpha(int alpha) { a = alpha; }
 
-	NVGcolor asNVG()
+	NVGcolor asNvgColour()
 	{
 		return nvgRGBA(getRed(), getGreen(), getBlue(), getAlpha());
 	}

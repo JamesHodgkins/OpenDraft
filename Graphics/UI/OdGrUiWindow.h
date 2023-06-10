@@ -26,14 +26,12 @@
 
 
 // Class representing a window
-class OdGrUiWindow
+class OdGrUiWindow : public OdGrUiComponent
 {
 protected:
 	GLFWwindow* glfwHandle = nullptr;		// Handle to the GLFW window
 	struct Context* context = nullptr;		// NanoVG context
 	GrInputMap input;						// Input map for storing user input
-
-	std::vector<OdGrUiComponent*> controls;	// Vector to store UI components
 
 public:
 	int width;								// Width of the window
@@ -156,6 +154,11 @@ public:
 		return context;
 	}
 
+	OdSyPoint getLocationInContext()
+	{
+		return OdSyPoint(0, 0);
+	}
+
 	// Close the window and clean up resources
 	void close()
 	{
@@ -163,7 +166,7 @@ public:
 		glfwTerminate();
 
 		// Delete UI components
-		for (OdGrUiComponent* control : controls) {
+		for (OdGrUiComponent* control : childComponents) {
 			delete control;
 		}
 	}
@@ -175,7 +178,7 @@ public:
 	}
 
 	// Render the window and UI components
-	virtual void startFrameProcess()
+	virtual void const onFrame(NVGcontext* vg)
 	{
 		glfwPollEvents();
 	}
@@ -183,7 +186,7 @@ public:
 	// Process events for UI components
 	void triggerEventsChain()
 	{
-		for (OdGrUiComponent* control : controls)
+		for (OdGrUiComponent* control : childComponents)
 		{
 			control->processEvents(&input);
 		}

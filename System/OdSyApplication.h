@@ -55,7 +55,7 @@ public:
 		}
 
 		mainWindow->triggerEventsChain();
-		mainWindow->startFrameProcess();
+		mainWindow->onFrame();
 	}
 
 

@@ -59,16 +59,34 @@ public:
 	 */
 	virtual void const onFrame(NVGcontext* vg) override
 	{
+		if (vg == nullptr)
+			return;
+
+		// Convert class location (relative to parent) to context location (relative to the window)
+		OdSyPoint baseLocation;
+
+		if (parent == nullptr) {
+			baseLocation = OdSyPoint(location.x, location.y);
+		}
+		else
+		{
+			baseLocation = OdSyPoint(parent->getLocationInContext().x + location.x, parent->getLocationInContext().y + location.y);
+		}
+
+		//
+		// Begin drawing Button
+		//
+
 		nvgBeginPath(vg);
-		nvgRect(vg, location.x, location.y, size.x, size.y);
+		nvgRect(vg, baseLocation.x, baseLocation.y, size.x, size.y);
 
 		if (mouseOver)
-			nvgFillColor(vg, backColourHover.asNVG() );
+			nvgFillColor(vg, backColourHover.asNvgColour() );
 		else
-			nvgFillColor(vg, backColour.asNVG());
+			nvgFillColor(vg, backColour.asNvgColour());
 
 		if (mouseDown) {
-			nvgFillColor(vg, backColourActive.asNVG());
+			nvgFillColor(vg, backColourActive.asNvgColour());
 		}
 
 		nvgFill(vg);
@@ -77,12 +95,12 @@ public:
 		nvgBeginPath(vg);
 
 		if (mouseOver)
-			nvgFillColor(vg, foreColourHover.asNVG());
+			nvgFillColor(vg, foreColourHover.asNvgColour());
 		else
-			nvgFillColor(vg, foreColour.asNVG());
+			nvgFillColor(vg, foreColour.asNvgColour());
 
 		if (mouseDown) {
-			nvgFillColor(vg, foreColourActive.asNVG());
+			nvgFillColor(vg, foreColourActive.asNvgColour());
 		}
 		
 		nvgFill(vg);
@@ -90,7 +108,7 @@ public:
 		nvgFontSize(vg, 14.0f);
 		nvgFontFace(vg, "sans");
 		nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-		nvgText(vg, location.x + size.x/2, location.y + size.y/2, text.c_str(), nullptr);
+		nvgText(vg, baseLocation.x + size.x/2, baseLocation.y + size.y/2, text.c_str(), nullptr);
 
 		nvgClosePath(vg);
 	}

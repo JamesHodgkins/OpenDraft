@@ -12,26 +12,28 @@ public:
 	{
 		OdGrUiButton* btn1 = new OdGrUiButton(300, 300);
 		btn1->setText("Button 1");
-		controls.push_back(btn1);
+		addChildControl(btn1);
 
 		OdGrUiButton* btn2 = new OdGrUiButton(300, 50);
 		btn2->setText("Button 2");
-		controls.push_back(btn2);
+		addChildControl(btn2);
+
 	}
 
 	// Render the window and UI components
-	void startFrameProcess() override
+	virtual void const onFrame(NVGcontext* vg = nullptr, OdGrUiComponent* parent = nullptr)
 	{
 		glClearColor(0.3f, 0.3f, 0.32f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 		nvgBeginFrame(context, 1280, 720, 1);
 
-		if (controls[0]->isMouseDown())
-			controls[1]->setText("HELLO WORLD");
+		if (childComponents[0]->isMouseDown())
+			childComponents[1]->setText("HELLO WORLD");
+
 
 		// Update UI components
-		for (OdGrUiComponent* control : controls) {
+		for (OdGrUiComponent* control : childComponents) {
 			control->onFrame(context);
 		}
 

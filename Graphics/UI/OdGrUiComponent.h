@@ -44,6 +44,8 @@ public:
 	bool show;					// Visible or hidden.
 	OdGrUiComponent* parent;	// Parent container control for the control.
 
+	std::vector<OdGrUiComponent*>childComponents; // Child Components
+
 	virtual void const onFrame(NVGcontext* vg) = 0;
 
 	void setLocation(int aX, int aY)
@@ -52,7 +54,12 @@ public:
 		location.y = aY;
 	}
 
-	OdSyPoint getLocation()
+	OdSyPoint getLocation() const
+	{
+		return location;
+	}
+
+	OdSyPoint getLocationInContext() const
 	{
 		return location;
 	}
@@ -86,6 +93,13 @@ public:
 	std::string getText()
 	{
 		return text;
+	}
+
+	void addChildControl(OdGrUiComponent* c)
+	{
+		// Todo check in component already has a parent, and remove it from there first.
+		c->parent = this;
+		childComponents.push_back(c);
 	}
 
 	void processEvents(GrInputMap* input)
