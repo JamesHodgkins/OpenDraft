@@ -58,9 +58,6 @@
     <ClInclude Include="..\Graphics\UI\OdGrUiComponent.h">
       <Filter>Graphics\UI</Filter>
     </ClInclude>
-    <ClInclude Include="..\Graphics\UI\OdGrUiComponents.h">
-      <Filter>Graphics\UI</Filter>
-    </ClInclude>
     <ClInclude Include="..\Graphics\UI\OdGrUiInput.h">
       <Filter>Graphics\UI</Filter>
     </ClInclude>
@@ -78,6 +75,12 @@
     </ClInclude>
     <ClInclude Include="..\System\Kernel\OdSyFont.h">
       <Filter>System\Kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Graphics\UI\OdGrUiComponents.h">
+      <Filter>Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Graphics\OdGrDraw.h">
+      <Filter>Graphics</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

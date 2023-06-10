@@ -12,6 +12,7 @@
 *   A colour class for the OpenDraft framework.                                       *
 ***************************************************************************************/
 
-#include "OdGrUiComponent.h"
-#include "OdGrUiWindow.h"
-#include "OdGrUiButton.h"
+#include "Graphics/OdGrDraw.h"
+#include "UI/OdGrUiComponent.h"
+#include "UI/OdGrUiWindow.h"
+#include "UI/OdGrUiButton.h"

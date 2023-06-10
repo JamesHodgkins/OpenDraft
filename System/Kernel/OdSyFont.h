@@ -13,6 +13,8 @@
 ***************************************************************************************/
 
 
+#include <vector>
+
 
 class OdSyFont {
 private:
@@ -25,6 +27,7 @@ public:
 	OdSyFont(const char* n, float s = 14.f) : name(n), size(s) {}
 
 };
+
 
 
 

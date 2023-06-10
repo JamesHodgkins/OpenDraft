@@ -8,11 +8,12 @@
 #include "nanovg.h"					// Include core nanovg library
 #include "nanovg_gl.h"				// Include nanovg opengl3 implementation
 
+#include "System/OdSyCore.h"
 #include "Graphics/UI/OdGrUiInput.h"
-#include "Graphics/UI/OdGrUiComponents.h"
+#include "Graphics/OdGrUiComponents.h"
+#include "Graphics/OdGrDraw.h"
 
 class GrGraphics
 {
 
 };
-

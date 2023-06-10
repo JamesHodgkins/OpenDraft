@@ -18,3 +18,4 @@
 
 #include "System/Kernel/OdSyColour.h"
 #include "System/Kernel/OdSyPoint.h"
+#include "System/Kernel/OdSyFont.h"

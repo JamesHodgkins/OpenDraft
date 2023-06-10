@@ -147,6 +147,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Graphics\OdGrGraphics.h" />
+    <ClInclude Include="..\Graphics\OdGrDraw.h" />
     <ClInclude Include="..\Graphics\UI\OdGrUiButton.h" />
     <ClInclude Include="..\Graphics\OdGrMainWindow.h" />
     <ClInclude Include="..\Graphics\UI\OdGrUiComponent.h" />

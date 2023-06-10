@@ -14,7 +14,7 @@
 
 
 
-#include "Graphics/UI/OdGrUiComponent.h"
+#include "Graphics/OdGrGraphics.h"
 
 
 
@@ -34,7 +34,7 @@ public:
 	 * \param size (OdSyPoint) The size of the button.
 	 * \param text (std::string) The text displayed on the button.
 	 */
-	OdGrUiButton(int x=0, int y=0, int width=150, int height=30, std::string t="Button")
+	OdGrUiButton(int x = 0, int y = 0, int width = 150, int height = 30, std::string t = "Button")
 	{
 		location.x = x;
 		location.y = y;
@@ -76,43 +76,26 @@ public:
 		//
 		// Begin drawing Button
 		//
-
-		nvgBeginPath(vg);
-		nvgRect(vg, baseLocation.x, baseLocation.y, size.x, size.y);
-
-		if (mouseOver)
-			nvgFillColor(vg, backColourHover.asNvgColour() );
-		else
-			nvgFillColor(vg, backColour.asNvgColour());
-
-		if (mouseDown) {
-			nvgFillColor(vg, backColourActive.asNvgColour());
+		if (mouseDown)
+		{
+			OdGrDraw::Rect(vg, baseLocation.x, baseLocation.y, size.x, size.y, backColourActive);
+			OdGrDraw::Text(vg, baseLocation.x, baseLocation.y, size.x, size.y, foreColourActive, text.c_str());
 		}
-
-		nvgFill(vg);
-		nvgClosePath(vg);
-
-		nvgBeginPath(vg);
-
-		if (mouseOver)
-			nvgFillColor(vg, foreColourHover.asNvgColour());
 		else
-			nvgFillColor(vg, foreColour.asNvgColour());
-
-		if (mouseDown) {
-			nvgFillColor(vg, foreColourActive.asNvgColour());
+		{
+			if (mouseOver)
+			{
+				OdGrDraw::Rect(vg, baseLocation.x, baseLocation.y, size.x, size.y, backColourHover);
+				OdGrDraw::Text(vg, baseLocation.x, baseLocation.y, size.x, size.y, foreColourHover, text.c_str());
+			}
+			else
+			{
+				OdGrDraw::Rect(vg, baseLocation.x, baseLocation.y, size.x, size.y, backColour);
+				OdGrDraw::Text(vg, baseLocation.x, baseLocation.y, size.x, size.y, foreColour, text.c_str());
+			}
 		}
+	
 		
-		nvgFill(vg);
-		nvgCreateFont(vg, "sans", ".\\OpenSans.ttf");
-		nvgFontSize(vg, 14.0f);
-		nvgFontFace(vg, "sans");
-		nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-		nvgText(vg, baseLocation.x + size.x/2, baseLocation.y + size.y/2, text.c_str(), nullptr);
-
-		nvgClosePath(vg);
 	}
-
-
 
 };

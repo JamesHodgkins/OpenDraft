@@ -21,7 +21,7 @@
 #define Context NVGcontext			// Alias Window for GLFWwindow
 
 #include "Graphics/UI/OdGrUiInput.h"
-#include "Graphics/UI/OdGrUiComponents.h"
+#include "Graphics/OdGrUiComponents.h"
 
 
 
