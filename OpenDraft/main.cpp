@@ -17,6 +17,7 @@ int main(int, char**)
 		app->update();
 	}
 
+	// Release app
 	delete app;
 
 	return 0;
