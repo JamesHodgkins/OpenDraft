@@ -35,9 +35,6 @@
       <Filter>Libraries\nanovg</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="..\Graphics\OdGrGraphics.cpp">
-      <Filter>Graphics</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\System\Entities\OdSyEntity.h">

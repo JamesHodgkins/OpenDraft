@@ -1,7 +1,21 @@
 #pragma once
 
+/**************************************************************************************
+* OpenDraft:    Graphic Draw Class                                                    *
+*-------------------------------------------------------------------------------------*
+* Filename:     OdGrDraw.h                                                            *
+* Contributors: James Hodgkins                                                        *
+* Date:         June 11, 2023                                                         *
+* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+*-------------------------------------------------------------------------------------*
+* Description:                                                                        *
+*   Draw routine wrappers for NanoVG intended for GUI rendering                       *
+***************************************************************************************/
+
+
 
 #include "Libraries/nanovg/src/nanovg.h"
+
 
 
 class OdGrDraw

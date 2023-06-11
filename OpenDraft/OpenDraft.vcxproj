@@ -141,7 +141,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\Graphics\OdGrGraphics.cpp" />
     <ClCompile Include="..\Libraries\nanovg\src\nanovg.c" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
