@@ -1,6 +1,6 @@
 # OpenDraft
 
-<img src="Docs/Branding/OpenDraft%20Logo%201%20(Backfill).png" alt="OpenDraft Logo" width="500px" margin="0 auto">
+<img src="Docs/Branding/OpenDraft%20Logo%201%20(Backfill w/ Highlight).png" alt="OpenDraft Logo" width="500px" margin="0 auto">
 
 OpenDraft is an open-source 2D CAD project that aims to provide a lightweight, user-friendly, and extendable CAD solution. The project is currently in its early stages of development, focusing on setting up the program structure and core classes. 
 
