@@ -39,12 +39,7 @@ public:
 		size.y = height;
 
 		backColour = OdSyColour(255, 0, 0, 255);
-		backColourHover = OdSyColour(0, 255, 0, 255);
-		backColourActive = OdSyColour(0, 0, 255, 255);
-
 		foreColour = OdSyColour(255, 255, 255, 200);
-		foreColourHover = OdSyColour(25, 25, 25, 255);
-		foreColourActive = OdSyColour(255, 255, 25, 255);
 
 		text = t;
 	}
