@@ -1,4 +1,4 @@
-#include "Graphics/UI/OdGrUiWindow.h"
+#include "Graphics/OdGrGraphics.h"
 
 class OdGrMainWindow : public OdGrUiWindow
 {
