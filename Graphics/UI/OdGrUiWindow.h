@@ -23,7 +23,6 @@
 #include "System/OdSyCore.h"
 #include "Graphics/UI/OdGrUiComponent.h"
 #include "Graphics/OdGrDraw.h"
-#include "Graphics/UI/OdGrUiInput.h"
 
 
 // Class representing a window
