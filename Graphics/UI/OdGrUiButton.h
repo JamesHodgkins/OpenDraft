@@ -14,8 +14,9 @@
 
 
 
-#include "Graphics/OdGrGraphics.h"
-
+#include "System/OdSyCore.h"
+#include "Graphics/UI/OdGrUiComponent.h"
+#include "Graphics/OdGrDraw.h"
 
 
 class OdGrUiButton : public OdGrUiComponent

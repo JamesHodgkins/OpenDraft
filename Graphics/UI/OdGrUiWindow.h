@@ -20,9 +20,10 @@
 #define Window GLFWwindow			// Alias Window for GLFWwindow
 #define Context NVGcontext			// Alias Window for GLFWwindow
 
+#include "System/OdSyCore.h"
+#include "Graphics/UI/OdGrUiComponent.h"
+#include "Graphics/OdGrDraw.h"
 #include "Graphics/UI/OdGrUiInput.h"
-#include "Graphics/OdGrUiComponents.h"
-
 
 
 // Class representing a window
