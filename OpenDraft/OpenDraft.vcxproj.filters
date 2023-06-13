@@ -73,11 +73,14 @@
     <ClInclude Include="..\System\Kernel\OdSyFont.h">
       <Filter>System\Kernel</Filter>
     </ClInclude>
-    <ClInclude Include="..\Graphics\UI\OdGrUiComponents.h">
+    <ClInclude Include="..\Graphics\OdGrUiComponents.h">
       <Filter>Graphics</Filter>
     </ClInclude>
     <ClInclude Include="..\Graphics\OdGrDraw.h">
       <Filter>Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Graphics\UI\OdGrUiLabel.h">
+      <Filter>Graphics\UI</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

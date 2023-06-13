@@ -150,8 +150,9 @@
     <ClInclude Include="..\Graphics\UI\OdGrUiButton.h" />
     <ClInclude Include="..\Graphics\OdGrMainWindow.h" />
     <ClInclude Include="..\Graphics\UI\OdGrUiComponent.h" />
-    <ClInclude Include="..\Graphics\UI\OdGrUiComponents.h" />
+    <ClInclude Include="..\Graphics\OdGrUiComponents.h" />
     <ClInclude Include="..\Graphics\UI\OdGrUiInput.h" />
+    <ClInclude Include="..\Graphics\UI\OdGrUiLabel.h" />
     <ClInclude Include="..\Graphics\UI\OdGrUiWindow.h" />
     <ClInclude Include="..\System\Entities\OdSyEntity.h" />
     <ClInclude Include="..\System\Kernel\OdSyColour.h" />

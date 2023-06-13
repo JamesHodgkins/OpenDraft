@@ -14,5 +14,6 @@
 
 #include "Graphics/OdGrDraw.h"
 #include "UI/OdGrUiComponent.h"
-#include "UI/OdGrUiWindow.h"
 #include "UI/OdGrUiButton.h"
+#include "UI/OdGrUiLabel.h"
+#include "UI/OdGrUiWindow.h"
