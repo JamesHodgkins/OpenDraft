@@ -95,6 +95,9 @@ public:
 				OdGrDraw::Text(vg, baseLocation.x, baseLocation.y, size.x, size.y, foreColour, text.c_str());
 			}
 		}
+
+		OdGrDraw::RectStroke(vg, baseLocation.x, baseLocation.y, size.x, size.y, OdSyColour(255,255,255,255));
+
 	
 		
 	}

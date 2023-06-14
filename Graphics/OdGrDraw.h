@@ -23,6 +23,7 @@ class OdGrDraw
 public:
 
 	static void Rect(NVGcontext* vg, int x, int y, int width, int height, OdSyColour colour);
+	static void RectStroke(NVGcontext* vg, int x, int y, int width, int height, OdSyColour colour);
 	static void Text(NVGcontext* vg, int x, int y, int width, int height, OdSyColour colour, const char* text);
 };
 
@@ -33,6 +34,15 @@ void OdGrDraw::Rect(NVGcontext* vg, int x, int y, int width, int height, OdSyCol
 	nvgRect(vg, x, y, width, height);
 	nvgFillColor(vg, colour.asNvgColour());
 	nvgFill(vg);
+	nvgClosePath(vg);
+}
+
+void OdGrDraw::RectStroke(NVGcontext* vg, int x, int y, int width, int height, OdSyColour colour)
+{
+	nvgBeginPath(vg);
+	nvgRect(vg, x, y, width, height);
+	nvgStrokeColor(vg, colour.asNvgColour());
+	nvgStroke(vg);
 	nvgClosePath(vg);
 }
 
