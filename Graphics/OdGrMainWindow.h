@@ -1,5 +1,18 @@
 #include "Graphics/OdGrGraphics.h"
 
+/**************************************************************************************
+* OpenDraft:    Main Application Window Class                                         *
+*-------------------------------------------------------------------------------------*
+* Filename:     OdSyColour.h                                                          *
+* Contributors: James Hodgkins                                                        *
+* Date:         June 14, 2023                                                         *
+* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+*-------------------------------------------------------------------------------------*
+* Description:                                                                        *
+*   A class for the main application window                                           *
+***************************************************************************************/
+
+
 class OdGrMainWindow : public OdGrUiWindow
 {
 public:
