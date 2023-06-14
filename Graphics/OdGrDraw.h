@@ -25,7 +25,17 @@ public:
 	static void Rect(NVGcontext* vg, int x, int y, int width, int height, OdSyColour colour);
 	static void RectStroke(NVGcontext* vg, int x, int y, int width, int height, OdSyColour colour);
 	static void Text(NVGcontext* vg, int x, int y, int width, int height, OdSyColour colour, const char* text);
+
+	// TEMP
+	static void LoadFont(NVGcontext* vg);
 };
+
+
+
+void OdGrDraw::LoadFont(NVGcontext* vg)
+{
+	nvgCreateFont(vg, "sans", ".\\OpenSans.ttf");
+}
 
 
 void OdGrDraw::Rect(NVGcontext* vg, int x, int y, int width, int height, OdSyColour colour)
@@ -52,7 +62,6 @@ void OdGrDraw::Text(NVGcontext* vg, int x, int y, int width, int height, OdSyCol
 	nvgBeginPath(vg);
 	nvgFillColor(vg, colour.asNvgColour());
 	nvgFill(vg);
-	nvgCreateFont(vg, "sans", ".\\OpenSans.ttf");
 	nvgFontSize(vg, 14.0f);
 	nvgFontFace(vg, "sans");
 	nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);

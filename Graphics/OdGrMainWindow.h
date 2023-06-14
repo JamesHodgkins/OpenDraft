@@ -24,6 +24,8 @@ public:
 	// Initialize the window and UI components
 	void initialise() override
 	{
+		OdGrDraw::LoadFont(context);
+
 		OdGrUiButton* btn1 = new OdGrUiButton(300, 300);
 		btn1->setText("Button 1");
 		addChildControl(btn1);
