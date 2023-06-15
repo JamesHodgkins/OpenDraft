@@ -157,6 +157,7 @@
     <ClInclude Include="..\System\Entities\OdSyEntity.h" />
     <ClInclude Include="..\System\Kernel\OdSyColour.h" />
     <ClInclude Include="..\System\Kernel\OdSyFont.h" />
+    <ClInclude Include="..\System\Kernel\OdSyImage.h" />
     <ClInclude Include="..\System\Kernel\OdSyPoint.h" />
     <ClInclude Include="..\System\OdSyApplication.h" />
     <ClInclude Include="..\System\OdSyCore.h" />

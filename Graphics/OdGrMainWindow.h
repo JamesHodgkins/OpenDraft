@@ -18,7 +18,21 @@ class OdGrMainWindow : public OdGrUiWindow
 {
 public:
 
-	OdGrMainWindow(int aWidth, int aHeight, const char* title) : OdGrUiWindow(aWidth, aHeight, title) {}
+	OdSyImage* img;
+
+	OdGrMainWindow(int aWidth, int aHeight, const char* title) : OdGrUiWindow(aWidth, aHeight, title) {
+		OdGrDraw::LoadImage(context, 256, 256, ".\\testimage.jpg", &img);
+	}
+
+	~OdGrMainWindow()
+	{
+		delete img;
+
+		// Update UI components
+		for (OdGrUiComponent* control : childComponents) {
+			delete control;
+		}
+	}
 
 
 	// Initialize the window and UI components
@@ -47,11 +61,14 @@ public:
 		if (childComponents[0]->isMouseDown())
 			childComponents[1]->setText("HELLO WORLD");
 
+		
+		OdGrDraw::ImageFromPath(context, 700, 200, img);
 
 		// Update UI components
 		for (OdGrUiComponent* control : childComponents) {
 			control->onFrame(context);
 		}
+
 
 		nvgEndFrame(context);
 

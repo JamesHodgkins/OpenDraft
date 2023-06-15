@@ -82,5 +82,8 @@
     <ClInclude Include="..\Graphics\UI\OdGrUiLabel.h">
       <Filter>Graphics\UI</Filter>
     </ClInclude>
+    <ClInclude Include="..\System\Kernel\OdSyImage.h">
+      <Filter>System\Kernel</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
