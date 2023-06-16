@@ -33,7 +33,7 @@ public:
 	// Draws text on the specified NanoVG context.
 	static void Text(NVGcontext* vg, int x, int y, int width, int height, OdSyColour colour, const char* text);
 
-	static void LoadImage(NVGcontext* vg, int width, int height, const char* filePath, OdSyImage** img);
+	static void CreateImage(NVGcontext* vg, int width, int height, const char* filePath, OdSyImage** img);
 
 	// Draws an image on the specified NanoVG context from a file path.
 	static void ImageFromPath(NVGcontext* vg, int x, int y, OdSyImage* img);
@@ -83,17 +83,15 @@ void OdGrDraw::Text(NVGcontext* vg, int x, int y, int width, int height, OdSyCol
 }
 
 
-void OdGrDraw::LoadImage(NVGcontext* vg, int width, int height, const char* filePath, OdSyImage** img)
+void OdGrDraw::CreateImage(NVGcontext* vg, int width, int height, const char* filePath, OdSyImage** img)
 {
-	int imageHandle = nvgCreateImage(vg, ".\\testimage.jpg", 0);
+	int imageHandle = nvgCreateImage(vg, filePath, 0);
 	*img = new OdSyImage(width, height, 1.0, filePath, imageHandle);
 }
 
 
 void OdGrDraw::ImageFromPath(NVGcontext* vg, int x, int y, OdSyImage* img)
 {
-	std::cout << img->getId() << std::endl;
-
 	if (img->getId() != 0)
 	{
 		nvgBeginPath(vg);

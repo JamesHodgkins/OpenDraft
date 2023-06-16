@@ -21,17 +21,12 @@ public:
 	OdSyImage* img;
 
 	OdGrMainWindow(int aWidth, int aHeight, const char* title) : OdGrUiWindow(aWidth, aHeight, title) {
-		OdGrDraw::LoadImage(context, 256, 256, ".\\testimage.jpg", &img);
+		OdGrDraw::CreateImage(context, 150, 150, ".\\testimage.jpg", &img);
 	}
 
 	~OdGrMainWindow()
 	{
 		delete img;
-
-		// Update UI components
-		for (OdGrUiComponent* control : childComponents) {
-			delete control;
-		}
 	}
 
 
