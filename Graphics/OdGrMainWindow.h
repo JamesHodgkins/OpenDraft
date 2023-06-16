@@ -21,7 +21,7 @@ public:
 	OdSyImage* img;
 
 	OdGrMainWindow(int aWidth, int aHeight, const char* title) : OdGrUiWindow(aWidth, aHeight, title) {
-		OdGrDraw::CreateImage(context, 150, 150, ".\\testimage.jpg", &img);
+		OdGrDraw::CreateImage(context, 32, 32, "..\\Resources\\Icons\\line.png", &img);
 	}
 
 	~OdGrMainWindow()
@@ -33,7 +33,7 @@ public:
 	// Initialize the window and UI components
 	void initialise() override
 	{
-		OdGrDraw::LoadFont(context);
+		OdGrDraw::LoadFont(context, "sans", "..\\Resources\\Fonts\\OpenSans.ttf");
 
 		OdGrUiButton* btn1 = new OdGrUiButton(300, 300);
 		btn1->setText("Button 1");

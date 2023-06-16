@@ -39,14 +39,14 @@ public:
 	static void ImageFromPath(NVGcontext* vg, int x, int y, OdSyImage* img);
 
 	// TEMP: Loads a font into the specified NanoVG context.
-	static void LoadFont(NVGcontext* vg);
+	static void LoadFont(NVGcontext* vg, const char* name, const char* filePath);
 };
 
 
 
-void OdGrDraw::LoadFont(NVGcontext* vg)
+void OdGrDraw::LoadFont(NVGcontext* vg, const char* name, const char* filePath)
 {
-	nvgCreateFont(vg, "sans", ".\\OpenSans.ttf");
+	nvgCreateFont(vg, name, filePath);
 }
 
 
