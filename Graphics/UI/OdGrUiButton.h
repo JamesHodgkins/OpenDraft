@@ -80,19 +80,19 @@ public:
 		if (mouseDown)
 		{
 			OdGrDraw::Rect(vg, baseLocation.x, baseLocation.y, size.x, size.y, backColourActive);
-			OdGrDraw::Text(vg, baseLocation.x, baseLocation.y, size.x, size.y, foreColourActive, text.c_str());
+			OdGrDraw::Text(vg, baseLocation.x, baseLocation.y, size.x, size.y, 14.0f, foreColourActive, text.c_str());
 		}
 		else
 		{
 			if (mouseOver)
 			{
 				OdGrDraw::Rect(vg, baseLocation.x, baseLocation.y, size.x, size.y, backColourHover);
-				OdGrDraw::Text(vg, baseLocation.x, baseLocation.y, size.x, size.y, foreColourHover, text.c_str());
+				OdGrDraw::Text(vg, baseLocation.x, baseLocation.y, size.x, size.y, 14.0f, foreColourHover, text.c_str());
 			}
 			else
 			{
 				OdGrDraw::Rect(vg, baseLocation.x, baseLocation.y, size.x, size.y, backColour);
-				OdGrDraw::Text(vg, baseLocation.x, baseLocation.y, size.x, size.y, foreColour, text.c_str());
+				OdGrDraw::Text(vg, baseLocation.x, baseLocation.y, size.x, size.y, 14.0f, foreColour, text.c_str());
 			}
 		}
 

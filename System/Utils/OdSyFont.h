@@ -19,14 +19,18 @@
 
 class OdSyFont {
 private:
+	const int id;
+	const char* name;
+	const char* filePath;
 
 public:
-	float size;
-	const char* name;
-
 	// Default constructor
-	OdSyFont(const char* n, float s = 14.f) : name(n), size(s) {}
+	OdSyFont(const char* aName, const char* aFilePath, int aId) : name(aName), filePath(aFilePath), id(aId) {}
 
+	// Getters
+	const char* getName() const { return name; }
+	const char* getFilePath() const { return filePath; }
+	int getId() const { return id; }
 };
 
 

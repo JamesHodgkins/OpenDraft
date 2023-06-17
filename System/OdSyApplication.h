@@ -22,16 +22,17 @@ class OdGrApplication
 private:
 	bool running = false;
 	OdGrMainWindow* mainWindow = nullptr;
-	OdSyResourceManager* resourceManager;
+	OdSyResourceManager* resManager;
 
 public:
 
 	OdGrApplication()
 	{
-		resourceManager = new OdSyResourceManager();
+		resManager = new OdSyResourceManager();
 		mainWindow = new OdGrMainWindow(1280, 720, "OpenDraft");
-		mainWindow->resourceManager = resourceManager;
+		mainWindow->resourceManager = resManager;
 		mainWindow->initialise();
+		
 		running = true;
 	}
 
@@ -64,7 +65,7 @@ public:
 	~OdGrApplication()
 	{
 		mainWindow->close();
-		delete resourceManager;
+		delete resManager;
 		delete mainWindow;
 	}
 

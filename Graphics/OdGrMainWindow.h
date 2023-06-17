@@ -27,7 +27,8 @@ public:
 	void initialise() override
 	{
 		loadResources();
-		OdGrDraw::LoadFont(context, "sans", "..\\Resources\\Fonts\\OpenSans.ttf");
+
+		backColour.setRGB(31,39,48);
 
 		OdGrUiButton* btn1 = new OdGrUiButton(300, 300);
 		btn1->setText("Button 1");
@@ -42,13 +43,17 @@ public:
 	// Load required resources
 	void loadResources()
 	{
-		resourceManager->importImageFromFile(context, 32, 32, "Test", "..\\Resources\\Icons\\line.png");
+		resourceManager->importFontFromFile(context, "sans", "..\\Resources\\Fonts\\OpenSans.ttf");
+		//resourceManager->importImageFromFile(context, 32, 32, "Test", "..\\Resources\\Icons\\line.png");
+
+		// load 32x32 png icons
+		resourceManager->importDirectory(context, {"png"}, "..\\Resources\\Icons");
 	}
 
 	// Render the window and UI components
 	virtual void const onFrame(NVGcontext* vg = nullptr, OdGrUiComponent* parent = nullptr)
 	{
-		glClearColor(0.3f, 0.3f, 0.32f, 1.0f);
+		glClearColor(backColour.getRedNorm(), backColour.getGreenNorm(), backColour.getGreenNorm(), 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 		nvgBeginFrame(context, 1280, 720, 1);
@@ -57,7 +62,7 @@ public:
 			childComponents[1]->setText("HELLO WORLD");
 
 		
-		OdGrDraw::ImageFromPath(context, 700, 200, resourceManager->images["Test"]);
+		OdGrDraw::ImageFromPath(context, 700, 200, resourceManager->images["circle.png"]);
 
 		// Update UI components
 		for (OdGrUiComponent* control : childComponents) {

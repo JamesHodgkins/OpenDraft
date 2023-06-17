@@ -65,24 +65,28 @@ public:
 		return location;
 	}
 
-	OdSyPoint getSize()
+	OdSyPoint getSize() const
 	{
 		return size;
 	}
 
-	bool isMouseOver() const {
+	bool isMouseOver() const
+	{
 		return mouseOver;
 	}
 
-	bool isMouseEnter() const {
+	bool isMouseEnter() const
+	{
 		return mouseEnter;
 	}
 
-	bool isMouseLeave() const {
+	bool isMouseLeave() const
+	{
 		return mouseLeave;
 	}
 
-	bool isMouseDown() const {
+	bool isMouseDown() const
+	{
 		return mouseDown;
 	}
 

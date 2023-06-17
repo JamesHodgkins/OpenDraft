@@ -69,7 +69,7 @@ public:
 		// Begin drawing Label
 		//
 		OdGrDraw::Rect(vg, baseLocation.x, baseLocation.y, size.x, size.y, backColour);
-		OdGrDraw::Text(vg, baseLocation.x, baseLocation.y, size.x, size.y, foreColour, text.c_str());
+		OdGrDraw::Text(vg, baseLocation.x, baseLocation.y, size.x, size.y, 14.0f, foreColour, text.c_str());
 
 
 	}

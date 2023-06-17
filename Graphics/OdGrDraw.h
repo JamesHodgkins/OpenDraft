@@ -31,23 +31,12 @@ public:
 	static void RectStroke(NVGcontext* vg, int x, int y, int width, int height, OdSyColour colour);
 
 	// Draws text on the specified NanoVG context.
-	static void Text(NVGcontext* vg, int x, int y, int width, int height, OdSyColour colour, const char* text);
-
-	
+	static void Text(NVGcontext* vg, int x, int y, int width, int height, float size, OdSyColour colour, const char* text);
 
 	// Draws an image on the specified NanoVG context from a file path.
 	static void ImageFromPath(NVGcontext* vg, int x, int y, OdSyImage* img);
 
-	// TEMP: Loads a font into the specified NanoVG context.
-	static void LoadFont(NVGcontext* vg, const char* name, const char* filePath);
 };
-
-
-
-void OdGrDraw::LoadFont(NVGcontext* vg, const char* name, const char* filePath)
-{
-	nvgCreateFont(vg, name, filePath);
-}
 
 
 void OdGrDraw::Rect(NVGcontext* vg, int x, int y, int width, int height, OdSyColour colour)
@@ -70,12 +59,12 @@ void OdGrDraw::RectStroke(NVGcontext* vg, int x, int y, int width, int height, O
 }
 
 
-void OdGrDraw::Text(NVGcontext* vg, int x, int y, int width, int height, OdSyColour colour, const char* text)
+void OdGrDraw::Text(NVGcontext* vg, int x, int y, int width, int height, float size, OdSyColour colour, const char* text)
 {
 	nvgBeginPath(vg);
 	nvgFillColor(vg, colour.asNvgColour());
 	nvgFill(vg);
-	nvgFontSize(vg, 14.0f);
+	nvgFontSize(vg, size);
 	nvgFontFace(vg, "sans");
 	nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
 	nvgText(vg, x + width / 2, y + height / 2, text, nullptr);

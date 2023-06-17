@@ -9,28 +9,27 @@
 * Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
-*   Standard OpenDraft image class                                                    *
+*   An image wrapper class for the OpenDraft framework                                 *
 ***************************************************************************************/
 
 
 
-#include <string>
 
 
 
 class OdSyImage {
 private:
 	int width, height, alpha, id;
-	std::string fileLocation;
+	const char* filePath;
 
 public:
-	OdSyImage(int aWidth, int aHeight, int aAlpha, const char* aFileLocation, int aId)
-		: width(aWidth), height(aHeight), alpha(aAlpha), fileLocation(aFileLocation), id(aId) {}
+	OdSyImage(int aWidth, int aHeight, int aAlpha, const char* aFilePath, int aId)
+		: width(aWidth), height(aHeight), alpha(aAlpha), filePath(aFilePath), id(aId) {}
 
 	// Getters
 	int getWidth() const { return width; }
 	int getHeight() const { return height; }
 	int getAlpha() const { return alpha; }
-	std::string getFileLocation() const { return fileLocation; }
+	const char* getFilePath() const { return filePath; }
 	int getId() const { return id; }
 };
