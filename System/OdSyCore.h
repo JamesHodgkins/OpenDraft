@@ -16,7 +16,7 @@
 
 
 
-#include "System/Kernel/OdSyColour.h"
-#include "System/Kernel/OdSyImage.h"
-#include "System/Kernel/OdSyPoint.h"
-#include "System/Kernel/OdSyFont.h"
+#include "System/Utils/OdSyColour.h"
+#include "System/Utils/OdSyImage.h"
+#include "System/Utils/OdSyPoint.h"
+#include "System/Utils/OdSyFont.h"

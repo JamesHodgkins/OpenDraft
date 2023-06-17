@@ -14,9 +14,6 @@
     <Filter Include="System\Entities">
       <UniqueIdentifier>{365ef6d7-8d8c-4e23-bb4f-2ce2ab706191}</UniqueIdentifier>
     </Filter>
-    <Filter Include="System\Kernel">
-      <UniqueIdentifier>{ac87da0c-6b74-4505-a202-287a7ff6f166}</UniqueIdentifier>
-    </Filter>
     <Filter Include="DataManager">
       <UniqueIdentifier>{0b3bb50b-6de7-4bd7-865a-a5b34da1ea79}</UniqueIdentifier>
     </Filter>
@@ -28,6 +25,9 @@
     </Filter>
     <Filter Include="Graphics\UI">
       <UniqueIdentifier>{f63f2d64-82cf-4be2-986a-c483b8b73151}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\Utils">
+      <UniqueIdentifier>{ac87da0c-6b74-4505-a202-287a7ff6f166}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -61,17 +61,17 @@
     <ClInclude Include="..\Graphics\UI\OdGrUiWindow.h">
       <Filter>Graphics\UI</Filter>
     </ClInclude>
-    <ClInclude Include="..\System\Kernel\OdSyColour.h">
-      <Filter>System\Kernel</Filter>
+    <ClInclude Include="..\System\Utils\OdSyColour.h">
+      <Filter>System\Utils</Filter>
     </ClInclude>
     <ClInclude Include="..\System\OdSyApplication.h">
       <Filter>System</Filter>
     </ClInclude>
-    <ClInclude Include="..\System\Kernel\OdSyPoint.h">
-      <Filter>System\Kernel</Filter>
+    <ClInclude Include="..\System\Utils\OdSyPoint.h">
+      <Filter>System\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="..\System\Kernel\OdSyFont.h">
-      <Filter>System\Kernel</Filter>
+    <ClInclude Include="..\System\Utils\OdSyFont.h">
+      <Filter>System\Utils</Filter>
     </ClInclude>
     <ClInclude Include="..\Graphics\OdGrUiComponents.h">
       <Filter>Graphics</Filter>
@@ -82,8 +82,8 @@
     <ClInclude Include="..\Graphics\UI\OdGrUiLabel.h">
       <Filter>Graphics\UI</Filter>
     </ClInclude>
-    <ClInclude Include="..\System\Kernel\OdSyImage.h">
-      <Filter>System\Kernel</Filter>
+    <ClInclude Include="..\System\Utils\OdSyImage.h">
+      <Filter>System\Utils</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

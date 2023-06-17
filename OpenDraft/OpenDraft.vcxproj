@@ -155,10 +155,10 @@
     <ClInclude Include="..\Graphics\UI\OdGrUiLabel.h" />
     <ClInclude Include="..\Graphics\UI\OdGrUiWindow.h" />
     <ClInclude Include="..\System\Entities\OdSyEntity.h" />
-    <ClInclude Include="..\System\Kernel\OdSyColour.h" />
-    <ClInclude Include="..\System\Kernel\OdSyFont.h" />
-    <ClInclude Include="..\System\Kernel\OdSyImage.h" />
-    <ClInclude Include="..\System\Kernel\OdSyPoint.h" />
+    <ClInclude Include="..\System\Utils\OdSyColour.h" />
+    <ClInclude Include="..\System\Utils\OdSyFont.h" />
+    <ClInclude Include="..\System\Utils\OdSyImage.h" />
+    <ClInclude Include="..\System\Utils\OdSyPoint.h" />
     <ClInclude Include="..\System\OdSyApplication.h" />
     <ClInclude Include="..\System\OdSyCore.h" />
   </ItemGroup>
