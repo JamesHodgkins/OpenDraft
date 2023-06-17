@@ -20,3 +20,4 @@
 #include "System/Utils/OdSyImage.h"
 #include "System/Utils/OdSyPoint.h"
 #include "System/Utils/OdSyFont.h"
+#include "System/OdSyResourceManager.h"

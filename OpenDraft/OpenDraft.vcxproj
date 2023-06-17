@@ -161,6 +161,7 @@
     <ClInclude Include="..\System\Utils\OdSyPoint.h" />
     <ClInclude Include="..\System\OdSyApplication.h" />
     <ClInclude Include="..\System\OdSyCore.h" />
+    <ClInclude Include="..\System\OdSyResourceManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -44,7 +44,8 @@ public:
 	bool show;					// Visible or hidden.
 	OdGrUiComponent* parent;	// Parent container control for the control.
 
-	std::vector<OdGrUiComponent*>childComponents; // Child Components
+	OdSyResourceManager* resourceManager;			// Pointer to injected resource manager.
+	std::vector<OdGrUiComponent*>childComponents;	// Child Components
 
 	virtual void const onFrame(NVGcontext* vg) = 0;
 

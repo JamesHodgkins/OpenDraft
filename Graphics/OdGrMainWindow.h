@@ -18,21 +18,15 @@ class OdGrMainWindow : public OdGrUiWindow
 {
 public:
 
-	OdSyImage* img;
+	OdGrMainWindow(int aWidth, int aHeight, const char* title) : OdGrUiWindow(aWidth, aHeight, title) {}
 
-	OdGrMainWindow(int aWidth, int aHeight, const char* title) : OdGrUiWindow(aWidth, aHeight, title) {
-		OdGrDraw::CreateImage(context, 32, 32, "..\\Resources\\Icons\\line.png", &img);
-	}
-
-	~OdGrMainWindow()
-	{
-		delete img;
-	}
+	~OdGrMainWindow(){}
 
 
 	// Initialize the window and UI components
 	void initialise() override
 	{
+		loadResources();
 		OdGrDraw::LoadFont(context, "sans", "..\\Resources\\Fonts\\OpenSans.ttf");
 
 		OdGrUiButton* btn1 = new OdGrUiButton(300, 300);
@@ -43,6 +37,12 @@ public:
 		btn2->setText("Button 2");
 		addChildControl(btn2);
 
+	}
+
+	// Load required resources
+	void loadResources()
+	{
+		resourceManager->importImageFromFile(context, 32, 32, "Test", "..\\Resources\\Icons\\line.png");
 	}
 
 	// Render the window and UI components
@@ -57,7 +57,7 @@ public:
 			childComponents[1]->setText("HELLO WORLD");
 
 		
-		OdGrDraw::ImageFromPath(context, 700, 200, img);
+		OdGrDraw::ImageFromPath(context, 700, 200, resourceManager->images["Test"]);
 
 		// Update UI components
 		for (OdGrUiComponent* control : childComponents) {

@@ -85,5 +85,8 @@
     <ClInclude Include="..\System\Utils\OdSyImage.h">
       <Filter>System\Utils</Filter>
     </ClInclude>
+    <ClInclude Include="..\System\OdSyResourceManager.h">
+      <Filter>System</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
