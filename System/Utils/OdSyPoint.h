@@ -25,4 +25,5 @@ public:
 
 	// Custom constructor
 	OdSyPoint(double xCoord, double yCoord) : x(xCoord), y(yCoord) {}
+	OdSyPoint(int xCoord, int yCoord) : x(xCoord), y(yCoord) {}
 };

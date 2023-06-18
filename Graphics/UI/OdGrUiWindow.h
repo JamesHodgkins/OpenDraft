@@ -20,6 +20,7 @@
 #define Window GLFWwindow			// Alias Window for GLFWwindow
 #define Context NVGcontext			// Alias Window for GLFWwindow
 
+#include <Windows.h>
 #include "System/OdSyCore.h"
 #include "Graphics/UI/OdGrUiComponent.h"
 #include "Graphics/OdGrDraw.h"
@@ -33,15 +34,20 @@ protected:
 	struct Context* context = nullptr;		// NanoVG context
 	GrInputMap input;						// Input map for storing user input
 
+	void updateProperties()
+	{
+		int width = 0, height = 0;
+		glfwGetWindowSize(glfwHandle, &width, &height);
+		size.x = width;
+		size.y = height;		
+	}
+
 public:
-	int width;								// Width of the window
-	int height;								// Height of the window
 
 	// Constructor
 	OdGrUiWindow(int aWidth, int aHeight, const char* title)
 	{
-		width = aWidth;
-		height = aHeight;
+		size = OdSyPoint(aWidth, aHeight);
 		input = GrInputMap();
 
 		// Initialize GLFW
@@ -49,7 +55,7 @@ public:
 			return;
 
 		// Create window with graphics context
-		glfwHandle = glfwCreateWindow(width, height, title, nullptr, nullptr);
+		glfwHandle = glfwCreateWindow(size.x, size.y, title, nullptr, nullptr);
 		if (glfwHandle == nullptr)
 			return;
 
@@ -70,7 +76,12 @@ public:
 		glfwSetCursorPosCallback(glfwHandle, mousePositionEventCallback);
 		glfwSetMouseButtonCallback(glfwHandle, mouseClickEventCallback);
 		glfwSetKeyCallback(glfwHandle, keyEventCallback);
+		glfwSetWindowSizeCallback(glfwHandle, windowResizeCallback);
+
+		// Update some properties following intitialisation
+		updateProperties();
 	}
+	
 
 	// Callback function for mouse movement
 	static void mousePositionEventCallback(GLFWwindow* window, double xpos, double ypos)
@@ -80,6 +91,16 @@ public:
 			// Access the instance and store the mouse position
 			windowInstance->input.mouse.position.x = xpos;
 			windowInstance->input.mouse.position.y = ypos;
+		}
+	}
+
+	// Callback function for window resize
+	static void windowResizeCallback(GLFWwindow* window, int width, int height)
+	{
+		OdGrUiWindow* windowInstance = static_cast<OdGrUiWindow*>(glfwGetWindowUserPointer(window));
+		if (windowInstance) {
+			// Access the instance and update size
+			windowInstance->updateProperties();
 		}
 	}
 
@@ -134,6 +155,14 @@ public:
 				map->keys[key].changeState(false);
 
 		}
+	}
+
+	// Set size (todo: set override when base equivalent is implemented)
+	void setSize(int width, int height)
+	{
+		size.x = width;
+		size.y = height;
+		glfwSetWindowSize(glfwHandle, width, height);
 	}
 
 	// Check if the window is still running

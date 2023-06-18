@@ -34,7 +34,7 @@ public:
 		btn1->setText("Button 1");
 		addChildControl(btn1);
 
-		OdGrUiButton* btn2 = new OdGrUiButton(300, 50);
+		OdGrUiButton* btn2 = new OdGrUiButton(300, 230);
 		btn2->setText("Button 2");
 		addChildControl(btn2);
 
@@ -81,15 +81,20 @@ public:
 			1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-		nvgBeginFrame(context, 1280, 720, 1);
+		glViewport(0, 0, size.x, size.y);
+		nvgBeginFrame(context, size.x, size.y, 1);
+
 
 
 		// Test updates on state
 		if (childComponents[0]->isMouseDown())
-			childComponents[1]->setText("HELLO WORLD");
+			setSize(1280, 720);
+
+		if (childComponents[1]->isMouseDown())
+			setSize(600, 600);
 
 
-		OdGrDraw::Rect(context, 0, 0, 1280, 100, OdSyColour::BACKGROUND2);
+		OdGrDraw::Rect(context, 0, 0, size.x, 100, OdSyColour::BACKGROUND2);
 		
 		// Update UI components
 		for (OdGrUiComponent* control : childComponents) {
