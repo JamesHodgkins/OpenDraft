@@ -178,7 +178,7 @@ public:
 	}
 
 	// Render the window and UI components
-	virtual void const onFrame(NVGcontext* vg)
+	virtual void const onFrame(NVGcontext* context)
 	{
 		glfwPollEvents();
 	}

@@ -38,8 +38,13 @@ public:
 		btn2->setText("Button 2");
 		addChildControl(btn2);
 
-		OdGrUiButton* btn3 = new OdGrUiButton(100, 300, 32, 32, "");
-		addChildControl(btn3);
+
+		// Start Ribbon Area
+		OdGrUiPanel* pnl1 = new OdGrUiPanel(200, 0, 1000, 100);
+		addChildControl(pnl1);
+
+		OdGrUiButton* btn3 = new OdGrUiButton(10, 10, 32, 32, "");
+		pnl1->addChildControl(btn3);
 		btn3->stroke.setColourRGBA(0, 0, 0, 0);
 		btn3->setBackgroundImage(resourceManager->images["ico_circle"]);
 

@@ -88,5 +88,8 @@
     <ClInclude Include="..\System\OdSyResourceManager.h">
       <Filter>System</Filter>
     </ClInclude>
+    <ClInclude Include="..\Graphics\UI\OdGrUiPanel.h">
+      <Filter>Graphics\UI</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -49,7 +49,7 @@ public:
 	OdSyResourceManager* resourceManager;			// Pointer to injected resource manager.
 	std::vector<OdGrUiComponent*>childComponents;	// Child Components
 
-	virtual void const onFrame(NVGcontext* vg) = 0;
+	virtual void const onFrame(NVGcontext* context) = 0;
 
 	void setLocation(int aX, int aY)
 	{

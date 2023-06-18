@@ -1,15 +1,15 @@
 #pragma once
 
 /**************************************************************************************
-* OpenDraft:    GUI Button Class                                                      *
+* OpenDraft:    GUI Panel Container Class                                             *
 *-------------------------------------------------------------------------------------*
-* Filename:     OdGrUiButton.h                                                        *
+* Filename:     OdGrUiPanel.h                                                         *
 * Contributors: James Hodgkins                                                        *
-* Date:         June 9, 2023                                                          *
+* Date:         June 18, 2023                                                         *
 * Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
-*   A GUI button class derived from OdGrComponent                                     *
+*   A GUI panel container class derived from OdGrComponent                            *
 ***************************************************************************************/
 
 
@@ -19,24 +19,22 @@
 #include "Graphics/OdGrDraw.h"
 
 
-class OdGrUiButton : public OdGrUiComponent
+class OdGrUiPanel : public OdGrUiComponent
 {
 protected:
 	OdSyColour backColourHover;
-	OdSyColour foreColourHover;
 	OdSyColour backColourActive;
-	OdSyColour foreColourActive;
 	OdSyImage* backgroundImage;
 
 public:
 
 	/**
-	 * \brief Constructs a Button object with the specified attributes.
-	 * \param location (OdSyPoint) The position of the button.
-	 * \param size (OdSyPoint) The size of the button.
-	 * \param text (std::string) The text displayed on the button.
+	 * \brief Constructs a Panel object with the specified attributes.
+	 * \param location (OdSyPoint) The position of the panel.
+	 * \param size (OdSyPoint) The size of the panel.
+	 * \param text (std::string) The text displayed on the panel.
 	 */
-	OdGrUiButton(int x = 0, int y = 0, int width = 150, int height = 30, std::string t = "Button")
+	OdGrUiPanel(int x = 0, int y = 0, int width = 150, int height = 30)
 	{
 		location.x = x;
 		location.y = y;
@@ -48,12 +46,10 @@ public:
 		backColourActive = OdSyColour(0, 0, 255, 255);
 
 		foreColour = OdSyColour(255, 255, 255, 200);
-		foreColourHover = OdSyColour(25, 25, 25, 255);
-		foreColourActive = OdSyColour(255, 255, 25, 255);
 
 		backgroundImage = nullptr;
 
-		text = t;
+		text = "";
 	}
 
 	void setBackgroundImage(OdSyImage* img)
@@ -68,7 +64,7 @@ public:
 
 
 	/**
-	 * \brief Renders a default OD-GUI Button to a given NanoVG context (NVGContext) with the specified attributes.
+	 * \brief Renders a default OD-GUI Panel to a given NanoVG context (NVGContext) with the specified attributes.
 	 * \param context (NVGcontext*) The nanovg pointer for rendering.
 	 */
 	virtual void const onFrame(NVGcontext* context) override
@@ -88,24 +84,21 @@ public:
 		}
 
 		//
-		// Begin drawing Button
+		// Begin drawing Panel
 		//
 		if (mouseDown)
 		{
 			OdGrDraw::Rect(context, baseLocation.x, baseLocation.y, size.x, size.y, backColourActive);
-			OdGrDraw::Text(context, baseLocation.x, baseLocation.y, size.x, size.y, 14.0f, foreColourActive, text.c_str());
 		}
 		else
 		{
 			if (mouseOver)
 			{
 				OdGrDraw::Rect(context, baseLocation.x, baseLocation.y, size.x, size.y, backColourHover);
-				OdGrDraw::Text(context, baseLocation.x, baseLocation.y, size.x, size.y, 14.0f, foreColourHover, text.c_str());
 			}
 			else
 			{
 				OdGrDraw::Rect(context, baseLocation.x, baseLocation.y, size.x, size.y, backColour);
-				OdGrDraw::Text(context, baseLocation.x, baseLocation.y, size.x, size.y, 14.0f, foreColour, text.c_str());
 			}
 		}
 
@@ -117,8 +110,13 @@ public:
 
 		OdGrDraw::RectStroke(context, baseLocation.x, baseLocation.y, size.x, size.y, stroke);
 
-	
-		
+
+
+		// Update UI components
+		for (OdGrUiComponent* control : childComponents) {
+			control->onFrame(context);
+		}
+
 	}
 
 };

@@ -18,4 +18,5 @@
 #include "UI/OdGrUiComponent.h"
 #include "UI/OdGrUiButton.h"
 #include "UI/OdGrUiLabel.h"
+#include "UI/OdGrUiPanel.h"
 #include "UI/OdGrUiWindow.h"

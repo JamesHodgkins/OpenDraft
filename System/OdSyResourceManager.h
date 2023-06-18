@@ -30,7 +30,7 @@ public:
 
 
 	/* REMOVED - KEPT IN FOR FUTURE CONSIDERATION
-	void importDirectory(NVGcontext* vg, const std::vector<std::string>& exts, const char* directory)
+	void importDirectory(NVGcontext* context, const std::vector<std::string>& exts, const char* directory)
 	{
 		std::cout << "LOAD DIR STARTED" << std::endl;
 		std::filesystem::directory_iterator end_itr; // Default constructor provides an end iterator
@@ -53,7 +53,7 @@ public:
 						std::cout << itr->path().string() << std::endl;
 						std::cout << itr->path().stem().string() << std::endl;
 						// If the file extension matches one of the given extensions, process the file
-						importImageFromFile(vg, 32, 32, itr->path().filename().string().c_str(), itr->path().string().c_str());
+						importImageFromFile(context, 32, 32, itr->path().filename().string().c_str(), itr->path().string().c_str());
 						break;
 					}
 				}
@@ -66,7 +66,7 @@ public:
 	// Import an image into the resource manager
 	// If an image with the same reference already exists, return a pointer to it
 	// Otherwise, create a new image and store it in the resource manager, then return a pointer to it
-	OdSyImage* importImageFromFile(NVGcontext* vg, int width, int height, const char* reference, const char* filePath)
+	OdSyImage* importImageFromFile(NVGcontext* context, int width, int height, const char* reference, const char* filePath)
 	{
 		// Check if an image with the given reference already exists
 		std::unordered_map<std::string, OdSyImage*>::iterator imageIter = images.find(reference);
@@ -77,7 +77,7 @@ public:
 		}
 
 		// Image with the given reference does not exist, create a new image
-		int imageHandle = nvgCreateImage(vg, filePath, 0);
+		int imageHandle = nvgCreateImage(context, filePath, 0);
 		OdSyImage* newImage = new OdSyImage(width, height, 1.0, filePath, imageHandle);
 
 		// Store the new image in the resource manager
@@ -92,7 +92,7 @@ public:
 	// Import an font into the resource manager
 	// If an font with the same reference already exists, return a pointer to it
 	// Otherwise, create a new font and store it in the resource manager, then return a pointer to it
-	OdSyFont* importFontFromFile(NVGcontext* vg, const char* reference, const char* filePath)
+	OdSyFont* importFontFromFile(NVGcontext* context, const char* reference, const char* filePath)
 	{
 		// Check if an font with the given reference already exists
 		std::unordered_map<std::string, OdSyFont*>::iterator fontIter = fonts.find(reference);
@@ -103,7 +103,7 @@ public:
 		}
 
 		// font with the given reference does not exist, create a new font
-		int fontHandle = nvgCreateFont(vg, reference, filePath);
+		int fontHandle = nvgCreateFont(context, reference, filePath);
 		OdSyFont* newFont = new OdSyFont(reference, filePath, fontHandle);
 
 		// Store the new font in the resource manager

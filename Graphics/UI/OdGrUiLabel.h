@@ -47,11 +47,11 @@ public:
 
 	/**
 	 * \brief Renders a default OD-GUI Label to a given NanoVG context (NVGContext) with the specified attributes.
-	 * \param vg (NVGcontext*) The nanovg pointer for rendering.
+	 * \param context (NVGcontext*) The nanovg pointer for rendering.
 	 */
-	virtual void const onFrame(NVGcontext* vg) override
+	virtual void const onFrame(NVGcontext* context) override
 	{
-		if (vg == nullptr)
+		if (context == nullptr)
 			return;
 
 		// Convert class location (relative to parent) to context location (relative to the window)
@@ -68,8 +68,8 @@ public:
 		//
 		// Begin drawing Label
 		//
-		OdGrDraw::Rect(vg, baseLocation.x, baseLocation.y, size.x, size.y, backColour);
-		OdGrDraw::Text(vg, baseLocation.x, baseLocation.y, size.x, size.y, 14.0f, foreColour, text.c_str());
+		OdGrDraw::Rect(context, baseLocation.x, baseLocation.y, size.x, size.y, backColour);
+		OdGrDraw::Text(context, baseLocation.x, baseLocation.y, size.x, size.y, 14.0f, foreColour, text.c_str());
 
 
 	}
