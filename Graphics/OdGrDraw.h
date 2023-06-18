@@ -74,6 +74,9 @@ void OdGrDraw::Text(NVGcontext* vg, int x, int y, int width, int height, float s
 
 void OdGrDraw::ImageFromPath(NVGcontext* vg, int x, int y, OdSyImage* img)
 {
+	if (img == nullptr)
+		return;
+
 	if (img->getId() != 0)
 	{
 		nvgBeginPath(vg);

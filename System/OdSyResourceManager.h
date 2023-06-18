@@ -29,6 +29,7 @@ public:
 	std::unordered_map<std::string, OdSyImage*> images;
 
 
+	/* REMOVED - KEPT IN FOR FUTURE CONSIDERATION
 	void importDirectory(NVGcontext* vg, const std::vector<std::string>& exts, const char* directory)
 	{
 		std::cout << "LOAD DIR STARTED" << std::endl;
@@ -58,7 +59,7 @@ public:
 				}
 			}
 		}
-	}
+	} */
 
 
 

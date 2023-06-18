@@ -44,10 +44,21 @@ public:
 	void loadResources()
 	{
 		resourceManager->importFontFromFile(context, "sans", "..\\Resources\\Fonts\\OpenSans.ttf");
-		//resourceManager->importImageFromFile(context, 32, 32, "Test", "..\\Resources\\Icons\\line.png");
 
 		// load 32x32 png icons
-		resourceManager->importDirectory(context, {"png"}, "..\\Resources\\Icons");
+		resourceManager->importImageFromFile(context, 32, 32, "ico_circle", "..\\Resources\\Icons\\circle.png");
+		resourceManager->importImageFromFile(context, 32, 32, "ico_line", "..\\Resources\\Icons\\line.png");
+		resourceManager->importImageFromFile(context, 32, 32, "ico_mirror", "..\\Resources\\Icons\\mirror.png");
+		resourceManager->importImageFromFile(context, 32, 32, "ico_newfile", "..\\Resources\\Icons\\new_file.png");
+		resourceManager->importImageFromFile(context, 32, 32, "ico_open", "..\\Resources\\Icons\\open.png");
+		resourceManager->importImageFromFile(context, 32, 32, "ico_polyline", "..\\Resources\\Icons\\polyline.png");
+		resourceManager->importImageFromFile(context, 32, 32, "ico_print", "..\\Resources\\Icons\\print.png");
+		resourceManager->importImageFromFile(context, 32, 32, "ico_rectangle", "..\\Resources\\Icons\\rectangle.png");
+		resourceManager->importImageFromFile(context, 32, 32, "ico_redo", "..\\Resources\\Icons\\redo.png");
+		resourceManager->importImageFromFile(context, 32, 32, "ico_save", "..\\Resources\\Icons\\save.png");
+		resourceManager->importImageFromFile(context, 32, 32, "ico_saveas", "..\\Resources\\Icons\\save_as.png");
+		resourceManager->importImageFromFile(context, 32, 32, "ico_undo", "..\\Resources\\Icons\\undo.png");
+
 	}
 
 	// Render the window and UI components
@@ -62,7 +73,7 @@ public:
 			childComponents[1]->setText("HELLO WORLD");
 
 		
-		OdGrDraw::ImageFromPath(context, 700, 200, resourceManager->images["circle.png"]);
+		OdGrDraw::ImageFromPath(context, 700, 200, resourceManager->images["ico_circle"]);
 
 		// Update UI components
 		for (OdGrUiComponent* control : childComponents) {
