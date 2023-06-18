@@ -34,9 +34,12 @@ public:
 	static void Text(NVGcontext* vg, int x, int y, int width, int height, float size, OdSyColour colour, const char* text);
 
 	// Draws an image on the specified NanoVG context from a file path.
-	static void ImageFromPath(NVGcontext* vg, int x, int y, OdSyImage* img);
+	static void ResourceImage(NVGcontext* vg, int x, int y, int width, int height, OdSyImage* img);
+	static void ResourceImage(NVGcontext* vg, int x, int y, OdSyImage* img);
 
 };
+
+
 
 
 void OdGrDraw::Rect(NVGcontext* vg, int x, int y, int width, int height, OdSyColour colour)
@@ -72,7 +75,7 @@ void OdGrDraw::Text(NVGcontext* vg, int x, int y, int width, int height, float s
 }
 
 
-void OdGrDraw::ImageFromPath(NVGcontext* vg, int x, int y, OdSyImage* img)
+void OdGrDraw::ResourceImage(NVGcontext* vg, int x, int y, int width, int height, OdSyImage* img)
 {
 	if (img == nullptr)
 		return;
@@ -81,9 +84,17 @@ void OdGrDraw::ImageFromPath(NVGcontext* vg, int x, int y, OdSyImage* img)
 	{
 		nvgBeginPath(vg);
 		nvgRect(vg, x, y, img->getWidth(), img->getHeight());
-		nvgFillPaint(vg, nvgImagePattern(vg, x, y, img->getWidth(), img->getHeight(), 0, img->getId(), 1.0f));
+		nvgFillPaint(vg, nvgImagePattern(vg, x, y, width, height, 0, img->getId(), 1.0f));
 		nvgFill(vg);
 		nvgClosePath(vg);
 		//nvgDeleteImage(vg, imageHandle); // To do link delete image mem to deleting image class
 	}
+}
+
+void OdGrDraw::ResourceImage(NVGcontext* vg, int x, int y, OdSyImage* img)
+{
+	if (img == nullptr)
+		return;
+
+	OdGrDraw::ResourceImage(vg, x, y, img->getWidth(), img->getHeight(), img);
 }

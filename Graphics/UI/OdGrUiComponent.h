@@ -32,10 +32,12 @@ protected:
 
 
 public:
-	OdSyColour backColour;		// Backgound color of the control.
+	OdSyColour backColour;		// Backgound colour of the control.
+	OdSyColour stroke;			// Stroke colour
+	float strokeWidth;			// Width of stroke
 	bool enabled;				// Control is enabled or disabled.
 	void* font;					// Font of the text displayed by the control.
-	OdSyColour foreColour;		// Foreground color of the control.
+	OdSyColour foreColour;		// Foreground colour of the control.
 	OdSyPoint location = {0,0};	// Location of component
 	std::string name;			// Name of the control.
 	OdSyPoint size = {50,50};	// Location of component

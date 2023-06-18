@@ -38,6 +38,11 @@ public:
 		btn2->setText("Button 2");
 		addChildControl(btn2);
 
+		OdGrUiButton* btn3 = new OdGrUiButton(100, 300, 32, 32, "");
+		addChildControl(btn3);
+		btn3->stroke.setColourRGBA(0, 0, 0, 0);
+		btn3->setBackgroundImage(resourceManager->images["ico_circle"]);
+
 	}
 
 	// Load required resources
@@ -62,19 +67,25 @@ public:
 	}
 
 	// Render the window and UI components
-	virtual void const onFrame(NVGcontext* vg = nullptr, OdGrUiComponent* parent = nullptr)
+	virtual void const onFrame(NVGcontext* NULLREF = nullptr, OdGrUiComponent* parent = nullptr)
 	{
-		glClearColor(backColour.getRedNorm(), backColour.getGreenNorm(), backColour.getGreenNorm(), 1.0f);
+		glClearColor(
+			OdSyColour::BACKGROUND1.getRedNorm(),
+			OdSyColour::BACKGROUND1.getGreenNorm(),
+			OdSyColour::BACKGROUND1.getBlueNorm(),
+			1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 		nvgBeginFrame(context, 1280, 720, 1);
 
+
+		// Test updates on state
 		if (childComponents[0]->isMouseDown())
 			childComponents[1]->setText("HELLO WORLD");
 
-		
-		OdGrDraw::ImageFromPath(context, 700, 200, resourceManager->images["ico_circle"]);
 
+		OdGrDraw::Rect(context, 0, 0, 1280, 100, OdSyColour::BACKGROUND2);
+		
 		// Update UI components
 		for (OdGrUiComponent* control : childComponents) {
 			control->onFrame(context);

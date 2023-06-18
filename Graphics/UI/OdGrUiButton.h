@@ -26,6 +26,7 @@ protected:
 	OdSyColour foreColourHover;
 	OdSyColour backColourActive;
 	OdSyColour foreColourActive;
+	OdSyImage* backgroundImage;
 
 public:
 
@@ -42,15 +43,27 @@ public:
 		size.x = width;
 		size.y = height;
 
-		backColour = OdSyColour(255, 0, 0, 255);
-		backColourHover = OdSyColour(0, 255, 0, 255);
+		backColour = OdSyColour::BACKGROUND1;
+		backColourHover = OdSyColour::BACKGROUND2;
 		backColourActive = OdSyColour(0, 0, 255, 255);
 
 		foreColour = OdSyColour(255, 255, 255, 200);
 		foreColourHover = OdSyColour(25, 25, 25, 255);
 		foreColourActive = OdSyColour(255, 255, 25, 255);
 
+		backgroundImage = nullptr;
+
 		text = t;
+	}
+
+	void setBackgroundImage(OdSyImage* img)
+	{
+		backgroundImage = img;
+	}
+
+	void clearBackgroundImage()
+	{
+		backgroundImage = nullptr;
 	}
 
 
@@ -96,7 +109,13 @@ public:
 			}
 		}
 
-		OdGrDraw::RectStroke(vg, baseLocation.x, baseLocation.y, size.x, size.y, OdSyColour(255,255,255,255));
+
+		if (backgroundImage != nullptr)
+		{
+			OdGrDraw::ResourceImage(vg, baseLocation.x, baseLocation.y, size.x, size.y, backgroundImage);
+		}
+
+		OdGrDraw::RectStroke(vg, baseLocation.x, baseLocation.y, size.x, size.y, stroke);
 
 	
 		
