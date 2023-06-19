@@ -31,17 +31,17 @@ public:
 	 * \param size (OdSyPoint) The size of the Label.
 	 * \param text (std::string) The text displayed on the Label.
 	 */
-	OdGrUiLabel(int x = 0, int y = 0, int width = 150, int height = 30, std::string t = "Label")
+	OdGrUiLabel(int aX = 0, int aY = 0, int aWidth = 150, int aHeight = 30, std::string aText = "Label")
 	{
-		location.x = x;
-		location.y = y;
-		size.x = width;
-		size.y = height;
+		location.x = aX;
+		location.y = aY;
+		size.x = aWidth;
+		size.y = aHeight;
 
 		backColour = OdSyColour(255, 0, 0, 255);
 		foreColour = OdSyColour(255, 255, 255, 200);
 
-		text = t;
+		text = aText;
 	}
 
 
@@ -49,9 +49,9 @@ public:
 	 * \brief Renders a default OD-GUI Label to a given NanoVG context (NVGContext) with the specified attributes.
 	 * \param context (NVGcontext*) The nanovg pointer for rendering.
 	 */
-	virtual void const onFrame(NVGcontext* context) override
+	virtual void const onFrame(NVGcontext* aContext) override
 	{
-		if (context == nullptr)
+		if (aContext == nullptr)
 			return;
 
 		// Convert class location (relative to parent) to context location (relative to the window)
@@ -68,8 +68,8 @@ public:
 		//
 		// Begin drawing Label
 		//
-		OdGrDraw::Rect(context, baseLocation.x, baseLocation.y, size.x, size.y, backColour);
-		OdGrDraw::Text(context, baseLocation.x, baseLocation.y, size.x, size.y, 14.0f, foreColour, text.c_str());
+		OdGrDraw::Rect(aContext, baseLocation.x, baseLocation.y, size.x, size.y, backColour);
+		OdGrDraw::Text(aContext, baseLocation.x, baseLocation.y, size.x, size.y, 14.0f, foreColour, text.c_str());
 
 
 	}

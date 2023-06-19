@@ -36,39 +36,39 @@ public:
 	OdSyColour() : r(0), g(0), b(0), a(255) {}
 
 	// Custom constructor
-	OdSyColour(int red, int green, int blue, int alpha = 255) : r(red), g(green), b(blue), a(alpha) {}
+	OdSyColour(int aRed, int aGreen, int aBlue, int aAlpha = 255) : r(aRed), g(aGreen), b(aBlue), a(aAlpha) {}
 
 	// Getters and setters
 	int getRed() const { return r; }
 	float getRedNorm() const { return r/255.; }
-	void setRed(int red) { r = red; }
+	void setRed(int aRed) { r = aRed; }
 
 	int getGreen() const { return g; }
 	float getGreenNorm() const { return g / 255.; }
-	void setGreen(int green) { g = green; }
+	void setGreen(int aGreen) { g = aGreen; }
 
 	int getBlue() const { return b; }
 	float getBlueNorm() const { return b / 255.; }
-	void setBlue(int blue) { b = blue; }
+	void setBlue(int aBlue) { b = aBlue; }
 
 	int getAlpha() const { return a; }
 	float getAlphaNorm() const { return a / 255.; }
-	void setAlpha(int alpha) { a = alpha; }
+	void setAlpha(int aAlpha) { a = aAlpha; }
 
-	void setRGB(int red, int green, int blue)
+	void setRGB(int aRed, int aGreen, int aBlue)
 	{
-		r = red;
-		g = green;
-		b = blue;
+		r = aRed;
+		g = aGreen;
+		b = aBlue;
 		a = 255;
 	}
 
-	void setColourRGBA(int red, int green, int blue, int alpha)
+	void setColourRGBA(int aRed, int aGreen, int aBlue, int aAlpha)
 	{
-		r = red;
-		g = green;
-		b = blue;
-		a = alpha;
+		r = aRed;
+		g = aGreen;
+		b = aBlue;
+		a = aAlpha;
 	}
 
 	NVGcolor asNvgColour()

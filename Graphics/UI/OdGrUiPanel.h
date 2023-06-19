@@ -34,12 +34,12 @@ public:
 	 * \param size (OdSyPoint) The size of the panel.
 	 * \param text (std::string) The text displayed on the panel.
 	 */
-	OdGrUiPanel(int x = 0, int y = 0, int width = 150, int height = 30)
+	OdGrUiPanel(int aX = 0, int aY = 0, int aWidth = 150, int aHeight = 30)
 	{
-		location.x = x;
-		location.y = y;
-		size.x = width;
-		size.y = height;
+		location.x = aX;
+		location.y = aY;
+		size.x = aWidth;
+		size.y = aHeight;
 
 		backColour = OdSyColour::BACKGROUND1;
 		backColourHover = OdSyColour::BACKGROUND2;
@@ -52,9 +52,9 @@ public:
 		text = "";
 	}
 
-	void setBackgroundImage(OdSyImage* img)
+	void setBackgroundImage(OdSyImage* aImage)
 	{
-		backgroundImage = img;
+		backgroundImage = aImage;
 	}
 
 	void clearBackgroundImage()
@@ -67,12 +67,12 @@ public:
 	 * \brief Renders a default OD-GUI Panel to a given NanoVG context (NVGContext) with the specified attributes.
 	 * \param context (NVGcontext*) The nanovg pointer for rendering.
 	 */
-	virtual void const onFrame(NVGcontext* context) override
+	virtual void const onFrame(NVGcontext* aContext) override
 	{
 		if (!enabled)
 			return;
 
-		if (context == nullptr)
+		if (aContext == nullptr)
 			return;
 
 		// Convert class location (relative to parent) to context location (relative to the window)
@@ -89,22 +89,22 @@ public:
 		//
 		// Begin drawing Panel
 		//
-		OdGrDraw::Rect(context, baseLocation.x, baseLocation.y, size.x, size.y, backColour);
+		OdGrDraw::Rect(aContext, baseLocation.x, baseLocation.y, size.x, size.y, backColour);
 	
 
 
 		if (backgroundImage != nullptr)
 		{
-			OdGrDraw::ResourceImage(context, baseLocation.x, baseLocation.y, size.x, size.y, backgroundImage);
+			OdGrDraw::ResourceImage(aContext, baseLocation.x, baseLocation.y, size.x, size.y, backgroundImage);
 		}
 
-		OdGrDraw::RectStroke(context, baseLocation.x, baseLocation.y, size.x, size.y, stroke);
+		OdGrDraw::RectStroke(aContext, baseLocation.x, baseLocation.y, size.x, size.y, stroke);
 
 
 
 		// Update UI components
 		for (OdGrUiComponent* control : childComponents) {
-			control->onFrame(context);
+			control->onFrame(aContext);
 		}
 
 	}

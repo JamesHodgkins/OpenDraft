@@ -24,77 +24,77 @@ class OdGrDraw
 {
 public:
 
-	// Draws a filled rectangle on the specified NanoVG context.
-	static void Rect(NVGcontext* context, int x, int y, int width, int height, OdSyColour colour);
+	// Draws a filled rectangle on the specified NanoVG aContext.
+	static void Rect(NVGcontext* aContext, int aX, int aY, int aWidth, int aHeight, OdSyColour aColour);
 
-	// Draws a stroked rectangle on the specified NanoVG context.
-	static void RectStroke(NVGcontext* context, int x, int y, int width, int height, OdSyColour colour);
+	// Draws a stroked rectangle on the specified NanoVG aContext.
+	static void RectStroke(NVGcontext* aContext, int aX, int aY, int aWidth, int aHeight, OdSyColour aColour);
 
-	// Draws text on the specified NanoVG context.
-	static void Text(NVGcontext* context, int x, int y, int width, int height, float size, OdSyColour colour, const char* text);
+	// Draws text on the specified NanoVG aContext.
+	static void Text(NVGcontext* aContext, int aX, int aY, int aWidth, int aHeight, float aSize, OdSyColour aColour, const char* aText);
 
-	// Draws an image on the specified NanoVG context from a file path.
-	static void ResourceImage(NVGcontext* context, int x, int y, int width, int height, OdSyImage* img);
-	static void ResourceImage(NVGcontext* context, int x, int y, OdSyImage* img);
+	// Draws an image on the specified NanoVG aContext from a file path.
+	static void ResourceImage(NVGcontext* aContext, int aX, int aY, int aWidth, int aHeight, OdSyImage* aImage);
+	static void ResourceImage(NVGcontext* aContext, int aX, int aY, OdSyImage* aImage);
 
 };
 
 
 
 
-void OdGrDraw::Rect(NVGcontext* context, int x, int y, int width, int height, OdSyColour colour)
+void OdGrDraw::Rect(NVGcontext* aContext, int aX, int aY, int aWidth, int aHeight, OdSyColour aColour)
 {
-	nvgBeginPath(context);
-	nvgRect(context, x, y, width, height);
-	nvgFillColor(context, colour.asNvgColour());
-	nvgFill(context);
-	nvgClosePath(context);
+	nvgBeginPath(aContext);
+	nvgRect(aContext, aX, aY, aWidth, aHeight);
+	nvgFillColor(aContext, aColour.asNvgColour());
+	nvgFill(aContext);
+	nvgClosePath(aContext);
 }
 
 
-void OdGrDraw::RectStroke(NVGcontext* context, int x, int y, int width, int height, OdSyColour colour)
+void OdGrDraw::RectStroke(NVGcontext* aContext, int aX, int aY, int aWidth, int aHeight, OdSyColour aColour)
 {
-	nvgBeginPath(context);
-	nvgRect(context, x, y, width, height);
-	nvgStrokeColor(context, colour.asNvgColour());
-	nvgStroke(context);
-	nvgClosePath(context);
+	nvgBeginPath(aContext);
+	nvgRect(aContext, aX, aY, aWidth, aHeight);
+	nvgStrokeColor(aContext, aColour.asNvgColour());
+	nvgStroke(aContext);
+	nvgClosePath(aContext);
 }
 
 
-void OdGrDraw::Text(NVGcontext* context, int x, int y, int width, int height, float size, OdSyColour colour, const char* text)
+void OdGrDraw::Text(NVGcontext* aContext, int aX, int aY, int aWidth, int aHeight, float aSize, OdSyColour aColour, const char* text)
 {
-	nvgBeginPath(context);
-	nvgFillColor(context, colour.asNvgColour());
-	nvgFill(context);
-	nvgFontSize(context, size);
-	nvgFontFace(context, "sans");
-	nvgTextAlign(context, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-	nvgText(context, x + width / 2, y + height / 2, text, nullptr);
-	nvgClosePath(context);
+	nvgBeginPath(aContext);
+	nvgFillColor(aContext, aColour.asNvgColour());
+	nvgFill(aContext);
+	nvgFontSize(aContext, aSize);
+	nvgFontFace(aContext, "sans");
+	nvgTextAlign(aContext, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+	nvgText(aContext, aX + aWidth / 2, aY + aHeight / 2, text, nullptr);
+	nvgClosePath(aContext);
 }
 
 
-void OdGrDraw::ResourceImage(NVGcontext* context, int x, int y, int width, int height, OdSyImage* img)
+void OdGrDraw::ResourceImage(NVGcontext* aContext, int aX, int aY, int aWidth, int aHeight, OdSyImage* aImage)
 {
-	if (img == nullptr)
+	if (aImage == nullptr)
 		return;
 
-	if (img->getId() != 0)
+	if (aImage->getId() != 0)
 	{
-		nvgBeginPath(context);
-		nvgRect(context, x, y, img->getWidth(), img->getHeight());
-		nvgFillPaint(context, nvgImagePattern(context, x, y, width, height, 0, img->getId(), 1.0f));
-		nvgFill(context);
-		nvgClosePath(context);
-		//nvgDeleteImage(context, imageHandle); // To do link delete image mem to deleting image class
+		nvgBeginPath(aContext);
+		nvgRect(aContext, aX, aY, aImage->getWidth(), aImage->getHeight());
+		nvgFillPaint(aContext, nvgImagePattern(aContext, aX, aY, aWidth, aHeight, 0, aImage->getId(), 1.0f));
+		nvgFill(aContext);
+		nvgClosePath(aContext);
+		//nvgDeleteImage(aContext, imageHandle); // To do link delete image mem to deleting image class
 	}
 }
 
-void OdGrDraw::ResourceImage(NVGcontext* context, int x, int y, OdSyImage* img)
+void OdGrDraw::ResourceImage(NVGcontext* aContext, int aX, int aY, OdSyImage* aImage)
 {
-	if (img == nullptr)
+	if (aImage == nullptr)
 		return;
 
-	OdGrDraw::ResourceImage(context, x, y, img->getWidth(), img->getHeight(), img);
+	OdGrDraw::ResourceImage(aContext, aX, aY, aImage->getWidth(), aImage->getHeight(), aImage);
 }

@@ -36,12 +36,12 @@ public:
 	 * \param size (OdSyPoint) The size of the button.
 	 * \param text (std::string) The text displayed on the button.
 	 */
-	OdGrUiButton(int x = 0, int y = 0, int width = 150, int height = 30, std::string t = "Button")
+	OdGrUiButton(int aX = 0, int aY = 0, int aWidth = 150, int aHeight = 30, std::string aText = "Button")
 	{
-		location.x = x;
-		location.y = y;
-		size.x = width;
-		size.y = height;
+		location.x = aX;
+		location.y = aY;
+		size.x = aWidth;
+		size.y = aHeight;
 
 		backColour = OdSyColour::BACKGROUND1;
 		backColourHover = OdSyColour::BACKGROUND2;
@@ -55,12 +55,12 @@ public:
 
 		backgroundImage = nullptr;
 
-		text = t;
+		text = aText;
 	}
 
-	void setBackgroundImage(OdSyImage* img)
+	void setBackgroundImage(OdSyImage* aImage)
 	{
-		backgroundImage = img;
+		backgroundImage = aImage;
 	}
 
 	void clearBackgroundImage()
@@ -73,12 +73,12 @@ public:
 	 * \brief Renders a default OD-GUI Button to a given NanoVG context (NVGContext) with the specified attributes.
 	 * \param context (NVGcontext*) The nanovg pointer for rendering.
 	 */
-	virtual void const onFrame(NVGcontext* context) override
+	virtual void const onFrame(NVGcontext* aContext) override
 	{
 		if (!enabled)
 			return;
 
-		if (context == nullptr)
+		if (aContext == nullptr)
 			return;
 
 		// Convert class location (relative to parent) to context location (relative to the window)
@@ -97,30 +97,30 @@ public:
 		//
 		if (mouseDown)
 		{
-			OdGrDraw::Rect(context, baseLocation.x, baseLocation.y, size.x, size.y, backColourActive);
-			OdGrDraw::Text(context, baseLocation.x, baseLocation.y, size.x, size.y, 14.0f, foreColourActive, text.c_str());
+			OdGrDraw::Rect(aContext, baseLocation.x, baseLocation.y, size.x, size.y, backColourActive);
+			OdGrDraw::Text(aContext, baseLocation.x, baseLocation.y, size.x, size.y, 14.0f, foreColourActive, text.c_str());
 		}
 		else
 		{
 			if (mouseOver)
 			{
-				OdGrDraw::Rect(context, baseLocation.x, baseLocation.y, size.x, size.y, backColourHover);
-				OdGrDraw::Text(context, baseLocation.x, baseLocation.y, size.x, size.y, 14.0f, foreColourHover, text.c_str());
+				OdGrDraw::Rect(aContext, baseLocation.x, baseLocation.y, size.x, size.y, backColourHover);
+				OdGrDraw::Text(aContext, baseLocation.x, baseLocation.y, size.x, size.y, 14.0f, foreColourHover, text.c_str());
 			}
 			else
 			{
-				OdGrDraw::Rect(context, baseLocation.x, baseLocation.y, size.x, size.y, backColour);
-				OdGrDraw::Text(context, baseLocation.x, baseLocation.y, size.x, size.y, 14.0f, foreColour, text.c_str());
+				OdGrDraw::Rect(aContext, baseLocation.x, baseLocation.y, size.x, size.y, backColour);
+				OdGrDraw::Text(aContext, baseLocation.x, baseLocation.y, size.x, size.y, 14.0f, foreColour, text.c_str());
 			}
 		}
 
 
 		if (backgroundImage != nullptr)
 		{
-			OdGrDraw::ResourceImage(context, baseLocation.x, baseLocation.y, size.x, size.y, backgroundImage);
+			OdGrDraw::ResourceImage(aContext, baseLocation.x, baseLocation.y, size.x, size.y, backgroundImage);
 		}
 
-		OdGrDraw::RectStroke(context, baseLocation.x, baseLocation.y, size.x, size.y, stroke);
+		OdGrDraw::RectStroke(aContext, baseLocation.x, baseLocation.y, size.x, size.y, stroke);
 
 	
 		

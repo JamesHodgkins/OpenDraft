@@ -24,6 +24,6 @@ public:
 	OdSyPoint() : x(0.0), y(0.0) {}
 
 	// Custom constructor
-	OdSyPoint(double xCoord, double yCoord) : x(xCoord), y(yCoord) {}
-	OdSyPoint(int xCoord, int yCoord) : x(xCoord), y(yCoord) {}
+	OdSyPoint(double aX, double aY) : x(aX), y(aY) {}
+	OdSyPoint(int aX, int aY) : x(aX), y(aY) {}
 };

@@ -46,7 +46,7 @@ protected:
 public:
 
 	// Constructor
-	OdGrUiWindow(int aWidth, int aHeight, const char* title)
+	OdGrUiWindow(int aWidth, int aHeight, const char* aTitle)
 	{
 		size = OdSyPoint(aWidth, aHeight);
 		input = GrInputMap();
@@ -56,7 +56,7 @@ public:
 			return;
 
 		// Create window with graphics context
-		glfwHandle = glfwCreateWindow(size.x, size.y, title, nullptr, nullptr);
+		glfwHandle = glfwCreateWindow(size.x, size.y, aTitle, nullptr, nullptr);
 		if (glfwHandle == nullptr)
 			return;
 
@@ -85,20 +85,20 @@ public:
 	
 
 	// Callback function for mouse movement
-	static void mousePositionEventCallback(GLFWwindow* window, double xpos, double ypos)
+	static void mousePositionEventCallback(GLFWwindow* aWindow, double aPositionX, double aPositionY)
 	{
-		OdGrUiWindow* windowInstance = static_cast<OdGrUiWindow*>(glfwGetWindowUserPointer(window));
+		OdGrUiWindow* windowInstance = static_cast<OdGrUiWindow*>(glfwGetWindowUserPointer(aWindow));
 		if (windowInstance) {
 			// Access the instance and store the mouse position
-			windowInstance->input.mouse.position.x = xpos;
-			windowInstance->input.mouse.position.y = ypos;
+			windowInstance->input.mouse.position.x = aPositionX;
+			windowInstance->input.mouse.position.y = aPositionY;
 		}
 	}
 
 	// Callback function for window resize
-	static void windowResizeCallback(GLFWwindow* window, int width, int height)
+	static void windowResizeCallback(GLFWwindow* aWindow, int aWidth, int aHeight)
 	{
-		OdGrUiWindow* windowInstance = static_cast<OdGrUiWindow*>(glfwGetWindowUserPointer(window));
+		OdGrUiWindow* windowInstance = static_cast<OdGrUiWindow*>(glfwGetWindowUserPointer(aWindow));
 		if (windowInstance) {
 			// Access the instance and update size
 			windowInstance->updateProperties();
@@ -106,31 +106,31 @@ public:
 	}
 
 	// Callback function for mouse clicks
-	static void mouseClickEventCallback(GLFWwindow* window, int button, int action, int mods)
+	static void mouseClickEventCallback(GLFWwindow* aWindow, int aButton, int aAction, int aMods)
 	{
-		OdGrUiWindow* windowInstance = static_cast<OdGrUiWindow*>(glfwGetWindowUserPointer(window));
+		OdGrUiWindow* windowInstance = static_cast<OdGrUiWindow*>(glfwGetWindowUserPointer(aWindow));
 		if (windowInstance)
 		{
-			switch (button)
+			switch (aButton)
 			{
 			case 0:
-				if (action == GLFW_PRESS)
+				if (aAction == GLFW_PRESS)
 					windowInstance->input.mouse.leftButton.changeState(true);
-				if (action == GLFW_RELEASE)
+				if (aAction == GLFW_RELEASE)
 					windowInstance->input.mouse.leftButton.changeState(false);
 				break;
 
 			case 1:
-				if (action == GLFW_PRESS)
+				if (aAction == GLFW_PRESS)
 					windowInstance->input.mouse.rightButton.changeState(true);
-				if (action == GLFW_RELEASE)
+				if (aAction == GLFW_RELEASE)
 					windowInstance->input.mouse.rightButton.changeState(false);
 				break;
 
 			case 2:
-				if (action == GLFW_PRESS)
+				if (aAction == GLFW_PRESS)
 					windowInstance->input.mouse.middleButton.changeState(true);
-				if (action == GLFW_RELEASE)
+				if (aAction == GLFW_RELEASE)
 					windowInstance->input.mouse.middleButton.changeState(false);
 				break;
 			}
@@ -138,32 +138,32 @@ public:
 	}
 
 	// Callback function for key events
-	static void keyEventCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+	static void keyEventCallback(GLFWwindow* aWindow, int aKey, int aScancode, int aAction, int aMods)
 	{
-		OdGrUiWindow* windowInstance = static_cast<OdGrUiWindow*>(glfwGetWindowUserPointer(window));
+		OdGrUiWindow* windowInstance = static_cast<OdGrUiWindow*>(glfwGetWindowUserPointer(aWindow));
 		if (windowInstance) {
 			GrInputMap* map = &windowInstance->input;
 
-			if (map->keys.find(key) == map->keys.end())
+			if (map->keys.find(aKey) == map->keys.end())
 				return;
 
 			// Change button state to down
-			if (action == GLFW_PRESS)
-				map->keys[key].changeState(true);
+			if (aAction == GLFW_PRESS)
+				map->keys[aKey].changeState(true);
 
 			// Change button state to up
-			if (action == GLFW_RELEASE)
-				map->keys[key].changeState(false);
+			if (aAction == GLFW_RELEASE)
+				map->keys[aKey].changeState(false);
 
 		}
 	}
 
 	// Set size (todo: set override when base equivalent is implemented)
-	void setSize(int width, int height)
+	void setSize(int aWidth, int aHeight)
 	{
-		size.x = width;
-		size.y = height;
-		glfwSetWindowSize(glfwHandle, width, height);
+		size.x = aWidth;
+		size.y = aHeight;
+		glfwSetWindowSize(glfwHandle, aWidth, aHeight);
 	}
 
 	// Check if the window is still running

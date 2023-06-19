@@ -49,7 +49,7 @@ public:
 	OdSyResourceManager* resourceManager;			// Pointer to injected resource manager.
 	std::vector<OdGrUiComponent*>childComponents;	// Child Components
 
-	virtual void const onFrame(NVGcontext* context) = 0;
+	virtual void const onFrame(NVGcontext* aContext) = 0;
 
 	void setLocation(int aX, int aY)
 	{
@@ -102,18 +102,18 @@ public:
 		return text;
 	}
 
-	void addChildControl(OdGrUiComponent* c)
+	void addChildControl(OdGrUiComponent* aChild)
 	{
 		// Todo check in component already has a parent, and remove it from there first.
-		c->parent = this;
-		childComponents.push_back(c);
+		aChild->parent = this;
+		childComponents.push_back(aChild);
 	}
 
-	void processEvents(GrInputMap* input)
+	void processEvents(GrInputMap* aInput)
 	{
 		// Get mouse position from input
-		int mousePosX = input->mouse.position.x;
-		int mousePosY = input->mouse.position.y;
+		int mousePosX = aInput->mouse.position.x;
+		int mousePosY = aInput->mouse.position.y;
 
 		// Calculate object boundaries
 		int objectLeft = location.x;
@@ -148,10 +148,10 @@ public:
 		}
 
 
-		if (mouseOver && input->mouse.leftButton.isPressed())
+		if (mouseOver && aInput->mouse.leftButton.isPressed())
 			mouseDown = true;
 		
-		if (!input->mouse.leftButton.isDown())
+		if (!aInput->mouse.leftButton.isDown())
 			mouseDown = false;
 
 	}

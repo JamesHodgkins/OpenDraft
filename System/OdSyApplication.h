@@ -14,8 +14,8 @@
 
 
 
-#include "Graphics/OdGrGraphics.h"	// Include Graphics
-#include "Graphics/OdGrMainWindow.h"
+#include "Graphics/OdGrGraphics.h"		// Include Graphics
+#include "Graphics/OdGrMainWindow.h"	// Include Main Window Class
 
 class OdGrApplication
 {

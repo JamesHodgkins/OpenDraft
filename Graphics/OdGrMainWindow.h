@@ -18,7 +18,7 @@ class OdGrMainWindow : public OdGrUiWindow
 {
 public:
 
-	OdGrMainWindow(int aWidth, int aHeight, const char* title) : OdGrUiWindow(aWidth, aHeight, title) {}
+	OdGrMainWindow(int aWidth, int aHeight, const char* aTitle) : OdGrUiWindow(aWidth, aHeight, aTitle) {}
 
 	~OdGrMainWindow(){}
 
@@ -59,8 +59,6 @@ public:
 		btn5->setBackgroundImage(resourceManager->images["ico_polyline"]);
 		pnl1->addChildControl(btn5);
 
-		pnl1->enabled = false;
-
 	}
 
 	// Load required resources
@@ -85,7 +83,7 @@ public:
 	}
 
 	// Render the window and UI components
-	virtual void const onFrame(NVGcontext* NULLREF = nullptr, OdGrUiComponent* parent = nullptr)
+	virtual void const onFrame(NVGcontext* NULLREF = nullptr, OdGrUiComponent* aParent = nullptr)
 	{
 		glClearColor(
 			OdSyColour::BACKGROUND1.getRedNorm(),
@@ -108,7 +106,6 @@ public:
 			childComponents[2]->enabled = false;
 
 
-		//OdGrDraw::Rect(context, 0, 0, size.x, 100, OdSyColour::BACKGROUND2);
 		
 		// Update UI components
 		for (OdGrUiComponent* control : childComponents) {

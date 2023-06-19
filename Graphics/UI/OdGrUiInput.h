@@ -29,11 +29,11 @@ private:
 
 public:
 
-	void changeState(bool newState)
+	void changeState(bool aState)
 	{
-		pressed = (!down && newState);
-		released = (down && !newState);
-		down = newState;
+		pressed = (!down && aState);
+		released = (down && !aState);
+		down = aState;
 	}
 
 	bool isDown() const { return down; }
