@@ -31,11 +31,11 @@ public:
 		backColour.setRGB(31,39,48);
 
 		OdGrUiButton* btn1 = new OdGrUiButton(300, 300);
-		btn1->setText("Button 1");
+		btn1->setText("Show");
 		addChildControl(btn1);
 
 		OdGrUiButton* btn2 = new OdGrUiButton(300, 230);
-		btn2->setText("Button 2");
+		btn2->setText("Hide");
 		addChildControl(btn2);
 
 
@@ -58,6 +58,8 @@ public:
 		btn5->backColour = OdSyColour::TRANSP;
 		btn5->setBackgroundImage(resourceManager->images["ico_polyline"]);
 		pnl1->addChildControl(btn5);
+
+		pnl1->enabled = false;
 
 	}
 
@@ -99,10 +101,11 @@ public:
 
 		// Test updates on state
 		if (childComponents[0]->isMouseDown())
-			setSize(1280, 720);
+			childComponents[2]->enabled = true;
 
+		// Test updates on state
 		if (childComponents[1]->isMouseDown())
-			setSize(600, 600);
+			childComponents[2]->enabled = false;
 
 
 		//OdGrDraw::Rect(context, 0, 0, size.x, 100, OdSyColour::BACKGROUND2);

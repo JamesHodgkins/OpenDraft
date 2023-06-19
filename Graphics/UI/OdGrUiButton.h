@@ -75,6 +75,9 @@ public:
 	 */
 	virtual void const onFrame(NVGcontext* context) override
 	{
+		if (!enabled)
+			return;
+
 		if (context == nullptr)
 			return;
 
