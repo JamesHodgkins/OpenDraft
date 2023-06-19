@@ -44,7 +44,7 @@ public:
 		backColour = OdSyColour::BACKGROUND1;
 		backColourHover = OdSyColour::BACKGROUND2;
 		backColourActive = OdSyColour(0, 0, 255, 255);
-
+		stroke = OdSyColour(0, 0, 0, 0);
 		foreColour = OdSyColour(255, 255, 255, 200);
 
 		backgroundImage = nullptr;
@@ -86,21 +86,8 @@ public:
 		//
 		// Begin drawing Panel
 		//
-		if (mouseDown)
-		{
-			OdGrDraw::Rect(context, baseLocation.x, baseLocation.y, size.x, size.y, backColourActive);
-		}
-		else
-		{
-			if (mouseOver)
-			{
-				OdGrDraw::Rect(context, baseLocation.x, baseLocation.y, size.x, size.y, backColourHover);
-			}
-			else
-			{
-				OdGrDraw::Rect(context, baseLocation.x, baseLocation.y, size.x, size.y, backColour);
-			}
-		}
+		OdGrDraw::Rect(context, baseLocation.x, baseLocation.y, size.x, size.y, backColour);
+	
 
 
 		if (backgroundImage != nullptr)

@@ -41,12 +41,23 @@ public:
 
 		// Start Ribbon Area
 		OdGrUiPanel* pnl1 = new OdGrUiPanel(200, 0, 1000, 100);
+		pnl1->backColour = OdSyColour::BACKGROUND2;
 		addChildControl(pnl1);
 
 		OdGrUiButton* btn3 = new OdGrUiButton(10, 10, 32, 32, "");
-		pnl1->addChildControl(btn3);
-		btn3->stroke.setColourRGBA(0, 0, 0, 0);
+		btn3->backColour = OdSyColour::TRANSP;
 		btn3->setBackgroundImage(resourceManager->images["ico_circle"]);
+		pnl1->addChildControl(btn3);
+
+		OdGrUiButton* btn4 = new OdGrUiButton(55, 10, 32, 32, "");
+		btn4->backColour = OdSyColour::TRANSP;
+		btn4->setBackgroundImage(resourceManager->images["ico_line"]);
+		pnl1->addChildControl(btn4);
+
+		OdGrUiButton* btn5 = new OdGrUiButton(100, 10, 32, 32, "");
+		btn5->backColour = OdSyColour::TRANSP;
+		btn5->setBackgroundImage(resourceManager->images["ico_polyline"]);
+		pnl1->addChildControl(btn5);
 
 	}
 
@@ -94,7 +105,7 @@ public:
 			setSize(600, 600);
 
 
-		OdGrDraw::Rect(context, 0, 0, size.x, 100, OdSyColour::BACKGROUND2);
+		//OdGrDraw::Rect(context, 0, 0, size.x, 100, OdSyColour::BACKGROUND2);
 		
 		// Update UI components
 		for (OdGrUiComponent* control : childComponents) {

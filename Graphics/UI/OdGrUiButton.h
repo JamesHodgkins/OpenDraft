@@ -51,6 +51,8 @@ public:
 		foreColourHover = OdSyColour(25, 25, 25, 255);
 		foreColourActive = OdSyColour(255, 255, 25, 255);
 
+		stroke = OdSyColour(0, 0, 0, 0);
+
 		backgroundImage = nullptr;
 
 		text = t;
