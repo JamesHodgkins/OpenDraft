@@ -1,4 +1,5 @@
-#pragma once
+#ifndef OD_GR_DRAW_H
+#define OD_GR_DRAW_H
 
 /**************************************************************************************
 * OpenDraft:    Graphic Draw Class                                                    *
@@ -41,7 +42,7 @@ public:
 
 
 
-
+// Draws a filled rectangle on the specified NanoVG aContext.
 void OdGrDraw::Rect(NVGcontext* aContext, int aX, int aY, int aWidth, int aHeight, OdSyColour aColour)
 {
 	nvgBeginPath(aContext);
@@ -52,6 +53,7 @@ void OdGrDraw::Rect(NVGcontext* aContext, int aX, int aY, int aWidth, int aHeigh
 }
 
 
+// Draws a stroked rectangle on the specified NanoVG aContext.
 void OdGrDraw::RectStroke(NVGcontext* aContext, int aX, int aY, int aWidth, int aHeight, OdSyColour aColour)
 {
 	nvgBeginPath(aContext);
@@ -62,6 +64,7 @@ void OdGrDraw::RectStroke(NVGcontext* aContext, int aX, int aY, int aWidth, int 
 }
 
 
+// Draws text on the specified NanoVG aContext.
 void OdGrDraw::Text(NVGcontext* aContext, int aX, int aY, int aWidth, int aHeight, float aSize, OdSyColour aColour, const char* text)
 {
 	nvgBeginPath(aContext);
@@ -75,8 +78,10 @@ void OdGrDraw::Text(NVGcontext* aContext, int aX, int aY, int aWidth, int aHeigh
 }
 
 
+// Draws an image on the specified NanoVG aContext from a file path.
 void OdGrDraw::ResourceImage(NVGcontext* aContext, int aX, int aY, int aWidth, int aHeight, OdSyImage* aImage)
 {
+	// Check if image is valid
 	if (aImage == nullptr)
 		return;
 
@@ -93,8 +98,11 @@ void OdGrDraw::ResourceImage(NVGcontext* aContext, int aX, int aY, int aWidth, i
 
 void OdGrDraw::ResourceImage(NVGcontext* aContext, int aX, int aY, OdSyImage* aImage)
 {
+	// Check if image is valid
 	if (aImage == nullptr)
 		return;
 
 	OdGrDraw::ResourceImage(aContext, aX, aY, aImage->getWidth(), aImage->getHeight(), aImage);
 }
+
+#endif // OD_GR_DRAW_H

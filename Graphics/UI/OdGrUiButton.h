@@ -1,4 +1,5 @@
-#pragma once
+#ifndef OD_GR_UI_BUTTON_H
+#define OD_GR_UI_BUTTON_H
 
 /**************************************************************************************
 * OpenDraft:    GUI Button Class                                                      *
@@ -117,14 +118,13 @@ public:
 
 		if (backgroundImage != nullptr)
 		{
-			std::cout << size.x << std::endl;
 			OdGrDraw::ResourceImage(aContext, baseLocation.x, baseLocation.y, size.x, size.y, backgroundImage);
 		}
 
 		OdGrDraw::RectStroke(aContext, baseLocation.x, baseLocation.y, size.x, size.y, stroke);
 
-	
-		
 	}
 
 };
+
+#endif // OD_GR_UI_BUTTON_H

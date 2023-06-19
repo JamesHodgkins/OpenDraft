@@ -1,4 +1,5 @@
-#pragma once
+#ifndef OD_GR_UI_WINDOW_H
+#define OD_GR_UI_WINDOW_H
 
 /**************************************************************************************
 * OpenDraft:    GUI Window Class                                                      *
@@ -239,3 +240,5 @@ public:
 	}
 
 };
+
+#endif // OD_GR_UI_WINDOW_H

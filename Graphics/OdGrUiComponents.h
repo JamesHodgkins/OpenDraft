@@ -1,4 +1,5 @@
-#pragma once
+#ifndef OD_GR_UI_COMPONENTS_H
+#define OD_GR_UI_COMPONENTS_H
 
 /**************************************************************************************
 * OpenDraft:    Components Includes                                                   *
@@ -20,3 +21,5 @@
 #include "UI/OdGrUiLabel.h"
 #include "UI/OdGrUiPanel.h"
 #include "UI/OdGrUiWindow.h"
+
+#endif // OD_GR_UI_COMPONENTS_H

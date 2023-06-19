@@ -1,4 +1,5 @@
-#pragma once
+#ifndef OD_SY_FONT_H
+#define OD_SY_FONT_H
 
 /**************************************************************************************
 * OpenDraft:    System Font Class                                                     *
@@ -33,7 +34,7 @@ public:
 	int getId() const { return id; }
 };
 
-
+#endif // OD_SY_FONT_H
 
 
 //

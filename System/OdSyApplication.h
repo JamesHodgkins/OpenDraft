@@ -1,4 +1,5 @@
-#pragma once
+#ifndef OD_SY_APPLICATION_H
+#define OD_SY_APPLICATION_H
 
 /**************************************************************************************
 * OpenDraft:    System Application Class                                              *
@@ -13,9 +14,9 @@
 ***************************************************************************************/
 
 
-
 #include "Graphics/OdGrGraphics.h"		// Include Graphics
 #include "Graphics/OdGrMainWindow.h"	// Include Main Window Class
+#include "OdSyResourceManager.h"		// Include Resource Manager
 
 class OdGrApplication
 {
@@ -32,7 +33,6 @@ public:
 		mainWindow = new OdGrMainWindow(1280, 720, "OpenDraft");
 		mainWindow->resourceManager = resManager;
 		mainWindow->initialise();
-		
 		running = true;
 	}
 
@@ -70,3 +70,5 @@ public:
 	}
 
 };
+
+#endif // OD_SY_APPLICATION_H

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef OD_SY_COLOUR_H
+#define OD_SY_COLOUR_H
 
 /**************************************************************************************
 * OpenDraft:    System Colour Class                                                   *
@@ -28,7 +29,7 @@ public:
 	const static OdSyColour BACKGROUND1;
 	const static OdSyColour BACKGROUND2;
 	const static OdSyColour PRIMARY;
-	const static OdSyColour TRANSP;
+	const static OdSyColour CLEAR;
 	const static OdSyColour WHITE;
 	
 
@@ -80,5 +81,7 @@ public:
 const OdSyColour OdSyColour::BACKGROUND1 = OdSyColour(31, 39, 48, 255);
 const OdSyColour OdSyColour::BACKGROUND2 = OdSyColour(41, 51, 61, 255);
 const OdSyColour OdSyColour::PRIMARY = OdSyColour(113, 195, 61, 255);
-const OdSyColour OdSyColour::TRANSP = OdSyColour(0, 0, 0, 0);
+const OdSyColour OdSyColour::CLEAR = OdSyColour(0, 0, 0, 0);
 const OdSyColour OdSyColour::WHITE = OdSyColour(218, 224, 230, 255);
+
+#endif // OD_SY_COLOUR_H

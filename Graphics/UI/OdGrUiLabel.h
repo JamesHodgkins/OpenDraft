@@ -1,4 +1,5 @@
-#pragma once
+#ifndef OD_GR_UI_LABEL_H
+#define OD_GR_UI_LABEL_H
 
 /**************************************************************************************
 * OpenDraft:    GUI Label Class                                                       *
@@ -75,3 +76,5 @@ public:
 	}
 
 };
+
+#endif // OD_GR_UI_LABEL_H

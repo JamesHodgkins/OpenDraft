@@ -1,4 +1,5 @@
-#pragma once
+#ifndef OD_SY_POINT_H
+#define OD_SY_POINT_H
 
 /**************************************************************************************
 * OpenDraft:    System Point Class                                                    *
@@ -27,3 +28,5 @@ public:
 	OdSyPoint(double aX, double aY) : x(aX), y(aY) {}
 	OdSyPoint(int aX, int aY) : x(aX), y(aY) {}
 };
+
+#endif // OD_SY_POINT_H

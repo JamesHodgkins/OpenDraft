@@ -1,4 +1,5 @@
-#pragma once
+#ifndef OD_GR_UI_PANEL_H
+#define OD_GR_UI_PANEL_H
 
 /**************************************************************************************
 * OpenDraft:    GUI Panel Container Class                                             *
@@ -110,3 +111,5 @@ public:
 	}
 
 };
+
+#endif // OD_GR_UI_PANEL_H

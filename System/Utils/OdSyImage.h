@@ -1,4 +1,5 @@
-#pragma once
+#ifndef OD_SY_IMAGE_H
+#define OD_SY_IMAGE_H
 
 /**************************************************************************************
 * OpenDraft:    System Image Class                                                    *
@@ -11,9 +12,6 @@
 * Description:                                                                        *
 *   An image wrapper class for the OpenDraft framework                                 *
 ***************************************************************************************/
-
-
-
 
 
 
@@ -33,3 +31,5 @@ public:
 	const char* getFilePath() const { return filePath; }
 	int getId() const { return id; }
 };
+
+#endif // OD_SY_IMAGE_H

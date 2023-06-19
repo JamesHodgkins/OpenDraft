@@ -1,4 +1,5 @@
-#pragma once
+#ifndef OD_GR_UI_COMPONENT_H
+#define OD_GR_UI_COMPONENT_H
 
 /**************************************************************************************
 * OpenDraft:    GUI Component Base Class                                              *
@@ -157,3 +158,5 @@ public:
 	}
 
 };
+
+#endif // OD_GR_UI_COMPONENT_H

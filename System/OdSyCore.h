@@ -1,4 +1,5 @@
-#pragma
+#ifndef OD_SY_CORE_H
+#define OD_SY_CORE_H
 
 /**************************************************************************************
 * OpenDraft:    Core System Class                                                     *
@@ -21,3 +22,5 @@
 #include "System/Utils/OdSyPoint.h"
 #include "System/Utils/OdSyFont.h"
 #include "System/OdSyResourceManager.h"
+
+#endif // OD_SY_CORE_H

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef OD_SY_RESOURCE_MANAGER_H
+#define OD_SY_RESOURCE_MANAGER_H
 
 /**************************************************************************************
 * OpenDraft:    Core System Resource Manager Class                                    *
@@ -113,3 +114,5 @@ public:
 		return newFont;
 	}
 };
+
+#endif // OD_SY_RESOURCE_MANAGER_H

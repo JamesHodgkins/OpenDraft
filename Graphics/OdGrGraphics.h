@@ -1,4 +1,5 @@
-#pragma once
+#ifndef OD_GR_GRAPHICS_H
+#define OD_GR_GRAPHICS_H
 
 #define GLEW_STATIC					// Use static glew library (glew32s.lib)
 #include "GL/glew.h"				// Include glew
@@ -16,3 +17,5 @@ class GrGraphics
 {
 
 };
+
+#endif // OD_GR_GRAPHICS_H

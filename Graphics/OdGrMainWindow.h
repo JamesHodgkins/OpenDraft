@@ -1,4 +1,5 @@
-#include "Graphics/OdGrGraphics.h"
+#ifndef OD_GR_MAIN_WINDOW_H
+#define OD_GR_MAIN_WINDOW_H
 
 /**************************************************************************************
 * OpenDraft:    Main Application Window Class                                         *
@@ -12,6 +13,9 @@
 *   A class for the main application window                                           *
 ***************************************************************************************/
 
+
+
+#include "Graphics/OdGrGraphics.h"
 
 
 class OdGrMainWindow : public OdGrUiWindow
@@ -45,17 +49,17 @@ public:
 		addChildControl(pnl1);
 
 		OdGrUiButton* btn3 = new OdGrUiButton(10, 10, 24, 24, "");
-		btn3->backColour = OdSyColour::TRANSP;
+		btn3->backColour = OdSyColour::CLEAR;
 		btn3->setBackgroundImage(resourceManager->images["ico_circle"]);
 		pnl1->addChildControl(btn3);
 
 		OdGrUiButton* btn4 = new OdGrUiButton(55, 10, 24, 24, "");
-		btn4->backColour = OdSyColour::TRANSP;
+		btn4->backColour = OdSyColour::CLEAR;
 		btn4->setBackgroundImage(resourceManager->images["ico_line"]);
 		pnl1->addChildControl(btn4);
 
 		OdGrUiButton* btn5 = new OdGrUiButton(100, 10, 24, 24, "");
-		btn5->backColour = OdSyColour::TRANSP;
+		btn5->backColour = OdSyColour::CLEAR;
 		btn5->setBackgroundImage(resourceManager->images["ico_polyline"]);
 		pnl1->addChildControl(btn5);
 
@@ -66,7 +70,7 @@ public:
 	{
 		resourceManager->importFontFromFile(context, "sans", "..\\Resources\\Fonts\\OpenSans.ttf");
 
-		// load 32x32 png icons
+		// Load 32x32 GUI PNG icons
 		resourceManager->importImageFromFile(context, 32, 32, "ico_circle", "..\\Resources\\Icons\\circle.png");
 		resourceManager->importImageFromFile(context, 32, 32, "ico_line", "..\\Resources\\Icons\\line.png");
 		resourceManager->importImageFromFile(context, 32, 32, "ico_mirror", "..\\Resources\\Icons\\mirror.png");
@@ -119,3 +123,5 @@ public:
 		glfwSwapBuffers(glfwHandle);
 	}
 };
+
+#endif // OD_GR_MAIN_WINDOW_H
