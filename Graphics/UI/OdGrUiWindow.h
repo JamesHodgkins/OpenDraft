@@ -5,7 +5,7 @@
 *-------------------------------------------------------------------------------------*
 * Filename:     OdGrWindow.h                                                          *
 * Contributors: James Hodgkins                                                        *
-* Date:         June 9, 2023                                                          *
+* Date:         June 19, 2023                                                          *
 * Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
@@ -17,10 +17,11 @@
 #include <vector>
 #include <iostream>
 
-#define Window GLFWwindow			// Alias Window for GLFWwindow
-#define Context NVGcontext			// Alias Window for GLFWwindow
-
 #include <Windows.h>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <nanovg.h>
+
 #include "System/OdSyCore.h"
 #include "Graphics/UI/OdGrUiComponent.h"
 #include "Graphics/OdGrDraw.h"
@@ -31,7 +32,7 @@ class OdGrUiWindow : public OdGrUiComponent
 {
 protected:
 	GLFWwindow* glfwHandle = nullptr;		// Handle to the GLFW window
-	struct Context* context = nullptr;		// NanoVG context
+	struct NVGcontext* context = nullptr;	// NanoVG context
 	GrInputMap input;						// Input map for storing user input
 
 	void updateProperties()
@@ -191,6 +192,7 @@ public:
 	// Close the window and clean up resources
 	void close()
 	{
+		// Destroy GLFW window and terminate GLFW
 		glfwDestroyWindow(glfwHandle);
 		glfwTerminate();
 
@@ -198,6 +200,10 @@ public:
 		for (OdGrUiComponent* control : childComponents) {
 			delete control;
 		}
+		childComponents.clear();
+
+		// Delete NanoVG context
+		nvgDeleteGL3(context);
 	}
 
 	// Initialize the window and UI components
