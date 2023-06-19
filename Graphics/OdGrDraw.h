@@ -96,6 +96,8 @@ void OdGrDraw::ResourceImage(NVGcontext* aContext, int aX, int aY, int aWidth, i
 	}
 }
 
+
+// Draws an image on the specified NanoVG aContext from a file path.
 void OdGrDraw::ResourceImage(NVGcontext* aContext, int aX, int aY, OdSyImage* aImage)
 {
 	// Check if image is valid
