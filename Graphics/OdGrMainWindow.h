@@ -44,17 +44,17 @@ public:
 		pnl1->backColour = OdSyColour::BACKGROUND2;
 		addChildControl(pnl1);
 
-		OdGrUiButton* btn3 = new OdGrUiButton(10, 10, 32, 32, "");
+		OdGrUiButton* btn3 = new OdGrUiButton(10, 10, 24, 24, "");
 		btn3->backColour = OdSyColour::TRANSP;
 		btn3->setBackgroundImage(resourceManager->images["ico_circle"]);
 		pnl1->addChildControl(btn3);
 
-		OdGrUiButton* btn4 = new OdGrUiButton(55, 10, 32, 32, "");
+		OdGrUiButton* btn4 = new OdGrUiButton(55, 10, 24, 24, "");
 		btn4->backColour = OdSyColour::TRANSP;
 		btn4->setBackgroundImage(resourceManager->images["ico_line"]);
 		pnl1->addChildControl(btn4);
 
-		OdGrUiButton* btn5 = new OdGrUiButton(100, 10, 32, 32, "");
+		OdGrUiButton* btn5 = new OdGrUiButton(100, 10, 24, 24, "");
 		btn5->backColour = OdSyColour::TRANSP;
 		btn5->setBackgroundImage(resourceManager->images["ico_polyline"]);
 		pnl1->addChildControl(btn5);

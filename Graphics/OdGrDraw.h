@@ -83,7 +83,7 @@ void OdGrDraw::ResourceImage(NVGcontext* aContext, int aX, int aY, int aWidth, i
 	if (aImage->getId() != 0)
 	{
 		nvgBeginPath(aContext);
-		nvgRect(aContext, aX, aY, aImage->getWidth(), aImage->getHeight());
+		nvgRect(aContext, aX, aY, aWidth, aHeight);
 		nvgFillPaint(aContext, nvgImagePattern(aContext, aX, aY, aWidth, aHeight, 0, aImage->getId(), 1.0f));
 		nvgFill(aContext);
 		nvgClosePath(aContext);

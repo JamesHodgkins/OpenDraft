@@ -117,6 +117,7 @@ public:
 
 		if (backgroundImage != nullptr)
 		{
+			std::cout << size.x << std::endl;
 			OdGrDraw::ResourceImage(aContext, baseLocation.x, baseLocation.y, size.x, size.y, backgroundImage);
 		}
 
