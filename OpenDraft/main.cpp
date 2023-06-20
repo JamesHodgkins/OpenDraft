@@ -1,4 +1,4 @@
-#include "System/OdSyApplication.h"
+#include "System/OdApplication.h"
 
 
 #include <Windows.h>
@@ -9,7 +9,7 @@
 // Main code
 int main(int, char**)
 {
-	OdGrApplication* app = new OdGrApplication();
+	OdApplication* app = new OdApplication();
 
 	// Main loop
 	while (app->isRunning())

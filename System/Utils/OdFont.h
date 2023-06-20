@@ -4,7 +4,7 @@
 /**************************************************************************************
 * OpenDraft:    System Font Class                                                     *
 *-------------------------------------------------------------------------------------*
-* Filename:     OdSyFont.h                                                            *
+* Filename:     OdFont.h                                                            *
 * Contributors: James Hodgkins                                                        *
 * Date:         June 10, 2023                                                         *
 * Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
@@ -18,21 +18,30 @@
 #include <vector>
 
 
-class OdSyFont {
-private:
-	const int id;
-	const char* name;
-	const char* filePath;
+namespace OD
+{
+	namespace System
+	{
 
-public:
-	// Default constructor
-	OdSyFont(const char* aName, const char* aFilePath, int aId) : name(aName), filePath(aFilePath), id(aId) {}
+		// Font class
+		class OdFont {
+		private:
+			const int id;
+			const char* name;
+			const char* filePath;
 
-	// Getters
-	const char* getName() const { return name; }
-	const char* getFilePath() const { return filePath; }
-	int getId() const { return id; }
-};
+		public:
+			// Default constructor
+			OdFont(const char* aName, const char* aFilePath, int aId) : name(aName), filePath(aFilePath), id(aId) {}
+
+			// Getters
+			const char* getName() const { return name; }
+			const char* getFilePath() const { return filePath; }
+			int getId() const { return id; }
+		};
+
+	} // namespace System
+} // namespace OD
 
 #endif // OD_SY_FONT_H
 

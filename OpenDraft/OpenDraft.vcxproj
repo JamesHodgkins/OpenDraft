@@ -145,24 +145,24 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Graphics\OdGrGraphics.h" />
-    <ClInclude Include="..\Graphics\OdGrDraw.h" />
-    <ClInclude Include="..\Graphics\UI\OdGrUiButton.h" />
-    <ClInclude Include="..\Graphics\OdGrMainWindow.h" />
-    <ClInclude Include="..\Graphics\UI\OdGrUiComponent.h" />
-    <ClInclude Include="..\Graphics\OdGrUiComponents.h" />
-    <ClInclude Include="..\Graphics\UI\OdGrUiInput.h" />
-    <ClInclude Include="..\Graphics\UI\OdGrUiLabel.h" />
-    <ClInclude Include="..\Graphics\UI\OdGrUiPanel.h" />
-    <ClInclude Include="..\Graphics\UI\OdGrUiWindow.h" />
+    <ClInclude Include="..\Graphics\OdGraphics.h" />
+    <ClInclude Include="..\Graphics\OdDraw.h" />
+    <ClInclude Include="..\Graphics\UI\OdButton.h" />
+    <ClInclude Include="..\Graphics\OdMainWindow.h" />
+    <ClInclude Include="..\Graphics\UI\OdComponent.h" />
+    <ClInclude Include="..\Graphics\OdComponents.h" />
+    <ClInclude Include="..\Graphics\UI\OdInput.h" />
+    <ClInclude Include="..\Graphics\UI\OdLabel.h" />
+    <ClInclude Include="..\Graphics\UI\OdPanel.h" />
+    <ClInclude Include="..\Graphics\UI\OdWindow.h" />
     <ClInclude Include="..\System\Entities\OdSyEntity.h" />
-    <ClInclude Include="..\System\Utils\OdSyColour.h" />
-    <ClInclude Include="..\System\Utils\OdSyFont.h" />
-    <ClInclude Include="..\System\Utils\OdSyImage.h" />
-    <ClInclude Include="..\System\Utils\OdSyPoint.h" />
-    <ClInclude Include="..\System\OdSyApplication.h" />
-    <ClInclude Include="..\System\OdSyCore.h" />
-    <ClInclude Include="..\System\OdSyResourceManager.h" />
+    <ClInclude Include="..\System\Utils\OdColour.h" />
+    <ClInclude Include="..\System\Utils\OdFont.h" />
+    <ClInclude Include="..\System\Utils\OdImage.h" />
+    <ClInclude Include="..\System\Utils\OdPoint.h" />
+    <ClInclude Include="..\System\OdApplication.h" />
+    <ClInclude Include="..\System\OdCore.h" />
+    <ClInclude Include="..\System\OdResourceManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

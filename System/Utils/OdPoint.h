@@ -4,7 +4,7 @@
 /**************************************************************************************
 * OpenDraft:    System Point Class                                                    *
 *-------------------------------------------------------------------------------------*
-* Filename:     OdSyPoint.h                                                           *
+* Filename:     OdPoint.h                                                           *
 * Contributors: James Hodgkins                                                        *
 * Date:         June 9, 2023                                                          *
 * Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
@@ -14,19 +14,26 @@
 ***************************************************************************************/
 
 
+namespace OD
+{
+	namespace System
+	{
+		// Point class
+		class OdPoint {
+		private:
 
-class OdSyPoint {
-private:
+		public:
+			double x, y;
 
-public:
-	double x, y;
+			// Default constructor
+			OdPoint() : x(0.0), y(0.0) {}
 
-	// Default constructor
-	OdSyPoint() : x(0.0), y(0.0) {}
+			// Custom constructor
+			OdPoint(double aX, double aY) : x(aX), y(aY) {}
+			OdPoint(int aX, int aY) : x(aX), y(aY) {}
+		};
 
-	// Custom constructor
-	OdSyPoint(double aX, double aY) : x(aX), y(aY) {}
-	OdSyPoint(int aX, int aY) : x(aX), y(aY) {}
-};
+	} // namespace System
+} // namespace OD
 
 #endif // OD_SY_POINT_H

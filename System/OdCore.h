@@ -4,7 +4,7 @@
 /**************************************************************************************
 * OpenDraft:    Core System Class                                                     *
 *-------------------------------------------------------------------------------------*
-* Filename:     OdSyCore.h                                                            *
+* Filename:     OdCore.h                                                            *
 * Contributors: James Hodgkins                                                        *
 * Date:         June 10, 2023                                                         *
 * Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
@@ -17,10 +17,10 @@
 
 
 
-#include "System/Utils/OdSyColour.h"
-#include "System/Utils/OdSyImage.h"
-#include "System/Utils/OdSyPoint.h"
-#include "System/Utils/OdSyFont.h"
-#include "System/OdSyResourceManager.h"
+#include "System/Utils/OdColour.h"
+#include "System/Utils/OdImage.h"
+#include "System/Utils/OdPoint.h"
+#include "System/Utils/OdFont.h"
+#include "System/OdResourceManager.h"
 
 #endif // OD_SY_CORE_H

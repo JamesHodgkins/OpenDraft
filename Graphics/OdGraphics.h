@@ -9,13 +9,21 @@
 #include "nanovg.h"					// Include core nanovg library
 #include "nanovg_gl.h"				// Include nanovg opengl3 implementation
 
-#include "System/OdSyCore.h"
-#include "Graphics/OdGrUiComponents.h"
-#include "Graphics/OdGrDraw.h"
+#include "System/OdCore.h"
+#include "Graphics/OdComponents.h"
+#include "Graphics/OdDraw.h"
 
-class GrGraphics
+namespace OD
 {
+	namespace Graphics
+	{
 
-};
+		class GrGraphics
+		{
+
+		};
+
+	} // namespace Graphics
+}// namespace OD
 
 #endif // OD_GR_GRAPHICS_H
