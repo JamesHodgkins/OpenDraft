@@ -96,11 +96,8 @@ namespace OD
 				OdDraw::RectStroke(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, stroke);
 
 
-
-				// Update UI components
-				for (OdComponent* control : childComponents) {
-					control->onFrame(aContext);
-				}
+				// Draw child UI components
+				drawChildComponents(aContext);
 
 			}
 

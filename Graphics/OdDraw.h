@@ -48,7 +48,7 @@ namespace OD
 
 
 		// Draws a filled rectangle on the specified NanoVG aContext.
-		void OdDraw::Rect(NVGcontext* aContext, int aX, int aY, int aWidth, int aHeight, OdColour aColour)
+		void OdDraw::Rect(NVGcontext* aContext, int aX, int aY, int aWidth, int aHeight, const OdColour aColour)
 		{
 			nvgBeginPath(aContext);
 			nvgRect(aContext, aX, aY, aWidth, aHeight);
@@ -59,7 +59,7 @@ namespace OD
 
 
 		// Draws a stroked rectangle on the specified NanoVG aContext.
-		void OdDraw::RectStroke(NVGcontext* aContext, int aX, int aY, int aWidth, int aHeight, OdColour aColour)
+		void OdDraw::RectStroke(NVGcontext* aContext, int aX, int aY, int aWidth, int aHeight, const OdColour aColour)
 		{
 			nvgBeginPath(aContext);
 			nvgRect(aContext, aX, aY, aWidth, aHeight);

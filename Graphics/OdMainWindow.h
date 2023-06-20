@@ -25,6 +25,29 @@ namespace OD
 
 		class OdMainWindow : public OdWindow
 		{
+		protected:
+
+			// Load required resources
+			void loadResources()
+			{
+				resourceManager->importFontFromFile(context, "sans", "..\\Resources\\Fonts\\OpenSans.ttf");
+
+				// Load 32x32 GUI PNG icons
+				resourceManager->importImageFromFile(context, 32, 32, "ico_circle", "..\\Resources\\Icons\\circle.png");
+				resourceManager->importImageFromFile(context, 32, 32, "ico_line", "..\\Resources\\Icons\\line.png");
+				resourceManager->importImageFromFile(context, 32, 32, "ico_mirror", "..\\Resources\\Icons\\mirror.png");
+				resourceManager->importImageFromFile(context, 32, 32, "ico_newfile", "..\\Resources\\Icons\\new_file.png");
+				resourceManager->importImageFromFile(context, 32, 32, "ico_open", "..\\Resources\\Icons\\open.png");
+				resourceManager->importImageFromFile(context, 32, 32, "ico_polyline", "..\\Resources\\Icons\\polyline.png");
+				resourceManager->importImageFromFile(context, 32, 32, "ico_print", "..\\Resources\\Icons\\print.png");
+				resourceManager->importImageFromFile(context, 32, 32, "ico_rectangle", "..\\Resources\\Icons\\rectangle.png");
+				resourceManager->importImageFromFile(context, 32, 32, "ico_redo", "..\\Resources\\Icons\\redo.png");
+				resourceManager->importImageFromFile(context, 32, 32, "ico_save", "..\\Resources\\Icons\\save.png");
+				resourceManager->importImageFromFile(context, 32, 32, "ico_saveas", "..\\Resources\\Icons\\save_as.png");
+				resourceManager->importImageFromFile(context, 32, 32, "ico_undo", "..\\Resources\\Icons\\undo.png");
+			}
+
+
 		public:
 
 			OdMainWindow(int aWidth, int aHeight, const char* aTitle) : OdWindow(aWidth, aHeight, aTitle) {}
@@ -49,7 +72,7 @@ namespace OD
 
 
 				// Start Ribbon Area
-				OdPanel* pnl1 = new OdPanel(200, 0, 1000, 100);
+				OdPanel* pnl1 = new OdPanel(0, 0, size.x, 100);
 				pnl1->backColour = OdColour::BACKGROUND2;
 				addChildControl(pnl1);
 
@@ -70,26 +93,6 @@ namespace OD
 
 			}
 
-			// Load required resources
-			void loadResources()
-			{
-				resourceManager->importFontFromFile(context, "sans", "..\\Resources\\Fonts\\OpenSans.ttf");
-
-				// Load 32x32 GUI PNG icons
-				resourceManager->importImageFromFile(context, 32, 32, "ico_circle", "..\\Resources\\Icons\\circle.png");
-				resourceManager->importImageFromFile(context, 32, 32, "ico_line", "..\\Resources\\Icons\\line.png");
-				resourceManager->importImageFromFile(context, 32, 32, "ico_mirror", "..\\Resources\\Icons\\mirror.png");
-				resourceManager->importImageFromFile(context, 32, 32, "ico_newfile", "..\\Resources\\Icons\\new_file.png");
-				resourceManager->importImageFromFile(context, 32, 32, "ico_open", "..\\Resources\\Icons\\open.png");
-				resourceManager->importImageFromFile(context, 32, 32, "ico_polyline", "..\\Resources\\Icons\\polyline.png");
-				resourceManager->importImageFromFile(context, 32, 32, "ico_print", "..\\Resources\\Icons\\print.png");
-				resourceManager->importImageFromFile(context, 32, 32, "ico_rectangle", "..\\Resources\\Icons\\rectangle.png");
-				resourceManager->importImageFromFile(context, 32, 32, "ico_redo", "..\\Resources\\Icons\\redo.png");
-				resourceManager->importImageFromFile(context, 32, 32, "ico_save", "..\\Resources\\Icons\\save.png");
-				resourceManager->importImageFromFile(context, 32, 32, "ico_saveas", "..\\Resources\\Icons\\save_as.png");
-				resourceManager->importImageFromFile(context, 32, 32, "ico_undo", "..\\Resources\\Icons\\undo.png");
-
-			}
 
 			// Render the window and UI components
 			virtual void const onFrame(NVGcontext* NULLREF = nullptr, OdComponent* aParent = nullptr)
@@ -116,10 +119,8 @@ namespace OD
 
 
 		
-				// Update UI components
-				for (OdComponent* control : childComponents) {
-					control->onFrame(context);
-				}
+				// Draw child UI components
+				drawChildComponents(context);
 
 
 				nvgEndFrame(context);

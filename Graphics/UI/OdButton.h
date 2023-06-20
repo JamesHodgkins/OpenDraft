@@ -49,11 +49,11 @@ namespace OD
 
 				backColour = OdColour::BACKGROUND1;
 				backColourHover = OdColour::BACKGROUND2;
-				backColourActive = OdColour(0, 0, 255, 255);
+				backColourActive = OdColour::BACKGROUND2;
 
-				foreColour = OdColour(255, 255, 255, 200);
-				foreColourHover = OdColour(25, 25, 25, 255);
-				foreColourActive = OdColour(255, 255, 25, 255);
+				foreColour = OdColour::WHITE;
+				foreColourHover = OdColour::WHITE;
+				foreColourActive = OdColour::PRIMARY;
 
 				stroke = OdColour(0, 0, 0, 0);
 
@@ -72,6 +72,12 @@ namespace OD
 				backgroundImage = nullptr;
 			}
 
+			void DrawButtonState(NVGcontext* aContext, float x, float y, const OdColour& backColour, const OdColour& foreColor)
+			{
+				OdDraw::Rect(aContext, x, y, size.x, size.y, backColour);
+				OdDraw::Text(aContext, x, y, size.x, size.y, 14.0f, foreColor, text.c_str());
+			}
+
 			/**
 			 * \brief Renders a default OD-GUI Button to a given NanoVG context (NVGContext) with the specified attributes.
 			 * \param context (NVGcontext*) The nanovg pointer for rendering.
@@ -84,33 +90,22 @@ namespace OD
 				if (aContext == nullptr)
 					return;
 
-				//
-				// Begin drawing Button
-				//
+
+				// Draw button state
 				if (mouseDown)
-				{
-					OdDraw::Rect(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, backColourActive);
-					OdDraw::Text(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, 14.0f, foreColourActive, text.c_str());
-				}
+					DrawButtonState(aContext, getRelativeLocation().x, getRelativeLocation().y, backColourActive, foreColourActive);
+				
+				else if (mouseOver)
+					DrawButtonState(aContext, getRelativeLocation().x, getRelativeLocation().y - 1, backColourHover, foreColourHover);
+				
 				else
-				{
-					if (mouseOver)
-					{
-						OdDraw::Rect(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, backColourHover);
-						OdDraw::Text(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, 14.0f, foreColourHover, text.c_str());
-					}
-					else
-					{
-						OdDraw::Rect(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, backColour);
-						OdDraw::Text(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, 14.0f, foreColour, text.c_str());
-					}
-				}
+					DrawButtonState(aContext, getRelativeLocation().x, getRelativeLocation().y, backColour, foreColour);
+				
 
-
+				// Draw background image if set
 				if (backgroundImage != nullptr)
-				{
 					OdDraw::ResourceImage(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, backgroundImage);
-				}
+				
 
 				OdDraw::RectStroke(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, stroke);
 

@@ -41,12 +41,20 @@ namespace OD
 			struct NVGcontext* context = nullptr;	// NanoVG context
 			GrInputMap input;						// Input map for storing user input
 
+
+			// Update properties following initialization or resize
 			void updateProperties()
 			{
 				int width = 0, height = 0;
 				glfwGetWindowSize(glfwHandle, &width, &height);
 				size.x = width;
 				size.y = height;		
+			}
+
+			// Load required resources
+			void loadResources()
+			{
+				// To be overridden by derived classes
 			}
 
 		public:

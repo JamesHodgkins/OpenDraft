@@ -42,18 +42,23 @@ namespace OD
 			bool enabled = true;		// Control is enabled or disabled.
 			void* font;					// Font of the text displayed by the control.
 			OdColour foreColour;		// Foreground colour of the control.
-			OdPoint location = {0,0};	// Location of component
+			OdPoint location = { 0,0 };	// Location of component
 			std::string name;			// Name of the control.
-			OdPoint size = {50,50};	// Location of component
+			OdPoint size = { 50,50 };		// Location of component
 			int TabIndex;				// Tab order of the control within its container.
 			std::string text;			// Text associated with the control.
 			bool show;					// Visible or hidden.
-			OdComponent* parent;	// Parent container control for the control.
+			OdComponent* parent;		// Parent container control for the control.
+			bool overflow;				// Determines whether the control can draw child
+			// components outside this components boundaries.
 
 			OdResourceManager* resourceManager;			// Pointer to injected resource manager.
 			std::vector<OdComponent*>childComponents;	// Child Components
 
+
+			// Virtual Functions
 			virtual void const onFrame(NVGcontext* aContext) = 0;
+
 
 			// Setters
 			void setLocation(int aX, int aY)
@@ -61,11 +66,12 @@ namespace OD
 				location.x = aX;
 				location.y = aY;
 			}
-			
+
 			void setText(std::string s)
 			{
 				text = s;
 			}
+
 
 			// Getters
 			OdPoint getLocation() const
@@ -84,7 +90,7 @@ namespace OD
 					return {
 						parent->getRelativeLocation().x + location.x,
 						parent->getRelativeLocation().y + location.y
-					};
+				};
 				else
 					return location;
 			}
@@ -93,6 +99,7 @@ namespace OD
 			{
 				return size;
 			}
+
 
 			// Mouse Events
 			bool isMouseOver() const
@@ -115,9 +122,24 @@ namespace OD
 				return mouseDown;
 			}
 
+
 			void addChildControl(OdComponent* aChild)
 			{
-				// Todo check in component already has a parent, and remove it from there first.
+				// Check is component already has a parent
+				if (aChild->parent != nullptr)
+				{
+					// Remove child from parent
+					for (int i = 0; i < aChild->parent->childComponents.size(); i++)
+					{
+						if (aChild->parent->childComponents[i] == aChild)
+						{
+							aChild->parent->childComponents.erase(aChild->parent->childComponents.begin() + i);
+							break;
+						}
+					}
+				}
+
+				// Set parent of child to this component
 				aChild->parent = this;
 				childComponents.push_back(aChild);
 			}
@@ -163,10 +185,37 @@ namespace OD
 
 				if (mouseOver && aInput->mouse.leftButton.isPressed())
 					mouseDown = true;
-		
+
 				if (!aInput->mouse.leftButton.isDown())
 					mouseDown = false;
 
+			}
+
+			void drawChildComponents(NVGcontext* aContext)
+			{
+				// Check for overflow restriction
+				if (overflow)
+					allowOverflow(aContext);
+				else
+					setNoOverflow(aContext);
+
+
+				// Update child UI components
+				for (OdComponent* control : childComponents) {
+					control->onFrame(aContext);
+				}
+			}
+
+			// Function to restrict the drawing of the component to within its boundaries
+			void setNoOverflow(NVGcontext* aContext)
+			{
+				nvgScissor(aContext, location.x, location.y, size.x, size.y);
+			}
+
+			// Clear restrictions on drawing to allow drawing outside of the component boundaries
+			void allowOverflow(NVGcontext* aContext)
+			{
+				nvgResetScissor(aContext);
 			}
 
 		};

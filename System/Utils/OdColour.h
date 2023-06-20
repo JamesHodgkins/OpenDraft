@@ -76,7 +76,7 @@ namespace OD
 				a = aAlpha;
 			}
 
-			NVGcolor asNvgColour()
+			NVGcolor asNvgColour() const
 			{
 				return nvgRGBA(getRed(), getGreen(), getBlue(), getAlpha());
 			}

@@ -60,17 +60,6 @@ namespace OD
 				if (aContext == nullptr)
 					return;
 
-				// Convert class location (relative to parent) to context location (relative to the window)
-				OdPoint baseLocation;
-
-				if (parent == nullptr) {
-					baseLocation = OdPoint(location.x, location.y);
-				}
-				else
-				{
-					baseLocation = OdPoint(parent->getRelativeLocation().x + location.x, parent->getRelativeLocation().y + location.y);
-				}
-
 				//
 				// Begin drawing Label
 				//
