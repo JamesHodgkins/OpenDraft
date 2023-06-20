@@ -68,14 +68,14 @@ namespace OD
 				}
 				else
 				{
-					baseLocation = OdPoint(parent->getLocationInContext().x + location.x, parent->getLocationInContext().y + location.y);
+					baseLocation = OdPoint(parent->getRelativeLocation().x + location.x, parent->getRelativeLocation().y + location.y);
 				}
 
 				//
 				// Begin drawing Label
 				//
-				OdDraw::Rect(aContext, baseLocation.x, baseLocation.y, size.x, size.y, backColour);
-				OdDraw::Text(aContext, baseLocation.x, baseLocation.y, size.x, size.y, 14.0f, foreColour, text.c_str());
+				OdDraw::Rect(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, backColour);
+				OdDraw::Text(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, 14.0f, foreColour, text.c_str());
 
 
 			}

@@ -190,7 +190,7 @@ namespace OD
 				return context;
 			}
 
-			OdPoint getLocationInContext()
+			OdPoint getRelativeLocation()
 			{
 				return OdPoint(0, 0);
 			}

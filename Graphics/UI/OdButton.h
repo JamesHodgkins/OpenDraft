@@ -4,13 +4,13 @@
 /**************************************************************************************
 * OpenDraft:    GUI Button Class                                                      *
 *-------------------------------------------------------------------------------------*
-* Filename:     OdButton.h                                                        *
+* Filename:     OdButton.h                                                            *
 * Contributors: James Hodgkins                                                        *
 * Date:         June 9, 2023                                                          *
 * Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
-*   A GUI button class derived from OdComponent                                     *
+*   A GUI button class derived from OdComponent                                       *
 ***************************************************************************************/
 
 
@@ -72,7 +72,6 @@ namespace OD
 				backgroundImage = nullptr;
 			}
 
-
 			/**
 			 * \brief Renders a default OD-GUI Button to a given NanoVG context (NVGContext) with the specified attributes.
 			 * \param context (NVGcontext*) The nanovg pointer for rendering.
@@ -85,46 +84,35 @@ namespace OD
 				if (aContext == nullptr)
 					return;
 
-				// Convert class location (relative to parent) to context location (relative to the window)
-				OdPoint baseLocation;
-
-				if (parent == nullptr) {
-					baseLocation = OdPoint(location.x, location.y);
-				}
-				else
-				{
-					baseLocation = OdPoint(parent->getLocationInContext().x + location.x, parent->getLocationInContext().y + location.y);
-				}
-
 				//
 				// Begin drawing Button
 				//
 				if (mouseDown)
 				{
-					OdDraw::Rect(aContext, baseLocation.x, baseLocation.y, size.x, size.y, backColourActive);
-					OdDraw::Text(aContext, baseLocation.x, baseLocation.y, size.x, size.y, 14.0f, foreColourActive, text.c_str());
+					OdDraw::Rect(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, backColourActive);
+					OdDraw::Text(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, 14.0f, foreColourActive, text.c_str());
 				}
 				else
 				{
 					if (mouseOver)
 					{
-						OdDraw::Rect(aContext, baseLocation.x, baseLocation.y, size.x, size.y, backColourHover);
-						OdDraw::Text(aContext, baseLocation.x, baseLocation.y, size.x, size.y, 14.0f, foreColourHover, text.c_str());
+						OdDraw::Rect(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, backColourHover);
+						OdDraw::Text(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, 14.0f, foreColourHover, text.c_str());
 					}
 					else
 					{
-						OdDraw::Rect(aContext, baseLocation.x, baseLocation.y, size.x, size.y, backColour);
-						OdDraw::Text(aContext, baseLocation.x, baseLocation.y, size.x, size.y, 14.0f, foreColour, text.c_str());
+						OdDraw::Rect(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, backColour);
+						OdDraw::Text(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, 14.0f, foreColour, text.c_str());
 					}
 				}
 
 
 				if (backgroundImage != nullptr)
 				{
-					OdDraw::ResourceImage(aContext, baseLocation.x, baseLocation.y, size.x, size.y, backgroundImage);
+					OdDraw::ResourceImage(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, backgroundImage);
 				}
 
-				OdDraw::RectStroke(aContext, baseLocation.x, baseLocation.y, size.x, size.y, stroke);
+				OdDraw::RectStroke(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, stroke);
 
 			}
 

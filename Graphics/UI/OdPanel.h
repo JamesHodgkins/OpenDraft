@@ -81,30 +81,19 @@ namespace OD
 				if (aContext == nullptr)
 					return;
 
-				// Convert class location (relative to parent) to context location (relative to the window)
-				OdPoint baseLocation;
-
-				if (parent == nullptr) {
-					baseLocation = OdPoint(location.x, location.y);
-				}
-				else
-				{
-					baseLocation = OdPoint(parent->getLocationInContext().x + location.x, parent->getLocationInContext().y + location.y);
-				}
-
 				//
 				// Begin drawing Panel
 				//
-				OdDraw::Rect(aContext, baseLocation.x, baseLocation.y, size.x, size.y, backColour);
+				OdDraw::Rect(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, backColour);
 	
 
 
 				if (backgroundImage != nullptr)
 				{
-					OdDraw::ResourceImage(aContext, baseLocation.x, baseLocation.y, size.x, size.y, backgroundImage);
+					OdDraw::ResourceImage(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, backgroundImage);
 				}
 
-				OdDraw::RectStroke(aContext, baseLocation.x, baseLocation.y, size.x, size.y, stroke);
+				OdDraw::RectStroke(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, stroke);
 
 
 

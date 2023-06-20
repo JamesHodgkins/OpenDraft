@@ -55,20 +55,38 @@ namespace OD
 
 			virtual void const onFrame(NVGcontext* aContext) = 0;
 
+			// Setters
 			void setLocation(int aX, int aY)
 			{
 				location.x = aX;
 				location.y = aY;
 			}
+			
+			void setText(std::string s)
+			{
+				text = s;
+			}
 
+			// Getters
 			OdPoint getLocation() const
 			{
 				return location;
 			}
 
-			OdPoint getLocationInContext() const
+			std::string getText()
 			{
-				return location;
+				return text;
+			}
+
+			OdPoint getRelativeLocation() const
+			{
+				if (parent != nullptr)
+					return {
+						parent->getRelativeLocation().x + location.x,
+						parent->getRelativeLocation().y + location.y
+					};
+				else
+					return location;
 			}
 
 			OdPoint getSize() const
@@ -76,6 +94,7 @@ namespace OD
 				return size;
 			}
 
+			// Mouse Events
 			bool isMouseOver() const
 			{
 				return mouseOver;
@@ -94,16 +113,6 @@ namespace OD
 			bool isMouseDown() const
 			{
 				return mouseDown;
-			}
-
-			void setText(std::string s)
-			{
-				text = s;
-			}
-
-			std::string getText()
-			{
-				return text;
 			}
 
 			void addChildControl(OdComponent* aChild)
