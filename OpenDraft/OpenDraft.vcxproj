@@ -141,7 +141,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\Graphics\OdDraw.cpp" />
+    <ClCompile Include="..\Graphics\UI\OdButton.cpp" />
+    <ClCompile Include="..\Graphics\UI\OdComponent.cpp" />
     <ClCompile Include="..\Libraries\nanovg\src\nanovg.c" />
+    <ClCompile Include="..\System\Utils\OdColour.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>

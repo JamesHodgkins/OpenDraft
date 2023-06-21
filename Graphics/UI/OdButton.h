@@ -6,12 +6,13 @@
 *-------------------------------------------------------------------------------------*
 * Filename:     OdButton.h                                                            *
 * Contributors: James Hodgkins                                                        *
-* Date:         June 9, 2023                                                          *
+* Date:         June 21, 2023                                                         *
 * Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   A GUI button class derived from OdComponent                                       *
 ***************************************************************************************/
+
 
 
 #include "System/OdCore.h"
@@ -40,76 +41,36 @@ namespace OD
 			 * \param size (OdPoint) The size of the button.
 			 * \param text (std::string) The text displayed on the button.
 			 */
-			OdButton(int aX = 0, int aY = 0, int aWidth = 150, int aHeight = 30, std::string aText = "Button")
-			{
-				location.x = aX;
-				location.y = aY;
-				size.x = aWidth;
-				size.y = aHeight;
+			OdButton(int aX = 0, int aY = 0, int aWidth = 150, int aHeight = 30, std::string aText = "Button");
 
-				backColour = OdColour::BACKGROUND1;
-				backColourHover = OdColour::BACKGROUND2;
-				backColourActive = OdColour::BACKGROUND2;
+			/**
+			 * \brief Sets the background image of the button. 
+			 * \param aImage (OdImage*) The image to set as the background.
+			 * \return void
+			 */
+			void setBackgroundImage(OdImage* aImage);
 
-				foreColour = OdColour::WHITE;
-				foreColourHover = OdColour::WHITE;
-				foreColourActive = OdColour::PRIMARY;
+			/**
+			 * \brief Clears the background image of the button.
+			 * \return void
+			 */
+			void clearBackgroundImage();
 
-				stroke = OdColour(0, 0, 0, 0);
-
-				backgroundImage = nullptr;
-
-				text = aText;
-			}
-
-			void setBackgroundImage(OdImage* aImage)
-			{
-				backgroundImage = aImage;
-			}
-
-			void clearBackgroundImage()
-			{
-				backgroundImage = nullptr;
-			}
-
-			void DrawButtonState(NVGcontext* aContext, float x, float y, const OdColour& backColour, const OdColour& foreColor)
-			{
-				OdDraw::Rect(aContext, x, y, size.x, size.y, backColour);
-				OdDraw::Text(aContext, x, y, size.x, size.y, 14.0f, foreColor, text.c_str());
-			}
+			/**
+			 * \brief Draws the button to the specified NanoVG context (NVGContext) with the specified attributes.
+			 * \param aContext (NVGcontext*) The nanovg pointer for rendering.
+			 * \param x The x position of the button.
+			 * \param y The y position of the button.
+			 * \param backColour The background colour of the button.
+			 * \param foreColor The foreground colour of the button.
+			 */
+			void DrawButtonState(NVGcontext* aContext, float x, float y, const OdColour& backColour, const OdColour& foreColor);
 
 			/**
 			 * \brief Renders a default OD-GUI Button to a given NanoVG context (NVGContext) with the specified attributes.
 			 * \param context (NVGcontext*) The nanovg pointer for rendering.
 			 */
-			virtual void const onFrame(NVGcontext* aContext) override
-			{
-				if (!enabled)
-					return;
-
-				if (aContext == nullptr)
-					return;
-
-
-				// Draw button state
-				if (mouseDown)
-					DrawButtonState(aContext, getRelativeLocation().x, getRelativeLocation().y, backColourActive, foreColourActive);
-				
-				else if (mouseOver)
-					DrawButtonState(aContext, getRelativeLocation().x, getRelativeLocation().y - 1, backColourHover, foreColourHover);
-				
-				else
-					DrawButtonState(aContext, getRelativeLocation().x, getRelativeLocation().y, backColour, foreColour);
-				
-
-				// Draw background image if set
-				if (backgroundImage != nullptr)
-					OdDraw::ResourceImage(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, backgroundImage);
-				
-
-				OdDraw::RectStroke(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, stroke);
-
-			}
+			virtual void const onFrame(NVGcontext* aContext) override;
 
 		};
 

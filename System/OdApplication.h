@@ -4,7 +4,7 @@
 /**************************************************************************************
 * OpenDraft:    System Application Class                                              *
 *-------------------------------------------------------------------------------------*
-* Filename:     OdApplication.h                                                     *
+* Filename:     OdApplication.h                                                       *
 * Contributors: James Hodgkins                                                        *
 * Date:         June 10, 2023                                                         *
 * Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
@@ -14,6 +14,7 @@
 ***************************************************************************************/
 
 
+#include "System/OdCore.h"
 #include "Graphics/OdGraphics.h"		// Include Graphics
 #include "Graphics/OdMainWindow.h"	// Include Main Window Class
 #include "OdResourceManager.h"		// Include Resource Manager

@@ -35,6 +35,18 @@
       <Filter>Libraries\nanovg</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="..\Graphics\UI\OdComponent.cpp">
+      <Filter>Graphics\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System\Utils\OdColour.cpp">
+      <Filter>System\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Graphics\UI\OdButton.cpp">
+      <Filter>Graphics\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Graphics\OdDraw.cpp">
+      <Filter>Graphics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\System\Entities\OdSyEntity.h">
