@@ -20,6 +20,7 @@
 #include "UI/OdButton.h"
 #include "UI/OdLabel.h"
 #include "UI/OdPanel.h"
+#include "UI/OdTabView.h"
 #include "UI/OdWindow.h"
 
 #endif // OD_GR_UI_COMPONENTS_H

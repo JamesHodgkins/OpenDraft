@@ -4,9 +4,9 @@
 /**************************************************************************************
 * OpenDraft:    GUI Window Class                                                      *
 *-------------------------------------------------------------------------------------*
-* Filename:     OdWindow.h                                                          *
+* Filename:     OdWindow.h                                                            *
 * Contributors: James Hodgkins                                                        *
-* Date:         June 19, 2023                                                          *
+* Date:         June 19, 2023                                                         *
 * Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
@@ -21,7 +21,6 @@
 #include <Windows.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <nanovg.h>
 
 #include "System/OdCore.h"
 #include "Graphics/UI/OdComponent.h"
@@ -64,6 +63,7 @@ namespace OD
 			{
 				size = OdPoint(aWidth, aHeight);
 				input = GrInputMap();
+				text = aTitle;
 
 				// Initialize GLFW
 				if (!glfwInit())
@@ -227,7 +227,7 @@ namespace OD
 			}
 
 			// Render the window and UI components
-			virtual void const onFrame(NVGcontext* context)
+			virtual void onFrame(NVGcontext* context)
 			{
 				glfwPollEvents();
 			}

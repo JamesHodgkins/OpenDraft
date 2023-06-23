@@ -62,17 +62,17 @@ namespace OD
 
 				backColour.setRGB(31,39,48);
 
-				OdButton* btn1 = new OdButton(300, 300);
+				/*OdButton* btn1 = new OdButton(200, 110);
 				btn1->setText("Show");
 				addChildControl(btn1);
 
-				OdButton* btn2 = new OdButton(300, 230);
+				OdButton* btn2 = new OdButton(400, 110);
 				btn2->setText("Hide");
-				addChildControl(btn2);
+				addChildControl(btn2);*/
 
 
 				// Start Ribbon Area
-				OdPanel* pnl1 = new OdPanel(0, 0, size.x, 100);
+				/*OdPanel* pnl1 = new OdPanel(0, 0, size.x, 100);
 				pnl1->backColour = OdColour::BACKGROUND2;
 				addChildControl(pnl1);
 
@@ -89,7 +89,15 @@ namespace OD
 				OdButton* btn5 = new OdButton(100, 10, 24, 24, "");
 				btn5->backColour = OdColour::CLEAR;
 				btn5->setBackgroundImage(resourceManager->images["ico_polyline"]);
-				pnl1->addChildControl(btn5);
+				pnl1->addChildControl(btn5);*/
+
+				OdTabView* tabV = new OdTabView(0, 0, 1280, 100);
+				addChildControl(tabV);
+
+				tabV->addTab("Tab 1");
+				tabV->addTab("Tab 1");
+				tabV->addTab("Tab 1");
+				tabV->addTab("Tab 1");
 
 			}
 
@@ -105,17 +113,18 @@ namespace OD
 				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 				glViewport(0, 0, size.x, size.y);
+
 				nvgBeginFrame(context, size.x, size.y, 1);
 
 
 
-				// Test updates on state
-				if (childComponents[0]->isMouseDown())
-					childComponents[2]->enabled = true;
+				//// Test updates on state
+				//if (childComponents[0]->isMouseDown())
+				//	childComponents[2]->enabled = true;
 
-				// Test updates on state
-				if (childComponents[1]->isMouseDown())
-					childComponents[2]->enabled = false;
+				//// Test updates on state
+				//if (childComponents[1]->isMouseDown())
+				//	childComponents[2]->enabled = false;
 
 
 		

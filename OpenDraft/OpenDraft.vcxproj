@@ -144,6 +144,9 @@
     <ClCompile Include="..\Graphics\OdDraw.cpp" />
     <ClCompile Include="..\Graphics\UI\OdButton.cpp" />
     <ClCompile Include="..\Graphics\UI\OdComponent.cpp" />
+    <ClCompile Include="..\Graphics\UI\OdLabel.cpp" />
+    <ClCompile Include="..\Graphics\UI\OdPanel.cpp" />
+    <ClCompile Include="..\Graphics\UI\OdTabView.cpp" />
     <ClCompile Include="..\Libraries\nanovg\src\nanovg.c" />
     <ClCompile Include="..\System\Utils\OdColour.cpp" />
     <ClCompile Include="main.cpp" />
@@ -158,6 +161,7 @@
     <ClInclude Include="..\Graphics\UI\OdInput.h" />
     <ClInclude Include="..\Graphics\UI\OdLabel.h" />
     <ClInclude Include="..\Graphics\UI\OdPanel.h" />
+    <ClInclude Include="..\Graphics\UI\OdTabView.h" />
     <ClInclude Include="..\Graphics\UI\OdWindow.h" />
     <ClInclude Include="..\System\Entities\OdSyEntity.h" />
     <ClInclude Include="..\System\Utils\OdColour.h" />

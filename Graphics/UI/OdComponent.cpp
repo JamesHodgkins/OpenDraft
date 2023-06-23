@@ -32,9 +32,9 @@ namespace OD
 			location.y = aY;
 		}
 
-		void OdComponent::setText(std::string s)
+		void OdComponent::setText(std::string aText)
 		{
-			text = s;
+			text = aText;
 		}
 
 		OdPoint OdComponent::getLocation() const
@@ -130,9 +130,9 @@ namespace OD
 			int mousePosY = aInput->mouse.position.y;
 
 			// Calculate object boundaries
-			int objectLeft = location.x;
+			int objectLeft = getRelativeLocation().x;
 			int objectRight = location.x + size.x;
-			int objectTop = location.y;
+			int objectTop = getRelativeLocation().y;
 			int objectBottom = location.y + size.y;
 
 			// Check if mouse is within object boundaries
@@ -166,6 +166,9 @@ namespace OD
 			if (!aInput->mouse.leftButton.isDown())
 				mouseDown = false;
 
+			// Process child components
+			for (OdComponent* control : childComponents)
+				control->processEvents(aInput);
 		}
 
 
@@ -176,27 +179,25 @@ namespace OD
 		// Draw child components
 		void OdComponent::drawChildComponents(NVGcontext* aContext)
 		{
-			// Check for overflow restriction
-			if (overflow)
-				allowOverflow(aContext);
-			else
-				setNoOverflow(aContext);
-
-
 			// Update child UI components
 			for (OdComponent* control : childComponents) {
+
+				// Check for overflow restriction
+				if (!overflow)
+					disableOverflow(aContext);
+				
 				control->onFrame(aContext);
 			}
 		}
 
 		// Function to restrict the drawing of the component to within its boundaries
-		void OdComponent::setNoOverflow(NVGcontext* aContext)
+		void OdComponent::disableOverflow(NVGcontext* aContext)
 		{
 			nvgScissor(aContext, location.x, location.y, size.x, size.y);
 		}
 
 		// Clear restrictions on drawing to allow drawing outside of the component boundaries
-		void OdComponent::allowOverflow(NVGcontext* aContext)
+		void OdComponent::enableOverflow(NVGcontext* aContext)
 		{
 			nvgResetScissor(aContext);
 		}

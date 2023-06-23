@@ -56,21 +56,25 @@ namespace OD
 			// Behavior properties
 			bool enabled = true;                         // Control is enabled or disabled.
 			bool show;                                   // Visible or hidden.
-			bool overflow;                               // Determines whether the control can draw child components outside its boundaries.
+			bool overflow = true;                        // Determines whether the control can draw child components outside its boundaries.
 
 			int tabIndex;                                // Tab order of the control within its container.
+			
 			// Text properties
 			std::string text;                            // Text associated with the control.
 
 			// Resource properties
 			OdResourceManager* resourceManager;          // Pointer to injected resource manager.
 
+			// Destructor
+			virtual ~OdComponent() = default;			// Default destructor
+
 			// Virtual Functions
-			virtual void const onFrame(NVGcontext* aContext) = 0;
+			virtual void onFrame(NVGcontext* aContext) = 0;
 
 			// Setters
 			void setLocation(int aX, int aY);
-			void setText(std::string s);
+			void setText(std::string aText);
 
 			// Getters
 			std::string getText();
@@ -92,8 +96,8 @@ namespace OD
 
 			// Drawing
 			void drawChildComponents(NVGcontext* aContext);
-			void setNoOverflow(NVGcontext* aContext);
-			void allowOverflow(NVGcontext* aContext);
+			void disableOverflow(NVGcontext* aContext);
+			void enableOverflow(NVGcontext* aContext);
 		};
 
 	} // namespace Graphics

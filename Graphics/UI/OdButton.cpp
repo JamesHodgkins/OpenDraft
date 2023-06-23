@@ -21,7 +21,7 @@ namespace OD
 {
 	namespace Graphics
 	{
-		OdButton::OdButton(int aX, int aY, int aWidth, int aHeight, std::string aText)
+		OdButton::OdButton(const int aX, const int aY, const int aWidth, const int aHeight, const std::string aText)
 		{
 			location.x = aX;
 			location.y = aY;
@@ -41,6 +41,7 @@ namespace OD
 			backgroundImage = nullptr;
 
 			text = aText;
+			fontSize = 14;
 		}
 
 		void OdButton::setBackgroundImage(OdImage* aImage)
@@ -56,10 +57,10 @@ namespace OD
 		void OdButton::DrawButtonState(NVGcontext* aContext, float x, float y, const OdColour& backColour, const OdColour& foreColor)
 		{
 			OdDraw::Rect(aContext, x, y, size.x, size.y, backColour);
-			OdDraw::Text(aContext, x, y, size.x, size.y, 14.0f, foreColor, text.c_str());
+			OdDraw::Text(aContext, x, y, size.x, size.y, fontSize, foreColor, text.c_str());
 		}
 
-		void const OdButton::onFrame(NVGcontext* aContext)
+		void OdButton::onFrame(NVGcontext* aContext)
 		{
 			if (!enabled)
 				return;

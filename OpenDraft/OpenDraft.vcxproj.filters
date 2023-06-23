@@ -47,6 +47,15 @@
     <ClCompile Include="..\Graphics\OdDraw.cpp">
       <Filter>Graphics</Filter>
     </ClCompile>
+    <ClCompile Include="..\Graphics\UI\OdTabView.cpp">
+      <Filter>Graphics\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Graphics\UI\OdLabel.cpp">
+      <Filter>Graphics\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Graphics\UI\OdPanel.cpp">
+      <Filter>Graphics\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\System\Entities\OdSyEntity.h">
@@ -101,6 +110,9 @@
       <Filter>System</Filter>
     </ClInclude>
     <ClInclude Include="..\Graphics\UI\OdPanel.h">
+      <Filter>Graphics\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Graphics\UI\OdTabView.h">
       <Filter>Graphics\UI</Filter>
     </ClInclude>
   </ItemGroup>
