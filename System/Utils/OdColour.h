@@ -45,19 +45,19 @@ namespace OD
 
 			// Getters and setters
 			int getRed() const { return r; }
-			float getRedNorm() const { return r/255.; }
+			float getRedNorm() const { return static_cast<float>(r)/255.f; }
 			void setRed(int aRed) { r = aRed; }
 
 			int getGreen() const { return g; }
-			float getGreenNorm() const { return g / 255.; }
+			float getGreenNorm() const { return static_cast<float>(g)/255.f; }
 			void setGreen(int aGreen) { g = aGreen; }
 
 			int getBlue() const { return b; }
-			float getBlueNorm() const { return b / 255.; }
+			float getBlueNorm() const { return static_cast<float>(b)/255.f; }
 			void setBlue(int aBlue) { b = aBlue; }
 
 			int getAlpha() const { return a; }
-			float getAlphaNorm() const { return a / 255.; }
+			float getAlphaNorm() const { return static_cast<float>(a)/255.f; }
 			void setAlpha(int aAlpha) { a = aAlpha; }
 
 			void setRGB(int aRed, int aGreen, int aBlue)

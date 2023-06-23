@@ -54,10 +54,10 @@ namespace OD
 			backgroundImage = nullptr;
 		}
 
-		void OdButton::DrawButtonState(NVGcontext* aContext, float x, float y, const OdColour& backColour, const OdColour& foreColor)
+		void OdButton::DrawButtonState(NVGcontext* aContext, const int x, const int y, const OdColour& backColour, const OdColour& foreColor)
 		{
-			OdDraw::Rect(aContext, x, y, size.x, size.y, backColour);
-			OdDraw::Text(aContext, x, y, size.x, size.y, fontSize, foreColor, text.c_str());
+			OdDraw::Rect(aContext, x, y, (int)size.x, (int)size.y, backColour);
+			OdDraw::Text(aContext, x, y, (int)size.x, (int)size.y, (float)fontSize, foreColor, text.c_str());
 		}
 
 		void OdButton::onFrame(NVGcontext* aContext)
@@ -70,8 +70,8 @@ namespace OD
 
 
 			// Calculate draw location
-			int x = getRelativeLocation().x;
-			int y = getRelativeLocation().y;
+			int x = (int)getRelativeLocation().x;
+			int y = (int)getRelativeLocation().y;
 
 
 			// Draw button state
@@ -87,10 +87,10 @@ namespace OD
 
 			// Draw background image if set
 			if (backgroundImage != nullptr)
-				OdDraw::ResourceImage(aContext, x, y, size.x, size.y, backgroundImage);
+				OdDraw::ResourceImage(aContext, x, y, (int)size.x, (int)size.y, backgroundImage);
 
 
-			OdDraw::RectStroke(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, stroke);
+			OdDraw::RectStroke(aContext, x, y, (int)size.x, (int)size.y, stroke);
 
 		}
 

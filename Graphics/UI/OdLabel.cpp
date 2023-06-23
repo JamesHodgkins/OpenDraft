@@ -55,8 +55,13 @@ namespace OD
 				//
 				// Begin drawing Label
 				//
-				OdDraw::Rect(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, backColour);
-				OdDraw::Text(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, 14.0f, foreColour, text.c_str());
+				int x = static_cast<int>(getRelativeLocation().x);
+				int y = static_cast<int>(getRelativeLocation().y);
+				int sizeX = static_cast<int>(size.x);
+				int sizeY = static_cast<int>(size.y);
+
+				OdDraw::Rect(aContext, x, y, sizeX, sizeY, backColour);
+				OdDraw::Text(aContext, x, y, sizeX, sizeY, 14.0f, foreColour, text.c_str());
 
 			}
 

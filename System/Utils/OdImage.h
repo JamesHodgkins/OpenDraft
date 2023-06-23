@@ -25,7 +25,7 @@ namespace OD
 			const char* filePath;
 
 		public:
-			OdImage(int aWidth, int aHeight, int aAlpha, const char* aFilePath, int aId)
+			OdImage(int aWidth, int aHeight, float aAlpha, const char* aFilePath, int aId)
 				: width(aWidth), height(aHeight), alpha(aAlpha), filePath(aFilePath), id(aId) {}
 
 			// Getters
