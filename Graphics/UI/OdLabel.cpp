@@ -34,7 +34,7 @@ namespace OD
 				setLocation(aX, aY);
 				setSize(aWidth, aHeight);
 
-				backColour = OdColour(255, 0, 0, 255);
+				backColour = OdColour::CLEAR;
 				foreColour = OdColour(255, 255, 255, 200);
 
 				text = aText;

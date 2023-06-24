@@ -212,6 +212,7 @@ namespace OD
 				if (childComponents[i]->enabled)
 					return (OdTab*)childComponents[i];
 			}
+			return nullptr;
 		}
 		
 		OdTab* OdTabView::getTab(int aIndex)
