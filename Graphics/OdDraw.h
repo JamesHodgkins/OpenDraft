@@ -21,20 +21,17 @@
 
 using namespace OD::System;
 
-namespace OD
+namespace OD::Graphics
 {
-	namespace Graphics
+	class OdDraw
 	{
-		class OdDraw
-		{
-		public:
-			static void Rect(NVGcontext* aContext, int aX, int aY, int aWidth, int aHeight, OdColour aColour);
-			static void RectStroke(NVGcontext* aContext, int aX, int aY, int aWidth, int aHeight, OdColour aColour);
-			static void Text(NVGcontext* aContext, int aX, int aY, int aWidth, int aHeight, float aSize, OdColour aColour, const char* aText);
-			static void ResourceImage(NVGcontext* aContext, int aX, int aY, int aWidth, int aHeight, OdImage* aImage);
-			static void ResourceImage(NVGcontext* aContext, int aX, int aY, OdImage* aImage);
-		};
-	} // namespace Graphics
-} // namespace OD
+	public:
+		static void Rect(NVGcontext* aContext, float aX, float aY, float aWidth, float aHeight, OdColour aColour);
+		static void RectStroke(NVGcontext* aContext, float aX, float aY, float aWidth, float aHeight, OdColour aColour);
+		static void Text(NVGcontext* aContext, float aX, float aY, float aWidth, float aHeight, float aSize, OdColour aColour, const char* aText);
+		static void ResourceImage(NVGcontext* aContext, float aX, float aY, float aWidth, float aHeight, OdImage* aImage);
+		static void ResourceImage(NVGcontext* aContext, float aX, float aY, OdImage* aImage);
+	};
+} // namespace OD::Graphics
 
 #endif // OD_GR_DRAW_H

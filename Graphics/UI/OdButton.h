@@ -32,7 +32,7 @@ namespace OD
 			OdColour backColourActive;
 			OdColour foreColourActive;
 			OdImage* backgroundImage;
-			int fontSize;
+			float fontSize;
 
 		public:
 
@@ -72,7 +72,7 @@ namespace OD
 			 * \param backColour The background colour of the button.
 			 * \param foreColor The foreground colour of the button.
 			 */
-			void DrawButtonState(NVGcontext* aContext, const int x, const int y, const OdColour& backColour, const OdColour& foreColor);
+			void DrawButtonState(NVGcontext* aContext, const float x, const float y, const OdColour& backColour, const OdColour& foreColor);
 
 			/**
 			 * \brief Renders a default OD-GUI Button to a given NanoVG context (NVGContext) with the specified attributes.

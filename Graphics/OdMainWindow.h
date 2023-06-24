@@ -95,10 +95,21 @@ namespace OD
 				addChildControl(tabV);
 
 				tabV->addTab("Tab 1");
-				tabV->addTab("Tab 1");
-				tabV->addTab("Tab 1");
-				tabV->addTab("Tab 1");
+				tabV->addTab("Tab 2");
+				tabV->addTab("Tab 3");
+				tabV->addTab("Tab 4");
 
+				OdTab* t1 = tabV->getTab(0);
+				OdTab* t2 = tabV->getTab(1);
+				OdTab* t3 = tabV->getTab(2);
+				OdTab* t4 = tabV->getTab(3);
+
+				OdLabel* lb1 = new OdLabel(10, 10, 100, 20, "Hello World");
+
+				t1->addPanelChildControl(lb1);
+
+				// Set tab 1 as active
+				tabV->setActiveTab(0);
 			}
 
 
@@ -112,9 +123,13 @@ namespace OD
 					1.0f);
 				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-				glViewport(0, 0, size.x, size.y);
+				// Cast window size
+				float w = static_cast<float>(size.x);
+				float h = static_cast<float>(size.y);
 
-				nvgBeginFrame(context, size.x, size.y, 1);
+				glViewport(0, 0, w, h);
+
+				nvgBeginFrame(context, w, h, 1);
 
 
 

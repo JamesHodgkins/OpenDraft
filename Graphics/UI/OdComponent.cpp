@@ -18,192 +18,255 @@
 #include "Graphics/UI/OdComponent.h"
 
 
-namespace OD
+namespace OD::Graphics
 {
-	namespace Graphics
+	//
+	//	Getters and Setters
+	//
+
+	void OdComponent::setLocation(int aX, int aY)
 	{
-		//
-		//	Getters and Setters
-		//
+		location.x = static_cast<double>(aX);
+		location.y = static_cast<double>(aY);
+	}
 
-		void OdComponent::setLocation(int aX, int aY)
-		{
-			location.x = aX;
-			location.y = aY;
-		}
+	void OdComponent::setLocation(double aX, double aY)
+	{
+		location.x = aX;
+		location.y = aY;
+	}
 
-		void OdComponent::setText(std::string aText)
-		{
-			text = aText;
-		}
+	void OdComponent::setLocation(OdPoint<float> aPoint)
+	{
+		location.x = aPoint.x;
+		location.y = aPoint.y;
+	}
 
-		OdPoint OdComponent::getLocation() const
-		{
+	void OdComponent::setText(std::string aText)
+	{
+		text = aText;
+	}
+
+	void OdComponent::setSize(int aWidth, int aHeight)
+	{
+		size.x = static_cast<float>(aWidth);
+		size.y = static_cast<float>(aHeight);
+	}
+
+	void OdComponent::setSize(double aWidth, double aHeight)
+	{
+		size.x = static_cast<float>(aWidth);
+		size.y = static_cast<float>(aHeight);
+	}
+		
+	void OdComponent::setSize(OdPoint<float> aSize)
+	{
+		size.x = aSize.x;
+		size.y = aSize.y;
+	}
+
+	void OdComponent::setWidth(int aWidth)
+	{
+		size.x = static_cast<float>(aWidth);
+	}
+
+	void OdComponent::setHeight(int aHeight)
+	{
+		size.y = static_cast<float>(aHeight);
+	}
+
+	OdPoint<float> OdComponent::OdComponent::getLocation() const
+	{
+		return location;
+	}
+
+	int OdComponent::getLocationX() const
+	{
+		return static_cast<int>(location.x);
+	}
+
+	int OdComponent::getLocationY() const
+	{
+		return static_cast<int>(location.y);
+	}
+
+	std::string OdComponent::getText()
+	{
+		return text;
+	}
+
+	OdPoint<float> OdComponent::getRelativeLocation() const
+	{
+		if (parent != nullptr)
+			return {
+				parent->getRelativeLocation().x + location.x,
+				parent->getRelativeLocation().y + location.y
+		};
+		else
 			return location;
-		}
+	}
 
-		std::string OdComponent::getText()
+	OdPoint<float> OdComponent::getSize() const
+	{
+		return size;
+	}
+
+	int OdComponent::getWidth() const
+	{
+		return static_cast<int>(size.x);
+	}
+
+	int OdComponent::getHeight() const
+	{
+		return static_cast<int>(size.y);
+	}
+
+
+
+	//
+	// Mouse Events
+	//
+
+	bool OdComponent::isMouseOver() const
+	{
+		return mouseOver;
+	}
+
+	bool OdComponent::isMouseEnter() const
+	{
+		return mouseEnter;
+	}
+
+	bool OdComponent::isMouseLeave() const
+	{
+		return mouseLeave;
+	}
+
+	bool OdComponent::isMouseDown() const
+	{
+		return mouseDown;
+	}
+
+
+
+	//
+	// Child Component Management
+	//
+
+	void OdComponent::addChildControl(OdComponent* aChild)
+	{
+		// Check if the component already has a parent
+		if (aChild->parent != nullptr)
 		{
-			return text;
-		}
-
-		OdPoint OdComponent::getRelativeLocation() const
-		{
-			if (parent != nullptr)
-				return {
-					parent->getRelativeLocation().x + location.x,
-					parent->getRelativeLocation().y + location.y
-			};
-			else
-				return location;
-		}
-
-		OdPoint OdComponent::getSize() const
-		{
-			return size;
-		}
-
-
-
-		//
-		// Mouse Events
-		//
-
-		bool OdComponent::isMouseOver() const
-		{
-			return mouseOver;
-		}
-
-		bool OdComponent::isMouseEnter() const
-		{
-			return mouseEnter;
-		}
-
-		bool OdComponent::isMouseLeave() const
-		{
-			return mouseLeave;
-		}
-
-		bool OdComponent::isMouseDown() const
-		{
-			return mouseDown;
-		}
-
-
-
-		//
-		// Child Component Management
-		//
-
-		void OdComponent::addChildControl(OdComponent* aChild)
-		{
-			// Check if the component already has a parent
-			if (aChild->parent != nullptr)
+			// Remove child from the parent
+			for (int i = 0; i < aChild->parent->childComponents.size(); i++)
 			{
-				// Remove child from the parent
-				for (int i = 0; i < aChild->parent->childComponents.size(); i++)
+				if (aChild->parent->childComponents[i] == aChild)
 				{
-					if (aChild->parent->childComponents[i] == aChild)
-					{
-						aChild->parent->childComponents.erase(aChild->parent->childComponents.begin() + i);
-						break;
-					}
+					aChild->parent->childComponents.erase(aChild->parent->childComponents.begin() + i);
+					break;
 				}
 			}
+		}
 
-			// Set the parent of the child to this component
-			aChild->parent = this;
-			childComponents.push_back(aChild);
+		// Set the parent of the child to this component
+		aChild->parent = this;
+		childComponents.push_back(aChild);
+	}
+
+
+
+
+	//
+	// Event Handling
+	//
+
+	void OdComponent::processEvents(GrInputMap* aInput)
+	{
+		// Get mouse position from input
+		int mousePosX = static_cast<int>(aInput->mouse.position.x);
+		int mousePosY = static_cast<int>(aInput->mouse.position.y);
+
+		// Calculate object boundaries
+		int objectLeft   = static_cast<int>(getRelativeLocation().x);
+		int objectRight  = static_cast<int>(location.x + size.x);
+		int objectTop    = static_cast<int>(getRelativeLocation().y);
+		int objectBottom = static_cast<int>(location.y + size.y);
+
+		// Check if mouse is within object boundaries
+		if (mousePosX >= objectLeft && mousePosX <= objectRight && mousePosY >= objectTop && mousePosY <= objectBottom)
+		{
+			// Mouse is over the object
+			mouseOver = true;
+
+			// Check if mouse entered the object
+			if (!mouseEnter)
+				mouseEnter = true;
+
+		}
+		else
+		{
+			// Mouse is not over the object
+			mouseOver = false;
+
+			// Check if mouse left the object
+			if (mouseEnter)
+			{
+				mouseEnter = false;
+				// Handle mouse leave event
+			}
 		}
 
 
+		if (mouseOver && aInput->mouse.leftButton.isPressed())
+			mouseDown = true;
+
+		if (!aInput->mouse.leftButton.isDown())
+			mouseDown = false;
+
+		// Process child components
+		for (OdComponent* control : childComponents)
+			control->processEvents(aInput);
+	}
 
 
-		//
-		// Event Handling
-		//
+	//
+	// Drawing
+	//
 
-		void OdComponent::processEvents(GrInputMap* aInput)
-		{
-			// Get mouse position from input
-			int mousePosX = aInput->mouse.position.x;
-			int mousePosY = aInput->mouse.position.y;
+	// Draw child components
+	void OdComponent::drawChildComponents(NVGcontext* aContext)
+	{
+		// Update child UI components
+		for (OdComponent* control : childComponents) {
 
-			// Calculate object boundaries
-			int objectLeft = getRelativeLocation().x;
-			int objectRight = location.x + size.x;
-			int objectTop = getRelativeLocation().y;
-			int objectBottom = location.y + size.y;
-
-			// Check if mouse is within object boundaries
-			if (mousePosX >= objectLeft && mousePosX <= objectRight && mousePosY >= objectTop && mousePosY <= objectBottom)
-			{
-				// Mouse is over the object
-				mouseOver = true;
-
-				// Check if mouse entered the object
-				if (!mouseEnter)
-					mouseEnter = true;
-
-			}
-			else
-			{
-				// Mouse is not over the object
-				mouseOver = false;
-
-				// Check if mouse left the object
-				if (mouseEnter)
-				{
-					mouseEnter = false;
-					// Handle mouse leave event
-				}
-			}
-
-
-			if (mouseOver && aInput->mouse.leftButton.isPressed())
-				mouseDown = true;
-
-			if (!aInput->mouse.leftButton.isDown())
-				mouseDown = false;
-
-			// Process child components
-			for (OdComponent* control : childComponents)
-				control->processEvents(aInput);
-		}
-
-
-		//
-		// Drawing
-		//
-
-		// Draw child components
-		void OdComponent::drawChildComponents(NVGcontext* aContext)
-		{
-			// Update child UI components
-			for (OdComponent* control : childComponents) {
-
-				// Check for overflow restriction
-				if (!overflow)
-					disableOverflow(aContext);
+			// Check for overflow restriction
+			if (!overflow)
+				disableOverflow(aContext);
 				
-				control->onFrame(aContext);
-			}
+			control->onFrame(aContext);
 		}
+	}
 
-		// Function to restrict the drawing of the component to within its boundaries
-		void OdComponent::disableOverflow(NVGcontext* aContext)
-		{
-			nvgScissor(aContext, location.x, location.y, size.x, size.y);
-		}
+	// Function to restrict the drawing of the component to within its boundaries
+	void OdComponent::disableOverflow(NVGcontext* aContext)
+	{
+		// Static cast int properties to float
+		float x = location.x;
+		float y = location.y;
+		float w = size.x;
+		float h = size.y;
 
-		// Clear restrictions on drawing to allow drawing outside of the component boundaries
-		void OdComponent::enableOverflow(NVGcontext* aContext)
-		{
-			nvgResetScissor(aContext);
-		}
+		nvgScissor(aContext, x, y, w, h);
+	}
 
-	} // namespace Graphics
-} // namespace OD
+	// Clear restrictions on drawing to allow drawing outside of the component boundaries
+	void OdComponent::enableOverflow(NVGcontext* aContext)
+	{
+		nvgResetScissor(aContext);
+	}
+
+} // namespace OD::Graphics
 
 
 #endif // OD_GR_UI_COMPONENT_CPP

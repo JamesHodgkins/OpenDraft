@@ -31,10 +31,8 @@ namespace OD
 			 */
 			OdLabel::OdLabel(int aX, int aY, int aWidth, int aHeight, std::string aText)
 			{
-				location.x = aX;
-				location.y = aY;
-				size.x = aWidth;
-				size.y = aHeight;
+				setLocation(aX, aY);
+				setSize(aWidth, aHeight);
 
 				backColour = OdColour(255, 0, 0, 255);
 				foreColour = OdColour(255, 255, 255, 200);
@@ -55,13 +53,13 @@ namespace OD
 				//
 				// Begin drawing Label
 				//
-				int x = static_cast<int>(getRelativeLocation().x);
-				int y = static_cast<int>(getRelativeLocation().y);
-				int sizeX = static_cast<int>(size.x);
-				int sizeY = static_cast<int>(size.y);
+				float x = getRelativeLocation().x;
+				float y = getRelativeLocation().y;
+				float w = size.x;
+				float h = size.y;
 
-				OdDraw::Rect(aContext, x, y, sizeX, sizeY, backColour);
-				OdDraw::Text(aContext, x, y, sizeX, sizeY, 14.0f, foreColour, text.c_str());
+				OdDraw::Rect(aContext, x, y, w, h, backColour);
+				OdDraw::Text(aContext, x, y, w, h, 14.0f, foreColour, text.c_str());
 
 			}
 

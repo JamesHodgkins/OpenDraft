@@ -20,6 +20,7 @@
 #include "Graphics/UI/OdComponent.h"
 #include "Graphics/OdDraw.h"
 #include "Graphics/UI/OdButton.h"
+#include "Graphics/UI/OdPanel.h"
 
 
 namespace OD
@@ -33,11 +34,14 @@ namespace OD
 
 		public:
 			OdButton* button;
+			OdPanel* panel;
+
 			OdTab(std::string aText);
 			~OdTab();
 
 			void setText(std::string aText);
 			void recalculateSize(NVGcontext* aContext);
+			void addPanelChildControl(OdComponent* aControl);
 			void onFrame(NVGcontext* aContext);
 			void setParent(OdComponent* aParent);
 
@@ -58,6 +62,8 @@ namespace OD
 			const int HEADER_FONT_SIZE = 12;
 			const int PADDING = 4;
 
+			int activeTab = 0;
+
 		public:
 
 			OdColour headerColour;
@@ -67,9 +73,13 @@ namespace OD
 
 			void onFrame(NVGcontext* aContext) override;
 
+			// Tab management
+			OdTab* getActiveTab();
+			OdTab* getTab(int aIndex);
 			int getIndexOfTab(OdTab* aTab);
 			void addTab(std::string aText);
 			void removeTab(int aIndex);
+			void setActiveTab(int aIndex);
 
 			// Set OdTab class as a friend so it can access protected members
 			friend class OdTab;

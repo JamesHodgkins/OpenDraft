@@ -17,84 +17,85 @@
 
 #include "Graphics/UI/OdButton.h"
 
-namespace OD
+namespace OD::Graphics
 {
-	namespace Graphics
+	OdButton::OdButton(const int aX, const int aY, const int aWidth, const int aHeight, const std::string aText)
 	{
-		OdButton::OdButton(const int aX, const int aY, const int aWidth, const int aHeight, const std::string aText)
-		{
-			location.x = aX;
-			location.y = aY;
-			size.x = aWidth;
-			size.y = aHeight;
+		location.x = aX;
+		location.y = aY;
+		size.x = aWidth;
+		size.y = aHeight;
 
-			backColour = OdColour::BACKGROUND1;
-			backColourHover = OdColour::BACKGROUND2;
-			backColourActive = OdColour::BACKGROUND2;
+		backColour = OdColour::BACKGROUND1;
+		backColourHover = OdColour::BACKGROUND2;
+		backColourActive = OdColour::BACKGROUND2;
 
-			foreColour = OdColour::WHITE;
-			foreColourHover = OdColour::WHITE;
-			foreColourActive = OdColour::PRIMARY;
+		foreColour = OdColour::WHITE;
+		foreColourHover = OdColour::WHITE;
+		foreColourActive = OdColour::PRIMARY;
 
-			stroke = OdColour(0, 0, 0, 0);
+		stroke = OdColour(0, 0, 0, 0);
 
-			backgroundImage = nullptr;
+		backgroundImage = nullptr;
 
-			text = aText;
-			fontSize = 14;
-		}
+		text = aText;
+		fontSize = 14;
+	}
 
-		void OdButton::setBackgroundImage(OdImage* aImage)
-		{
-			backgroundImage = aImage;
-		}
+	void OdButton::setBackgroundImage(OdImage* aImage)
+	{
+		backgroundImage = aImage;
+	}
 
-		void OdButton::clearBackgroundImage()
-		{
-			backgroundImage = nullptr;
-		}
+	void OdButton::clearBackgroundImage()
+	{
+		backgroundImage = nullptr;
+	}
 
-		void OdButton::DrawButtonState(NVGcontext* aContext, const int x, const int y, const OdColour& backColour, const OdColour& foreColor)
-		{
-			OdDraw::Rect(aContext, x, y, (int)size.x, (int)size.y, backColour);
-			OdDraw::Text(aContext, x, y, (int)size.x, (int)size.y, (float)fontSize, foreColor, text.c_str());
-		}
+	void OdButton::DrawButtonState(NVGcontext* aContext, const float x, const float y, const OdColour& backColour, const OdColour& foreColor)
+	{
+		// Static cast parameters to int
+		int w = static_cast<int>(size.x);
+		int h = static_cast<int>(size.y);
 
-		void OdButton::onFrame(NVGcontext* aContext)
-		{
-			if (!enabled)
-				return;
+		OdDraw::Rect(aContext, x, y, w, h, backColour);
+		OdDraw::Text(aContext, x, y, w, h, fontSize, foreColor, text.c_str());
+	}
 
-			if (aContext == nullptr)
-				return;
+	void OdButton::onFrame(NVGcontext* aContext)
+	{
+		if (!enabled)
+			return;
 
-
-			// Calculate draw location
-			int x = (int)getRelativeLocation().x;
-			int y = (int)getRelativeLocation().y;
+		if (aContext == nullptr)
+			return;
 
 
-			// Draw button state
-			if (mouseDown)
-				DrawButtonState(aContext, x, y, backColourActive, foreColourActive);
-
-			else if (mouseOver)
-				DrawButtonState(aContext, x, y - 1, backColourHover, foreColourHover);
-
-			else
-				DrawButtonState(aContext, x, y, backColour, foreColour);
+		// Calculate draw location
+		int x = static_cast<int>(getRelativeLocation().x);
+		int y = static_cast<int>(getRelativeLocation().y);
 
 
-			// Draw background image if set
-			if (backgroundImage != nullptr)
-				OdDraw::ResourceImage(aContext, x, y, (int)size.x, (int)size.y, backgroundImage);
+		// Draw button state
+		if (mouseDown)
+			DrawButtonState(aContext, x, y, backColourActive, foreColourActive);
+
+		else if (mouseOver)
+			DrawButtonState(aContext, x, y - 1, backColourHover, foreColourHover);
+
+		else
+			DrawButtonState(aContext, x, y, backColour, foreColour);
 
 
-			OdDraw::RectStroke(aContext, x, y, (int)size.x, (int)size.y, stroke);
+		// Draw background image if set
+		if (backgroundImage != nullptr)
+			OdDraw::ResourceImage(aContext, x, y, (int)size.x, (int)size.y, backgroundImage);
 
-		}
 
-	} // namespace Graphics
-} // namespace OpenDraft
+		OdDraw::RectStroke(aContext, x, y, (int)size.x, (int)size.y, stroke);
+
+	}
+
+} // namespace OD::Graphics
 
 #endif // OD_GR_UI_BUTTON_CPP

@@ -21,17 +21,18 @@ namespace OD
 		// Image class
 		class OdImage {
 		private:
-			int width, height, alpha, id;
+			int width, height, id;
+			double alpha;
 			const char* filePath;
 
 		public:
 			OdImage(int aWidth, int aHeight, float aAlpha, const char* aFilePath, int aId)
-				: width(aWidth), height(aHeight), alpha(aAlpha), filePath(aFilePath), id(aId) {}
+				: width(aWidth), height(aHeight), alpha(static_cast<double>(aAlpha)), filePath(aFilePath), id(aId) {}
 
 			// Getters
 			int getWidth() const { return width; }
 			int getHeight() const { return height; }
-			int getAlpha() const { return alpha; }
+			double getAlpha() const { return alpha; }
 			const char* getFilePath() const { return filePath; }
 			int getId() const { return id; }
 		};

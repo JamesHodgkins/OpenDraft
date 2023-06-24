@@ -46,8 +46,7 @@ namespace OD
 			{
 				int width = 0, height = 0;
 				glfwGetWindowSize(glfwHandle, &width, &height);
-				size.x = width;
-				size.y = height;		
+				setSize(width, height);
 			}
 
 			// Load required resources
@@ -61,7 +60,7 @@ namespace OD
 			// Constructor
 			OdWindow(int aWidth, int aHeight, const char* aTitle)
 			{
-				size = OdPoint(aWidth, aHeight);
+				setSize(aWidth, aHeight);
 				input = GrInputMap();
 				text = aTitle;
 
@@ -69,8 +68,12 @@ namespace OD
 				if (!glfwInit())
 					return;
 
+				// Static cast parameters to float
+				int w = static_cast<int>(aWidth);
+				int h = static_cast<int>(aHeight);
+
 				// Create window with graphics context
-				glfwHandle = glfwCreateWindow(size.x, size.y, aTitle, nullptr, nullptr);
+				glfwHandle = glfwCreateWindow(w, h, aTitle, nullptr, nullptr);
 				if (glfwHandle == nullptr)
 					return;
 
@@ -104,8 +107,8 @@ namespace OD
 				OdWindow* windowInstance = static_cast<OdWindow*>(glfwGetWindowUserPointer(aWindow));
 				if (windowInstance) {
 					// Access the instance and store the mouse position
-					windowInstance->input.mouse.position.x = aPositionX;
-					windowInstance->input.mouse.position.y = aPositionY;
+					windowInstance->input.mouse.position.x = static_cast<int>(aPositionX);
+					windowInstance->input.mouse.position.y = static_cast<int>(aPositionY);
 				}
 			}
 
@@ -172,12 +175,14 @@ namespace OD
 				}
 			}
 
-			// Set size (todo: set override when base equivalent is implemented)
+			// Set the window size
 			void setSize(int aWidth, int aHeight)
 			{
 				size.x = aWidth;
 				size.y = aHeight;
-				glfwSetWindowSize(glfwHandle, aWidth, aHeight);
+				
+				if (glfwHandle)
+					glfwSetWindowSize(glfwHandle, aWidth, aHeight);
 			}
 
 			// Check if the window is still running
@@ -198,9 +203,9 @@ namespace OD
 				return context;
 			}
 
-			OdPoint getRelativeLocation()
+			OdPoint<float> getRelativeLocation()
 			{
-				return OdPoint(0, 0);
+				return OdPoint<float>(0, 0);
 			}
 
 			// Close the window and clean up resources

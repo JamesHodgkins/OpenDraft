@@ -19,18 +19,18 @@ namespace OD
 	namespace System
 	{
 		// Point class
+		template<typename T>
 		class OdPoint {
 		private:
 
 		public:
-			double x, y;
+			T x, y;
 
 			// Default constructor
-			OdPoint() : x(0.0), y(0.0) {}
+			OdPoint() : x(0), y(0) {}
 
 			// Custom constructor
-			OdPoint(double aX, double aY) : x(aX), y(aY) {}
-			OdPoint(int aX, int aY) : x(aX), y(aY) {}
+			OdPoint(T aX, T aY) : x(aX), y(aY) {}
 		};
 
 	} // namespace System

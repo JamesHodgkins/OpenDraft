@@ -70,20 +70,22 @@ namespace OD
 			if (aContext == nullptr)
 				return;
 
+			// Static cast properties
+			float x = getRelativeLocation().x;
+			float y = getRelativeLocation().y;
+			float w = size.x;
+			float h = size.y;
+
+
 			//
 			// Begin drawing Panel
 			//
-			OdDraw::Rect(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, backColour);
-
-
+			OdDraw::Rect(aContext, x, y, w, h, backColour);
 
 			if (backgroundImage != nullptr)
-			{
-				OdDraw::ResourceImage(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, backgroundImage);
-			}
+				OdDraw::ResourceImage(aContext, x, y, w, h, backgroundImage);
 
-
-			OdDraw::RectStroke(aContext, getRelativeLocation().x, getRelativeLocation().y, size.x, size.y, stroke);
+			OdDraw::RectStroke(aContext, x, y, w, h, stroke);
 
 
 			// Draw child UI components
