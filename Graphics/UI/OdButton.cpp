@@ -81,7 +81,7 @@ namespace OD::Graphics
 			DrawButtonState(aContext, x, y, backColourActive, foreColourActive);
 
 		else if (mouseOver)
-			DrawButtonState(aContext, x, y - 1, backColourHover, foreColourHover);
+			DrawButtonState(aContext, x, y, backColourHover, foreColourHover);
 
 		else
 			DrawButtonState(aContext, x, y, backColour, foreColour);

@@ -94,10 +94,10 @@ namespace OD
 				OdTabView* tabV = new OdTabView(0, 0, 1280, 100);
 				addChildControl(tabV);
 
-				tabV->addTab("Tab 1");
-				tabV->addTab("Tab 2");
-				tabV->addTab("Tab 3");
-				tabV->addTab("Tab 4");
+				tabV->addTab("Home");
+				tabV->addTab("Modify");
+				tabV->addTab("View");
+				tabV->addTab("Help");
 
 				OdTab* t1 = tabV->getTab(0);
 				OdTab* t2 = tabV->getTab(1);

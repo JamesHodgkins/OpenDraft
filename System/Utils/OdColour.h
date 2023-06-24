@@ -30,11 +30,33 @@ namespace OD
 
 		public:
 
+			// Theme colours
 			const static OdColour BACKGROUND1;
 			const static OdColour BACKGROUND2;
 			const static OdColour PRIMARY;
 			const static OdColour CLEAR;
 			const static OdColour WHITE;
+
+			// Standard colours
+			const static OdColour BLACK;
+			const static OdColour BLUE;
+			const static OdColour BROWN;
+			const static OdColour CYAN;
+			const static OdColour DARK_GREY;
+			const static OdColour GREEN;
+			const static OdColour GREY;
+			const static OdColour LIGHT_GREY;
+			const static OdColour LIME;
+			const static OdColour MAGENTA;
+			const static OdColour MAROON;
+			const static OdColour NAVY;
+			const static OdColour OLIVE;
+			const static OdColour ORANGE;
+			const static OdColour PINK;
+			const static OdColour PURPLE;
+			const static OdColour RED;
+			const static OdColour TEAL;
+			const static OdColour YELLOW;
 	
 
 			// Default constructor

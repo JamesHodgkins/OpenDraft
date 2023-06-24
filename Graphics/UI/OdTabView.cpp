@@ -98,12 +98,13 @@ namespace OD
 			parent = aParent;
 
 			// Inherit properties from parent OdTabView
-			button->setHeight( ((OdTabView*)parent)->HEADER_HEIGHT - 4);
+			button->setHeight( ((OdTabView*)parent)->HEADER_HEIGHT);
 			button->setFontSize( ((OdTabView*)parent)->HEADER_FONT_SIZE );
 
 			// Set panel location
 			panel->setLocation(0, ((OdTabView*)parent)->HEADER_HEIGHT);
 			panel->setSize(parent->getWidth(), parent->getHeight() - ((OdTabView*)parent)->HEADER_HEIGHT);
+			panel->backColour = OdColour::BACKGROUND2;
 		}
 
 
@@ -166,7 +167,7 @@ namespace OD
 			float h = getHeight();
 
 			// Drawing window
-			OdDraw::Rect(aContext, x, y, w, h, OdColour::BACKGROUND2);
+			OdDraw::Rect(aContext, x, y, w, h, OdColour::PRIMARY);
 			
 			OdDraw::RectStroke(aContext, x, y, w, h, stroke);
 
@@ -189,7 +190,7 @@ namespace OD
 				 
 				// Update offset
 				OdTab* tab = (OdTab*)childComponents[i];
-				tab->button->setLocation(offset + 4, 3);
+				tab->button->setLocation(offset + 4, 0);
 				
 				// Draw tab
 				tab->onFrame(aContext);
@@ -273,13 +274,26 @@ namespace OD
 				return;
 			}
 
+			activeTab = aIndex;
+
 			// Set tab to active
 			for (int i = 0; i < childComponents.size(); i++)
 			{
+				// Get child as OdTab
+				OdTab* tab = (OdTab*)childComponents[i];
+
 				if (i == aIndex)
-					childComponents[i]->enabled = true;
+				{
+					tab->enabled = true;
+					tab->button->backColour = OdColour::BACKGROUND2;
+					tab->button->foreColour = OdColour::PRIMARY;
+				}
 				else
-					childComponents[i]->enabled = false;
+				{
+					tab->enabled = false;
+					tab->button->backColour = OdColour::BACKGROUND1;
+					tab->button->foreColour = OdColour::WHITE;
+				}
 			}
 		}
 		
