@@ -154,7 +154,7 @@ namespace OD
 			{
 				if (OdTab* tab = dynamic_cast<OdTab*>(component))
 				{
-					if (tab->button->isMouseDown())
+					if (tab->button->wasMousePressed())
 						setActiveTab(getIndexOfTab(tab));
 				}
 			}

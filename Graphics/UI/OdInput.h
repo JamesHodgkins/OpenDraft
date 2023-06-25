@@ -36,14 +36,20 @@ namespace OD
 
 			void changeState(bool aState)
 			{
+				if (!aState && !down)
+					released = false;
+
 				pressed = (!down && aState);
 				released = (down && !aState);
 				down = aState;
+
+				if (released)
+					std::cout << "released" << std::endl;
 			}
 
 			bool isDown() const { return down; }
-			bool isPressed() const { return pressed; }
-			bool isReleased() const { return released; }
+			bool isPressDown() const { return pressed; }
+			bool isPressUp() const { return released; }
 		};
 
 

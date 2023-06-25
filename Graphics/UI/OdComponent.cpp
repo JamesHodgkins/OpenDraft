@@ -144,10 +144,58 @@ namespace OD::Graphics
 
 	bool OdComponent::isMouseDown() const
 	{
-		return mouseDown;
+		return mousePressDown;
 	}
 
+	bool OdComponent::wasMousePressed() const
+	{
+		return mousePressUp;
+	}
 
+	//
+	// Anchor Management
+	//
+	bool OdComponent::isAnchorSet(OdAnchor::Direction direction) const
+	{
+		int index = static_cast<int>(direction);
+		return anchor[index].enabled;
+	}
+
+	void OdComponent::setAnchor(OdAnchor::Direction direction, bool aAnchor)
+	{
+		int index = static_cast<int>(direction);
+		anchor[index].enabled = aAnchor;
+
+		// If turning AnchorBottom on, get the current space between the bottom of the component and the bottom of the parent
+		if (aAnchor)
+			updateAnchor(direction);
+		
+	}
+
+	void OdComponent::updateAnchor(OdAnchor::Direction direction)
+	{
+		if (parent == nullptr)
+			return;
+
+		int index = static_cast<int>(direction);
+
+		// Update anchor offsets
+		// Top:
+		if (index == 0)
+			anchor[0].offset = location.y;
+
+		// Right:
+		else if (index == 1)
+			anchor[1].offset = parent->getWidth() - (location.x + size.x);
+		
+		// Bottom:
+		else if (index == 2)
+			anchor[2].offset = parent->getHeight() - (location.y + size.y);
+		
+		// Left:
+		else if (index == 3)
+			anchor[3].offset = location.x;
+	}
 
 	//
 	// Child Component Management
@@ -218,11 +266,19 @@ namespace OD::Graphics
 		}
 
 
-		if (mouseOver && aInput->mouse.leftButton.isPressed())
-			mouseDown = true;
+		if (mouseOver && aInput->mouse.leftButton.isPressDown())
+			mousePressDown = true;
 
+		// Check if mouse was pressed down
 		if (!aInput->mouse.leftButton.isDown())
-			mouseDown = false;
+			mousePressDown = false;
+
+		// Check if mouse was released
+		if (mouseOver && aInput->mouse.leftButton.isPressUp())
+			mousePressUp = true;
+		else
+			mousePressUp = false;
+
 
 		// Process child components
 		for (OdComponent* control : childComponents)

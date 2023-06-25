@@ -62,13 +62,19 @@ namespace OD
 
 				backColour.setRGB(31,39,48);
 
-				/*OdButton* btn1 = new OdButton(200, 110);
+
+				OdButton* btn1 = new OdButton(200, 110);
 				btn1->setText("Show");
 				addChildControl(btn1);
+				btn1->setAnchor(OdAnchor::Direction::Left, true);
+				//btn1->setAnchor(OdAnchor::Direction::Right, true);
+				btn1->backColour = OdColour::PRIMARY;
 
-				OdButton* btn2 = new OdButton(400, 110);
-				btn2->setText("Hide");
-				addChildControl(btn2);*/
+				//OdButton* btn2 = new OdButton(400, 210);
+				//btn2->setText("Hide");
+				//addChildControl(btn2);
+				//btn2->setAnchor(OdAnchor::Direction::Right, true);
+				//btn2->backColour = OdColour::PRIMARY;
 
 
 				// Start Ribbon Area
@@ -116,6 +122,13 @@ namespace OD
 			// Render the window and UI components
 			virtual void const onFrame(NVGcontext* NULLREF = nullptr, OdComponent* aParent = nullptr)
 			{
+				if (input.keys[GLFW_KEY_D].isPressUp())
+				{
+					std::cout << "D key released" << std::endl;
+				}
+
+				//std::cout << input.keys[GLFW_KEY_D].isDown() << std::endl;
+
 				glClearColor(
 					OdColour::BACKGROUND1.getRedNorm(),
 					OdColour::BACKGROUND1.getGreenNorm(),

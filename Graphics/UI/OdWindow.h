@@ -158,7 +158,8 @@ namespace OD
 			static void keyEventCallback(GLFWwindow* aWindow, int aKey, int aScancode, int aAction, int aMods)
 			{
 				OdWindow* windowInstance = static_cast<OdWindow*>(glfwGetWindowUserPointer(aWindow));
-				if (windowInstance) {
+				if (windowInstance)
+				{
 					GrInputMap* map = &windowInstance->input;
 
 					if (map->keys.find(aKey) == map->keys.end())
@@ -247,14 +248,30 @@ namespace OD
 
 				// Once the current input states are filtered through all the components
 				// reset the 'pressed'/'released' states to prevent double trigger
-				if (input.mouse.leftButton.isDown())
-					input.mouse.leftButton.changeState(true);
+				input.mouse.leftButton.changeState(input.mouse.leftButton.isDown());
+				input.mouse.middleButton.changeState(input.mouse.middleButton.isDown());
+				input.mouse.rightButton.changeState(input.mouse.rightButton.isDown());
 
-				if (input.mouse.middleButton.isDown())
-					input.mouse.middleButton.changeState(true);
+				
 
-				if (input.mouse.rightButton.isDown())
-					input.mouse.rightButton.changeState(true);
+				// Iterate over all objects in the map
+				for (auto& pair : input.keys) {
+					int key = pair.first;
+					
+					input.keys[key].changeState( input.keys[key].isDown() );
+
+					/*if (key == 68)
+						std::cout << "D [" << key << "] is " << input.keys[key].isDown() << "\n";
+
+					if (input.keys[key].isPressUp())
+						std::cout << "D is released" << std::endl;*/
+				}
+
+				if (input.keys[GLFW_KEY_D].isPressUp())
+					std::cout << "D is released" << std::endl;
+
+				
+				
 			}
 
 		};

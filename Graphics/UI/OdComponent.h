@@ -25,6 +25,22 @@ using namespace OD::System;
 
 namespace OD::Graphics
 {
+	struct OdAnchor
+	{
+		// Create enum for anchor direction
+		enum class Direction
+		{
+			Top = 0,
+			Right = 1,
+			Bottom = 2,
+			Left = 3
+		};
+		
+		bool enabled = false;
+		int offset = 0;
+	};
+
+
 	class OdComponent
 	{
 	protected:
@@ -32,8 +48,12 @@ namespace OD::Graphics
 		bool mouseOver = false;
 		bool mouseEnter = false;
 		bool mouseLeave = false;
-		bool mouseDown = false;
+		bool mousePressDown = false;
+		bool mousePressUp = false;
 
+		// Anchor array
+		OdAnchor anchor[4] = { OdAnchor(), OdAnchor(), OdAnchor(), OdAnchor() };
+		
 		// Parent-child relationship
 		OdComponent* parent;                        // Parent container control for the control.
 		std::vector<OdComponent*> childComponents;	// Child Components
@@ -98,6 +118,13 @@ namespace OD::Graphics
 		bool isMouseEnter() const;
 		bool isMouseLeave() const;
 		bool isMouseDown() const;
+		bool wasMousePressed() const;
+
+		// Anchor Events
+		bool isAnchorSet(OdAnchor::Direction direction) const;
+		void setAnchor(OdAnchor::Direction direction, bool aAnchor);
+		void updateAnchor(OdAnchor::Direction direction);
+
 
 		// Child Component Management
 		virtual void addChildControl(OdComponent* aChild);

@@ -14,26 +14,23 @@
 ***************************************************************************************/
 
 
-namespace OD
+namespace OD::System
 {
-	namespace System
-	{
-		// Point class
-		template<typename T>
-		class OdPoint {
-		private:
+	// Point class
+	template<typename T>
+	class OdPoint {
+	private:
 
-		public:
-			T x, y;
+	public:
+		T x, y;
 
-			// Default constructor
-			OdPoint() : x(0), y(0) {}
+		// Default constructor
+		OdPoint() : x(0), y(0) {}
 
-			// Custom constructor
-			OdPoint(T aX, T aY) : x(aX), y(aY) {}
-		};
+		// Custom constructor
+		OdPoint(T aX, T aY) : x(aX), y(aY) {}
+	};
 
-	} // namespace System
-} // namespace OD
+} // namespace OD::System
 
 #endif // OD_SY_POINT_H

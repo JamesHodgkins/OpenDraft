@@ -18,30 +18,26 @@
 #include <vector>
 
 
-namespace OD
+namespace OD::System
 {
-	namespace System
-	{
+	// Font class
+	class OdFont {
+	private:
+		const int id;
+		const char* name;
+		const char* filePath;
 
-		// Font class
-		class OdFont {
-		private:
-			const int id;
-			const char* name;
-			const char* filePath;
+	public:
+		// Default constructor
+		OdFont(const char* aName, const char* aFilePath, int aId) : name(aName), filePath(aFilePath), id(aId) {}
 
-		public:
-			// Default constructor
-			OdFont(const char* aName, const char* aFilePath, int aId) : name(aName), filePath(aFilePath), id(aId) {}
+		// Getters
+		const char* getName() const { return name; }
+		const char* getFilePath() const { return filePath; }
+		int getId() const { return id; }
+	};
 
-			// Getters
-			const char* getName() const { return name; }
-			const char* getFilePath() const { return filePath; }
-			int getId() const { return id; }
-		};
-
-	} // namespace System
-} // namespace OD
+} // namespace OD::System
 
 #endif // OD_SY_FONT_H
 

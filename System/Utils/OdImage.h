@@ -14,30 +14,27 @@
 ***************************************************************************************/
 
 
-namespace OD
+namespace OD::System
 {
-	namespace System
-	{
-		// Image class
-		class OdImage {
-		private:
-			int width, height, id;
-			double alpha;
-			const char* filePath;
+	// Image class
+	class OdImage {
+	private:
+		int width, height, id;
+		double alpha;
+		const char* filePath;
 
-		public:
-			OdImage(int aWidth, int aHeight, float aAlpha, const char* aFilePath, int aId)
-				: width(aWidth), height(aHeight), alpha(static_cast<double>(aAlpha)), filePath(aFilePath), id(aId) {}
+	public:
+		OdImage(int aWidth, int aHeight, float aAlpha, const char* aFilePath, int aId)
+			: width(aWidth), height(aHeight), alpha(static_cast<double>(aAlpha)), filePath(aFilePath), id(aId) {}
 
-			// Getters
-			int getWidth() const { return width; }
-			int getHeight() const { return height; }
-			double getAlpha() const { return alpha; }
-			const char* getFilePath() const { return filePath; }
-			int getId() const { return id; }
-		};
+		// Getters
+		int getWidth() const { return width; }
+		int getHeight() const { return height; }
+		double getAlpha() const { return alpha; }
+		const char* getFilePath() const { return filePath; }
+		int getId() const { return id; }
+	};
 
-	} // namespace System
-} // namespace OD
+} // namespace OD::System
 
 #endif // OD_SY_IMAGE_H

@@ -71,13 +71,27 @@ namespace OD::Graphics
 			return;
 
 
+
+		// Update horizontal size based on anchor points
+		// Anchor top=0, right=1, bottom=2, left=3
+
+		if (anchor[3].enabled && anchor[1].enabled)
+			size.x = parent->getSize().x - anchor[1].offset - anchor[3].offset;
+
+		else if (anchor[3].enabled)
+			size.x = parent->getSize().x - location.x - anchor[3].offset;
+
+		else if (anchor[1].enabled)
+			size.x = location.x - anchor[1].offset;
+
+
 		// Calculate draw location
 		int x = static_cast<int>(getRelativeLocation().x);
 		int y = static_cast<int>(getRelativeLocation().y);
 
 
 		// Draw button state
-		if (mouseDown)
+		if (mousePressDown)
 			DrawButtonState(aContext, x, y, backColourActive, foreColourActive);
 
 		else if (mouseOver)

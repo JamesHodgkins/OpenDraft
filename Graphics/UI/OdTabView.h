@@ -45,11 +45,6 @@ namespace OD
 			void onFrame(NVGcontext* aContext);
 			void setParent(OdComponent* aParent);
 
-
-			void processEvents(GrInputMap* aInput)
-			{
-				std::cout << "Tab process events" << std::endl;
-			}
 		};
 
 
