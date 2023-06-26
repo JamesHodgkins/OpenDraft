@@ -56,6 +56,15 @@
     <ClCompile Include="..\Graphics\UI\OdPanel.cpp">
       <Filter>Graphics\UI</Filter>
     </ClCompile>
+    <ClCompile Include="..\Graphics\UI\OdWindow.cpp">
+      <Filter>Graphics\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System\OdApplication.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Graphics\OdMainWindow.cpp">
+      <Filter>Graphics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\System\Entities\OdSyEntity.h">

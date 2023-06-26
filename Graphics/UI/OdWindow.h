@@ -6,14 +6,12 @@
 *-------------------------------------------------------------------------------------*
 * Filename:     OdWindow.h                                                            *
 * Contributors: James Hodgkins                                                        *
-* Date:         June 19, 2023                                                         *
+* Date:         June 26, 2023                                                         *
 * Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   A GUI base window class                                                           *
 ***************************************************************************************/
-
-
 
 #include <vector>
 #include <iostream>
@@ -27,245 +25,74 @@
 #include "Graphics/OdDraw.h"
 #include "Graphics/UI/OdInput.h"
 
-
 namespace OD
 {
 	namespace Graphics
 	{
-
 		class OdWindow : public OdComponent
 		{
 		protected:
-			GLFWwindow* glfwHandle = nullptr;		// Handle to the GLFW window
-			struct NVGcontext* context = nullptr;	// NanoVG context
-			GrInputMap input;						// Input map for storing user input
-
+			GLFWwindow* glfwHandle = nullptr;       // Handle to the GLFW window
+			struct NVGcontext* context = nullptr;   // NanoVG context
 
 			// Update properties following initialization or resize
-			void updateProperties()
-			{
-				int width = 0, height = 0;
-				glfwGetWindowSize(glfwHandle, &width, &height);
-				setSize(width, height);
-			}
+			void updateProperties();
 
 			// Load required resources
-			void loadResources()
-			{
-				// To be overridden by derived classes
-			}
+			void loadResources();
+
 
 		public:
 
+			GrInputMap input;                       // Input map for storing user input
+
+
 			// Constructor
-			OdWindow(int aWidth, int aHeight, const char* aTitle)
-			{
-				setSize(aWidth, aHeight);
-				input = GrInputMap();
-				text = aTitle;
-
-				// Initialize GLFW
-				if (!glfwInit())
-					return;
-
-				// Static cast parameters to float
-				int w = static_cast<int>(aWidth);
-				int h = static_cast<int>(aHeight);
-
-				// Create window with graphics context
-				glfwHandle = glfwCreateWindow(w, h, aTitle, nullptr, nullptr);
-				if (glfwHandle == nullptr)
-					return;
-
-				glfwMakeContextCurrent(glfwHandle);		// Set context as current
-				glfwSwapInterval(1);					// Enable vsync
-				glewInit();								// Initialize glew
-
-				// Initialize NanoVG context (OpenGL backend)
-				context = nvgCreateGL3(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
-				if (context == nullptr) {
-					return;
-				}
-
-				// Bind this instance of GrWindow to the glfw window instance for static callbacks
-				glfwSetWindowUserPointer(glfwHandle, this);
-
-				// Set the callback function for mouse movement
-				glfwSetCursorPosCallback(glfwHandle, mousePositionEventCallback);
-				glfwSetMouseButtonCallback(glfwHandle, mouseClickEventCallback);
-				glfwSetKeyCallback(glfwHandle, keyEventCallback);
-				glfwSetWindowSizeCallback(glfwHandle, windowResizeCallback);
-
-				// Update some properties following intitialisation
-				updateProperties();
-			}
-	
-
-			// Callback function for mouse movement
-			static void mousePositionEventCallback(GLFWwindow* aWindow, double aPositionX, double aPositionY)
-			{
-				OdWindow* windowInstance = static_cast<OdWindow*>(glfwGetWindowUserPointer(aWindow));
-				if (windowInstance) {
-					// Access the instance and store the mouse position
-					windowInstance->input.mouse.position.x = static_cast<int>(aPositionX);
-					windowInstance->input.mouse.position.y = static_cast<int>(aPositionY);
-				}
-			}
-
-			// Callback function for window resize
-			static void windowResizeCallback(GLFWwindow* aWindow, int aWidth, int aHeight)
-			{
-				OdWindow* windowInstance = static_cast<OdWindow*>(glfwGetWindowUserPointer(aWindow));
-				if (windowInstance) {
-					// Access the instance and update size
-					windowInstance->updateProperties();
-				}
-			}
-
-			// Callback function for mouse clicks
-			static void mouseClickEventCallback(GLFWwindow* aWindow, int aButton, int aAction, int aMods)
-			{
-				OdWindow* windowInstance = static_cast<OdWindow*>(glfwGetWindowUserPointer(aWindow));
-				if (windowInstance)
-				{
-					switch (aButton)
-					{
-					case 0:
-						if (aAction == GLFW_PRESS)
-							windowInstance->input.mouse.leftButton.changeState(true);
-						if (aAction == GLFW_RELEASE)
-							windowInstance->input.mouse.leftButton.changeState(false);
-						break;
-
-					case 1:
-						if (aAction == GLFW_PRESS)
-							windowInstance->input.mouse.rightButton.changeState(true);
-						if (aAction == GLFW_RELEASE)
-							windowInstance->input.mouse.rightButton.changeState(false);
-						break;
-
-					case 2:
-						if (aAction == GLFW_PRESS)
-							windowInstance->input.mouse.middleButton.changeState(true);
-						if (aAction == GLFW_RELEASE)
-							windowInstance->input.mouse.middleButton.changeState(false);
-						break;
-					}
-				}
-			}
-
-			// Callback function for key events
-			static void keyEventCallback(GLFWwindow* aWindow, int aKey, int aScancode, int aAction, int aMods)
-			{
-				OdWindow* windowInstance = static_cast<OdWindow*>(glfwGetWindowUserPointer(aWindow));
-				if (windowInstance)
-				{
-					GrInputMap* map = &windowInstance->input;
-
-					if (map->keys.find(aKey) == map->keys.end())
-						return;
-
-					// Change button state to down
-					if (aAction == GLFW_PRESS)
-						map->keys[aKey].changeState(true);
-
-					// Change button state to up
-					if (aAction == GLFW_RELEASE)
-						map->keys[aKey].changeState(false);
-
-				}
-			}
+			OdWindow(int aWidth, int aHeight, const char* aTitle);
 
 			// Set the window size
-			void setSize(int aWidth, int aHeight)
-			{
-				size.x = aWidth;
-				size.y = aHeight;
-				
-				if (glfwHandle)
-					glfwSetWindowSize(glfwHandle, aWidth, aHeight);
-			}
+			void setSize(int aWidth, int aHeight);
 
 			// Check if the window is still running
-			bool isRunning()
-			{
-				return !glfwWindowShouldClose(glfwHandle);
-			}
+			bool isRunning();
 
 			// Set the current context
-			void makeCurrentContext()
-			{
-				glfwMakeContextCurrent(glfwHandle);
-			}
+			void makeCurrentContext();
 
 			// Get the NanoVG context
-			NVGcontext* getContext()
-			{
-				return context;
-			}
+			NVGcontext* getContext();
 
-			OdPoint<float> getRelativeLocation()
-			{
-				return OdPoint<float>(0, 0);
-			}
+			// Returns 0,0 as window will always be at the root of the component tree
+			OdPoint<float> getRelativeLocation();
 
 			// Close the window and clean up resources
-			void close()
-			{
-				// Destroy GLFW window and terminate GLFW
-				glfwDestroyWindow(glfwHandle);
-				glfwTerminate();
-
-				// Delete UI components
-				for (OdComponent* control : childComponents) {
-					delete control;
-				}
-				childComponents.clear();
-
-				// Delete NanoVG context
-				nvgDeleteGL3(context);
-			}
+			void close();
 
 			// Initialize the window and UI components
-			virtual void initialise()
-			{
-
-			}
+			virtual void initialise();
 
 			// Render the window and UI components
-			virtual void onFrame(NVGcontext* context)
-			{
-				glfwPollEvents();
-			}
+			virtual void onFrame(NVGcontext* context);
 
 			// Process events for UI components
-			void triggerEventsChain()
-			{
-				for (OdComponent* control : childComponents)
-				{
-					control->processEvents(&input);
-				}
-			}
+			void triggerEventsChain();
+			void closeEvents();
 
-			void closeEvents()
-			{
-				// Once the current input states are filtered through all the components
-				// reset the 'pressed'/'released' states to prevent double trigger
-				input.mouse.leftButton.changeState(input.mouse.leftButton.isDown());
-				input.mouse.middleButton.changeState(input.mouse.middleButton.isDown());
-				input.mouse.rightButton.changeState(input.mouse.rightButton.isDown());
+			// Callback function for mouse movement
+			static void mousePositionEventCallback(GLFWwindow* aWindow, double aPositionX, double aPositionY);
 
+			// Callback function for window resize
+			static void windowResizeCallback(GLFWwindow* aWindow, int aWidth, int aHeight);
 
-				// Iterate over all objects in the map
-				for (auto& pair : input.keys) {
-					int key = pair.first;
-					input.keys[key].changeState( input.keys[key].isDown() );
-				}
-			}
+			// Callback function for mouse clicks
+			static void mouseClickEventCallback(GLFWwindow* aWindow, int aButton, int aAction, int aMods);
+
+			// Callback function for key events
+			static void keyEventCallback(GLFWwindow* aWindow, int aKey, int aScancode, int aAction, int aMods);
 
 		};
 
-	} // namespace Graphics
-}// namespace OD
+	} // namespace OD::Graphics
+} // namespace OD
 
 #endif // OD_GR_UI_WINDOW_H

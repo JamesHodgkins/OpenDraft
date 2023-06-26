@@ -23,121 +23,124 @@
 
 using namespace OD::System;
 
-namespace OD::Graphics
+namespace OD
 {
-	struct OdAnchor
+	namespace Graphics
 	{
-		// Create enum for anchor direction
-		enum class Direction
+		struct OdAnchor
 		{
-			Top = 0,
-			Right = 1,
-			Bottom = 2,
-			Left = 3
+			// Create enum for anchor direction
+			enum class Direction
+			{
+				Top = 0,
+				Right = 1,
+				Bottom = 2,
+				Left = 3
+			};
+
+			bool enabled = false;
+			int offset = 0;
 		};
-		
-		bool enabled = false;
-		int offset = 0;
-	};
 
 
-	class OdComponent
-	{
-	protected:
-		// Mouse state
-		bool mouseOver = false;
-		bool mouseEnter = false;
-		bool mouseLeave = false;
-		bool mousePressDown = false;
-		bool mousePressUp = false;
+		class OdComponent
+		{
+		protected:
+			// Mouse state
+			bool mouseOver = false;
+			bool mouseEnter = false;
+			bool mouseLeave = false;
+			bool mousePressDown = false;
+			bool mousePressUp = false;
 
-		// Anchor array
-		OdAnchor anchor[4] = { OdAnchor(), OdAnchor(), OdAnchor(), OdAnchor() };
-		
-		// Parent-child relationship
-		OdComponent* parent;                        // Parent container control for the control.
-		std::vector<OdComponent*> childComponents;	// Child Components
-			
-		// Component properties
-		OdPoint<float> location = { 0,0 };			// Location of component
-		OdPoint<float> size = { 50,50 };			// Size of component
+			// Anchor array
+			OdAnchor anchor[4] = { OdAnchor(), OdAnchor(), OdAnchor(), OdAnchor() };
 
-	public:
-		// Component properties
-		std::string name;							// Name of the control.
+			// Parent-child relationship
+			OdComponent* parent;                        // Parent container control for the control.
+			std::vector<OdComponent*> childComponents;	// Child Components
 
-		// Appearance properties
-		float strokeWidth;                           // Width of stroke
-		void* font;                                  // Font of the text displayed by the control.
-		OdColour backColour;                         // Background colour of the control.
-		OdColour stroke;                             // Stroke colour
-		OdColour foreColour;                         // Foreground colour of the control.
+			// Component properties
+			OdPoint<float> location = { 0,0 };			// Location of component
+			OdPoint<float> size = { 50,50 };			// Size of component
 
-		// Behavior properties
-		bool enabled = true;                         // Control is enabled or disabled.
-		bool show;                                   // Visible or hidden.
-		bool overflow = true;                        // Determines whether the control can draw child components outside its boundaries.
+		public:
+			// Component properties
+			std::string name;							// Name of the control.
 
-		int tabIndex;                                // Tab order of the control within its container.
-			
-		// Text properties
-		std::string text;                            // Text associated with the control.
+			// Appearance properties
+			float strokeWidth;                           // Width of stroke
+			void* font;                                  // Font of the text displayed by the control.
+			OdColour backColour;                         // Background colour of the control.
+			OdColour stroke;                             // Stroke colour
+			OdColour foreColour;                         // Foreground colour of the control.
 
-		// Resource properties
-		OdResourceManager* resourceManager;          // Pointer to injected resource manager.
+			// Behavior properties
+			bool enabled = true;                         // Control is enabled or disabled.
+			bool show;                                   // Visible or hidden.
+			bool overflow = true;                        // Determines whether the control can draw child components outside its boundaries.
 
-		// Destructor
-		virtual ~OdComponent() = default;			// Default destructor
+			int tabIndex;                                // Tab order of the control within its container.
 
-		// Virtual Functions
-		virtual void onFrame(NVGcontext* aContext) = 0;
+			// Text properties
+			std::string text;                            // Text associated with the control.
 
-		// Setters
-		void setLocation(int aX, int aY);
-		void setLocation(double aX, double aY);
-		void setLocation(OdPoint<float> aPoint);
-		void setText(std::string aText);
-		void setSize(int aWidth, int aHeight);
-		void setSize(double aWidth, double aHeight);
-		void setSize(OdPoint<float> aSize);
-		void setWidth(int aWidth);
-		void setHeight(int aHeight);
+			// Resource properties
+			OdResourceManager* resourceManager;          // Pointer to injected resource manager.
 
-		// Getters
-		std::string getText();
-		OdPoint<float> getLocation() const;
-		int getLocationX() const;
-		int getLocationY() const;
-		OdPoint<float> getRelativeLocation() const;
-		OdPoint<float> getSize() const;
-		int getWidth() const;
-		int getHeight() const;
+			// Destructor
+			virtual ~OdComponent() = default;			// Default destructor
 
-		// Mouse Events
-		bool isMouseOver() const;
-		bool isMouseEnter() const;
-		bool isMouseLeave() const;
-		bool isMouseDown() const;
-		bool wasMousePressed() const;
+			// Virtual Functions
+			virtual void onFrame(NVGcontext* aContext) = 0;
 
-		// Anchor Events
-		bool isAnchorSet(OdAnchor::Direction direction) const;
-		void setAnchor(OdAnchor::Direction direction, bool aAnchor);
-		void updateAnchor(OdAnchor::Direction direction);
+			// Setters
+			void setLocation(int aX, int aY);
+			void setLocation(double aX, double aY);
+			void setLocation(OdPoint<float> aPoint);
+			void setText(std::string aText);
+			void setSize(int aWidth, int aHeight);
+			void setSize(double aWidth, double aHeight);
+			void setSize(OdPoint<float> aSize);
+			void setWidth(int aWidth);
+			void setHeight(int aHeight);
+
+			// Getters
+			std::string getText();
+			OdPoint<float> getLocation() const;
+			int getLocationX() const;
+			int getLocationY() const;
+			OdPoint<float> getRelativeLocation() const;
+			OdPoint<float> getSize() const;
+			int getWidth() const;
+			int getHeight() const;
+
+			// Mouse Events
+			bool isMouseOver() const;
+			bool isMouseEnter() const;
+			bool isMouseLeave() const;
+			bool isMouseDown() const;
+			bool wasMousePressed() const;
+
+			// Anchor Events
+			bool isAnchorSet(OdAnchor::Direction direction) const;
+			void setAnchor(OdAnchor::Direction direction, bool aAnchor);
+			void updateAnchor(OdAnchor::Direction direction);
 
 
-		// Child Component Management
-		virtual void addChildControl(OdComponent* aChild);
+			// Child Component Management
+			virtual void addChildControl(OdComponent* aChild);
 
-		// Event Handling
-		void processEvents(GrInputMap* aInput);
+			// Event Handling
+			void processEvents(GrInputMap* aInput);
 
-		// Drawing
-		void drawChildComponents(NVGcontext* aContext);
-		void disableOverflow(NVGcontext* aContext);
-		void enableOverflow(NVGcontext* aContext);
-	};
+			// Drawing
+			void drawChildComponents(NVGcontext* aContext);
+			void disableOverflow(NVGcontext* aContext);
+			void enableOverflow(NVGcontext* aContext);
+		};
 
-} // namespace OD::Graphics
+	} // namespace OD::Graphics
+} // namespace OD
 
 #endif // OD_GR_UI_COMPONENT_H

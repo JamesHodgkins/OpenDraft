@@ -142,12 +142,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Graphics\OdDraw.cpp" />
+    <ClCompile Include="..\Graphics\OdMainWindow.cpp" />
     <ClCompile Include="..\Graphics\UI\OdButton.cpp" />
     <ClCompile Include="..\Graphics\UI\OdComponent.cpp" />
     <ClCompile Include="..\Graphics\UI\OdLabel.cpp" />
     <ClCompile Include="..\Graphics\UI\OdPanel.cpp" />
     <ClCompile Include="..\Graphics\UI\OdTabView.cpp" />
+    <ClCompile Include="..\Graphics\UI\OdWindow.cpp" />
     <ClCompile Include="..\Libraries\nanovg\src\nanovg.c" />
+    <ClCompile Include="..\System\OdApplication.cpp" />
     <ClCompile Include="..\System\Utils\OdColour.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>

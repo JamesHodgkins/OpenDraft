@@ -16,7 +16,6 @@
 ***************************************************************************************/
 
 
-
 #include "System/Utils/OdColour.h"
 #include "System/Utils/OdImage.h"
 #include "System/Utils/OdPoint.h"

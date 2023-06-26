@@ -6,7 +6,7 @@
 *-------------------------------------------------------------------------------------*
 * Filename:     OdApplication.h                                                       *
 * Contributors: James Hodgkins                                                        *
-* Date:         June 10, 2023                                                         *
+* Date:         June 26, 2023                                                         *
 * Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
@@ -14,10 +14,10 @@
 ***************************************************************************************/
 
 
-#include "System/OdCore.h"
-#include "Graphics/OdGraphics.h"		// Include Graphics
+#include "System/OdCore.h"			// Include Core Utilities
 #include "Graphics/OdMainWindow.h"	// Include Main Window Class
 #include "OdResourceManager.h"		// Include Resource Manager
+
 
 using namespace OD::Graphics;
 
@@ -29,56 +29,34 @@ namespace OD
 		class OdApplication
 		{
 		private:
-			bool running = false;
-			OdMainWindow* mainWindow = nullptr;
-			OdResourceManager* resManager;
+
+			// Static reference to the application instance
+			static OdApplication* instance;
+
+			bool running = false;					// Flag to indicate if the application is still running
+			OdMainWindow* mainWindow = nullptr;		// Pointer to the main window
+			OdResourceManager* resManager;			// Pointer to the resource manager
 
 		public:
+			// Get the application instance
+			static OdApplication* getInstance();
 
-			OdApplication()
-			{
-				resManager = new OdResourceManager();
-				mainWindow = new OdMainWindow(1280, 720, "OpenDraft");
-				mainWindow->resourceManager = resManager;
-				mainWindow->initialise();
-				running = true;
-			}
+			// Constructor
+			OdApplication();
 
+			// Destructor
+			~OdApplication();
 
-			bool isRunning()
-			{
-				return running;
-			}
+			// Check if the application is still running
+			bool isRunning();
 
+			// Update the application for the next frame
+			void update();
 
-			OdMainWindow* getMainWindow()
-			{
-				return mainWindow;
-			}
-
-
-			void update()
-			{
-				if (!mainWindow->isRunning())
-				{
-					running = false;
-					return;
-				}
-
-				mainWindow->triggerEventsChain();
-				mainWindow->onFrame();
-			}
-
-
-			~OdApplication()
-			{
-				mainWindow->close();
-				delete resManager;
-				delete mainWindow;
-			}
-
+			OdMainWindow* getMainWindow();
 		};
-	} // namespace System
-}// namespace OD
+
+	}// namespace OD::System
+} // namespace OD
 
 #endif // OD_SY_APPLICATION_H

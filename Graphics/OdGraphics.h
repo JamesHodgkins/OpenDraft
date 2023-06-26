@@ -1,15 +1,24 @@
 #ifndef OD_GR_GRAPHICS_H
 #define OD_GR_GRAPHICS_H
 
+/**************************************************************************************
+* OpenDraft:    Main Application Window Class                                         *
+*-------------------------------------------------------------------------------------*
+* Filename:     OdGraphics.h                                                          *
+* Contributors: James Hodgkins                                                        *
+* Date:         June 26, 2023                                                         *
+* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+*-------------------------------------------------------------------------------------*
+* Description:                                                                        *
+*   Header file collates all necessary graphics                                       *
+***************************************************************************************/
+
+
+
 #define GLEW_STATIC					// Use static glew library (glew32s.lib)
 #include "GL/glew.h"				// Include glew
 #include "glfw/glfw3.h"				// Include glfw3
-
-#ifndef NANOVG_GL3_IMPLEMENTATION
-	#define NANOVG_GL3_IMPLEMENTATION	// Use GL3.
-	#include "nanovg.h"					// Include core nanovg library
-	#include "nanovg_gl.h"				// Include nanovg opengl3 implementation
-#endif
+#include "nanovg.h"					// Include core nanovg library
 
 #include "System/OdCore.h"
 #include "Graphics/OdComponents.h"
