@@ -42,9 +42,6 @@ namespace OD
 				pressed = (!down && aState);
 				released = (down && !aState);
 				down = aState;
-
-				if (released)
-					std::cout << "released" << std::endl;
 			}
 
 			bool isDown() const { return down; }

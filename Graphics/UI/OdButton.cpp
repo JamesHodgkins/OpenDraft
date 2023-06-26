@@ -86,8 +86,8 @@ namespace OD::Graphics
 
 
 		// Calculate draw location
-		int x = static_cast<int>(getRelativeLocation().x);
-		int y = static_cast<int>(getRelativeLocation().y);
+		float x = getRelativeLocation().x;
+		float y = getRelativeLocation().y;
 
 
 		// Draw button state
@@ -103,10 +103,10 @@ namespace OD::Graphics
 
 		// Draw background image if set
 		if (backgroundImage != nullptr)
-			OdDraw::ResourceImage(aContext, x, y, (int)size.x, (int)size.y, backgroundImage);
+			OdDraw::ResourceImage(aContext, x, y, size.x, size.y, backgroundImage);
 
 
-		OdDraw::RectStroke(aContext, x, y, (int)size.x, (int)size.y, stroke);
+		OdDraw::RectStroke(aContext, x, y, size.x, size.y, stroke);
 
 	}
 

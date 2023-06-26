@@ -127,6 +127,11 @@ namespace OD
 					std::cout << "D key released" << std::endl;
 				}
 
+				if (input.mouse.leftButton.isPressUp())
+				{
+					std::cout << "Mouse released" << std::endl;
+				}
+
 				//std::cout << input.keys[GLFW_KEY_D].isDown() << std::endl;
 
 				glClearColor(
@@ -161,6 +166,8 @@ namespace OD
 
 
 				nvgEndFrame(context);
+
+				closeEvents();
 
 				glfwPollEvents();
 				glfwSwapBuffers(glfwHandle);

@@ -245,33 +245,22 @@ namespace OD
 				{
 					control->processEvents(&input);
 				}
+			}
 
+			void closeEvents()
+			{
 				// Once the current input states are filtered through all the components
 				// reset the 'pressed'/'released' states to prevent double trigger
 				input.mouse.leftButton.changeState(input.mouse.leftButton.isDown());
 				input.mouse.middleButton.changeState(input.mouse.middleButton.isDown());
 				input.mouse.rightButton.changeState(input.mouse.rightButton.isDown());
 
-				
 
 				// Iterate over all objects in the map
 				for (auto& pair : input.keys) {
 					int key = pair.first;
-					
 					input.keys[key].changeState( input.keys[key].isDown() );
-
-					/*if (key == 68)
-						std::cout << "D [" << key << "] is " << input.keys[key].isDown() << "\n";
-
-					if (input.keys[key].isPressUp())
-						std::cout << "D is released" << std::endl;*/
 				}
-
-				if (input.keys[GLFW_KEY_D].isPressUp())
-					std::cout << "D is released" << std::endl;
-
-				
-				
 			}
 
 		};
