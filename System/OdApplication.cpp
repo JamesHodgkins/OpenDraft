@@ -11,6 +11,9 @@
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   Root application class                                                            *
+*                                                                                     *
+* Notes:                                                                              *
+*   This class is a singleton, which is currently not thread safe.                    *
 ***************************************************************************************/
 
 
@@ -23,17 +26,23 @@ namespace OD::System
 {
 	OdApplication* OdApplication::getInstance()
 	{
-		// Return the instance
-		return instance;
+		/**
+			* This is a safer way to create an instance. instance = new Singleton is
+			* dangeruous in case two instance threads wants to access at the same time
+			*/
+		if (instance_ == nullptr) {
+			instance_ = new OdApplication();
+		}
+		return instance_;
 	}
 
 	OdApplication::OdApplication()
 	{
 		// Check if the application instance has already been created
-		if (instance == nullptr)
+		if (instance_ == nullptr)
 		{
 			// Otherwise, set the instance to this
-			instance = this;
+			instance_ = this;
 		}
 
 		// Initialize the application
@@ -78,7 +87,7 @@ namespace OD::System
 	}
 
 	// Static reference to the application instance
-	OdApplication* OdApplication::instance = nullptr;
+	OdApplication* OdApplication::instance_ = nullptr;
 
 } // namespace OD::System
 

@@ -125,7 +125,7 @@ namespace OD::Graphics
 			std::cout << "D PRESSED DOWN" << std::endl;
 		}
 
-		wnd->
+		//wnd->
 
 		if (input.keys[GLFW_KEY_D].isPressUp())
 		{

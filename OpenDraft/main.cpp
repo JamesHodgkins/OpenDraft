@@ -9,7 +9,7 @@
 // Main code
 int main(int, char**)
 {
-	OdApplication* app = new OdApplication();
+	OdApplication* app = OdApplication::getInstance();
 
 	// Main loop
 	while (app->isRunning())

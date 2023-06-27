@@ -11,6 +11,9 @@
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   Root application class                                                            *
+*                                                                                     *
+* Notes:                                                                              *
+*   This class is a singleton, which is currently not thread safe.                    *
 ***************************************************************************************/
 
 
@@ -28,21 +31,28 @@ namespace OD
 		// Application Class
 		class OdApplication
 		{
+			OdApplication(OdApplication& other) = delete;
+			void operator=(const OdApplication&) = delete;
+		
+		protected:
+			// Constructor
+			OdApplication();
+
 		private:
 
 			// Static reference to the application instance
-			static OdApplication* instance;
+			static OdApplication* instance_;
 
 			bool running = false;					// Flag to indicate if the application is still running
 			OdMainWindow* mainWindow = nullptr;		// Pointer to the main window
 			OdResourceManager* resManager;			// Pointer to the resource manager
 
 		public:
+
+
 			// Get the application instance
 			static OdApplication* getInstance();
 
-			// Constructor
-			OdApplication();
 
 			// Destructor
 			~OdApplication();
