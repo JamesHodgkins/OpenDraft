@@ -41,7 +41,7 @@ namespace OD
 		OdTab::~OdTab()
 		{
 			// Delete button
-			delete button;
+			//delete button;
 		}
 
 		void OdTab::setText(std::string aText)
@@ -150,9 +150,9 @@ namespace OD
 
 			
 			// Update states
-			for (OdComponent* component : childComponents)
+			for (std::shared_ptr<OdComponent> component : childComponents)
 			{
-				if (OdTab* tab = dynamic_cast<OdTab*>(component))
+				if (OdTab* tab = static_cast<OdTab*>(component.get()))
 				{
 					if (tab->button->wasMousePressed())
 						setActiveTab(getIndexOfTab(tab));
@@ -189,7 +189,7 @@ namespace OD
 				//
 				 
 				// Update offset
-				OdTab* tab = (OdTab*)childComponents[i];
+				OdTab* tab = (OdTab*)childComponents[i].get();
 				tab->button->setLocation(offset + 4, 0);
 				
 				// Draw tab
@@ -211,7 +211,7 @@ namespace OD
 			for (int i = 0; i < childComponents.size(); i++)
 			{
 				if (childComponents[i]->enabled)
-					return (OdTab*)childComponents[i];
+					return (OdTab*)childComponents[i].get();
 			}
 			return nullptr;
 		}
@@ -223,7 +223,7 @@ namespace OD
 				return nullptr;
 
 			// Get tab by index
-			return (OdTab*)childComponents[aIndex];
+			return (OdTab*)childComponents[aIndex].get();
 		}
 
 		int OdTabView::getIndexOfTab(OdTab* aTab)
@@ -231,7 +231,7 @@ namespace OD
 			// Find index of tab
 			for (int i = 0; i < childComponents.size(); i++)
 			{
-				if (childComponents[i] == aTab)
+				if (childComponents[i].get() == aTab)
 					return i;
 			}
 			return -1;
@@ -246,15 +246,12 @@ namespace OD
 			tab->setParent(this);
 
 			// Insert into vector
-			childComponents.push_back(tab);
+			childComponents.push_back(std::shared_ptr<OdComponent>(tab));
 		}
 
 		
 		void OdTabView::removeTab(int aIndex)
 		{
-			// Remove tab and associated tab button by index
-			delete childComponents[aIndex];
-
 			// Remove from vector
 			childComponents.erase(childComponents.begin() + aIndex);
 		}
@@ -280,7 +277,7 @@ namespace OD
 			for (int i = 0; i < childComponents.size(); i++)
 			{
 				// Get child as OdTab
-				OdTab* tab = (OdTab*)childComponents[i];
+				OdTab* tab = static_cast<OdTab*>(childComponents[i].get());
 
 				if (i == aIndex)
 				{

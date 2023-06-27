@@ -209,7 +209,7 @@ namespace OD::Graphics
 			// Remove child from the parent
 			for (int i = 0; i < aChild->parent->childComponents.size(); i++)
 			{
-				if (aChild->parent->childComponents[i] == aChild)
+				if (aChild->parent->childComponents[i].get() == aChild)
 				{
 					aChild->parent->childComponents.erase(aChild->parent->childComponents.begin() + i);
 					break;
@@ -219,7 +219,7 @@ namespace OD::Graphics
 
 		// Set the parent of the child to this component
 		aChild->parent = this;
-		childComponents.push_back(aChild);
+		childComponents.push_back(std::shared_ptr<OdComponent>(aChild));
 	}
 
 
@@ -281,7 +281,7 @@ namespace OD::Graphics
 
 
 		// Process child components
-		for (OdComponent* control : childComponents)
+		for (std::shared_ptr<OdComponent> control : childComponents)
 			control->processEvents(aInput);
 	}
 
@@ -294,7 +294,7 @@ namespace OD::Graphics
 	void OdComponent::drawChildComponents(NVGcontext* aContext)
 	{
 		// Update child UI components
-		for (OdComponent* control : childComponents) {
+		for (std::shared_ptr<OdComponent> control : childComponents) {
 
 			// Check for overflow restriction
 			if (!overflow)

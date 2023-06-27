@@ -62,18 +62,15 @@ namespace OD::Graphics
 		btn1->setText("Show");
 		addChildControl(btn1);
 		btn1->setAnchor(OdAnchor::Direction::Left, true);
-		//btn1->setAnchor(OdAnchor::Direction::Right, true);
-		btn1->backColour = OdColour::PRIMARY;
 
-		//OdButton* btn2 = new OdButton(400, 210);
-		//btn2->setText("Hide");
-		//addChildControl(btn2);
-		//btn2->setAnchor(OdAnchor::Direction::Right, true);
-		//btn2->backColour = OdColour::PRIMARY;
+		OdButton* btn2 = new OdButton(400, 210);
+		btn2->setText("Hide");
+		addChildControl(btn2);
+		btn2->setAnchor(OdAnchor::Direction::Left, true);
 
 
 		// Start Ribbon Area
-		/*OdPanel* pnl1 = new OdPanel(0, 0, size.x, 100);
+		OdPanel* pnl1 = new OdPanel(0, 400, size.x, 100);
 		pnl1->backColour = OdColour::BACKGROUND2;
 		addChildControl(pnl1);
 
@@ -90,7 +87,7 @@ namespace OD::Graphics
 		OdButton* btn5 = new OdButton(100, 10, 24, 24, "");
 		btn5->backColour = OdColour::CLEAR;
 		btn5->setBackgroundImage(resourceManager->images["ico_polyline"]);
-		pnl1->addChildControl(btn5);*/
+		pnl1->addChildControl(btn5);
 
 		OdTabView* tabV = new OdTabView(0, 0, 1280, 100);
 		addChildControl(tabV);
@@ -119,25 +116,6 @@ namespace OD::Graphics
 	{
 		OdApplication* app = OdApplication::getInstance();
 		OdWindow* wnd = app->getMainWindow();
-
-		if (wnd->input.keys[68].isDown())
-		{
-			std::cout << "D PRESSED DOWN" << std::endl;
-		}
-
-		//wnd->
-
-		if (input.keys[GLFW_KEY_D].isPressUp())
-		{
-			std::cout << "D key released" << std::endl;
-		}
-
-		if (input.mouse.leftButton.isPressUp())
-		{
-			std::cout << "Mouse released" << std::endl;
-		}
-
-		//std::cout << input.keys[GLFW_KEY_D].isDown() << std::endl;
 
 		glClearColor(
 			OdColour::BACKGROUND1.getRedNorm(),

@@ -188,9 +188,6 @@ namespace OD
 			glfwDestroyWindow(glfwHandle);
 			glfwTerminate();
 
-			for (OdComponent* control : childComponents) {
-				delete control;
-			}
 			childComponents.clear();
 
 			nvgDeleteGL3(context);
@@ -208,7 +205,7 @@ namespace OD
 
 		void OdWindow::triggerEventsChain()
 		{
-			for (OdComponent* control : childComponents)
+			for (std::shared_ptr<OdComponent> control : childComponents)
 			{
 				control->processEvents(&input);
 			}

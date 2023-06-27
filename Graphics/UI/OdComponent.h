@@ -58,7 +58,7 @@ namespace OD
 
 			// Parent-child relationship
 			OdComponent* parent;                        // Parent container control for the control.
-			std::vector<OdComponent*> childComponents;	// Child Components
+			std::vector<std::shared_ptr<OdComponent>> childComponents;	// Child Components
 
 			// Component properties
 			OdPoint<float> location = { 0,0 };			// Location of component
