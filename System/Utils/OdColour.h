@@ -59,49 +59,42 @@ namespace OD
 			const static OdColour YELLOW;
 	
 
-			// Default constructor
-			OdColour() : r(0), g(0), b(0), a(255) {}
+			//
+			// Constructors
+			//
+			OdColour();
+			OdColour(int aRed, int aGreen, int aBlue, int aAlpha = 255);
 
-			// Custom constructor
-			OdColour(int aRed, int aGreen, int aBlue, int aAlpha = 255) : r(aRed), g(aGreen), b(aBlue), a(aAlpha) {}
 
+			//
 			// Getters and setters
-			int getRed() const { return r; }
-			float getRedNorm() const { return static_cast<float>(r)/255.f; }
-			void setRed(int aRed) { r = aRed; }
+			//
+			
+			// Getters and setters for red
+			int getRed() const;
+			float getRedNorm() const;
+			void setRed(int aRed);
 
-			int getGreen() const { return g; }
-			float getGreenNorm() const { return static_cast<float>(g)/255.f; }
-			void setGreen(int aGreen) { g = aGreen; }
+			// Getters and setters for green
+			int getGreen() const;
+			float getGreenNorm() const;
+			void setGreen(int aGreen);
 
-			int getBlue() const { return b; }
-			float getBlueNorm() const { return static_cast<float>(b)/255.f; }
-			void setBlue(int aBlue) { b = aBlue; }
+			// Getters and setters for blue
+			int getBlue() const;
+			float getBlueNorm() const;
+			void setBlue(int aBlue);
 
-			int getAlpha() const { return a; }
-			float getAlphaNorm() const { return static_cast<float>(a)/255.f; }
-			void setAlpha(int aAlpha) { a = aAlpha; }
+			// Getters and setters for alpha
+			int getAlpha() const;
+			float getAlphaNorm() const;
+			void setAlpha(int aAlpha);
 
-			void setRGB(int aRed, int aGreen, int aBlue)
-			{
-				r = aRed;
-				g = aGreen;
-				b = aBlue;
-				a = 255;
-			}
+			// Set colour by RGB or RGBA
+			void setRGB(int aRed, int aGreen, int aBlue, int aAlpha=255);
 
-			void setColourRGBA(int aRed, int aGreen, int aBlue, int aAlpha)
-			{
-				r = aRed;
-				g = aGreen;
-				b = aBlue;
-				a = aAlpha;
-			}
-
-			NVGcolor asNvgColour() const
-			{
-				return nvgRGBA(getRed(), getGreen(), getBlue(), getAlpha());
-			}
+			// Returns the colour as a NanoVG colour
+			NVGcolor asNvgColour() const;
 		};
 
 	} // namespace System

@@ -51,6 +51,40 @@ namespace OD
 		const OdColour OdColour::YELLOW = OdColour(255, 255, 0, 255);
 
 
+		// Default constructor
+		OdColour::OdColour() : r(0), g(0), b(0), a(255) {}
+
+		// Custom constructor
+		OdColour::OdColour(int aRed, int aGreen, int aBlue, int aAlpha) : r(aRed), g(aGreen), b(aBlue), a(aAlpha) {}
+
+		// Getters and setters
+		int OdColour::getRed() const { return r; }
+		float OdColour::getRedNorm() const { return static_cast<float>(r) / 255.f; }
+		void OdColour::setRed(int aRed) { r = aRed; }
+		int OdColour::getGreen() const { return g; }
+		float OdColour::getGreenNorm() const { return static_cast<float>(g) / 255.f; }
+		void OdColour::setGreen(int aGreen) { g = aGreen; }
+		int OdColour::getBlue() const { return b; }
+		float OdColour::getBlueNorm() const { return static_cast<float>(b) / 255.f; }
+		void OdColour::setBlue(int aBlue) { b = aBlue; }
+		int OdColour::getAlpha() const { return a; }
+		float OdColour::getAlphaNorm() const { return static_cast<float>(a) / 255.f; }
+		void OdColour::setAlpha(int aAlpha) { a = aAlpha; }
+		void OdColour::setRGB(int aRed, int aGreen, int aBlue, int aAlpha)
+		{
+			r = aRed;
+			g = aGreen;
+			b = aBlue;
+			a = aAlpha;
+		}
+
+		// Returns the colour as NVGcolor
+		NVGcolor OdColour::asNvgColour() const
+		{
+			return nvgRGBA(getRed(), getGreen(), getBlue(), getAlpha());
+		}
+
+
 	} // namespace System
 } // namespace OD
 

@@ -167,7 +167,11 @@
     <ClInclude Include="..\Graphics\UI\OdPanel.h" />
     <ClInclude Include="..\Graphics\UI\OdTabView.h" />
     <ClInclude Include="..\Graphics\UI\OdWindow.h" />
-    <ClInclude Include="..\System\Entities\OdSyEntity.h" />
+    <ClInclude Include="..\System\Entities\OdArc.h" />
+    <ClInclude Include="..\System\Entities\OdCircle.h" />
+    <ClInclude Include="..\System\Entities\OdEntity.h" />
+    <ClInclude Include="..\System\Entities\OdLine.h" />
+    <ClInclude Include="..\System\Entities\OdText.h" />
     <ClInclude Include="..\System\Utils\OdColour.h" />
     <ClInclude Include="..\System\Utils\OdFont.h" />
     <ClInclude Include="..\System\Utils\OdImage.h" />

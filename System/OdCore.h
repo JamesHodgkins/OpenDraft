@@ -20,6 +20,7 @@
 #include "System/Utils/OdImage.h"
 #include "System/Utils/OdPoint.h"
 #include "System/Utils/OdFont.h"
+#include "System/Utils/OdVector2.h"
 #include "System/OdResourceManager.h"
 
 #endif // OD_SY_CORE_H

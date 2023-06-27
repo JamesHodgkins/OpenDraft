@@ -70,7 +70,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\System\Entities\OdSyEntity.h">
+    <ClInclude Include="..\System\Entities\OdEntity.h">
       <Filter>System\Entities</Filter>
     </ClInclude>
     <ClInclude Include="..\System\OdCore.h">
@@ -129,6 +129,18 @@
     </ClInclude>
     <ClInclude Include="..\System\Utils\OdVector2.h">
       <Filter>System\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\System\Entities\OdArc.h">
+      <Filter>System\Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\System\Entities\OdLine.h">
+      <Filter>System\Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\System\Entities\OdCircle.h">
+      <Filter>System\Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\System\Entities\OdText.h">
+      <Filter>System\Entities</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
