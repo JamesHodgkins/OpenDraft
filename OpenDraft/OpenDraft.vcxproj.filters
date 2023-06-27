@@ -65,6 +65,9 @@
     <ClCompile Include="..\Graphics\OdMainWindow.cpp">
       <Filter>Graphics</Filter>
     </ClCompile>
+    <ClCompile Include="..\System\Utils\OdVector2.cpp">
+      <Filter>System\Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\System\Entities\OdSyEntity.h">
@@ -123,6 +126,9 @@
     </ClInclude>
     <ClInclude Include="..\Graphics\UI\OdTabView.h">
       <Filter>Graphics\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\System\Utils\OdVector2.h">
+      <Filter>System\Utils</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

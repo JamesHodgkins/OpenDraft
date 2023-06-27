@@ -4,7 +4,7 @@
 /**************************************************************************************
 * OpenDraft:    System Point Class                                                    *
 *-------------------------------------------------------------------------------------*
-* Filename:     OdPoint.h                                                           *
+* Filename:     OdPoint.h                                                             *
 * Contributors: James Hodgkins                                                        *
 * Date:         June 9, 2023                                                          *
 * Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *

@@ -152,6 +152,7 @@
     <ClCompile Include="..\Libraries\nanovg\src\nanovg.c" />
     <ClCompile Include="..\System\OdApplication.cpp" />
     <ClCompile Include="..\System\Utils\OdColour.cpp" />
+    <ClCompile Include="..\System\Utils\OdVector2.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -174,6 +175,7 @@
     <ClInclude Include="..\System\OdApplication.h" />
     <ClInclude Include="..\System\OdCore.h" />
     <ClInclude Include="..\System\OdResourceManager.h" />
+    <ClInclude Include="..\System\Utils\OdVector2.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
