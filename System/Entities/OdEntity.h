@@ -16,7 +16,9 @@
 
 #include "System/OdCore.h"
 
+
 using namespace OD::System;
+
 
 namespace OD
 {
@@ -46,7 +48,7 @@ namespace OD
 			void setLocation(OdVector2 location) { this->location = location; }
 
 			// Methods
-			virtual void draw() = 0;
+			virtual void draw(NVGcontext* aContext) = 0;
 			
 		};
 

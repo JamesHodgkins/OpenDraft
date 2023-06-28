@@ -142,6 +142,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\DataManager\OdDocument.cpp" />
+    <ClCompile Include="..\DataManager\OdDocumentManager.cpp" />
     <ClCompile Include="..\DataManager\OdDrawingDb.cpp" />
     <ClCompile Include="..\Graphics\OdDraw.cpp" />
     <ClCompile Include="..\Graphics\OdMainWindow.cpp" />
@@ -150,6 +151,7 @@
     <ClCompile Include="..\Graphics\UI\OdLabel.cpp" />
     <ClCompile Include="..\Graphics\UI\OdPanel.cpp" />
     <ClCompile Include="..\Graphics\UI\OdTabView.cpp" />
+    <ClCompile Include="..\Graphics\UI\OdViewport.cpp" />
     <ClCompile Include="..\Graphics\UI\OdWindow.cpp" />
     <ClCompile Include="..\Libraries\nanovg\src\nanovg.c" />
     <ClCompile Include="..\System\OdApplication.cpp" />
@@ -161,6 +163,7 @@
     <ClInclude Include="..\DataManager\OdData.h" />
     <ClInclude Include="..\DataManager\OdDataManager.h" />
     <ClInclude Include="..\DataManager\OdDocument.h" />
+    <ClInclude Include="..\DataManager\OdDocumentManager.h" />
     <ClInclude Include="..\DataManager\OdDrawingDb.h" />
     <ClInclude Include="..\Graphics\OdGraphics.h" />
     <ClInclude Include="..\Graphics\OdDraw.h" />
@@ -175,6 +178,7 @@
     <ClInclude Include="..\Graphics\UI\OdWindow.h" />
     <ClInclude Include="..\System\Entities\OdArc.h" />
     <ClInclude Include="..\System\Entities\OdCircle.h" />
+    <ClInclude Include="..\System\Entities\OdEntities.h" />
     <ClInclude Include="..\System\Entities\OdEntity.h" />
     <ClInclude Include="..\System\Entities\OdLine.h" />
     <ClInclude Include="..\System\Entities\OdText.h" />
@@ -186,6 +190,7 @@
     <ClInclude Include="..\System\OdCore.h" />
     <ClInclude Include="..\System\OdResourceManager.h" />
     <ClInclude Include="..\System\Utils\OdVector2.h" />
+    <ClInclude Include="..\Graphics\UI\OdViewport.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

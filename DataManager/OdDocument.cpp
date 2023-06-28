@@ -17,7 +17,7 @@
 #include "DataManager/OdDocument.h"
 
 
-namespace OD::System
+namespace OD::Data
 {
 	// Constructors and Destructors
 	OdDocument::OdDocument()

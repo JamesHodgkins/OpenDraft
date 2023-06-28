@@ -23,14 +23,14 @@ namespace OD
 	namespace Geometry
 	{
 
-		class OdEntity {
+		class OdText {
 		private:
 
 			unsigned int handle;
 
 		public:
 
-			virtual ~OdEntity() = default;
+			virtual ~OdText() = default;
 
 			OdVector2 location;
 		};

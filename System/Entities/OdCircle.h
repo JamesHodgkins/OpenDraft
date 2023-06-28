@@ -24,7 +24,7 @@ namespace OD
 	namespace Geometry
 	{
 
-		class OdArc : public OdEntity {
+		class OdCircle : public OdEntity {
 		public:
 			OdVector2 center;
 			double radius;

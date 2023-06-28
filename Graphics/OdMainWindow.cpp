@@ -108,12 +108,31 @@ namespace OD::Graphics
 
 		// Set tab 1 as active
 		tabV->setActiveTab(0);
+
+
+
+		// Test viewport
+		OdViewport* vp = new OdViewport(100, 60, 1000, 500);
+		vp->backColour = OdColour::LIME;
+		addChildControl(vp);
+
+		std::vector<OdEntity*>* entities = new std::vector<OdEntity*>();
+		OdLine* line1 = new OdLine(0, 0, 50, 50);
+		entities->push_back(line1);
+
+		OdLine* line2 = new OdLine(50, 0, 0, 50);
+		entities->push_back(line2);
+
+		vp->entities = entities;
+
 	}
 
 
 	// Render the window and UI components
 	void OdMainWindow::onFrame(NVGcontext* NULLREF, OdComponent* aParent)
 	{
+		nvgReset(context);
+
 		OdApplication* app = OdApplication::getInstance();
 		OdWindow* wnd = app->getMainWindow();
 

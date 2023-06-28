@@ -74,6 +74,12 @@
     <ClCompile Include="..\DataManager\OdDrawingDb.cpp">
       <Filter>DataManager</Filter>
     </ClCompile>
+    <ClCompile Include="..\DataManager\OdDocumentManager.cpp">
+      <Filter>DataManager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Graphics\UI\OdViewport.cpp">
+      <Filter>Graphics\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\System\Entities\OdEntity.h">
@@ -159,6 +165,15 @@
     </ClInclude>
     <ClInclude Include="..\DataManager\OdData.h">
       <Filter>DataManager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\DataManager\OdDocumentManager.h">
+      <Filter>DataManager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Graphics\UI\OdViewport.h">
+      <Filter>Graphics\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\System\Entities\OdEntities.h">
+      <Filter>System\Entities</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
