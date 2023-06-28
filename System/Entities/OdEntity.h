@@ -27,12 +27,27 @@ namespace OD
 		private:
 
 			unsigned int handle;
+			unsigned int parent = 0; // 0 = drawing root
+
+		protected:
+			void setHandle(unsigned int handle) { this->handle = handle; }
 
 		public:
+			OdVector2 location;
 
+			// Constructors & Destructors
 			virtual ~OdEntity() = default;
 
-			OdVector2 location;
+			// Getters & Setters
+			int getHandle() const { return handle; }
+			int getParent() const { return parent; }
+			void setParent(int parent) { this->parent = parent; }
+			OdVector2 getLocation() const { return location; }
+			void setLocation(OdVector2 location) { this->location = location; }
+
+			// Methods
+			virtual void draw() = 0;
+			
 		};
 
 	} // namespace Geometry

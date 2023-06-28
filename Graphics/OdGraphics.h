@@ -2,7 +2,7 @@
 #define OD_GR_GRAPHICS_H
 
 /**************************************************************************************
-* OpenDraft:    Main Application Window Class                                         *
+* OpenDraft:    Main Graphics Header                                                  *
 *-------------------------------------------------------------------------------------*
 * Filename:     OdGraphics.h                                                          *
 * Contributors: James Hodgkins                                                        *
@@ -29,7 +29,7 @@ namespace OD
 	namespace Graphics
 	{
 
-		class GrGraphics
+		class OdGraphics
 		{
 
 		};

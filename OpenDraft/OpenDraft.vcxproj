@@ -141,6 +141,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\DataManager\OdDocument.cpp" />
+    <ClCompile Include="..\DataManager\OdDrawingDb.cpp" />
     <ClCompile Include="..\Graphics\OdDraw.cpp" />
     <ClCompile Include="..\Graphics\OdMainWindow.cpp" />
     <ClCompile Include="..\Graphics\UI\OdButton.cpp" />
@@ -156,6 +158,10 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\DataManager\OdData.h" />
+    <ClInclude Include="..\DataManager\OdDataManager.h" />
+    <ClInclude Include="..\DataManager\OdDocument.h" />
+    <ClInclude Include="..\DataManager\OdDrawingDb.h" />
     <ClInclude Include="..\Graphics\OdGraphics.h" />
     <ClInclude Include="..\Graphics\OdDraw.h" />
     <ClInclude Include="..\Graphics\UI\OdButton.h" />
