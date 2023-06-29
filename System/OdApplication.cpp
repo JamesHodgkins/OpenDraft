@@ -26,10 +26,7 @@ namespace OD::System
 {
 	OdApplication* OdApplication::getInstance()
 	{
-		/**
-			* This is a safer way to create an instance. instance = new Singleton is
-			* dangeruous in case two instance threads wants to access at the same time
-			*/
+		// Check if the application instance has already been created
 		if (instance_ == nullptr) {
 			instance_ = new OdApplication();
 		}

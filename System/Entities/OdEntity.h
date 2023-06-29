@@ -31,6 +31,11 @@ namespace OD
 			unsigned int handle;
 			unsigned int parent = 0; // 0 = drawing root
 
+			int colour = 0;
+			int lineType = 0;
+			int lineWeight = 0;
+			OdLayer* layer = nullptr;
+
 		protected:
 			void setHandle(unsigned int handle) { this->handle = handle; }
 

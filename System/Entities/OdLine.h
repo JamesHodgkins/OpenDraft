@@ -46,7 +46,6 @@ namespace OD
 			// Draw
 			void draw(NVGcontext* aContext) override
 			{
-				std::cout << "Drawing line" << std::endl;
 				nvgBeginPath(aContext);
 				nvgMoveTo(aContext, start.x, start.y);
 				nvgLineTo(aContext, end.x, end.y);
