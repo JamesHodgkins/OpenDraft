@@ -15,10 +15,10 @@
 
 
 
-#define GLEW_STATIC					// Use static glew library (glew32s.lib)
-#include "GL/glew.h"				// Include glew
+#define GLEW_STATIC						// Use static glew library (glew32s.lib)
+#include "GL/glew.h"					// Include glew
 
-#include "nanovg.h"					// Include core nanovg library
+#include "nanovg.h"						// Include core nanovg library
 
 #ifndef NANOVG_GL3_IMPLEMENTATION
 	#define NANOVG_GL3_IMPLEMENTATION	// Use GL3.

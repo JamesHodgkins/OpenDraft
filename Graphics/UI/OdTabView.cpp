@@ -161,10 +161,12 @@ namespace OD
 
 
 			// Static cast properties
-			float x = getRelativeLocation().x;
-			float y = getRelativeLocation().y;
+			float x = getLocation().x;
+			float y = getLocation().y;
 			float w = getWidth();
 			float h = getHeight();
+
+
 
 			// Drawing window
 			OdDraw::Rect(aContext, x, y, w, h, OdColour::PRIMARY);
@@ -192,15 +194,17 @@ namespace OD
 				OdTab* tab = (OdTab*)childComponents[i].get();
 				tab->button->setLocation(offset + 4, 0);
 				
+				// Translate by location
+				OdDraw::Translate(aContext, x, y);
+				
 				// Draw tab
 				tab->onFrame(aContext);
 
+				// Translate back
+				OdDraw::Translate(aContext, -x, -y);
+				
 				// Update offset
 				offset += static_cast<int>(tab->button->getWidth());
-
-				//
-				// Draw Tab Content
-				//
 
 			}
 		}

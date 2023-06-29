@@ -17,6 +17,7 @@
 
 #include <string>
 #include <vector>
+#include "Graphics/OdDraw.h"
 #include "System/OdCore.h"
 #include "Graphics/UI/OdInput.h"
 #include <nanovg.h>
@@ -110,7 +111,6 @@ namespace OD
 			OdPoint<float> getLocation() const;
 			int getLocationX() const;
 			int getLocationY() const;
-			OdPoint<float> getRelativeLocation() const;
 			OdPoint<float> getSize() const;
 			int getWidth() const;
 			int getHeight() const;

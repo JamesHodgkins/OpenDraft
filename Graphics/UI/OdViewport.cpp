@@ -49,8 +49,8 @@ namespace OD::Graphics
 			return;
 
 		// Static cast properties
-		float x = getRelativeLocation().x;
-		float y = getRelativeLocation().y;
+		float x = getLocation().x;
+		float y = getLocation().y;
 		float w = size.x;
 		float h = size.y;
 
@@ -61,18 +61,14 @@ namespace OD::Graphics
 		OdDraw::Rect(aContext, x, y, w, h, backColour);
 		OdDraw::RectStroke(aContext, x, y, w, h, stroke);
 
-
 		disableOverflow(aContext);
-
 
 		// Check is entities is valid
 		if (entities == nullptr)
 			return;
 
-		// Debug out the size of the entities
-		std::cout << "Entities size: " << entities->size() << std::endl;
-
-		nvgTransform(aContext, 1.0f, 0.0f, 0.0f, 1.0f, location.x, location.y);
+		// Translate by location
+		OdDraw::Translate(aContext, location.x, location.y);
 
 		// Draw entities
 		for (OdEntity* entity : *entities)
@@ -81,6 +77,9 @@ namespace OD::Graphics
 			OdLine* l = dynamic_cast<OdLine*>(entity);
 			l->draw(aContext);
 		}
+
+		// Undo translation
+		OdDraw::Translate(aContext, -location.x, -location.y);
 
 	}
 

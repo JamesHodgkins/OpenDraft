@@ -74,6 +74,26 @@ namespace OD::Graphics
 		OdDraw::ResourceImage(aContext, aX, aY, aImage->getWidth(), aImage->getHeight(), aImage);
 	}
 
+	void OdDraw::Translate(NVGcontext* aContext, float aX, float aY)
+	{
+		nvgTranslate(aContext, aX, aY);
+	}
+
+	void OdDraw::Scale(NVGcontext* aContext, float aX, float aY)
+	{
+		nvgScale(aContext, aX, aY);
+	}
+
+	void OdDraw::Rotate(NVGcontext* aContext, float aAngle)
+	{
+		nvgRotate(aContext, aAngle);
+	}
+
+	void OdDraw::ResetTransform(NVGcontext* aContext)
+	{
+		nvgResetTransform(aContext);
+	}
+
 } // namespace OD::Graphics
 
 #endif // OD_GR_DRAW_CPP

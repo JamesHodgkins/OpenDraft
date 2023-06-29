@@ -71,11 +71,10 @@ namespace OD
 				return;
 
 			// Static cast properties
-			float x = getRelativeLocation().x;
-			float y = getRelativeLocation().y;
+			float x = getLocation().x;
+			float y = getLocation().y;
 			float w = size.x;
 			float h = size.y;
-
 
 			//
 			// Begin drawing Panel
@@ -86,7 +85,6 @@ namespace OD
 				OdDraw::ResourceImage(aContext, x, y, w, h, backgroundImage);
 
 			OdDraw::RectStroke(aContext, x, y, w, h, stroke);
-
 
 			// Draw child UI components
 			drawChildComponents(aContext);

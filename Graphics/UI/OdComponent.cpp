@@ -95,17 +95,6 @@ namespace OD::Graphics
 		return text;
 	}
 
-	OdPoint<float> OdComponent::getRelativeLocation() const
-	{
-		if (parent != nullptr)
-			return {
-				parent->getRelativeLocation().x + location.x,
-				parent->getRelativeLocation().y + location.y
-		};
-		else
-			return location;
-	}
-
 	OdPoint<float> OdComponent::getSize() const
 	{
 		return size;
@@ -236,9 +225,9 @@ namespace OD::Graphics
 		int mousePosY = static_cast<int>(aInput->mouse.position.y);
 
 		// Calculate object boundaries
-		int objectLeft   = static_cast<int>(getRelativeLocation().x);
+		int objectLeft   = static_cast<int>(getLocation().x);
 		int objectRight  = static_cast<int>(location.x + size.x);
-		int objectTop    = static_cast<int>(getRelativeLocation().y);
+		int objectTop    = static_cast<int>(getLocation().y);
 		int objectBottom = static_cast<int>(location.y + size.y);
 
 		// Check if mouse is within object boundaries
@@ -293,6 +282,9 @@ namespace OD::Graphics
 	// Draw child components
 	void OdComponent::drawChildComponents(NVGcontext* aContext)
 	{
+		// Translate by location
+		OdDraw::Translate(aContext, location.x, location.y);
+
 		// Update child UI components
 		for (std::shared_ptr<OdComponent> control : childComponents) {
 
@@ -302,6 +294,10 @@ namespace OD::Graphics
 				
 			control->onFrame(aContext);
 		}
+
+		// Translate back
+		OdDraw::Translate(aContext, -location.x, -location.y);
+
 	}
 
 	// Function to restrict the drawing of the component to within its boundaries

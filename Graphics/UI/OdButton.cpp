@@ -86,9 +86,8 @@ namespace OD::Graphics
 
 
 		// Calculate draw location
-		float x = getRelativeLocation().x;
-		float y = getRelativeLocation().y;
-
+		float x = getLocation().x;
+		float y = getLocation().y;
 
 		// Draw button state
 		if (mousePressDown)

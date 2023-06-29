@@ -33,6 +33,10 @@ namespace OD
 			static void Text(NVGcontext* aContext, float aX, float aY, float aWidth, float aHeight, float aSize, OdColour aColour, const char* aText);
 			static void ResourceImage(NVGcontext* aContext, float aX, float aY, float aWidth, float aHeight, OdImage* aImage);
 			static void ResourceImage(NVGcontext* aContext, float aX, float aY, OdImage* aImage);
+			static void Translate(NVGcontext* aContext, float aX, float aY);
+			static void Scale(NVGcontext* aContext, float aX, float aY);
+			static void Rotate(NVGcontext* aContext, float aAngle);
+			static void ResetTransform(NVGcontext* aContext);
 		};
 
 	} // OD::Graphics

@@ -53,8 +53,8 @@ namespace OD
 				//
 				// Begin drawing Label
 				//
-				float x = getRelativeLocation().x;
-				float y = getRelativeLocation().y;
+				float x = getLocation().x;
+				float y = getLocation().y;
 				float w = size.x;
 				float h = size.y;
 
