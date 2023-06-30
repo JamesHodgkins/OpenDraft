@@ -29,6 +29,9 @@
     <Filter Include="System\Utils">
       <UniqueIdentifier>{ac87da0c-6b74-4505-a202-287a7ff6f166}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Libraries\pugi">
+      <UniqueIdentifier>{da5df696-ddb0-4c27-a846-d439cc8e8446}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Libraries\nanovg\src\nanovg.c">
@@ -82,6 +85,15 @@
     </ClCompile>
     <ClCompile Include="..\System\Utils\OdLayer.cpp">
       <Filter>System\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System\Entities\OdEntity.cpp">
+      <Filter>System\Entities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System\OdSystem.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Libraries\pugixml\src\pugixml.cpp">
+      <Filter>Libraries\pugi</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -180,6 +192,9 @@
     </ClInclude>
     <ClInclude Include="..\System\Utils\OdLayer.h">
       <Filter>System\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\System\OdSystem.h">
+      <Filter>System</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -6,7 +6,7 @@
 *-------------------------------------------------------------------------------------*
 * Filename:     OdApplication.cpp                                                     *
 * Contributors: James Hodgkins                                                        *
-* Date:         June 26, 2023                                                         *
+* Date:         June 30, 2023                                                         *
 * Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
@@ -47,6 +47,7 @@ namespace OD::System
 		mainWindow = new OdMainWindow(1280, 720, "OpenDraft");
 		mainWindow->resourceManager = resManager;
 		mainWindow->initialise();
+		system = OdSystem::getInstance();
 		running = true;
 	}
 
@@ -65,12 +66,7 @@ namespace OD::System
 	}
 
 
-	OdMainWindow* OdApplication::getMainWindow()
-	{
-		return mainWindow;
-	}
-
-
+	// Update the application frame
 	void OdApplication::update()
 	{
 		if (!mainWindow->isRunning())
@@ -83,8 +79,18 @@ namespace OD::System
 		mainWindow->onFrame();
 	}
 
+
+	// Get the main window instance
+	OdMainWindow* OdApplication::getMainWindow()
+	{
+		return mainWindow;
+	}
+
+
 	// Static reference to the application instance
 	OdApplication* OdApplication::instance_ = nullptr;
+
+	
 
 } // namespace OD::System
 

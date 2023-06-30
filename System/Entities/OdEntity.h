@@ -6,7 +6,7 @@
 *-------------------------------------------------------------------------------------*
 * Filename:     OdEntity.h                                                            *
 * Contributors: James Hodgkins                                                        *
-* Date:         June 27, 2023                                                         *
+* Date:         June 30, 2023                                                         *
 * Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
@@ -37,7 +37,7 @@ namespace OD
 			OdLayer* layer = nullptr;
 
 		protected:
-			void setHandle(unsigned int handle) { this->handle = handle; }
+			void setHandle(unsigned int handle);
 
 		public:
 			OdVector2 location;
@@ -46,18 +46,30 @@ namespace OD
 			virtual ~OdEntity() = default;
 
 			// Getters & Setters
-			int getHandle() const { return handle; }
-			int getParent() const { return parent; }
-			void setParent(int parent) { this->parent = parent; }
-			OdVector2 getLocation() const { return location; }
-			void setLocation(OdVector2 location) { this->location = location; }
+			int getHandle() const;
+			int getParent() const;
+			void setParent(int parent);
+			OdVector2 getLocation() const;
+			void setLocation(OdVector2 location);
+
+			int getColour() const;
+			void setColour(int colour);
+
+			int getLineType() const;
+			void setLineType(int lineType);
+
+			int getLineWeight() const;
+			void setLineWeight(int lineWeight);
+
+			OdLayer* getLayer() const;
+			void setLayer(OdLayer* layer);
 
 			// Methods
 			virtual void draw(NVGcontext* aContext) = 0;
 			
 		};
 
-	} // namespace Geometry
+	} // namespace OD::Geometry
 } // namespace OD
 
 #endif // OD_SY_ENTITY_H

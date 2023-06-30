@@ -154,7 +154,10 @@
     <ClCompile Include="..\Graphics\UI\OdViewport.cpp" />
     <ClCompile Include="..\Graphics\UI\OdWindow.cpp" />
     <ClCompile Include="..\Libraries\nanovg\src\nanovg.c" />
+    <ClCompile Include="..\Libraries\pugixml\src\pugixml.cpp" />
+    <ClCompile Include="..\System\Entities\OdEntity.cpp" />
     <ClCompile Include="..\System\OdApplication.cpp" />
+    <ClCompile Include="..\System\OdSystem.cpp" />
     <ClCompile Include="..\System\Utils\OdColour.cpp" />
     <ClCompile Include="..\System\Utils\OdLayer.cpp" />
     <ClCompile Include="..\System\Utils\OdVector2.cpp" />
@@ -183,6 +186,7 @@
     <ClInclude Include="..\System\Entities\OdEntity.h" />
     <ClInclude Include="..\System\Entities\OdLine.h" />
     <ClInclude Include="..\System\Entities\OdText.h" />
+    <ClInclude Include="..\System\OdSystem.h" />
     <ClInclude Include="..\System\Utils\OdColour.h" />
     <ClInclude Include="..\System\Utils\OdFont.h" />
     <ClInclude Include="..\System\Utils\OdImage.h" />
