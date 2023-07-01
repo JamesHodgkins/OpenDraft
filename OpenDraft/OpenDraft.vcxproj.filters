@@ -32,6 +32,9 @@
     <Filter Include="Libraries\pugi">
       <UniqueIdentifier>{da5df696-ddb0-4c27-a846-d439cc8e8446}</UniqueIdentifier>
     </Filter>
+    <Filter Include="System\IO">
+      <UniqueIdentifier>{ec97b3d1-0b04-458c-a293-720179880111}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Libraries\nanovg\src\nanovg.c">
@@ -94,6 +97,9 @@
     </ClCompile>
     <ClCompile Include="..\Libraries\pugixml\src\pugixml.cpp">
       <Filter>Libraries\pugi</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System\IO\OdXmlReader.cpp">
+      <Filter>System\IO</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -195,6 +201,9 @@
     </ClInclude>
     <ClInclude Include="..\System\OdSystem.h">
       <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\System\IO\OdXmlReader.h">
+      <Filter>System\IO</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

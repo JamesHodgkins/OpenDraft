@@ -4,13 +4,13 @@
 /**************************************************************************************
 * OpenDraft:    System Application Class                                              *
 *-------------------------------------------------------------------------------------*
-* Filename:     OdSystem.h                                                       *
+* Filename:     OdSystem.h                                                            *
 * Contributors: James Hodgkins                                                        *
-* Date:         June 26, 2023                                                         *
+* Date:         July 01, 2023                                                         *
 * Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
-*   Root application class                                                            *
+*   System class for managing setting variables and other related tasks.              *
 *                                                                                     *
 * Notes:                                                                              *
 *   This class is a singleton, which is currently not thread safe.                    *
@@ -18,7 +18,8 @@
 
 
 #include <unordered_map>						// Include unordered_map
-#include <filesystem>
+#include <filesystem>							// Include filesystem
+#include <variant>								// Include variant
 #include <iostream>								// Include iostream
 #include <Libraries/pugixml/src/pugixml.hpp>	// Include pugixml
 #include "System/OdCore.h"						// Include Core Utilities
@@ -28,6 +29,46 @@ namespace OD
 {
 	namespace System
 	{
+		// System registry Variable Class
+		class OdSystemVariable
+		{
+			std::string key;
+			std::variant<bool, int, float, std::string> value;
+
+			public:
+
+				// Constructor
+				OdSystemVariable(std::string key, std::variant<bool, int, float, std::string> value)
+				{
+					this->key = key;
+					this->value = value;
+				}
+
+				// Get the key
+				std::string getKey()
+				{
+					return key;
+				}
+
+				// Get the value
+				std::variant<bool, int, float, std::string> getValue()
+				{
+					return value;
+				}
+
+				// Set the value
+				void setValue(std::variant<bool, int, float, std::string> value)
+				{
+					this->value = value;
+				}
+
+				// Get type of value
+				std::string getType()
+				{
+					return value.index() == 0 ? "bool" : value.index() == 1 ? "int" : value.index() == 2 ? "float" : "string";
+				}
+		};
+
 		// Application Class
 		class OdSystem
 		{
@@ -42,7 +83,7 @@ namespace OD
 
 			// Static reference to the application instance
 			static OdSystem* instance_;
-			std::unordered_map<std::string, int> systemVariables;	// Map of system variables
+			std::unordered_map<std::string, OdSystemVariable*> registry;	// Map of system variables
 
 		public:
 
@@ -52,14 +93,15 @@ namespace OD
 			// Destructor
 			~OdSystem();
 
+			// Load system variables from file
+			void loadRegistryVariablesFromFile();
+			
 			// Get system variable
-			int getSystemVariable(const char* name);
+			OdSystemVariable* getRegistryVariableByName(const char* name);
 
 			// Set system variable
-			void setSystemVariable(const char* name, int value);
+			void updateRegistryVariable(OdSystemVariable* aEntry);
 
-			// Load system variables from file
-			void loadSystemVariables();
 			
 		};
 

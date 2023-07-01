@@ -27,21 +27,14 @@ namespace OD::System
 	OdApplication* OdApplication::getInstance()
 	{
 		// Check if the application instance has already been created
-		if (instance_ == nullptr) {
+		if (instance_ == nullptr)
 			instance_ = new OdApplication();
-		}
+
 		return instance_;
 	}
 
 	OdApplication::OdApplication()
 	{
-		// Check if the application instance has already been created
-		if (instance_ == nullptr)
-		{
-			// Otherwise, set the instance to this
-			instance_ = this;
-		}
-
 		// Initialize the application
 		resManager = new OdResourceManager();
 		mainWindow = new OdMainWindow(1280, 720, "OpenDraft");

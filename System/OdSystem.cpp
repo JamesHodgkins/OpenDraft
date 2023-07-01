@@ -6,11 +6,11 @@
 *-------------------------------------------------------------------------------------*
 * Filename:     OdSystem.cpp                                                          *
 * Contributors: James Hodgkins                                                        *
-* Date:         June 30, 2023                                                         *
+* Date:         July 01, 2023                                                         *
 * Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
-*   Root application class                                                            *
+*   System class for managing setting variables and other related tasks.              *
 *                                                                                     *
 * Notes:                                                                              *
 *   This class is a singleton, which is currently not thread safe.                    *
@@ -24,15 +24,7 @@
 namespace OD::System
 {
 	// Constructor
-	OdSystem::OdSystem()
-	{
-		// Check if the application instance has already been created
-		if (instance_ == nullptr)
-		{
-			// Otherwise, set the instance to this
-			instance_ = this;
-		}
-	}
+	OdSystem::OdSystem() {}
 
 
 	// Get the application instance
@@ -42,42 +34,31 @@ namespace OD::System
 		if (instance_ == nullptr)
 		{
 			instance_ = new OdSystem();
+			instance_->loadRegistryVariablesFromFile();
 		}
 
 		// Return the instance
 		return instance_;
+
 	}
 
 
 	// Destructor
-	OdSystem::~OdSystem() {}
-
-
-	// Get the system instance
-	int OdSystem::getSystemVariable(const char* name)
+	OdSystem::~OdSystem()
 	{
-		//// Check if the variable exists
-		//if (systemVariables.find(name) != systemVariables.end())
-		//{
-		//	// Return the variable value
-		//	return systemVariables[name];
-		//}
-		//else
-		//{
-		//	// Return -1 if the variable does not exist
-		//	return -1;
-		//}
-		return 0;
+		// Delete the registry variables
+		for (auto& variable : registry)
+			delete variable.second;
+
+		// Clear the registry
+		registry.clear();
+
+		// Delete the instance
+		delete instance_;
 	}
 
 
-	void OdSystem::setSystemVariable(const char* name, int value)
-	{
-		systemVariables[name] = value;
-	}
-
-
-	void OdSystem::loadSystemVariables()
+	void OdSystem::loadRegistryVariablesFromFile()
 	{
 		// Variables are saved in an xml file called ApplicationSettings.xml
 		// The file is located in the same directory as the executable
@@ -93,17 +74,43 @@ namespace OD::System
 			if (result)
 			{
 				// Get the root node
-				pugi::xml_node root = doc.child("ApplicationSettings");
+				pugi::xml_node root = doc.child("systemVariables");
 
-				// Iterate through the child nodes
-				for (pugi::xml_node node : root.children())
+				// Iterate through the variables
+				for (const auto& variable : root.children("variable"))
 				{
-					// Get the name and value of the variable
-					const char* name = node.attribute("name").value();
-					int value = node.attribute("value").as_int();
+					// Get key and value elements
+					pugi::xml_node keyNode = variable.child("key");
+					pugi::xml_node valNode = variable.child("value");
 
-					// Set the variable
-					OdSystem::getInstance()->setSystemVariable(name, value);
+					// Extract key and value strings
+					std::string key = keyNode.child_value();
+					std::string val = valNode.child_value();
+					std::string type = valNode.attribute("type").value();
+
+					// Convert value to int or float
+
+					// Update the registry variant value depending on type
+
+					if (type == "int")
+					{
+						int iVal = std::stoi(val);
+						registry[key] = new OdSystemVariable(key, iVal);
+					}
+					else if (type == "float")
+					{
+						float fVal = std::stof(val);
+						registry[key] = new OdSystemVariable(key, fVal);
+					}
+					else if (type == "bool")
+					{
+						bool bVal = (val == "true");
+						registry[key] = new OdSystemVariable(key, bVal);
+					}
+					else if (type == "string")
+					{
+						registry[key] = new OdSystemVariable(key, val);
+					}
 				}
 			}
 			else
@@ -119,6 +126,39 @@ namespace OD::System
 			std::cout << "Error loading ApplicationSettings.xml: File does not exist" << std::endl;
 		}
 	}
+
+	// Get system variable
+	OdSystemVariable* OdSystem::getRegistryVariableByName(const char* name)
+	{
+		// Return entry if it exists
+		if (registry.find(name) != registry.end())
+		{
+			return registry[name];
+		}
+		else
+		{
+			// Return null if entry does not exist
+			return nullptr;
+		}
+	}
+
+	// Set system variable
+	void OdSystem::updateRegistryVariable(OdSystemVariable* aEntry)
+	{
+		// Check if entry already exists
+		if (registry.find(aEntry->getKey()) != registry.end())
+		{
+			// Update the entry
+			registry[aEntry->getKey()] = aEntry;
+		}
+		else
+		{
+			// Add the entry
+			registry[aEntry->getKey()] = aEntry;
+		}
+	}
+
+
 
 	// Static reference to the application instance
 	OdSystem* OdSystem::instance_ = nullptr;

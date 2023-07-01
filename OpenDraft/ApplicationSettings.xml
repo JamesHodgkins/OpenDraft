@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<systemVariables>
+  <variable>
+    <key>gridSize</key>
+    <value type="int">10</value>
+  </variable>
+  <variable>
+    <key>defaultLineWidth</key>
+    <value type="int">1</value>
+  </variable>
+  <variable>
+    <key>defaultFontSize</key>
+    <value type="int">12</value>
+  </variable>
+  <variable>
+    <key>lineThicknessDisplay0</key>
+    <value type="int">1</value>
+  </variable>
+   <variable>
+    <key>lineThicknessDisplay1</key>
+    <value type="int">1</value>
+  </variable>
+   <variable>
+    <key>lineThicknessDisplay2</key>
+    <value type="int">1</value>
+  </variable>
+   <variable>
+    <key>lineThicknessDisplay3</key>
+    <value type="int">2</value>
+  </variable>
+</systemVariables>
