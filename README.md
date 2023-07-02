@@ -40,7 +40,7 @@ OpenDraft currently has the following dependencies, which are included within th
 - [The OpenGL Extension Wrangler Libary (GLEW)](https://github.com/nigels-com/glew)
 - [GLFW](https://www.glfw.org)
 - [NanoVG](https://github.com/memononen/nanovg)
-- [pugixml]([https://github.com/memononen/nanovg](https://github.com/zeux/pugixml)
+- [pugixml](https://github.com/zeux/pugixml)
 
 ## Why Another CAD Package?
 
