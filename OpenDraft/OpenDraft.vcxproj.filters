@@ -133,9 +133,6 @@
     <ClInclude Include="..\System\OdApplication.h">
       <Filter>System</Filter>
     </ClInclude>
-    <ClInclude Include="..\System\Utils\OdPoint.h">
-      <Filter>System\Utils</Filter>
-    </ClInclude>
     <ClInclude Include="..\System\Utils\OdFont.h">
       <Filter>System\Utils</Filter>
     </ClInclude>
@@ -204,6 +201,9 @@
     </ClInclude>
     <ClInclude Include="..\System\IO\OdXmlReader.h">
       <Filter>System\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\System\Entities\OdPoint.h">
+      <Filter>System\Entities</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

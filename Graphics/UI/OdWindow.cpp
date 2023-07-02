@@ -178,9 +178,9 @@ namespace OD
 			return context;
 		}
 
-		OdPoint<float> OdWindow::getRelativeLocation()
+		OdVector2 OdWindow::getRelativeLocation()
 		{
-			return OdPoint<float>(0, 0);
+			return OdVector2(0, 0);
 		}
 
 		void OdWindow::close()

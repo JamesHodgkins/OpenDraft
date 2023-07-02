@@ -62,8 +62,8 @@ namespace OD
 			std::vector<std::shared_ptr<OdComponent>> childComponents;	// Child Components
 
 			// Component properties
-			OdPoint<float> location = { 0,0 };			// Location of component
-			OdPoint<float> size = { 50,50 };			// Size of component
+			OdVector2 location = { 0,0 };			// Location of component
+			OdVector2 size = { 50,50 };			// Size of component
 
 		public:
 			// Component properties
@@ -98,20 +98,20 @@ namespace OD
 			// Setters
 			void setLocation(int aX, int aY);
 			void setLocation(double aX, double aY);
-			void setLocation(OdPoint<float> aPoint);
+			void setLocation(OdVector2 aPoint);
 			void setText(std::string aText);
 			void setSize(int aWidth, int aHeight);
 			void setSize(double aWidth, double aHeight);
-			void setSize(OdPoint<float> aSize);
+			void setSize(OdVector2 aSize);
 			void setWidth(int aWidth);
 			void setHeight(int aHeight);
 
 			// Getters
 			std::string getText();
-			OdPoint<float> getLocation() const;
+			OdVector2 getLocation() const;
 			int getLocationX() const;
 			int getLocationY() const;
-			OdPoint<float> getSize() const;
+			OdVector2 getSize() const;
 			int getWidth() const;
 			int getHeight() const;
 

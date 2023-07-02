@@ -36,7 +36,7 @@ namespace OD::Graphics
 		location.y = aY;
 	}
 
-	void OdComponent::setLocation(OdPoint<float> aPoint)
+	void OdComponent::setLocation(OdVector2 aPoint)
 	{
 		location.x = aPoint.x;
 		location.y = aPoint.y;
@@ -59,7 +59,7 @@ namespace OD::Graphics
 		size.y = static_cast<float>(aHeight);
 	}
 		
-	void OdComponent::setSize(OdPoint<float> aSize)
+	void OdComponent::setSize(OdVector2 aSize)
 	{
 		size.x = aSize.x;
 		size.y = aSize.y;
@@ -75,7 +75,7 @@ namespace OD::Graphics
 		size.y = static_cast<float>(aHeight);
 	}
 
-	OdPoint<float> OdComponent::OdComponent::getLocation() const
+	OdVector2 OdComponent::OdComponent::getLocation() const
 	{
 		return location;
 	}
@@ -95,7 +95,7 @@ namespace OD::Graphics
 		return text;
 	}
 
-	OdPoint<float> OdComponent::getSize() const
+	OdVector2 OdComponent::getSize() const
 	{
 		return size;
 	}

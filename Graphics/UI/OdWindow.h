@@ -63,7 +63,7 @@ namespace OD
 			NVGcontext* getContext();
 
 			// Returns 0,0 as window will always be at the root of the component tree
-			OdPoint<float> getRelativeLocation();
+			OdVector2 getRelativeLocation();
 
 			// Close the window and clean up resources
 			void close();

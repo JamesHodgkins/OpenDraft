@@ -58,7 +58,7 @@ namespace OD::Graphics
 		backColour.setRGB(31, 39, 48);
 
 
-		OdButton* btn1 = new OdButton(200, 110);
+		/*OdButton* btn1 = new OdButton(200, 110);
 		btn1->setText("Show");
 		addChildControl(btn1);
 		btn1->setAnchor(OdAnchor::Direction::Left, true);
@@ -66,7 +66,7 @@ namespace OD::Graphics
 		OdButton* btn2 = new OdButton(400, 210);
 		btn2->setText("Hide");
 		addChildControl(btn2);
-		btn2->setAnchor(OdAnchor::Direction::Left, true);
+		btn2->setAnchor(OdAnchor::Direction::Left, true);*/
 
 
 		// Start Ribbon Area
@@ -127,6 +127,9 @@ namespace OD::Graphics
 
 		OdCircle* circle1 = new OdCircle(100, 100, 50);
 		entities->push_back(circle1);
+
+		OdPoint* point1 = new OdPoint(300, 200);
+		entities->push_back(point1);
 	}
 
 

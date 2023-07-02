@@ -186,6 +186,7 @@
     <ClInclude Include="..\System\Entities\OdEntities.h" />
     <ClInclude Include="..\System\Entities\OdEntity.h" />
     <ClInclude Include="..\System\Entities\OdLine.h" />
+    <ClInclude Include="..\System\Entities\OdPoint.h" />
     <ClInclude Include="..\System\Entities\OdText.h" />
     <ClInclude Include="..\System\IO\OdXmlReader.h" />
     <ClInclude Include="..\System\OdSystem.h" />
@@ -193,7 +194,6 @@
     <ClInclude Include="..\System\Utils\OdFont.h" />
     <ClInclude Include="..\System\Utils\OdImage.h" />
     <ClInclude Include="..\System\Utils\OdLayer.h" />
-    <ClInclude Include="..\System\Utils\OdPoint.h" />
     <ClInclude Include="..\System\OdApplication.h" />
     <ClInclude Include="..\System\OdCore.h" />
     <ClInclude Include="..\System\OdResourceManager.h" />

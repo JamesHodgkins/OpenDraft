@@ -20,11 +20,11 @@
 #include "System/Utils/OdFont.h"
 #include "System/Utils/OdImage.h"
 #include "System/Utils/OdLayer.h"
-#include "System/Utils/OdPoint.h"
 #include "System/Utils/OdVector2.h"
 #include "System/OdResourceManager.h"
 
 // Define constants
 #define OD_PI 3.14159265358979323846
+#define OD_E 2.71828182845904523536
 
 #endif // OD_SY_CORE_H

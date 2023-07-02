@@ -20,7 +20,7 @@
 #include "System/Entities/OdCircle.h"
 //#include "System/Entities/OdEllipse.h"
 #include "System/Entities/OdLine.h"
-//#include "System/Entities/OdPoint.h"
+#include "System/Entities/OdPoint.h"
 //#include "System/Entities/OdPolyline.h"
 //#include "System/Entities/OdRectangle.h"
 #include "System/Entities/OdText.h"
