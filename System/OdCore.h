@@ -24,4 +24,7 @@
 #include "System/Utils/OdVector2.h"
 #include "System/OdResourceManager.h"
 
+// Define constants
+#define OD_PI 3.14159265358979323846
+
 #endif // OD_SY_CORE_H

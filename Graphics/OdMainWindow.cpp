@@ -70,7 +70,7 @@ namespace OD::Graphics
 
 
 		// Start Ribbon Area
-		OdPanel* pnl1 = new OdPanel(0, 400, size.x, 100);
+		/*OdPanel* pnl1 = new OdPanel(0, 400, size.x, 100);
 		pnl1->backColour = OdColour::BACKGROUND2;
 		addChildControl(pnl1);
 
@@ -87,7 +87,7 @@ namespace OD::Graphics
 		OdButton* btn5 = new OdButton(100, 10, 24, 24, "");
 		btn5->backColour = OdColour::CLEAR;
 		btn5->setBackgroundImage(resourceManager->images["ico_polyline"]);
-		pnl1->addChildControl(btn5);
+		pnl1->addChildControl(btn5);*/
 
 		OdTabView* tabV = new OdTabView(0, 0, 1280, 100);
 		addChildControl(tabV);
@@ -112,19 +112,21 @@ namespace OD::Graphics
 
 
 		// Test viewport
-		OdViewport* vp = new OdViewport(100, 60, 1000, 500);
-		vp->backColour = OdColour::LIME;
+		OdViewport* vp = new OdViewport(0, 100, 1280, 700);
+		vp->backColour = OdColour(0,0,0,50);
 		addChildControl(vp);
 
 		std::vector<OdEntity*>* entities = new std::vector<OdEntity*>();
+		vp->entities = entities;
+
 		OdLine* line1 = new OdLine(0, 0, 50, 50);
 		entities->push_back(line1);
 
 		OdLine* line2 = new OdLine(50, 0, 0, 50);
 		entities->push_back(line2);
 
-		vp->entities = entities;
-
+		OdCircle* circle1 = new OdCircle(100, 100, 50);
+		entities->push_back(circle1);
 	}
 
 

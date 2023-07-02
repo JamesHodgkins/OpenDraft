@@ -72,12 +72,8 @@ namespace OD::Graphics
 
 		// Draw entities
 		for (OdEntity* entity : *entities)
-		{
-			// Cast as OdLine
-			OdLine* l = dynamic_cast<OdLine*>(entity);
-			l->draw(aContext);
-		}
-
+			entity->draw(aContext);
+		
 		// Undo translation
 		OdDraw::Translate(aContext, -location.x, -location.y);
 
