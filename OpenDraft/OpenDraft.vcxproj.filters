@@ -205,5 +205,8 @@
     <ClInclude Include="..\System\Entities\OdPoint.h">
       <Filter>System\Entities</Filter>
     </ClInclude>
+    <ClInclude Include="..\System\Entities\OdEllipse.h">
+      <Filter>System\Entities</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

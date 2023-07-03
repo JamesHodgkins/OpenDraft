@@ -32,6 +32,8 @@ namespace OD
 
 		public:
 
+			std::vector<OdEntity*>* entities;
+
 			// Constructor
 			OdMainWindow(int aWidth, int aHeight, const char* aTitle);
 

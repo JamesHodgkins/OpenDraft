@@ -18,7 +18,7 @@
 #include "System/Entities/OdEntity.h"
 #include "System/Entities/OdArc.h"
 #include "System/Entities/OdCircle.h"
-//#include "System/Entities/OdEllipse.h"
+#include "System/Entities/OdEllipse.h"
 #include "System/Entities/OdLine.h"
 #include "System/Entities/OdPoint.h"
 //#include "System/Entities/OdPolyline.h"

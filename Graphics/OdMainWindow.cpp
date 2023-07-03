@@ -116,9 +116,17 @@ namespace OD::Graphics
 		vp->backColour = OdColour(0,0,0,50);
 		addChildControl(vp);
 
-		std::vector<OdEntity*>* entities = new std::vector<OdEntity*>();
+		entities = new std::vector<OdEntity*>();
 		vp->entities = entities;
 
+		OdEllipse *ellipse1 = new OdEllipse(50, 50, 50, 20);
+		ellipse1->rotation = 45;
+		entities->push_back(ellipse1);
+
+		OdEllipse* ellipse2 = new OdEllipse(50, 50, 50, 20);
+		ellipse2->rotation = -45;
+		entities->push_back(ellipse2);
+		
 		OdLine* line1 = new OdLine(0, 0, 50, 50);
 		entities->push_back(line1);
 
@@ -130,6 +138,7 @@ namespace OD::Graphics
 
 		OdPoint* point1 = new OdPoint(300, 200);
 		entities->push_back(point1);
+
 	}
 
 
@@ -155,8 +164,6 @@ namespace OD::Graphics
 		glViewport(0, 0, w, h);
 
 		nvgBeginFrame(context, w, h, 1);
-
-
 
 		//// Test updates on state
 		//if (childComponents[0]->isMouseDown())

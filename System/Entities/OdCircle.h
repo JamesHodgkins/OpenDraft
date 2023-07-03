@@ -86,22 +86,34 @@ namespace OD
 				return OD_PI * radius * radius;
 			}
 
+			// Set by Area
+			void setArea(double anArea)
+			{
+				radius = sqrt(anArea / OD_PI);
+			}
+
 			// Circumference
 			double getCircumference()
 			{
 				return 2 * OD_PI * radius;
 			}
 
-			// Diameter
+			// Set by Circumference
+			void setCircumference(double aCircumference)
+			{
+				radius = aCircumference / (2 * OD_PI);
+			}
+
+			// Get Diameter
 			double getDiameter()
 			{
 				return 2 * radius;
 			}
 
-			// Radius
-			double getRadius()
+			// Set Diameter
+			void setDiameter(double aDiameter)
 			{
-				return radius;
+				radius = aDiameter / 2;
 			}
 
 		};

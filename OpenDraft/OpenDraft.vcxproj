@@ -183,6 +183,7 @@
     <ClInclude Include="..\Graphics\UI\OdWindow.h" />
     <ClInclude Include="..\System\Entities\OdArc.h" />
     <ClInclude Include="..\System\Entities\OdCircle.h" />
+    <ClInclude Include="..\System\Entities\OdEllipse.h" />
     <ClInclude Include="..\System\Entities\OdEntities.h" />
     <ClInclude Include="..\System\Entities\OdEntity.h" />
     <ClInclude Include="..\System\Entities\OdLine.h" />
