@@ -82,15 +82,6 @@ namespace OD
 
 				nvgSave(aContext);
 
-				// Get the inverse of the current transform
-				//float inverseTransform[6];
-				//nvgCurrentTransform(aContext, inverseTransform);
-				//nvgTransformInverse(inverseTransform, inverseTransform);
-
-				//// Apply the inverse transform to translate the ellipse's center back to its original coordinates
-				//float transformedCenterX = centre.x * inverseTransform[0] + centre.y * inverseTransform[2] + inverseTransform[4];
-				//float transformedCenterY = centre.x * inverseTransform[1] + centre.y * inverseTransform[3] + inverseTransform[5];
-
 				nvgTranslate(aContext, +centre.x, +centre.y);
 				nvgRotate(aContext, rotation * -OD_RAD2DEG_FACTOR);
 
@@ -125,4 +116,4 @@ namespace OD
 }
 
 
-#endif // OD_SY_CIRCLE_H
+#endif // OD_SY_ELLIPSE_H
