@@ -6,7 +6,7 @@
 *-------------------------------------------------------------------------------------*
 * Filename:     OdColour.cpp                                                          *
 * Contributors: James Hodgkins                                                        *
-* Date:         June 26, 2023                                                         *
+* Date:         July 04, 2023                                                         *
 * Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
@@ -45,7 +45,7 @@ namespace OD::Graphics
 
 	OdMainWindow::OdMainWindow(int aWidth, int aHeight, const char* aTitle) : OdWindow(aWidth, aHeight, aTitle) {}
 
-	OdMainWindow::~OdMainWindow() {}
+	OdMainWindow::~OdMainWindow() = default;
 
 
 	// Initialize the window and UI components
@@ -138,6 +138,10 @@ namespace OD::Graphics
 
 		OdPoint* point1 = new OdPoint(300, 200);
 		entities->push_back(point1);
+
+		// For debug: print out the size of ellipse1 using sizeof
+		std::cout << "Ellipse1 size: " << sizeof(*ellipse1) << std::endl;
+
 
 	}
 

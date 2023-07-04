@@ -14,6 +14,7 @@
 ***************************************************************************************/
 
 
+#include <fstream>
 #include "System/OdCore.h"
 
 
@@ -66,6 +67,10 @@ namespace OD
 
 			// Methods
 			virtual void draw(NVGcontext* aContext) = 0;
+
+			// Serialise
+			//virtual void serialise(std::ostream& aStream) = 0;
+			//virtual void deserialise(std::istream& aStream) = 0;
 			
 		};
 

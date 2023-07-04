@@ -6,7 +6,7 @@
 *-------------------------------------------------------------------------------------*
 * Filename:     OdColour.h                                                            *
 * Contributors: James Hodgkins                                                        *
-* Date:         June 26, 2023                                                         *
+* Date:         July 04, 2023                                                         *
 * Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
@@ -32,13 +32,21 @@ namespace OD
 
 		public:
 
-			std::vector<OdEntity*>* entities;
+			std::vector<OdEntity*>* entities;  // TODO: Remove this to a document instance <<<<<<<<<<<<<<<<<
 
 			// Constructor
 			OdMainWindow(int aWidth, int aHeight, const char* aTitle);
 
 			// Destructor
-			~OdMainWindow();
+			~OdMainWindow() override;
+
+			// Delete copy constructor
+			OdMainWindow(const OdMainWindow& aOther) = delete;
+
+			// Delete move constructor
+			OdMainWindow(OdMainWindow&& aOther) = delete;
+
+			bool operator==(const OdMainWindow& other) const = default;
 
 			// Initialize the window and UI components
 			void initialise() override;
