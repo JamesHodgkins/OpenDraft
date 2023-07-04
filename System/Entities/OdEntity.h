@@ -16,9 +16,11 @@
 
 #include <fstream>
 #include "System/OdCore.h"
+#include "DataManager/OdDbObject.h"
 
 
 using namespace OD::System;
+using namespace OD::Data;
 
 
 namespace OD
@@ -26,7 +28,7 @@ namespace OD
 	namespace Geometry
 	{
 
-		class OdEntity {
+		class OdEntity : public OdDbObject {
 		private:
 
 			unsigned int handle;
@@ -38,7 +40,7 @@ namespace OD
 			OdLayer* layer = nullptr;
 
 		protected:
-			void setHandle(unsigned int handle);
+
 
 		public:
 			OdVector2 location;
@@ -47,9 +49,6 @@ namespace OD
 			virtual ~OdEntity() = default;
 
 			// Getters & Setters
-			int getHandle() const;
-			int getParent() const;
-			void setParent(int parent);
 			OdVector2 getLocation() const;
 			void setLocation(OdVector2 location);
 

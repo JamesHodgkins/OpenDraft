@@ -139,9 +139,6 @@ namespace OD::Graphics
 		OdPoint* point1 = new OdPoint(300, 200);
 		entities->push_back(point1);
 
-		// For debug: print out the size of ellipse1 using sizeof
-		std::cout << "Ellipse1 size: " << sizeof(*ellipse1) << std::endl;
-
 
 	}
 

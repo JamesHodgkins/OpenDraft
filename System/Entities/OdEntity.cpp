@@ -23,14 +23,7 @@ using namespace OD::System;
 
 namespace OD::Geometry
 {
-	void OdEntity::setHandle(unsigned int handle) { this->handle = handle; }
-
-	// Constructors & Destructors
-
 	// Getters & Setters
-	int OdEntity::getHandle() const { return handle; }
-	int OdEntity::getParent() const { return parent; }
-	void OdEntity::setParent(int parent) { this->parent = parent; }
 	OdVector2 OdEntity::getLocation() const { return location; }
 	void OdEntity::setLocation(OdVector2 location) { this->location = location; }
 
