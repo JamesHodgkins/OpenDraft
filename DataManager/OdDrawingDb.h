@@ -15,10 +15,10 @@
 
 
 #include <vector>
-#include "System/Entities/OdEntity.h"
+#include "DataManager/OdDbObject.h"
 
 
-using namespace OD::Geometry;
+//using namespace OD::Geometry;
 
 
 namespace OD
@@ -28,9 +28,21 @@ namespace OD
 
 		class OdDrawingDb
 		{
+		private:
+			std::vector<OdDbObject*> objects;
+
+		public:
 
 			// Document Entities
-			std::vector<OdEntity*> entities;	// Document Entities
+
+			// Add Entity
+			void AddCreatedEntity(OdDbObject* aObject);
+
+			// Remove Entity
+			void RemoveEntity(OdDbObject* aObject);
+
+			// Get Entity
+			OdDbObject* GetEntity(int aHandle);
 
 		};
 

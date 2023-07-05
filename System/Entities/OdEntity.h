@@ -29,6 +29,7 @@ namespace OD
 	{
 
 		class OdEntity : public OdDbObject {
+
 		private:
 
 			unsigned int handle;
@@ -66,10 +67,6 @@ namespace OD
 
 			// Methods
 			virtual void draw(NVGcontext* aContext) = 0;
-
-			// Serialise
-			//virtual void serialise(std::ostream& aStream) = 0;
-			//virtual void deserialise(std::istream& aStream) = 0;
 			
 		};
 

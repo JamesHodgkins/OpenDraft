@@ -25,8 +25,13 @@ namespace OD
 {
 	namespace Data
 	{
+		class OdDrawingDb;
 
 		class OdDbObject {
+
+		// Declare OdDrawingDb as friend class
+		friend class OD::Data::OdDrawingDb;
+
 		private:
 
 			unsigned int handle;
