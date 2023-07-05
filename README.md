@@ -41,6 +41,7 @@ OpenDraft currently has the following dependencies, which are included within th
 - [GLFW](https://www.glfw.org)
 - [NanoVG](https://github.com/memononen/nanovg)
 - [pugixml](https://github.com/zeux/pugixml)
+- [SQLiteCpp](https://github.com/SRombauts/SQLiteCpp)
 
 ## Why Another CAD Package?
 
