@@ -6,7 +6,7 @@
 *-------------------------------------------------------------------------------------*
 * Filename:     OdDrawingDb.h                                                         *
 * Contributors: James Hodgkins                                                        *
-* Date:         June 28, 2023                                                         *
+* Date:         July 08, 2023                                                         *
 * Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
@@ -18,11 +18,17 @@
 #include "DataManager/OdDbObject.h"
 
 
-//using namespace OD::Geometry;
 
 
 namespace OD
 {
+
+	namespace Geometry
+	{
+		class OdEntity;
+	} // namespace Geometry
+
+
 	namespace Data
 	{
 
@@ -41,16 +47,18 @@ namespace OD
 			// Document Entities
 
 			// Add Entity
-			void AddCreatedEntity(OdDbObject* aObject);
+			void addCreatedEntity(OD::Geometry::OdEntity* aObject);
 
 			// Remove Entity
-			void RemoveEntity(OdDbObject* aObject);
+			void removeRecord(OdDbObject* aObject);
 
 			// Get Entity
-			OdDbObject* GetEntity(int aHandle);
+			OdDbObject* getRecordByHandle(int aHandle);
+
+			OdDbObject* getRecordByIndex(int aIndex);
 
 			// Get Entity Count
-			int GetEntityCount();
+			int getRecordCount();
 
 		};
 

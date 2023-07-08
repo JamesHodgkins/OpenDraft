@@ -143,6 +143,30 @@ namespace OD::Data
 	// Update Document
 	bool OdDocument::updateDocument()
 	{
+		// Write file header to file
+
+		std::wofstream outputFile("output.txt"); // Open the file for writing
+
+		std::vector<wchar_t> headerBuffer = compileFileHeader();
+		std::vector<wchar_t> databaseBuffer = compileFileDatabase();
+
+		if (outputFile.is_open())
+		{
+			// Write header to file
+			for (wchar_t c : headerBuffer)
+				outputFile << c;
+
+			// Write database to file
+			for (wchar_t c : databaseBuffer)
+				outputFile << c;
+
+			outputFile.close(); // Close the file
+		}
+		else {
+			std::cout << "Unable to open the file." << std::endl;
+		}
+
+
 		return false;
 	}
 
@@ -204,32 +228,38 @@ namespace OD::Data
 				fileHeader.push_back(' ');
 		}
 
-		// Debug: print file header
-		for (int i = 0; i < fileHeader.size(); i++)
-			std::wcout << fileHeader[i];
-
-		fileHeader.push_back('\0');
-
-
-
-		// Write file header to file
-
-		std::wofstream outputFile("output.txt"); // Open the file for writing
-
-		if (outputFile.is_open()) {
-			// Write the char vector to the file
-			for (wchar_t c : fileHeader) {
-				outputFile << c;
-			}
-			outputFile.close(); // Close the file
-			std::cout << "File write successful." << std::endl;
-		}
-		else {
-			std::cout << "Unable to open the file." << std::endl;
-		}
-
-
 		return fileHeader;
+	}
+
+
+	std::vector<wchar_t> OdDocument::compileFileDatabase()
+	{
+		// Create vector to store file DB objects 
+		std::vector<wchar_t> dbObjects;
+
+		// Get number of objects in database
+		int objectCount = database.getRecordCount();
+
+		// For each object in the database
+		for (int i = 0; i < objectCount; i++)
+		{
+			// Get object
+			OdDbObject* object = database.getRecordByIndex(i);
+
+			if (object == nullptr)
+				continue;
+
+			// Serialise object to ostream
+			std::wstring stringBuffer;
+			object->serialise(stringBuffer);
+			
+			// Add object to file DB objects
+			for (int i = 0; i < stringBuffer.size(); i++)
+				dbObjects.push_back(stringBuffer[i]);
+
+		}
+
+		return dbObjects;
 	}
 
 

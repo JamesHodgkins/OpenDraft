@@ -83,16 +83,14 @@ namespace OD::Graphics
 			return;
 
 		// Number of entities
-		int numEntities = db->GetEntityCount();
+		int numEntities = db->getRecordCount();
 
 
 		// Draw entities
 		for (int i = 0; i < numEntities; i++)
 		{
-			std::cout << "Drawing entity " << i << std::endl;
-
 			// Get entity
-			OdDbObject* dbObject = db->GetEntity(i);
+			OdDbObject* dbObject = db->getRecordByIndex(i);
 
 			// Check if entity is null
 			if (dbObject == nullptr)

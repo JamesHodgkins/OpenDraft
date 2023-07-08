@@ -53,8 +53,8 @@ namespace OD
 			void setParent(int parent);
 
 			// Serialise
-			//virtual void serialise(std::ostream& aStream) = 0;
-			//virtual void deserialise(std::istream& aStream) = 0;
+			virtual void serialise(std::wstring &buffer) = 0;
+			virtual void deserialise(std::wstring buffer) = 0;
 
 		};
 

@@ -96,6 +96,8 @@ namespace OD
 
 			std::vector<wchar_t> compileFileHeader();
 
+			std::vector<wchar_t> compileFileDatabase();
+
 
 		};
 

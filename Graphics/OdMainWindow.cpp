@@ -6,7 +6,7 @@
 *-------------------------------------------------------------------------------------*
 * Filename:     OdColour.cpp                                                          *
 * Contributors: James Hodgkins                                                        *
-* Date:         July 04, 2023                                                         *
+* Date:         July 08, 2023                                                         *
 * Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
@@ -53,8 +53,6 @@ namespace OD::Graphics
 	// Initialize the window and UI components
 	void OdMainWindow::initialise()
 	{
-		
-
 		loadResources();
 
 		backColour.setRGB(31, 39, 48);
@@ -142,20 +140,20 @@ namespace OD::Graphics
 
 		OdEllipse *ellipse1 = new OdEllipse(50, 50, 50, 20);
 		ellipse1->rotation = 45;
-		db->AddCreatedEntity(dynamic_cast<OdDbObject*>(ellipse1));
+		db->addCreatedEntity(ellipse1);
 
 		OdEllipse* ellipse2 = new OdEllipse(50, 50, 50, 20);
 		ellipse2->rotation = -45;
-		db->AddCreatedEntity(dynamic_cast<OdDbObject*>(ellipse2));
+		db->addCreatedEntity(ellipse2);
 		
 		OdLine* line1 = new OdLine(0, 0, 50, 50);
-		db->AddCreatedEntity(dynamic_cast<OdDbObject*>(line1));
+		db->addCreatedEntity(line1);
 
 		OdLine* line2 = new OdLine(50, 0, 0, 50);
-		db->AddCreatedEntity(dynamic_cast<OdDbObject*>(line2));
+		db->addCreatedEntity(line2);
 
 		OdCircle* circle1 = new OdCircle(100, 100, 50);
-		db->AddCreatedEntity(dynamic_cast<OdDbObject*>(circle1));
+		db->addCreatedEntity(circle1);
 
 
 		
@@ -171,7 +169,7 @@ namespace OD::Graphics
 
 		doc->creationDate = timestamp;
 		doc->modifiedDate = timestamp;
-		//doc->compileFileHeader();
+		doc->updateDocument();
 	}
 
 

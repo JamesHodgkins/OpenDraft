@@ -6,7 +6,7 @@
 *-------------------------------------------------------------------------------------*
 * Filename:     OdDrawingDb.cpp                                                       *
 * Contributors: James Hodgkins                                                        *
-* Date:         June 28, 2023                                                         *
+* Date:         July 08, 2023                                                         *
 * Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
@@ -15,6 +15,7 @@
 
 
 #include "DataManager/OdDrawingDb.h"
+#include "System/Entities/OdEntity.h"
 
 namespace OD::Data
 {
@@ -26,15 +27,18 @@ namespace OD::Data
 
 	OdDrawingDb::~OdDrawingDb()
 	{
-
+		// Delete all objects
+		for (auto& object : objects)
+			delete object;
 	}
 
 
 	// Add Entity
-	void OdDrawingDb::AddCreatedEntity(OdDbObject* aObject)
+	void OdDrawingDb::addCreatedEntity(OD::Geometry::OdEntity* aObject)
 	{
 		if (aObject == nullptr)
 			return;
+
 
 		// Iterate through objects and find the lowest unused handle
 		int handle = 1;
@@ -45,6 +49,9 @@ namespace OD::Data
 				handle++;
 		}
 
+		// Cast to OdDbObject
+		OdDbObject* dbObject = dynamic_cast<OdDbObject*>(aObject);
+
 		// Set object handle
 		aObject->setHandle(handle);
 
@@ -54,24 +61,22 @@ namespace OD::Data
 	}
 
 	// Remove Entity
-	void OdDrawingDb::RemoveEntity(OdDbObject* aObject)
+	void OdDrawingDb::removeRecord(OdDbObject* aObject)
 	{
 		// Remove object from vector
 		objects.erase(std::remove(objects.begin(), objects.end(), aObject), objects.end());
 	}
 
-	// Get Entity
-	OdDbObject* OdDrawingDb::GetEntity(int aHandle)
+	// Get Entity by Handle
+	OdDbObject* OdDrawingDb::getRecordByHandle(int aHandle)
 	{
 		// Loop through objects
 		for (auto& object : objects)
 		{
 			// Check if object handle matches
 			if (object->getHandle() == aHandle)
-			{
-				// Return object
 				return object;
-			}
+			
 		}
 
 		// Return null
@@ -79,8 +84,19 @@ namespace OD::Data
 
 	}
 
+	// Get Entity by Index
+	OdDbObject* OdDrawingDb::getRecordByIndex(int aIndex)
+	{
+		// Check if index is valid
+		if (aIndex < 0 || aIndex >= objects.size())
+			return nullptr;
+
+		// Return object
+		return objects[aIndex];
+	}
+
 	// Get Entity Count
-	int OdDrawingDb::GetEntityCount()
+	int OdDrawingDb::getRecordCount()
 	{
 		// Return object count
 		return objects.size();

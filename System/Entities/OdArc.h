@@ -27,7 +27,6 @@ namespace OD
 		class OdArc : public OdEntity {
 		public:
 
-			OdVector2 center;
 			double radius;
 			double startAngle;
 			double endAngle;
@@ -40,13 +39,43 @@ namespace OD
 				return "Arc";
 			}
 
+			// Serialisation Methods
+			virtual void serialise(std::wstring& buffer)
+			{
+				// For each property, add to buffer
+
+				// Add type code
+				buffer += L"E001";
+
+				// Serialise handle
+				buffer += std::to_wstring(getHandle());
+
+				// Serialise location
+				buffer += std::to_wstring(location.x);
+				buffer += std::to_wstring(location.y);
+
+				// Serialise radius
+				buffer += std::to_wstring(radius);
+
+				// Serialise start angle
+				buffer += std::to_wstring(startAngle);
+
+				// Serialise end angle
+				buffer += std::to_wstring(endAngle);
+			}
+
+			virtual void deserialise(std::wstring buffer)
+			{
+
+			}
+
 
 			//
 			// Constructors
 			//
 			OdArc()
 			{
-				center = OdVector2(0, 0);
+				location = OdVector2(0, 0);
 				radius = 1;
 				startAngle = 0;
 				endAngle = 360;
@@ -54,7 +83,7 @@ namespace OD
 
 			OdArc(OdVector2 aCenter, double aRadius, double aStartAngle, double aEndAngle)
 			{
-				center = aCenter;
+				location = aCenter;
 				radius = aRadius;
 				startAngle = aStartAngle;
 				endAngle = aEndAngle;
@@ -62,7 +91,7 @@ namespace OD
 
 			OdArc(float x, float y, double aRadius, double aStartAngle, double aEndAngle)
 			{
-				center = OdVector2(x, y);
+				location = OdVector2(x, y);
 				radius = aRadius;
 				startAngle = aStartAngle;
 				endAngle = aEndAngle;
@@ -70,7 +99,7 @@ namespace OD
 
 			OdArc(int x, int y, double aRadius, double aStartAngle, double aEndAngle)
 			{
-				center = OdVector2(x, y);
+				location = OdVector2(x, y);
 				radius = aRadius;
 				startAngle = aStartAngle;
 				endAngle = aEndAngle;
@@ -86,7 +115,7 @@ namespace OD
 				nvgStrokeWidth(aContext, 1.0f);
 				nvgStrokeColor(aContext, nvgRGBA(0, 0, 0, 255));
 				nvgBeginPath(aContext);
-				nvgArc(aContext, center.x, center.y, radius, startAngle, endAngle, NVG_CCW);
+				nvgArc(aContext, location.x, location.y, radius, startAngle, endAngle, NVG_CCW);
 				nvgStroke(aContext);
 			}
 
@@ -98,13 +127,13 @@ namespace OD
 			// Get start point
 			OdVector2 startPoint()
 			{
-				return OdVector2(center.x + radius * cos(startAngle * OD_PI / 180), center.y + radius * sin(startAngle * OD_PI / 180));
+				return OdVector2(location.x + radius * cos(startAngle * OD_PI / 180), location.y + radius * sin(startAngle * OD_PI / 180));
 			}
 
 			// Get end point
 			OdVector2 endPoint()
 			{
-				return OdVector2(center.x + radius * cos(endAngle * OD_PI / 180), center.y + radius * sin(endAngle * OD_PI / 180));
+				return OdVector2(location.x + radius * cos(endAngle * OD_PI / 180), location.y + radius * sin(endAngle * OD_PI / 180));
 			}
 
 			// Get length

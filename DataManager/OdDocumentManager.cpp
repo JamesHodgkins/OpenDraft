@@ -20,13 +20,16 @@
 namespace OD::Data
 {
 	// Constructors & Destructors
-	OdDocumentManager::OdDocumentManager() : documents()
+	OdDocumentManager::OdDocumentManager() : documents(), activeDocumentIndex(-1)
 	{
 
 	}
 
 	OdDocumentManager::~OdDocumentManager()
 	{
+		// Delete all documents
+		for (int i = 0; i < documents.size(); i++)
+			delete documents[i];
 
 	}
 

@@ -38,6 +38,31 @@ namespace OD
 			}
 
 
+			// Serialisation Methods
+			virtual void serialise(std::wstring& buffer)
+			{
+				// For each property, add to buffer
+
+				// Add type code
+				buffer += L"E002";
+
+				// Serialise handle
+				buffer += std::to_wstring(getHandle());
+
+				// Serialise location
+				buffer += std::to_wstring(location.x);
+				buffer += std::to_wstring(location.y);
+
+				// Serialise radius
+				buffer += std::to_wstring(radius);
+			}
+
+			virtual void deserialise(std::wstring buffer)
+			{
+
+			}
+
+
 
 			//
 			// Constructors
