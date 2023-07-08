@@ -32,8 +32,6 @@ namespace OD
 
 		public:
 
-			std::vector<OdEntity*>* entities;  // TODO: Remove this to a document instance <<<<<<<<<<<<<<<<<
-
 			// Constructor
 			OdMainWindow(int aWidth, int aHeight, const char* aTitle);
 

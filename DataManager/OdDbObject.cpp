@@ -19,7 +19,6 @@
 
 namespace OD::Data
 {
-
 	// Getters & Setters
 	int OdDbObject::getHandle() const { return handle; }
 	void OdDbObject::setHandle(unsigned int aHandle) { handle = aHandle; }
