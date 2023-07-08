@@ -33,6 +33,11 @@ namespace OD
 
 		public:
 
+			// Constructor and Destructor
+			OdDrawingDb();
+			~OdDrawingDb();
+
+
 			// Document Entities
 
 			// Add Entity
@@ -44,7 +49,11 @@ namespace OD
 			// Get Entity
 			OdDbObject* GetEntity(int aHandle);
 
+			// Get Entity Count
+			int GetEntityCount();
+
 		};
+
 
 	} // namespace OD::Data
 } // namespace OD

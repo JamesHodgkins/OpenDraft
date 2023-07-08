@@ -20,7 +20,7 @@
 namespace OD::Data
 {
 	// Constructors & Destructors
-	OdDocumentManager::OdDocumentManager()
+	OdDocumentManager::OdDocumentManager() : documents()
 	{
 
 	}
@@ -42,7 +42,7 @@ namespace OD::Data
 			return false;
 		
 		// Open a document
-		std::shared_ptr<OdDocument> doc = std::make_shared<OdDocument>();
+		OdDocument* doc = new OdDocument();
 		
 		// Set filepath of document
 		doc->setPath(aFilepath);
@@ -56,7 +56,7 @@ namespace OD::Data
 		// Find document index
 		for (int i = 0; i < documents.size(); i++)
 		{
-			if (documents[i].get() == aDocument)
+			if (documents[i] == aDocument)
 			{
 				// Close document
 				//documents[i]->close();  //// TODO: Implement close method
@@ -68,7 +68,7 @@ namespace OD::Data
 	void OdDocumentManager::addDocument(OdDocument* aDocument)
 	{
 		// Add document
-		documents.push_back(std::shared_ptr<OdDocument>(aDocument));
+		documents.push_back(aDocument);
 	}
 
 	void OdDocumentManager::removeDocument(OdDocument* aDocument)
@@ -76,7 +76,7 @@ namespace OD::Data
 		// Find document index
 		for (int i = 0; i < documents.size(); i++)
 		{
-			if (documents[i].get() == aDocument)
+			if (documents[i] == aDocument)
 			{
 				// Remove document
 				documents.erase(documents.begin() + i);
@@ -100,7 +100,7 @@ namespace OD::Data
 		// Find document index
 		for (int i = 0; i < documents.size(); i++)
 		{
-			if (documents[i].get() == aDocument)
+			if (documents[i] == aDocument)
 			{
 				activeDocumentIndex = i;
 				return;
@@ -115,7 +115,7 @@ namespace OD::Data
 
 	OdDocument* OdDocumentManager::getActiveDocument()
 	{
-		return documents[activeDocumentIndex].get();
+		return documents[activeDocumentIndex];
 	}
 
 	OdDocument* OdDocumentManager::getDocument(int aIndex)
@@ -125,7 +125,7 @@ namespace OD::Data
 			return nullptr;
 		
 		// Return document
-		return documents[aIndex].get();
+		return documents[aIndex];
 	}
 
 	int OdDocumentManager::getDocumentCount()

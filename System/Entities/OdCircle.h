@@ -30,6 +30,15 @@ namespace OD
 			double radius;
 
 
+			// Override Get Type
+			const char* getType() const
+			{
+				// Return type
+				return "Circle";
+			}
+
+
+
 			//
 			// Constructors
 			//

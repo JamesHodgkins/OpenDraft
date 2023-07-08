@@ -16,6 +16,9 @@
 
 
 #include "Graphics/UI/OdViewport.h"
+#include "System/OdApplication.h"
+#include "DataManager/OdData.h"
+
 
 
 using namespace OD::Geometry;
@@ -63,16 +66,48 @@ namespace OD::Graphics
 
 		disableOverflow(aContext);
 
-		// Check is entities is valid
-		if (entities == nullptr)
-			return;
-
 		// Translate by location
 		OdDraw::Translate(aContext, location.x, location.y);
 
+		// Get active document
+		OdDocument* doc = OdApplication::getInstance()->getDocumentManager()->getActiveDocument();
+
+		// Check if document is null
+		if (doc == nullptr)
+			return;
+
+		OdDrawingDb* db = doc->getDatabase();
+
+		// Check if database is null
+		if (db == nullptr)
+			return;
+
+		// Number of entities
+		int numEntities = db->GetEntityCount();
+
+
 		// Draw entities
-		for (OdEntity* entity : *entities)
+		for (int i = 0; i < numEntities; i++)
+		{
+			std::cout << "Drawing entity " << i << std::endl;
+
+			// Get entity
+			OdDbObject* dbObject = db->GetEntity(i);
+
+			// Check if entity is null
+			if (dbObject == nullptr)
+				continue;
+
+			// Can item be cast as an OdEntity
+			OdEntity* entity = static_cast<OdEntity*>(dbObject);
+
+			// Check if entity is null
+			if (entity == nullptr)
+				continue;
+
+			// Draw entity
 			entity->draw(aContext);
+		}
 		
 		// Undo translation
 		OdDraw::Translate(aContext, -location.x, -location.y);

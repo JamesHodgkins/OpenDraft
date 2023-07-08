@@ -24,6 +24,7 @@
 #include "Graphics/OdMainWindow.h"	// Include Main Window Class
 #include "OdResourceManager.h"		// Include Resource Manager
 #include "System/OdSystem.h"		// Include System Class
+#include "DataManager/OdData.h"		// Include Data Header
 
 
 using namespace OD::Graphics;
@@ -45,12 +46,13 @@ namespace OD
 		private:
 
 			// Static reference to the application instance
-			static OdApplication* instance_;
+			static OdApplication* instance_;		// Pointer to the application instance
 
 			bool running = false;					// Flag to indicate if the application is still running
 			OdMainWindow* mainWindow = nullptr;		// Pointer to the main window
 			OdResourceManager* resManager;			// Pointer to the resource manager
 			OdSystem* system;						// Pointer to the system
+			OdDocumentManager* documentManager;		// Pointer to the document manager
 
 		public:
 
@@ -60,6 +62,9 @@ namespace OD
 			// Destructor
 			~OdApplication();
 
+			// Initialize the application
+			void initialise();
+
 			// Check if the application is still running
 			bool isRunning();
 
@@ -68,6 +73,9 @@ namespace OD
 
 			// Get the main window
 			OdMainWindow* getMainWindow();
+
+			// Get the document manager
+			OdDocumentManager* getDocumentManager();
 		};
 
 	}// namespace OD::System

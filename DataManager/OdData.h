@@ -18,6 +18,7 @@
 #include "DataManager/OdDocument.h"
 #include "DataManager/OdDrawingDb.h"
 #include "DataManager/OdDataManager.h"
+#include "DataManager/OdDocumentManager.h"
 
 
 namespace OD

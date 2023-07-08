@@ -28,7 +28,7 @@ namespace OD
 		{
 		private:
 			// Private Properties
-			std::vector<std::shared_ptr<OdDocument>> documents;
+			std::vector<OdDocument*> documents;
 			int activeDocumentIndex;
 
 		public:
@@ -48,7 +48,6 @@ namespace OD
 			OdDocument* getDocument(int aIndex);
 			int getDocumentCount();
 
-	
 		};
 
 	} // namespace OD::Data

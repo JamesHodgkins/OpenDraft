@@ -43,6 +43,9 @@ namespace OD
 			void setHandle(unsigned int handle);
 
 		public:
+			// Get Type
+			virtual const char* getType() const = 0;
+
 			// Getters & Setters
 			int getHandle() const;
 

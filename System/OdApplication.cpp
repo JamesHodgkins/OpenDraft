@@ -27,22 +27,17 @@ namespace OD::System
 	OdApplication* OdApplication::getInstance()
 	{
 		// Check if the application instance has already been created
-		if (instance_ == nullptr)
-			instance_ = new OdApplication();
+		if (instance_ != nullptr)
+			return instance_;
 
-		return instance_;
-	}
+		// Create the application instance
+		instance_ = new OdApplication();
 
-	OdApplication::OdApplication()
-	{
 		// Initialize the application
-		resManager = new OdResourceManager();
-		mainWindow = new OdMainWindow(1280, 720, "OpenDraft");
-		mainWindow->resourceManager = resManager;
-		mainWindow->initialise();
-		system = OdSystem::getInstance();
-		running = true;
+		instance_->initialise();
 	}
+
+	OdApplication::OdApplication() {}
 
 
 	OdApplication::~OdApplication()
@@ -50,6 +45,19 @@ namespace OD::System
 		mainWindow->close();
 		delete resManager;
 		delete mainWindow;
+		delete documentManager;
+	}
+
+	void OdApplication::initialise()
+	{
+		// Initialize the application
+		resManager = new OdResourceManager();
+		documentManager = new OdDocumentManager();
+		system = OdSystem::getInstance();
+		mainWindow = new OdMainWindow(1280, 720, "OpenDraft");
+		mainWindow->resourceManager = resManager;
+		mainWindow->initialise();
+		running = true;
 	}
 
 
@@ -77,6 +85,12 @@ namespace OD::System
 	OdMainWindow* OdApplication::getMainWindow()
 	{
 		return mainWindow;
+	}
+
+	// Get the document manager
+	OdDocumentManager* OdApplication::getDocumentManager()
+	{
+		return documentManager;
 	}
 
 

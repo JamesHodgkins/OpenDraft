@@ -15,8 +15,10 @@
 
 
 
+#include <chrono>
 #include "Graphics/OdMainWindow.h"
 #include "System/OdApplication.h"
+#include "DataManager/OdData.h"
 
 
 namespace OD::Graphics
@@ -110,36 +112,66 @@ namespace OD::Graphics
 		tabV->setActiveTab(0);
 
 
+		//
+		// 
+		// 
+		// Testing
+		//
+		//
+		//
 
-		// Test viewport
+		OdApplication* app = OdApplication::getInstance();
+		OdDocumentManager* docManager = app->getDocumentManager();
+
+		OdDocument* doc1 = new OdDocument();
+		docManager->addDocument(doc1);
+		docManager->setActiveDocument(0);
+
+		OdDocument* doc = docManager->getActiveDocument();
+		OdDrawingDb* db = doc->getDatabase();
+
+
+		doc->author = L"James Hodgkins";
+		doc->comments = L"This is a test document comment";
+		doc->company = L"OpenDraft";
+		
+		
 		OdViewport* vp = new OdViewport(0, 100, 1280, 700);
 		vp->backColour = OdColour(0,0,0,50);
 		addChildControl(vp);
 
-		entities = new std::vector<OdEntity*>();
-		vp->entities = entities;
-
 		OdEllipse *ellipse1 = new OdEllipse(50, 50, 50, 20);
 		ellipse1->rotation = 45;
-		entities->push_back(ellipse1);
+		db->AddCreatedEntity(dynamic_cast<OdDbObject*>(ellipse1));
 
 		OdEllipse* ellipse2 = new OdEllipse(50, 50, 50, 20);
 		ellipse2->rotation = -45;
-		entities->push_back(ellipse2);
+		db->AddCreatedEntity(dynamic_cast<OdDbObject*>(ellipse2));
 		
 		OdLine* line1 = new OdLine(0, 0, 50, 50);
-		entities->push_back(line1);
+		db->AddCreatedEntity(dynamic_cast<OdDbObject*>(line1));
 
 		OdLine* line2 = new OdLine(50, 0, 0, 50);
-		entities->push_back(line2);
+		db->AddCreatedEntity(dynamic_cast<OdDbObject*>(line2));
 
 		OdCircle* circle1 = new OdCircle(100, 100, 50);
-		entities->push_back(circle1);
-
-		OdPoint* point1 = new OdPoint(300, 200);
-		entities->push_back(point1);
+		db->AddCreatedEntity(dynamic_cast<OdDbObject*>(circle1));
 
 
+		
+
+		// Get current date as unix timestamp
+		std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+
+		// Convert the system time point to a duration since epoch
+		std::chrono::seconds duration = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch());
+
+		// Extract the count of seconds as an int value
+		int timestamp = static_cast<int>(duration.count());
+
+		doc->creationDate = timestamp;
+		doc->modifiedDate = timestamp;
+		//doc->compileFileHeader();
 	}
 
 

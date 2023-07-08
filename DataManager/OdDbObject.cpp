@@ -22,7 +22,7 @@ namespace OD::Data
 
 	// Getters & Setters
 	int OdDbObject::getHandle() const { return handle; }
-	void OdDbObject::setHandle(unsigned int handle) { this->handle = handle; }
+	void OdDbObject::setHandle(unsigned int aHandle) { handle = aHandle; }
 
 	int OdDbObject::getParent() const { return parent; }
 	void OdDbObject::setParent(int parent) { this->parent = parent; }

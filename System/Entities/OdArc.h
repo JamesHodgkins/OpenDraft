@@ -33,6 +33,14 @@ namespace OD
 			double endAngle;
 
 
+			// Override Get Type
+			const char* getType() const
+			{
+				// Return type
+				return "Arc";
+			}
+
+
 			//
 			// Constructors
 			//

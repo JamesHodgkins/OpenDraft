@@ -14,17 +14,16 @@
 ***************************************************************************************/
 
 
+#include <cstring>
 #include "DataManager/OdDocument.h"
 
 
 namespace OD::Data
 {
 	// Constructors and Destructors
-	OdDocument::OdDocument()
+	OdDocument::OdDocument() : version{'O','D','2','3','\0'}
 	{
-		name = "";
 		path = "";
-		version = 0;
 		readOnly = false;
 		modified = false;
 		locked = false;
@@ -40,17 +39,6 @@ namespace OD::Data
 	// Getters and Setters
 	//
 
-	// Document Name
-	std::string OdDocument::getName()
-	{
-		return name;
-	}
-	
-	void OdDocument::setName(std::string aName)
-	{
-		name = name;
-	}
-
 	// Document Path
 	std::string OdDocument::getPath()
 	{
@@ -59,17 +47,18 @@ namespace OD::Data
 	
 	void OdDocument::setPath(std::string aPath)
 	{
-		path = path;
+		path = aPath;
 	}
 
 	// Document Version
-	short OdDocument::getVersion()
+	std::string OdDocument::getVersion()
 	{
 		return version;
 	}
-	void OdDocument::setVersion(short aVersion)
+	void OdDocument::setVersion(const char* aVersion)
 	{
-		version = version;
+		strncpy_s(version, aVersion, sizeof(version));
+		version[sizeof(version) - 1] = '\0'; // Ensure null-termination
 	}
 
 	// Document Read-Only
@@ -116,6 +105,18 @@ namespace OD::Data
 	// Document Save
 	bool OdDocument::save()
 	{
+		// Check if document is read-only or locked
+		if (readOnly || locked)
+			return false;
+
+		
+		// Check if file does not already exists
+		if (path == "")
+			createNew("");
+
+		// Save file
+		updateDocument();
+
 		return true;
 	}
 
@@ -123,6 +124,112 @@ namespace OD::Data
 	bool OdDocument::saveAs(std::string aPath)
 	{
 		return true;
+	}
+
+	// Create new Document
+	bool OdDocument::createNew(std::string aPath)
+	{
+		// if path is empty, ask user for path
+		if (aPath == "")
+		{
+			// TO DO: Get path from user
+		}
+
+		// Compiler file header
+
+		return false;
+	}
+
+	// Update Document
+	bool OdDocument::updateDocument()
+	{
+		return false;
+	}
+
+	// Get Document Database
+	OdDrawingDb* OdDocument::getDatabase()
+	{
+		return &database;
+	}
+
+	std::vector<wchar_t> OdDocument::compileFileHeader()
+	{
+		// Create vector to store file header
+		std::vector<wchar_t> fileHeader;
+
+		// Add version to file header
+		for (int i = 0; i < sizeof(version); i++)
+			fileHeader.push_back(version[i]);
+
+		for (int i = 0; i < 3; i++)
+			fileHeader.push_back(' ');
+
+		// Add Creation Date to file header
+		std::string creationDateStr = std::to_string(creationDate);
+
+		for (int i = 0; i < creationDateStr.length(); i++)
+			fileHeader.push_back(creationDateStr[i]);
+
+
+		//// Add Modified Date to file header
+		std::string modifiedDateStr = std::to_string(modifiedDate);
+
+		for (int i = 0; i < creationDateStr.length(); i++)
+			fileHeader.push_back(modifiedDateStr[i]);
+
+		// Add Author to file header
+		for (int i = 0; i < 64; i++)
+		{
+			if (author.size() > i)
+				fileHeader.push_back(author[i]);
+			else
+				fileHeader.push_back(' ');
+		}
+
+		// Add Company to file header
+		for (int i = 0; i < 64; i++)
+		{
+			if (company.size() > i)
+				fileHeader.push_back(company[i]);
+			else
+				fileHeader.push_back(' ');
+		}
+
+		// Add Comments to file header
+		for (int i = 0; i < 256; i++)
+		{
+			if (comments.size() > i)
+				fileHeader.push_back(comments[i]);
+			else
+				fileHeader.push_back(' ');
+		}
+
+		// Debug: print file header
+		for (int i = 0; i < fileHeader.size(); i++)
+			std::wcout << fileHeader[i];
+
+		fileHeader.push_back('\0');
+
+
+
+		// Write file header to file
+
+		std::wofstream outputFile("output.txt"); // Open the file for writing
+
+		if (outputFile.is_open()) {
+			// Write the char vector to the file
+			for (wchar_t c : fileHeader) {
+				outputFile << c;
+			}
+			outputFile.close(); // Close the file
+			std::cout << "File write successful." << std::endl;
+		}
+		else {
+			std::cout << "Unable to open the file." << std::endl;
+		}
+
+
+		return fileHeader;
 	}
 
 

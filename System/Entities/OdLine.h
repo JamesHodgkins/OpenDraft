@@ -31,6 +31,14 @@ namespace OD
 			OdVector2 end;
 
 
+			// Override Get Type
+			const char* getType() const
+			{
+				// Return type
+				return "Line";
+			}
+
+
 			//
 			// Constructors
 			//

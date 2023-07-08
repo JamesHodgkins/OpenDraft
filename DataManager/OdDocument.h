@@ -15,6 +15,7 @@
 
 
 
+#include <fstream>
 #include <string>
 #include "DataManager/OdDrawingDb.h"
 #include "System/OdCore.h"				// Include Core Utilities
@@ -29,9 +30,14 @@ namespace OD
 		{
 		public:
 
-			std::string name;			// Document Name
+			// Document Properties
 			std::string path;			// Document Path
-			short version;				// Document Version
+			char version[5];			// Document Version
+			std::wstring author;		// Document Author
+			std::wstring company;		// Document Company
+			std::wstring comments;		// Document Comments
+			int creationDate;			// Document Creation Date
+			int modifiedDate;			// Document Modified Date
 			bool readOnly;				// Document Read-Only
 			bool modified;				// Document Modified
 			bool locked;				// Document Locked
@@ -47,18 +53,14 @@ namespace OD
 			// 
 			// Getters and Setters
 			//
-			
-			// Document Name
-			std::string getName();
-			void setName(std::string aName);
 
 			// Document Path
 			std::string getPath();
 			void setPath(std::string aPath);
 			
 			// Document Version
-			short getVersion();
-			void setVersion(short aVersion);
+			std::string getVersion();
+			void setVersion(const char* aVersion);
 
 			// Document Read-Only
 			bool isReadOnly();
@@ -77,6 +79,23 @@ namespace OD
 
 			// Document Save As
 			bool saveAs(std::string aPath);
+
+			// Create new Document
+			bool createNew(std::string aPath = "");
+
+			// Update Document
+			bool updateDocument();
+
+			// Get Document Database
+			OdDrawingDb* getDatabase();
+
+
+			//
+			// File structure methods
+			//
+
+			std::vector<wchar_t> compileFileHeader();
+
 
 		};
 

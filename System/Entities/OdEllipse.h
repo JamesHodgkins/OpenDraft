@@ -32,6 +32,14 @@ namespace OD
 			double rotation;
 
 
+			// Override Get Type
+			const char* getType() const
+			{
+				// Return type
+				return "Ellipse";
+			}
+
+
 			//
 			// Constructors
 			//

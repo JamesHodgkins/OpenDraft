@@ -29,6 +29,14 @@ namespace OD
 			OdVector2 centre;
 
 
+			// Override Get Type
+			const char* getType() const
+			{
+				// Return type
+				return "Point";
+			}
+
+
 			//
 			// Constructors
 			//

@@ -30,6 +30,13 @@ namespace OD
 
 		public:
 
+			// Override Get Type
+			const char* getType() const
+			{
+				// Return type
+				return "Text";
+			}
+
 			virtual ~OdText() = default;
 
 			OdVector2 location;

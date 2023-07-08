@@ -18,20 +18,31 @@
 
 namespace OD::Data
 {
+	// Constructor and Destructor
+	OdDrawingDb::OdDrawingDb()
+	{
+
+	}
+
+	OdDrawingDb::~OdDrawingDb()
+	{
+
+	}
+
 
 	// Add Entity
 	void OdDrawingDb::AddCreatedEntity(OdDbObject* aObject)
 	{
+		if (aObject == nullptr)
+			return;
+
 		// Iterate through objects and find the lowest unused handle
 		int handle = 1;
 		for (auto& object : objects)
 		{
 			// Check if object handle matches
 			if (object->getHandle() == handle)
-			{
-				// Increment handle
 				handle++;
-			}
 		}
 
 		// Set object handle
@@ -39,6 +50,7 @@ namespace OD::Data
 
 		// Add object to vector
 		objects.push_back(aObject);
+
 	}
 
 	// Remove Entity
@@ -65,6 +77,13 @@ namespace OD::Data
 		// Return null
 		return nullptr;
 
+	}
+
+	// Get Entity Count
+	int OdDrawingDb::GetEntityCount()
+	{
+		// Return object count
+		return objects.size();
 	}
 
 }
