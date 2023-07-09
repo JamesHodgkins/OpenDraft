@@ -15,6 +15,7 @@
 
 
 #include "System/Entities/OdEntity.h"
+#include "DataManager/OdData.h"
 
 
 using namespace OD::System;
@@ -50,18 +51,18 @@ namespace OD
 				// Serialise handle
 				buffer += std::to_wstring(getHandle());
 
-				// Serialise location
-				buffer += std::to_wstring(location.x);
-				buffer += std::to_wstring(location.y);
+				
+				buffer += OdData::doubleToHexWString(location.x);
+				buffer += OdData::doubleToHexWString(location.y);
 
 				// Serialise radius
-				buffer += std::to_wstring(radius);
+				buffer += OdData::doubleToHexWString(radius);
 
 				// Serialise start angle
-				buffer += std::to_wstring(startAngle);
+				buffer += OdData::doubleToHexWString(startAngle);
 
 				// Serialise end angle
-				buffer += std::to_wstring(endAngle);
+				buffer += OdData::doubleToHexWString(endAngle);
 			}
 
 			virtual void deserialise(std::wstring buffer)

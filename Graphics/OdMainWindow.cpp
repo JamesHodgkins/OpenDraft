@@ -170,6 +170,8 @@ namespace OD::Graphics
 		doc->creationDate = timestamp;
 		doc->modifiedDate = timestamp;
 		doc->updateDocument();
+
+		
 	}
 
 

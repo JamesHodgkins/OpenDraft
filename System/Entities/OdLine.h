@@ -17,6 +17,10 @@
 #include "System/Entities/OdEntity.h"
 #include "System/OdSystem.h"
 
+
+#define start = location;
+
+
 using namespace OD::System;
 
 namespace OD
@@ -25,12 +29,14 @@ namespace OD
 	{
 
 		class OdLine : public OdEntity {
-		public:
-			
-			OdVector2 start;
+
+		private:
+
 			OdVector2 end;
 
 
+		public:
+			
 			// Override Get Type
 			const char* getType() const
 			{
@@ -39,7 +45,21 @@ namespace OD
 			}
 
 
+			//
+			// Getters and Setters
+			//
+			
+			OdVector2 getStart() { return location; }
+			void setStart(OdVector2 aStart) { location = aStart; }
+
+			OdVector2 getEnd() { return end; }
+			void setEnd(OdVector2 aEnd) { location = aEnd; }
+
+
+			//
 			// Serialisation Methods
+			//
+
 			virtual void serialise(std::wstring& buffer)
 			{
 				// For each property, add to buffer
@@ -68,13 +88,13 @@ namespace OD
 			
 			OdLine(OdVector2 aStart, OdVector2 aEnd)
 			{
-				start = aStart;
+				location = aStart;
 				end = aEnd;
 			}
 
 			OdLine(int x1, int y1, int x2, int y2)
 			{
-				start = OdVector2(x1, y1);
+				location = OdVector2(x1, y1);
 				end = OdVector2(x2, y2);
 			}
 

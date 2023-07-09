@@ -26,7 +26,6 @@ namespace OD
 
 		class OdCircle : public OdEntity {
 		public:
-			OdVector2 centre;
 			double radius;
 
 
@@ -70,25 +69,25 @@ namespace OD
 			
 			OdCircle()
 			{
-				centre = OdVector2(0, 0);
+				location = OdVector2(0, 0);
 				radius = 1;
 			}
 
 			OdCircle(OdVector2 aCentre, double aRadius)
 			{
-				centre = aCentre;
+				location = aCentre;
 				radius = aRadius;
 			}
 
 			OdCircle(float x, float y, double aRadius)
 			{
-				centre = OdVector2(x, y);
+				location = OdVector2(x, y);
 				radius = aRadius;
 			}
 
 			OdCircle(int x, int y, double aRadius)
 			{
-				centre = OdVector2(x, y);
+				location = OdVector2(x, y);
 				radius = aRadius;
 			}
 
@@ -104,7 +103,7 @@ namespace OD
 				//float lineWeight = OdSystem::getRegistryVariableByName("lineWidth");
 
 				nvgBeginPath(aContext);
-				nvgCircle(aContext, centre.x, centre.y, radius);
+				nvgCircle(aContext, location.x, location.y, radius);
 				nvgStrokeColor(aContext, nvgRGBA(255, 0, 0, 255));
 				nvgStrokeWidth(aContext, 3);
 				nvgStroke(aContext);
