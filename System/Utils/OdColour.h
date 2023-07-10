@@ -95,6 +95,15 @@ namespace OD
 
 			// Returns the colour as a NanoVG colour
 			NVGcolor asNvgColour() const;
+
+
+			// Operator overloads
+			bool operator==(const OdColour& aColour) const;
+
+			bool operator!=(const OdColour& aColour) const;
+
+			OdColour operator=(const OdColour& aColour);
+
 		};
 
 	} // namespace System

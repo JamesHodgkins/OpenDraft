@@ -60,9 +60,22 @@ namespace OD
 			}
 
 
-			virtual ~OdText() = default;
+			//
+			// Draw
+			//
 
-			OdVector2 location;
+			void draw(NVGcontext* aContext) override
+			{
+// Draw text
+				nvgBeginPath(aContext);
+				nvgFontSize(aContext, 18.0f);
+				nvgFontFace(aContext, "sans");
+				nvgTextAlign(aContext, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
+				nvgFillColor(aContext, nvgRGBA(255, 255, 255, 255));
+				nvgText(aContext, location.x, location.y, "Text", NULL);
+			}
+
+			
 		};
 
 	} // namespace Geometry

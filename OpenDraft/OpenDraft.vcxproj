@@ -158,6 +158,7 @@
     <ClCompile Include="..\Libraries\pugixml\src\pugixml.cpp" />
     <ClCompile Include="..\System\Entities\OdEntity.cpp" />
     <ClCompile Include="..\System\IO\OdXmlReader.cpp" />
+    <ClCompile Include="..\System\Objects\OdLayer.cpp" />
     <ClCompile Include="..\System\OdApplication.cpp" />
     <ClCompile Include="..\System\OdSystem.cpp" />
     <ClCompile Include="..\System\Utils\OdColour.cpp" />
@@ -192,6 +193,7 @@
     <ClInclude Include="..\System\Entities\OdPoint.h" />
     <ClInclude Include="..\System\Entities\OdText.h" />
     <ClInclude Include="..\System\IO\OdXmlReader.h" />
+    <ClInclude Include="..\System\Objects\OdLayer.h" />
     <ClInclude Include="..\System\OdSystem.h" />
     <ClInclude Include="..\System\Utils\OdColour.h" />
     <ClInclude Include="..\System\Utils\OdFont.h" />

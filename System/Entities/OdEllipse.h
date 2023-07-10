@@ -26,7 +26,6 @@ namespace OD
 
 		class OdEllipse : public OdEntity {
 		public:
-			OdVector2 centre;
 			double majorRadius;
 			double minorRadius;
 			double rotation;
@@ -69,7 +68,7 @@ namespace OD
 
 			OdEllipse()
 			{
-				centre = OdVector2(0,0);
+				location = OdVector2(0,0);
 				majorRadius = 2;
 				minorRadius = 1;
 				rotation = 0;
@@ -77,7 +76,7 @@ namespace OD
 
 			OdEllipse(OdVector2 aCentre, double aMajor, double aMinor)
 			{
-				centre = aCentre;
+				location = aCentre;
 				majorRadius = aMajor;
 				minorRadius = aMinor;
 				rotation = 0;
@@ -85,7 +84,7 @@ namespace OD
 
 			OdEllipse(float x, float y, float aMajor, float aMinor)
 			{
-				centre = OdVector2(x, y);
+				location = OdVector2(x, y);
 				majorRadius = aMajor;
 				minorRadius = aMinor;
 				rotation = 0;
@@ -93,7 +92,7 @@ namespace OD
 
 			OdEllipse(int x, int y, int aMajor, int aMinor)
 			{
-				centre = OdVector2(x, y);
+				location = OdVector2(x, y);
 				majorRadius = aMajor;
 				minorRadius = aMinor;
 				rotation = 0;
@@ -113,7 +112,7 @@ namespace OD
 
 				nvgSave(aContext);
 
-				nvgTranslate(aContext, +centre.x, +centre.y);
+				nvgTranslate(aContext, +location.x, +location.y);
 				nvgRotate(aContext, rotation * -OD_RAD2DEG_FACTOR);
 
 				// Draw ellipse

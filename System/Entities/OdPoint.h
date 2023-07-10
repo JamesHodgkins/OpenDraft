@@ -26,8 +26,6 @@ namespace OD
 
 		class OdPoint : public OdEntity {
 		public:
-			OdVector2 centre;
-
 
 			// Override Get Type
 			const char* getType() const
@@ -66,22 +64,22 @@ namespace OD
 
 			OdPoint()
 			{
-				centre = OdVector2(0, 0);
+				location = OdVector2(0, 0);
 			}
 
 			OdPoint(OdVector2 aCentre)
 			{
-				centre = aCentre;
+				location = aCentre;
 			}
 
 			OdPoint(float x, float y)
 			{
-				centre = OdVector2(x, y);
+				location = OdVector2(x, y);
 			}
 
 			OdPoint(int x, int y)
 			{
-				centre = OdVector2(x, y);
+				location = OdVector2(x, y);
 			}
 
 
@@ -96,7 +94,7 @@ namespace OD
 				//float lineWeight = OdSystem::getRegistryVariableByName("lineWidth");
 
 				nvgBeginPath(aContext);
-				nvgCircle(aContext, centre.x, centre.y, 0.8);
+				nvgCircle(aContext, location.x, location.y, 0.8);
 				nvgFillColor(aContext, nvgRGBA(255, 0, 0, 255));
 				nvgFill(aContext);
 			}

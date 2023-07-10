@@ -18,9 +18,6 @@
 #include "System/OdSystem.h"
 
 
-#define start = location;
-
-
 using namespace OD::System;
 
 namespace OD
@@ -109,7 +106,7 @@ namespace OD
 				//float lineWeight = OdSystem::getRegistryVariableByName("lineWidth");
 
 				nvgBeginPath(aContext);
-				nvgMoveTo(aContext, start.x, start.y);
+				nvgMoveTo(aContext, location.x, location.y);
 				nvgLineTo(aContext, end.x, end.y);
 				nvgStrokeColor(aContext, nvgRGBA(255, 0, 0, 255));
 				nvgStrokeWidth(aContext, 3);
@@ -124,25 +121,25 @@ namespace OD
 			// Length
 			double getLength()
 			{
-				return sqrt(pow(end.x - start.x, 2) + pow(end.y - start.y, 2));
+				return sqrt(pow(end.x - location.x, 2) + pow(end.y - location.y, 2));
 			}
 
 			// Midpoint
 			OdVector2 getMidpoint()
 			{
-				return OdVector2((start.x + end.x) / 2, (start.y + end.y) / 2);
+				return OdVector2((location.x + end.x) / 2, (location.y + end.y) / 2);
 			}
 
 			// Slope
 			double getSlope()
 			{
-				return (end.y - start.y) / (end.x - start.x);
+				return (end.y - location.y) / (end.x - location.x);
 			}
 
 			// Angle
 			double getAngle()
 			{
-				return atan2(end.y - start.y, end.x - start.x);
+				return atan2(end.y - location.y, end.x - location.x);
 			}
 
 			// Perpendicular Slope
@@ -154,7 +151,7 @@ namespace OD
 			// Perpendicular Angle
 			double getPerpendicularAngle()
 			{
-				return atan2(end.x - start.x, start.y - end.y);
+				return atan2(end.x - location.x, location.y - end.y);
 			}
 
 			// Perpendicular Bisector
@@ -163,20 +160,20 @@ namespace OD
 				OdVector2 midpoint = getMidpoint();
 				double angle = getPerpendicularAngle();
 				double length = getLength() / 2;
-				OdVector2 start = OdVector2(midpoint.x + length * cos(angle), midpoint.y + length * sin(angle));
+				OdVector2 location = OdVector2(midpoint.x + length * cos(angle), midpoint.y + length * sin(angle));
 				OdVector2 end = OdVector2(midpoint.x - length * cos(angle), midpoint.y - length * sin(angle));
-				return OdLine(start, end);
+				return OdLine(location, end);
 			}
 
 			// Intersection
 			OdVector2 getIntersection(OdLine aLine)
 			{
-				double x1 = start.x;
-				double y1 = start.y;
+				double x1 = location.x;
+				double y1 = location.y;
 				double x2 = end.x;
 				double y2 = end.y;
-				double x3 = aLine.start.x;
-				double y3 = aLine.start.y;
+				double x3 = aLine.location.x;
+				double y3 = aLine.location.y;
 				double x4 = aLine.end.x;
 				double y4 = aLine.end.y;
 

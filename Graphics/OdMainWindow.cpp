@@ -72,39 +72,37 @@ namespace OD::Graphics
 		// Start Ribbon Area
 		/*OdPanel* pnl1 = new OdPanel(0, 400, size.x, 100);
 		pnl1->backColour = OdColour::BACKGROUND2;
-		addChildControl(pnl1);
-
-		OdButton* btn3 = new OdButton(10, 10, 24, 24, "");
-		btn3->backColour = OdColour::CLEAR;
-		btn3->setBackgroundImage(resourceManager->images["ico_circle"]);
-		pnl1->addChildControl(btn3);
-
-		OdButton* btn4 = new OdButton(55, 10, 24, 24, "");
-		btn4->backColour = OdColour::CLEAR;
-		btn4->setBackgroundImage(resourceManager->images["ico_line"]);
-		pnl1->addChildControl(btn4);
-
-		OdButton* btn5 = new OdButton(100, 10, 24, 24, "");
-		btn5->backColour = OdColour::CLEAR;
-		btn5->setBackgroundImage(resourceManager->images["ico_polyline"]);
-		pnl1->addChildControl(btn5);*/
+		addChildControl(pnl1);	*/
 
 		OdTabView* tabV = new OdTabView(0, 0, 1280, 100);
 		addChildControl(tabV);
 
 		tabV->addTab("Home");
+		tabV->addTab("Draw");
 		tabV->addTab("Modify");
 		tabV->addTab("View");
 		tabV->addTab("Help");
 
-		OdTab* t1 = tabV->getTab(0);
-		OdTab* t2 = tabV->getTab(1);
-		OdTab* t3 = tabV->getTab(2);
-		OdTab* t4 = tabV->getTab(3);
+		OdTab* tabHome = tabV->getTab(0);
+		OdTab* tabDraw = tabV->getTab(1);
+		OdTab* tabModify = tabV->getTab(2);
+		OdTab* tabView = tabV->getTab(3);
+		OdTab* tabHelp = tabV->getTab(4);
 
-		OdLabel* lb1 = new OdLabel(10, 10, 100, 20, "Hello World");
+		OdButton* btn3 = new OdButton(10, 10, 24, 24, "");
+		btn3->backColour = OdColour::CLEAR;
+		btn3->setBackgroundImage(resourceManager->images["ico_circle"]);
+		tabDraw->addPanelChildControl(btn3);
 
-		t1->addPanelChildControl(lb1);
+		OdButton* btn4 = new OdButton(55, 10, 24, 24, "");
+		btn4->backColour = OdColour::CLEAR;
+		btn4->setBackgroundImage(resourceManager->images["ico_line"]);
+		tabDraw->addPanelChildControl(btn4);
+
+		OdButton* btn5 = new OdButton(100, 10, 24, 24, "");
+		btn5->backColour = OdColour::CLEAR;
+		btn5->setBackgroundImage(resourceManager->images["ico_polyline"]);
+		tabDraw->addPanelChildControl(btn5);
 
 		// Set tab 1 as active
 		tabV->setActiveTab(0);

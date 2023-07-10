@@ -85,6 +85,27 @@ namespace OD
 		}
 
 
+		// Operator overloads
+		bool OdColour::operator==(const OdColour& aColour) const
+		{
+			return (r == aColour.r && g == aColour.g && b == aColour.b && a == aColour.a);
+		}
+
+		bool OdColour::operator!=(const OdColour& aColour) const
+		{
+			return !(*this == aColour);
+		}
+
+		OdColour OdColour::operator=(const OdColour& aColour)
+		{
+			r = aColour.r;
+			g = aColour.g;
+			b = aColour.b;
+			a = aColour.a;
+			return *this;
+		}
+
+
 	} // namespace System
 } // namespace OD
 

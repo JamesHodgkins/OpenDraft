@@ -35,6 +35,9 @@
     <Filter Include="System\IO">
       <UniqueIdentifier>{ec97b3d1-0b04-458c-a293-720179880111}</UniqueIdentifier>
     </Filter>
+    <Filter Include="System\Objects">
+      <UniqueIdentifier>{e9ee4cef-c75f-44c1-bbbd-a1383f7216ed}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Libraries\nanovg\src\nanovg.c">
@@ -103,6 +106,9 @@
     </ClCompile>
     <ClCompile Include="..\DataManager\OdDbObject.cpp">
       <Filter>DataManager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System\Objects\OdLayer.cpp">
+      <Filter>System\Objects</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -213,6 +219,9 @@
     </ClInclude>
     <ClInclude Include="..\DataManager\OdDbObject.h">
       <Filter>DataManager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\System\Objects\OdLayer.h">
+      <Filter>System\Objects</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
