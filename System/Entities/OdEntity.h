@@ -17,6 +17,7 @@
 #include <fstream>
 #include "System/OdCore.h"
 #include "DataManager/OdDbObject.h"
+#include "System/Objects/OdLayer.h"
 
 
 using namespace OD::System;

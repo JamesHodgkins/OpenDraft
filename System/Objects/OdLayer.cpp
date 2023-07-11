@@ -42,10 +42,9 @@ namespace OD::System
 		OdLayer::OdLayer(
 			const std::string& name,
 			const std::string& description,
-			const std::string& colour,
+			OdColour colour,
 			const std::string& lineType,
-			const std::string& lineWeight,
-			const std::string& plotStyle){}
+			int lineWeight){}
 		
 		OdLayer::~OdLayer()
 		{
@@ -113,6 +112,28 @@ namespace OD::System
 				lineWeight = aLayer.lineWeight;
 			}
 			return *this;
+		}
+
+
+		//
+		// Base class overrides
+		//
+
+		// Get Type
+		const char* OdLayer::getType() const
+		{
+			return "Layer";
+		}
+
+		// Serialise
+		void OdLayer::serialise(std::wstring& buffer)
+		{
+
+		}
+
+		void OdLayer::deserialise(std::wstring buffer)
+		{
+
 		}
 
 } // namespace OD::System

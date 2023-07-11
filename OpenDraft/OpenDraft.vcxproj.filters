@@ -89,9 +89,6 @@
     <ClCompile Include="..\Graphics\UI\OdViewport.cpp">
       <Filter>Graphics\UI</Filter>
     </ClCompile>
-    <ClCompile Include="..\System\Utils\OdLayer.cpp">
-      <Filter>System\Utils</Filter>
-    </ClCompile>
     <ClCompile Include="..\System\Entities\OdEntity.cpp">
       <Filter>System\Entities</Filter>
     </ClCompile>
@@ -201,9 +198,6 @@
     </ClInclude>
     <ClInclude Include="..\System\Entities\OdEntities.h">
       <Filter>System\Entities</Filter>
-    </ClInclude>
-    <ClInclude Include="..\System\Utils\OdLayer.h">
-      <Filter>System\Utils</Filter>
     </ClInclude>
     <ClInclude Include="..\System\OdSystem.h">
       <Filter>System</Filter>

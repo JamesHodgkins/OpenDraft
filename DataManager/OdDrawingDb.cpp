@@ -33,6 +33,16 @@ namespace OD::Data
 	}
 
 
+	// Add DbObject Record
+	void OdDrawingDb::addRecord(OdDbObject* aObject)
+	{
+		if (aObject == nullptr)
+			return;
+
+		// Add object to vector
+		objects.push_back(aObject);
+	}
+
 	// Add Entity
 	void OdDrawingDb::addCreatedEntity(OD::Geometry::OdEntity* aObject)
 	{

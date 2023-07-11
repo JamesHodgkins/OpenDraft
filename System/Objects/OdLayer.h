@@ -40,7 +40,7 @@ namespace OD
 
 			OdLayer();
 			OdLayer(const OdLayer& layer);
-			OdLayer(const std::string& name, const std::string& description, const std::string& colour, const std::string& lineType, const std::string& lineWeight, const std::string& plotStyle);
+			OdLayer(const std::string& name, const std::string& description, const OdColour colour, const std::string& lineType, int lineWeight);
 			~OdLayer();
 
 			// Getters
@@ -59,6 +59,19 @@ namespace OD
 
 			// Operators
 			OdLayer& operator=(const OdLayer& aLayer);
+
+
+
+			//
+			// Base class overrides
+			//
+
+			// Get Type
+			virtual const char* getType() const override;
+
+			// Serialise
+			virtual void serialise(std::wstring& buffer) override;
+			virtual void deserialise(std::wstring buffer) override;
 
 		};
 

@@ -19,7 +19,6 @@
 #include "System/Utils/OdColour.h"
 #include "System/Utils/OdFont.h"
 #include "System/Utils/OdImage.h"
-#include "System/Utils/OdLayer.h"
 #include "System/Utils/OdVector2.h"
 #include "System/OdResourceManager.h"
 

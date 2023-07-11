@@ -46,6 +46,9 @@ namespace OD
 
 			// Document Entities
 
+			// Add DbObject Record
+			void addRecord(OdDbObject* aObject);
+
 			// Add Entity
 			void addCreatedEntity(OD::Geometry::OdEntity* aObject);
 

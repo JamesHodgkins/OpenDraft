@@ -16,6 +16,8 @@
 
 #include <cstring>
 #include "DataManager/OdDocument.h"
+#include "System/OdCore.h"				// Include Core Utilities
+#include "System/Objects/OdLayer.h"		// Include Layer Object
 
 
 namespace OD::Data
@@ -27,6 +29,10 @@ namespace OD::Data
 		readOnly = false;
 		modified = false;
 		locked = false;
+
+		// Add 'undefined' default layer to database
+		OdLayer* layer = new OdLayer("Undefined","Undefined default layer", OdColour(0,0,0,0), "", 0);
+		database.addRecord(dynamic_cast<OdDbObject*>(layer));
 	}
 	
 	OdDocument::~OdDocument()

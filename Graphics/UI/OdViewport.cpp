@@ -97,7 +97,7 @@ namespace OD::Graphics
 				continue;
 
 			// Can item be cast as an OdEntity
-			OdEntity* entity = static_cast<OdEntity*>(dbObject);
+			OdEntity* entity = dynamic_cast<OdEntity*>(dbObject);
 
 			// Check if entity is null
 			if (entity == nullptr)
