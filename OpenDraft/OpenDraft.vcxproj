@@ -190,6 +190,7 @@
     <ClInclude Include="..\System\Entities\OdEntity.h" />
     <ClInclude Include="..\System\Entities\OdLine.h" />
     <ClInclude Include="..\System\Entities\OdPoint.h" />
+    <ClInclude Include="..\System\Entities\OdTemplate.h" />
     <ClInclude Include="..\System\Entities\OdText.h" />
     <ClInclude Include="..\System\IO\OdXmlReader.h" />
     <ClInclude Include="..\System\Objects\OdLayer.h" />

@@ -14,68 +14,49 @@
 ***************************************************************************************/
 
 
-#include "DataManager/OdData.h"
-
-
-using namespace OD::Data;
+#include "System/Entities/OdEntities.h"
 
 
 namespace OD
 {
-	namespace System
+	namespace Geometry
 	{
 
-		class OdLayer : public OdDbObject
+		class OdTemplate : public OdEntity
 		{
 
 		public:
 
 			// Properties
 			std::string name;
-			std::string description;
-			OdColour colour;
-			//std::string lineType;
-			char lineWeight;
 
 
 			// Constructors and Destructors
-			OdLayer();
-			OdLayer(const OdLayer& layer);
-			OdLayer(const std::string& name, const std::string& description, const OdColour colour, const std::string& lineType, int lineWeight);
-			~OdLayer();
 
 
-			// Getters
-			std::string getName() const;
-			std::string getDescription() const;
-			OdColour getColor() const;
-			//std::string getLineType() const;
-			char getLineWeight() const;
+			// Getters and Setters
+			std::string getName() const
+			{
+				return name;
+			}
+
+			void setName(const std::string& aName)
+			{
+				name = aName;
+			}
 
 
-			// Setters
-			void setName(const std::string& aName);
-			void setDescription(const std::string& aDescription);
-			void setColor(const OdColour& aColor);
-			//void setLineType(const std::string& lineType);
-			void setLineWeight(const char aLineWeight);
-
-
-			// Operators
-			OdLayer& operator=(const OdLayer& aLayer);
+			// Methods
 
 
 
 			//
-			// Base class overrides
+			// Draw
 			//
-
-			// Get Type
-			virtual const char* getType() const override;
-
-			// Serialise
-			virtual void serialise(std::wstring& buffer) override;
-			virtual void deserialise(std::wstring buffer) override;
+			void draw(NVGcontext* aContext) override
+			{
+				
+			}
 
 		};
 

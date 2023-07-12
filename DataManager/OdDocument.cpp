@@ -30,9 +30,9 @@ namespace OD::Data
 		modified = false;
 		locked = false;
 
-		// Add 'undefined' default layer to database
-		OdLayer* layer = new OdLayer("Undefined","Undefined default layer", OdColour(0,0,0,0), "", 0);
-		database.addRecord(dynamic_cast<OdDbObject*>(layer));
+		// Create active layer and set to 'Undefined' default layer
+		activeLayer = new OdLayer("Undefined","Undefined default layer", OdColour(0,0,0,0), "", 0);
+		database.addRecord(dynamic_cast<OdDbObject*>(activeLayer));
 	}
 	
 	OdDocument::~OdDocument()
@@ -180,6 +180,12 @@ namespace OD::Data
 	OdDrawingDb* OdDocument::getDatabase()
 	{
 		return &database;
+	}
+
+	// Get Document Active Layer
+	OdLayer* OdDocument::getActiveLayer()
+	{
+		return activeLayer;
 	}
 
 	std::vector<wchar_t> OdDocument::compileFileHeader()

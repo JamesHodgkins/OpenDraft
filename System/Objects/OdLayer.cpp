@@ -21,120 +21,118 @@ using namespace OD::Data;
 
 
 namespace OD::System
+{
+
+	OdLayer::OdLayer() :
+		name(""),
+		description(""),
+		colour(OdColour()),
+		lineWeight('0')
+	{}
+		
+	OdLayer::OdLayer(const OdLayer& layer) :
+		name(layer.name),
+		description(layer.description),
+		colour(layer.colour),
+		lineWeight(layer.lineWeight)
+	{}
+		
+	OdLayer::OdLayer(
+		const std::string& aName,
+		const std::string& aDescription,
+		OdColour aColour,
+		const std::string& aLineType,
+		int aLineWeight) :
+			
+		name(aName),
+		description(aDescription),
+		colour(aColour),
+		lineWeight(aLineWeight)
+	{}
+		
+	OdLayer::~OdLayer()	{}
+
+
+
+	// Getters
+	std::string OdLayer::getName() const
+	{
+		return name;
+	}
+			
+	std::string OdLayer::getDescription() const
+	{
+		return description;
+	}
+			
+	OdColour OdLayer::getColor() const
+	{
+		return colour;
+	}
+			
+	char OdLayer::getLineWeight() const
+	{
+		return lineWeight;
+	}
+
+	// Setters
+	void OdLayer::setName(const std::string& aName)
+	{
+		name = aName;
+	}
+			
+	void OdLayer::setDescription(const std::string & aDescription)
+	{
+		description = aDescription;
+	}
+			
+	void OdLayer::setColor(const OdColour & aColour)
+	{
+		colour.setRed(aColour.getRed());
+		colour.setGreen(aColour.getGreen());
+		colour.setBlue(aColour.getBlue());
+		colour.setAlpha(aColour.getAlpha());
+	}
+			
+	void OdLayer::setLineWeight(const char aLineWeight)
+	{
+		lineWeight = aLineWeight;
+	}
+
+	// Operators
+	OdLayer& OdLayer::operator=(const OdLayer& aLayer)
+	{
+		if (this != &aLayer)
+		{
+			name = aLayer.name;
+			description = aLayer.description;
+			colour = aLayer.colour;
+			lineWeight = aLayer.lineWeight;
+		}
+		return *this;
+	}
+
+
+	//
+	// Base class overrides
+	//
+
+	// Get Type
+	const char* OdLayer::getType() const
+	{
+		return "Layer";
+	}
+
+	// Serialise
+	void OdLayer::serialise(std::wstring& buffer)
 	{
 
-		OdLayer::OdLayer()
-		{
-			name = "";
-			description = "";
-			colour = OdColour();
-			lineWeight = '0';
-		}
-		
-		OdLayer::OdLayer(const OdLayer& layer)
-		{
-			name = layer.name;
-			description = layer.description;
-			colour = layer.colour;
-			lineWeight = layer.lineWeight;
-		}
-		
-		OdLayer::OdLayer(
-			const std::string& name,
-			const std::string& description,
-			OdColour colour,
-			const std::string& lineType,
-			int lineWeight){}
-		
-		OdLayer::~OdLayer()
-		{
-			name = "";
-			description = "";
-			colour = OdColour();
-			lineWeight = '0';
-		}
+	}
 
+	void OdLayer::deserialise(std::wstring buffer)
+	{
 
-
-		// Getters
-		std::string OdLayer::getName() const
-		{
-			return name;
-		}
-			
-		std::string OdLayer::getDescription() const
-		{
-			return description;
-		}
-			
-		OdColour OdLayer::getColor() const
-		{
-			return colour;
-		}
-			
-		char OdLayer::getLineWeight() const
-		{
-			return lineWeight;
-		}
-
-		// Setters
-		void OdLayer::setName(const std::string& aName)
-		{
-			name = aName;
-		}
-			
-		void OdLayer::setDescription(const std::string & aDescription)
-		{
-			description = aDescription;
-		}
-			
-		void OdLayer::setColor(const OdColour & aColour)
-		{
-			colour.setRed(aColour.getRed());
-			colour.setGreen(aColour.getGreen());
-			colour.setBlue(aColour.getBlue());
-			colour.setAlpha(aColour.getAlpha());
-		}
-			
-		void OdLayer::setLineWeight(const char aLineWeight)
-		{
-			lineWeight = aLineWeight;
-		}
-
-		// Operators
-		OdLayer& OdLayer::operator=(const OdLayer& aLayer)
-		{
-			if (this != &aLayer)
-			{
-				name = aLayer.name;
-				description = aLayer.description;
-				colour = aLayer.colour;
-				lineWeight = aLayer.lineWeight;
-			}
-			return *this;
-		}
-
-
-		//
-		// Base class overrides
-		//
-
-		// Get Type
-		const char* OdLayer::getType() const
-		{
-			return "Layer";
-		}
-
-		// Serialise
-		void OdLayer::serialise(std::wstring& buffer)
-		{
-
-		}
-
-		void OdLayer::deserialise(std::wstring buffer)
-		{
-
-		}
+	}
 
 } // namespace OD::System
 

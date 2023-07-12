@@ -21,6 +21,15 @@
 #include "System/OdCore.h"				// Include Core Utilities
 
 
+// Forward declarations
+namespace OD
+{
+	namespace System
+	{
+		class OdLayer;
+	}
+}
+
 namespace OD
 {
 	namespace Data
@@ -43,6 +52,7 @@ namespace OD
 			bool locked;				// Document Locked
 
 			OdDrawingDb database;		// Document Database
+			OdLayer* activeLayer;		// Document Active Layer
 
 
 			// Constructors and Destructors
@@ -88,6 +98,9 @@ namespace OD
 
 			// Get Document Database
 			OdDrawingDb* getDatabase();
+
+			// Get Document Active Layer
+			OdLayer* getActiveLayer();
 
 
 			//

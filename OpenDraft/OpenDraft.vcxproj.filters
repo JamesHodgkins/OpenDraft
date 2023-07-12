@@ -217,5 +217,8 @@
     <ClInclude Include="..\System\Objects\OdLayer.h">
       <Filter>System\Objects</Filter>
     </ClInclude>
+    <ClInclude Include="..\System\Entities\OdTemplate.h">
+      <Filter>System\Entities</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

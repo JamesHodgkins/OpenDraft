@@ -15,6 +15,7 @@
 
 
 #include <fstream>
+#include <string>
 #include "System/OdCore.h"
 #include "DataManager/OdDbObject.h"
 #include "System/Objects/OdLayer.h"
@@ -50,19 +51,20 @@ namespace OD
 
 			// Getters & Setters
 			OdVector2 getLocation() const;
-			void setLocation(OdVector2 location);
+			void setLocation(OdVector2 aLocation);
 
 			int getColour() const;
-			void setColour(int colour);
+			void setColour(int aColour);
 
 			int getLineType() const;
-			void setLineType(int lineType);
+			void setLineType(int aLineType);
 
 			int getLineWeight() const;
-			void setLineWeight(int lineWeight);
+			void setLineWeight(int aLineWeight);
 
 			OdLayer* getLayer() const;
-			void setLayer(OdLayer* layer);
+			void setLayer(OdLayer* aLayer);
+			void setLayer(std::string aLayer);
 
 			// Methods
 			virtual void draw(NVGcontext* aContext) = 0;

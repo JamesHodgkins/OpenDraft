@@ -38,6 +38,33 @@ namespace OD::Geometry
 
 	OdLayer* OdEntity::getLayer() const { return layer; }
 	void OdEntity::setLayer(OdLayer* layer) { this->layer = layer; }
+	
+	void OdEntity::setLayer(std::string aLayer)
+	{
+		// Get the layer from the application
+		OdApplication* app = OdApplication::getInstance();
+		OdDocument* doc = app->getDocumentManager()->getActiveDocument();
+		OdDrawingDb* db = doc->getDatabase();
+		
+		for (int i = 0; i < db->getRecordCount(); i++)
+		{
+			OdDbObject* object = db->getRecordByIndex(i);
+
+			// Check is object is not null
+			if (object == nullptr) continue;
+
+			// Check if object is a layer
+			if (object->getType() == "Layer")
+			{
+				OdLayer* iLayer = dynamic_cast<OdLayer*>(object);
+				if (iLayer->getName() == aLayer)
+				{
+					layer = iLayer;
+					break;
+				}
+			}
+		}
+	}
 
 
 } // namespace OD::Geometry

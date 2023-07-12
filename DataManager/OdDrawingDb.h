@@ -36,6 +36,7 @@ namespace OD
 		{
 		private:
 			std::vector<OdDbObject*> objects;
+			
 
 		public:
 

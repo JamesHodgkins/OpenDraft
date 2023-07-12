@@ -59,6 +59,9 @@ namespace OD::Data
 				handle++;
 		}
 
+		if (aObject->getLayer() == nullptr)
+			aObject->setLayer("Undefined");
+
 		// Cast to OdDbObject
 		OdDbObject* dbObject = dynamic_cast<OdDbObject*>(aObject);
 
