@@ -26,7 +26,7 @@ namespace OD::System
 	OdLayer::OdLayer() :
 		name(""),
 		description(""),
-		colour(OdColour()),
+		colour(7),
 		lineWeight('0')
 	{}
 		
@@ -40,7 +40,7 @@ namespace OD::System
 	OdLayer::OdLayer(
 		const std::string& aName,
 		const std::string& aDescription,
-		OdColour aColour,
+		int aColour,
 		const std::string& aLineType,
 		int aLineWeight) :
 			
@@ -65,7 +65,7 @@ namespace OD::System
 		return description;
 	}
 			
-	OdColour OdLayer::getColor() const
+	int OdLayer::getColor() const
 	{
 		return colour;
 	}
@@ -86,12 +86,9 @@ namespace OD::System
 		description = aDescription;
 	}
 			
-	void OdLayer::setColor(const OdColour & aColour)
+	void OdLayer::setColor(const int aColour)
 	{
-		colour.setRed(aColour.getRed());
-		colour.setGreen(aColour.getGreen());
-		colour.setBlue(aColour.getBlue());
-		colour.setAlpha(aColour.getAlpha());
+		colour = aColour;
 	}
 			
 	void OdLayer::setLineWeight(const char aLineWeight)

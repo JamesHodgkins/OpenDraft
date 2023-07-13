@@ -37,6 +37,7 @@ namespace OD
 		private:
 			std::vector<OdDbObject*> objects;
 			
+			int requestNewHandleId();
 
 		public:
 

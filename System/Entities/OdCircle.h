@@ -102,9 +102,11 @@ namespace OD
 				//int lineWidthIndex = getLineWeight();
 				//float lineWeight = OdSystem::getRegistryVariableByName("lineWidth");
 
+				OdColour drawColour = getDrawColour();
+
 				nvgBeginPath(aContext);
 				nvgCircle(aContext, location.x, location.y, radius);
-				nvgStrokeColor(aContext, nvgRGBA(255, 0, 0, 255));
+				nvgStrokeColor(aContext, drawColour.asNvgColour());
 				nvgStrokeWidth(aContext, 3);
 				nvgStroke(aContext);
 			}

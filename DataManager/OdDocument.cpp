@@ -23,7 +23,7 @@
 namespace OD::Data
 {
 	// Constructors and Destructors
-	OdDocument::OdDocument() : version{'O','D','2','3','\0'}
+	OdDocument::OdDocument() : version{'O','D','0','0','\0'}
 	{
 		path = "";
 		readOnly = false;
@@ -31,7 +31,7 @@ namespace OD::Data
 		locked = false;
 
 		// Create active layer and set to 'Undefined' default layer
-		activeLayer = new OdLayer("Undefined","Undefined default layer", OdColour(0,0,0,0), "", 0);
+		activeLayer = new OdLayer("Undefined","Undefined default layer", 7, "", 0);
 		database.addRecord(dynamic_cast<OdDbObject*>(activeLayer));
 	}
 	

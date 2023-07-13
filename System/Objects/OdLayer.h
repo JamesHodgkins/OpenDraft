@@ -33,7 +33,7 @@ namespace OD
 			// Properties
 			std::string name;
 			std::string description;
-			OdColour colour;
+			int colour;
 			//std::string lineType;
 			char lineWeight;
 
@@ -41,24 +41,26 @@ namespace OD
 			// Constructors and Destructors
 			OdLayer();
 			OdLayer(const OdLayer& layer);
-			OdLayer(const std::string& name, const std::string& description, const OdColour colour, const std::string& lineType, int lineWeight);
+			OdLayer(const std::string& name, const std::string& description, const int colour, const std::string& lineType, int lineWeight);
 			~OdLayer();
 
 
-			// Getters
+			// Getters and Setters
 			std::string getName() const;
-			std::string getDescription() const;
-			OdColour getColor() const;
-			//std::string getLineType() const;
-			char getLineWeight() const;
-
-
-			// Setters
 			void setName(const std::string& aName);
+			
+			std::string getDescription() const;
 			void setDescription(const std::string& aDescription);
-			void setColor(const OdColour& aColor);
+			
+			int getColor() const;
+			void setColor(const int aColor);
+			
+			//std::string getLineType() const;
 			//void setLineType(const std::string& lineType);
+			
+			char getLineWeight() const;
 			void setLineWeight(const char aLineWeight);
+
 
 
 			// Operators

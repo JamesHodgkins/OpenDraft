@@ -115,10 +115,13 @@ namespace OD
 				nvgTranslate(aContext, +location.x, +location.y);
 				nvgRotate(aContext, rotation * -OD_RAD2DEG_FACTOR);
 
+				// Get draw colour
+				OdColour drawColour = getDrawColour();
+
 				// Draw ellipse
 				nvgBeginPath(aContext);
 				nvgEllipse(aContext, 0, 0, majorRadius, minorRadius);
-				nvgStrokeColor(aContext, nvgRGBA(255, 0, 0, 255));
+				nvgStrokeColor(aContext, drawColour.asNvgColour());
 				nvgStrokeWidth(aContext, 3.0f);
 				nvgStroke(aContext);
 

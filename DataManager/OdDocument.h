@@ -37,6 +37,9 @@ namespace OD
 		// Document Class
 		class OdDocument
 		{
+		private:
+
+
 		public:
 
 			// Document Properties

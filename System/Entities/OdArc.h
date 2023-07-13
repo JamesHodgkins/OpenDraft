@@ -112,9 +112,11 @@ namespace OD
 			//
 			void draw(NVGcontext* aContext) override
 			{
+				OdColour drawColour = getDrawColour();
+
 				// To do: get line weight from layer
 				nvgStrokeWidth(aContext, 1.0f);
-				nvgStrokeColor(aContext, nvgRGBA(0, 0, 0, 255));
+				nvgStrokeColor(aContext, drawColour.asNvgColour());
 				nvgBeginPath(aContext);
 				nvgArc(aContext, location.x, location.y, radius, startAngle, endAngle, NVG_CCW);
 				nvgStroke(aContext);

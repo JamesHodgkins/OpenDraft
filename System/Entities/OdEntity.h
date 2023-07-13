@@ -34,12 +34,12 @@ namespace OD
 
 		private:
 
+
+		protected:
 			int colour = 0;
 			int lineType = 0;
 			int lineWeight = 0;
 			OdLayer* layer = nullptr;
-
-		protected:
 
 
 		public:
@@ -55,6 +55,7 @@ namespace OD
 
 			int getColour() const;
 			void setColour(int aColour);
+			OdColour getDrawColour() const;
 
 			int getLineType() const;
 			void setLineType(int aLineType);

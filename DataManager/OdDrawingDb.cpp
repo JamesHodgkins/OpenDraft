@@ -32,6 +32,21 @@ namespace OD::Data
 			delete object;
 	}
 
+	// Private Method: Request New Handle Id
+	int OdDrawingDb::requestNewHandleId()
+	{
+		// Iterate through objects and find the lowest unused handle
+		int handle = 1;
+
+		for (auto& object : objects)
+		{
+			// Check if object handle matches
+			if (object->getHandle() == handle)
+				handle++;
+		}
+
+		return handle;
+	}
 
 	// Add DbObject Record
 	void OdDrawingDb::addRecord(OdDbObject* aObject)
@@ -46,27 +61,24 @@ namespace OD::Data
 	// Add Entity
 	void OdDrawingDb::addCreatedEntity(OD::Geometry::OdEntity* aObject)
 	{
+		// Check if object is null
 		if (aObject == nullptr)
 			return;
 
+		// Cast to OdDbObject
+		OdDbObject* dbObject = dynamic_cast<OdDbObject*>(aObject);
+		
+		// Check if object can be cast to OdDbObject
+		if (dbObject == nullptr)
+			return;
 
-		// Iterate through objects and find the lowest unused handle
-		int handle = 1;
-		for (auto& object : objects)
-		{
-			// Check if object handle matches
-			if (object->getHandle() == handle)
-				handle++;
-		}
-
+		// Set object layer to default if null
 		if (aObject->getLayer() == nullptr)
 			aObject->setLayer("Undefined");
 
-		// Cast to OdDbObject
-		OdDbObject* dbObject = dynamic_cast<OdDbObject*>(aObject);
-
-		// Set object handle
-		aObject->setHandle(handle);
+		// Request and set new handle
+		int newHandle = requestNewHandleId();
+		aObject->setHandle(newHandle);
 
 		// Add object to vector
 		objects.push_back(aObject);

@@ -30,6 +30,13 @@ namespace OD
 
 		public:
 
+			//
+			// Static methods
+			//
+			
+			// Get colour by index
+			const static OdColour colourByIndex(int index);
+
 			// Theme colours
 			const static OdColour BACKGROUND1;
 			const static OdColour BACKGROUND2;

@@ -29,6 +29,18 @@ namespace OD::Geometry
 
 	int OdEntity::getColour() const { return colour; }
 	void OdEntity::setColour(int colour) { this->colour = colour; }
+	OdColour OdEntity::getDrawColour() const
+	{
+		// Get colour
+		OdColour drawColour;
+		if (colour == 0)
+			drawColour = OdColour::colourByIndex(layer->colour);
+
+		else
+			drawColour = OdColour::colourByIndex(colour);
+		
+		return drawColour;
+	}
 
 	int OdEntity::getLineType() const { return lineType; }
 	void OdEntity::setLineType(int lineType) { this->lineType = lineType; }
