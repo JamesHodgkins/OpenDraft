@@ -102,6 +102,8 @@ namespace OD
 			// Set system variable
 			void updateRegistryVariable(OdSystemVariable* aEntry);
 
+			// Get draw line weight by index
+			float getDrawLineWeightByIndex(int index);
 			
 		};
 

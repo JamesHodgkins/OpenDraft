@@ -33,7 +33,7 @@ namespace OD::Geometry
 	{
 		// Get colour
 		OdColour drawColour;
-		if (colour == 0)
+		if (colour == -1)
 			drawColour = OdColour::colourByIndex(layer->colour);
 
 		else
@@ -47,6 +47,19 @@ namespace OD::Geometry
 
 	int OdEntity::getLineWeight() const { return lineWeight; }
 	void OdEntity::setLineWeight(int lineWeight) { this->lineWeight = lineWeight; }
+	float OdEntity::getDrawLineWeight() const
+	{
+		// Get line weight
+		float activeLineWeight;
+		if (lineWeight == -1)
+			activeLineWeight = layer->lineWeight;
+
+		else
+			activeLineWeight = lineWeight;
+
+		OdSystem* sys = OdSystem::getInstance();
+		return sys->getDrawLineWeightByIndex(activeLineWeight);
+	}
 
 	OdLayer* OdEntity::getLayer() const { return layer; }
 	void OdEntity::setLayer(OdLayer* layer) { this->layer = layer; }

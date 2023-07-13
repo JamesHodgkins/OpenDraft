@@ -14,18 +14,18 @@
   </variable>
   <variable>
     <key>lineThicknessDisplay0</key>
-    <value type="int">1</value>
+    <value type="float">0.5</value>
   </variable>
    <variable>
     <key>lineThicknessDisplay1</key>
-    <value type="int">1</value>
+    <value type="float">1</value>
   </variable>
    <variable>
     <key>lineThicknessDisplay2</key>
-    <value type="int">1</value>
+    <value type="float">2</value>
   </variable>
    <variable>
     <key>lineThicknessDisplay3</key>
-    <value type="int">2</value>
+    <value type="float">5</value>
   </variable>
 </systemVariables>

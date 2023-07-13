@@ -158,6 +158,28 @@ namespace OD::System
 		}
 	}
 
+	
+	// Get draw line weight by index
+	float OdSystem::getDrawLineWeightByIndex(int index)
+	{
+		OdSystemVariable* v;
+
+			v = getRegistryVariableByName("lineThicknessDisplay0");
+		
+		if (index == 1)
+			v = getRegistryVariableByName("lineThicknessDisplay1");
+
+		else if (index == 2)
+			v = getRegistryVariableByName("lineThicknessDisplay2");
+
+		else if (index == 3)
+			v = getRegistryVariableByName("lineThicknessDisplay3");
+		
+		float result = std::get<float>(v->getValue());
+		return result;
+	}
+
+
 
 
 	// Static reference to the application instance

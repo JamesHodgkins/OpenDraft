@@ -62,6 +62,7 @@ namespace OD
 
 			int getLineWeight() const;
 			void setLineWeight(int aLineWeight);
+			float getDrawLineWeight() const;
 
 			OdLayer* getLayer() const;
 			void setLayer(OdLayer* aLayer);
