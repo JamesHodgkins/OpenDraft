@@ -37,6 +37,7 @@ namespace OD
 		class OdViewport : public OdComponent
 		{
 		protected:
+			OdVector2 position;
 
 		public:
 			std::vector<OdEntity*>* entities;
@@ -45,6 +46,10 @@ namespace OD
 			OdViewport(int aX, int aY, int aWidth, int aHeight);
 
 			void onFrame(NVGcontext* aContext);
+
+			void translatePosition(float aX, float aY);
+			void setPosition(float aX, float aY);
+			OdVector2 getPosition();
 
 		};
 

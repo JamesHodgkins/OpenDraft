@@ -112,6 +112,24 @@ namespace OD::Graphics
 
 	}
 
+
+	void OdViewport::translatePosition(float aX, float aY)
+	{
+		position.x += aX;
+		position.y += aY;
+	}
+
+	void OdViewport::setPosition(float aX, float aY)
+	{
+		position.x = aX;
+		position.y = aY;
+	}
+
+	OdVector2 OdViewport::getPosition()
+	{
+		return position;
+	}
+
 }
 
 #endif // OD_GR_GRAPHICS_CPP

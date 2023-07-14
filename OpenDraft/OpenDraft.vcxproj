@@ -164,6 +164,7 @@
     <ClCompile Include="..\System\Utils\OdColour.cpp" />
     <ClCompile Include="..\System\Utils\OdVector2.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="..\System\OdEditor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\DataManager\OdData.h" />
@@ -203,6 +204,7 @@
     <ClInclude Include="..\System\OdResourceManager.h" />
     <ClInclude Include="..\System\Utils\OdVector2.h" />
     <ClInclude Include="..\Graphics\UI\OdViewport.h" />
+    <ClInclude Include="..\System\OdEditor.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

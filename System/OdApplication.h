@@ -33,6 +33,10 @@ namespace OD
 {
 	namespace System
 	{
+		// Forward Declarations
+		class OdEditor;
+		
+		
 		// Application Class
 		class OdApplication
 		{
@@ -53,6 +57,7 @@ namespace OD
 			OdResourceManager* resManager;			// Pointer to the resource manager
 			OdSystem* system;						// Pointer to the system
 			OdDocumentManager* documentManager;		// Pointer to the document manager
+			OdEditor* editor;						// Pointer to the editor
 
 		public:
 

@@ -107,6 +107,9 @@
     <ClCompile Include="..\System\Objects\OdLayer.cpp">
       <Filter>System\Objects</Filter>
     </ClCompile>
+    <ClCompile Include="..\System\OdEditor.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\System\Entities\OdEntity.h">
@@ -219,6 +222,9 @@
     </ClInclude>
     <ClInclude Include="..\System\Entities\OdTemplate.h">
       <Filter>System\Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\System\OdEditor.h">
+      <Filter>System</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

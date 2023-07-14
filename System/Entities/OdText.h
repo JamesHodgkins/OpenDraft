@@ -15,6 +15,8 @@
 
 
 #include "System/OdCore.h"
+#include "Graphics/UI/OdViewport.h"
+
 
 using namespace OD::System;
 
@@ -64,9 +66,10 @@ namespace OD
 			// Draw
 			//
 
-			void draw(NVGcontext* aContext) override
+			void draw(NVGcontext* aContext, OdViewport* aVP) override
 			{
 				OdColour drawColour = getDrawColour();
+				OdVector2 vpLocation = aVP->getPosition();
 
 				// Draw text
 				nvgBeginPath(aContext);
@@ -74,7 +77,7 @@ namespace OD
 				nvgFontFace(aContext, "sans");
 				nvgTextAlign(aContext, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
 				nvgFillColor(aContext, drawColour.asNvgColour());
-				nvgText(aContext, location.x, location.y, "Text", NULL);
+				nvgText(aContext, location.x + vpLocation.x, location.y + vpLocation.y, "Text", NULL);
 			}
 
 			
