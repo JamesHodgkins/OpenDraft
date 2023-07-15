@@ -15,7 +15,6 @@
 
 
 #include "System/Entities/OdEntity.h"
-#include "Graphics/UI/OdViewport.h"
 
 
 using namespace OD::System;
@@ -104,7 +103,7 @@ namespace OD
 			// Draw
 			//
 
-			void draw(NVGcontext* aContext, OdViewport* aVP) override
+			void draw(NVGcontext* aContext, const OdVector2* aView) override
 			{
 				// To do: get line weight from layer
 				//int lineWidthIndex = getLineWeight();
@@ -113,12 +112,11 @@ namespace OD
 
 				nvgSave(aContext);
 
-				nvgTranslate(aContext, +location.x, +location.y);
+				nvgTranslate(aContext, location.x + aView->x, location.y + aView->y);
 				nvgRotate(aContext, rotation * -OD_RAD2DEG_FACTOR);
 
 				// Get draw colour
 				OdColour drawColour = getDrawColour();
-				OdVector2 vpLocation = aVP->getPosition();
 
 				// Draw ellipse
 				nvgBeginPath(aContext);

@@ -16,7 +16,6 @@
 
 #include "System/Entities/OdEntity.h"
 #include "System/OdSystem.h"
-#include "Graphics/UI/OdViewport.h"
 
 
 using namespace OD::System;
@@ -100,20 +99,19 @@ namespace OD
 			//
 			// Draw
 			//
-			void draw(NVGcontext* aContext, OdViewport* aVP) override
+			void draw(NVGcontext* aContext, const OdVector2* aView) override
 			{
 				// To do: get line weight from layer
 				//int lineWidthIndex = getLineWeight();
 				//float lineWeight = OdSystem::getRegistryVariableByName("lineWidth");
 
 				OdColour drawColour = getDrawColour();
-				OdVector2 vpLocation = aVP->getPosition();
 				float lineWeight = getDrawLineWeight();
 
 				// Draw line
 				nvgBeginPath(aContext);
-				nvgMoveTo(aContext, location.x, location.y);
-				nvgLineTo(aContext, end.x, end.y);
+				nvgMoveTo(aContext, location.x + aView->x, location.y + aView->y);
+				nvgLineTo(aContext, end.x + aView->x, end.y + aView->y);
 				nvgStrokeColor(aContext, drawColour.asNvgColour());
 				nvgStrokeWidth(aContext, lineWeight);
 				nvgStroke(aContext);

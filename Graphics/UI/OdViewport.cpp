@@ -104,7 +104,7 @@ namespace OD::Graphics
 				continue;
 
 			// Draw entity
-			entity->draw(aContext);
+			entity->draw(aContext, &position);
 		}
 		
 		// Undo translation

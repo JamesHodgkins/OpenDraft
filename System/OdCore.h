@@ -21,7 +21,7 @@
 #include "System/Utils/OdImage.h"
 #include "System/Utils/OdVector2.h"
 #include "System/OdResourceManager.h"
-#include "System/OdEditor.h"
+//#include "System/OdEditor.h"
 
 // Define constants
 #define OD_PI 3.14159265358979323846

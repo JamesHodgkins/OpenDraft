@@ -15,7 +15,6 @@
 
 
 #include "System/Entities/OdEntities.h"
-#include "Graphics/UI/OdViewport.h"
 
 
 namespace OD
@@ -54,7 +53,7 @@ namespace OD
 			//
 			// Draw
 			//
-			void draw(NVGcontext* aContext, OdViewport* aVP) override
+			void draw(NVGcontext* aContext, const OdVector2* aView) override
 			{
 				
 			}
