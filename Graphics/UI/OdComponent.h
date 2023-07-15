@@ -132,7 +132,8 @@ namespace OD
 			virtual void addChildControl(OdComponent* aChild);
 
 			// Event Handling
-			void processEvents(GrInputMap* aInput);
+			virtual void processEvents(GrInputMap* aInput) final;
+			virtual void actionEvents(GrInputMap* aInput) = 0;
 
 			// Drawing
 			void drawChildComponents(NVGcontext* aContext);

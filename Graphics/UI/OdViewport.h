@@ -36,6 +36,10 @@ namespace OD
 
 		class OdViewport : public OdComponent
 		{
+		private:
+			bool dragState = false;
+			OdVector2 dragStart;
+
 		protected:
 			OdVector2 position;
 
@@ -46,6 +50,7 @@ namespace OD
 			OdViewport(int aX, int aY, int aWidth, int aHeight);
 
 			void onFrame(NVGcontext* aContext);
+			void actionEvents(GrInputMap* aInput);
 
 			void translatePosition(float aX, float aY);
 			void setPosition(float aX, float aY);

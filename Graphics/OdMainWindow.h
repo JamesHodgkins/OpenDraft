@@ -51,6 +51,10 @@ namespace OD
 
 			// Render the window and UI components
 			virtual void onFrame(NVGcontext* NULLREF = nullptr, OdComponent* aParent = nullptr);
+
+			// Action window events
+			void actionEvents(GrInputMap* aInput);
+
 		};
 
 	} // namespace Graphics

@@ -15,13 +15,20 @@
 
 
 #include "System/OdEditor.h"
+#include "Graphics/UI/OdInput.h"
 
+using namespace OD::Graphics;
 
 namespace OD::System
 {
-	OdEditor::OdEditor(OdApplication* aApplication)
+	OdEditor::OdEditor()
 	{
-		application = aApplication;
+		
+	}
+
+	void OdEditor::processEvents(GrInputMap* input)
+	{
+
 	}
 
 }

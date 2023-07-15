@@ -18,6 +18,7 @@
 #include "DataManager/OdDocument.h"
 #include "System/OdCore.h"				// Include Core Utilities
 #include "System/Objects/OdLayer.h"		// Include Layer Object
+#include "System/OdEditor.h"			// Include Editor
 
 
 namespace OD::Data
@@ -25,6 +26,7 @@ namespace OD::Data
 	// Constructors and Destructors
 	OdDocument::OdDocument() : version{'O','D','0','0','\0'}
 	{
+		editor = new System::OdEditor();
 		path = "";
 		readOnly = false;
 		modified = false;

@@ -51,6 +51,9 @@ namespace OD
 			* \param context (NVGcontext*) The nanovg pointer for rendering.
 			*/
 			virtual void onFrame(NVGcontext* aContext) override;
+
+			
+			void actionEvents(GrInputMap* aInput);
 			
 		};
 

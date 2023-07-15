@@ -93,6 +93,13 @@ namespace OD
 				panel->onFrame(aContext);
 		}
 
+
+		void OdTab::actionEvents(GrInputMap* aInput)
+		{
+
+		}
+
+
 		void OdTab::setParent(OdComponent* aParent)
 		{
 			parent = aParent;
@@ -208,6 +215,13 @@ namespace OD
 
 			}
 		}
+
+
+		void OdTabView::actionEvents(GrInputMap* aInput)
+		{
+
+		}
+
 
 		OdTab* OdTabView::getActiveTab()
 		{

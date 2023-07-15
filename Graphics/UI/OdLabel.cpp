@@ -63,6 +63,11 @@ namespace OD
 
 			}
 
+			void OdLabel::actionEvents(GrInputMap* aInput)
+			{
+
+			}
+
 
 	} // namespace Graphics
 } // namespace OD

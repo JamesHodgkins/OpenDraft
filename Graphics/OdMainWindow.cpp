@@ -224,6 +224,13 @@ namespace OD::Graphics
 		glfwSwapBuffers(glfwHandle);
 	}
 
+
+	// Action main window events
+	void OdMainWindow::actionEvents(GrInputMap* aInput)
+	{
+
+	}
+
 }// namespace OD::Graphics
 
 #endif // OD_GR_MAIN_WINDOW_CPP

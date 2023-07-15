@@ -17,7 +17,7 @@
 
 #include <fstream>
 #include <string>
-#include "DataManager/OdDrawingDb.h"
+#include "DataManager/OdDrawingDb.h"	// Include Drawing Database
 #include "System/OdCore.h"				// Include Core Utilities
 
 
@@ -27,6 +27,7 @@ namespace OD
 	namespace System
 	{
 		class OdLayer;
+		class OdEditor;
 	}
 }
 
@@ -56,6 +57,8 @@ namespace OD
 
 			OdDrawingDb database;		// Document Database
 			OdLayer* activeLayer;		// Document Active Layer
+
+			OdEditor* editor;			// Pointer to the editor
 
 
 			// Constructors and Destructors

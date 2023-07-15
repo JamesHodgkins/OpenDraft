@@ -74,6 +74,9 @@ namespace OD
 			// Render the window and UI components
 			virtual void onFrame(NVGcontext* context);
 
+			// Action window events
+			void actionEvents(GrInputMap* aInput);
+
 			// Process events for UI components
 			void triggerEventsChain();
 			void closeEvents();

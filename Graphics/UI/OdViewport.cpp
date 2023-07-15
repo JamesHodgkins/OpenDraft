@@ -18,6 +18,7 @@
 #include "Graphics/UI/OdViewport.h"
 #include "System/OdApplication.h"
 #include "DataManager/OdData.h"
+#include "Graphics/UI/OdInput.h"
 
 
 
@@ -37,6 +38,8 @@ namespace OD::Graphics
 		backColour = OdColour::BACKGROUND1;
 		stroke = OdColour(0, 0, 0, 0);
 		foreColour = OdColour(255, 255, 255, 200);
+
+		position = OdVector2(0, 0);
 
 		text = "";
 	}
@@ -109,6 +112,50 @@ namespace OD::Graphics
 		
 		// Undo translation
 		OdDraw::Translate(aContext, -location.x, -location.y);
+
+	}
+
+
+	void OdViewport::actionEvents(GrInputMap* aInput)
+	{
+		if (aInput == nullptr)
+			return;
+
+
+		// Use mouse to move viewport position
+		if (aInput->keys[GLFW_KEY_LEFT].isDown())
+			translatePosition(-2, 0);
+
+		if (aInput->keys[GLFW_KEY_RIGHT].isDown())
+			translatePosition(2, 0);
+
+		if (aInput->keys[GLFW_KEY_UP].isDown())
+			translatePosition(0, -1);
+
+		if (aInput->keys[GLFW_KEY_DOWN].isDown())
+			translatePosition(0, 1);
+
+		// Use mouse to move viewport position
+		if (aInput->mouse.middleButton.isDown())
+		{
+			// if dragState is false, set dragState to true and set dragStart to mouse position
+			if (!dragState)
+			{
+				dragState = true;
+				dragStart = OdVector2(aInput->mouse.position.x, aInput->mouse.position.y);
+			}
+
+			// If dragState is true, translate position by difference between dragStart and mouse position
+ 			else
+ 			{
+				translatePosition(aInput->mouse.position.x - dragStart.x, aInput->mouse.position.y - dragStart.y);
+ 				dragStart = OdVector2(aInput->mouse.position.x, aInput->mouse.position.y);
+ 			}
+		}
+
+		// If middle button is not down, set dragState to false
+		else
+			dragState = false;
 
 	}
 

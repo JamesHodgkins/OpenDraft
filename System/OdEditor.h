@@ -14,20 +14,26 @@
 ***************************************************************************************/
 
 
-#include "System/OdApplication.h"
 #include "System/Entities/OdEntity.h"
 
 namespace OD
 {
+	// Forward declarations
+	namespace Graphics
+	{
+		class GrInputMap;
+	}
+
 	namespace System
 	{
 		class OdEditor
 		{
 		private:
-			OdApplication* application;
 
 		public:
-			OdEditor(OdApplication* aApplication);
+			void processEvents(Graphics::GrInputMap* input);
+
+			OdEditor();
 
 		};
 	}

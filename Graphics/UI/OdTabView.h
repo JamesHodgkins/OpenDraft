@@ -21,6 +21,7 @@
 #include "Graphics/OdDraw.h"
 #include "Graphics/UI/OdButton.h"
 #include "Graphics/UI/OdPanel.h"
+#include "Graphics/UI/OdInput.h"
 
 
 namespace OD
@@ -43,6 +44,7 @@ namespace OD
 			void recalculateSize(NVGcontext* aContext);
 			void addPanelChildControl(OdComponent* aControl);
 			void onFrame(NVGcontext* aContext);
+			void actionEvents(GrInputMap* aInput);
 			void setParent(OdComponent* aParent);
 
 		};
@@ -67,6 +69,7 @@ namespace OD
 			~OdTabView();
 
 			void onFrame(NVGcontext* aContext) override;
+			void actionEvents(GrInputMap* aInput) override;
 
 			// Tab management
 			OdTab* getActiveTab();

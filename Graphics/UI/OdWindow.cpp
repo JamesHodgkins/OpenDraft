@@ -27,6 +27,9 @@
 
 
 #include "Graphics/UI/OdWindow.h"
+#include "System/OdApplication.h"
+#include "System/OdEditor.h"
+
 
 namespace OD
 {
@@ -203,12 +206,21 @@ namespace OD
 			glfwPollEvents();
 		}
 
+		void OdWindow::actionEvents(GrInputMap* aInput)
+		{
+
+		}
+
 		void OdWindow::triggerEventsChain()
 		{
 			for (std::shared_ptr<OdComponent> control : childComponents)
 			{
 				control->processEvents(&input);
 			}
+
+			OdApplication* app = OdApplication::getInstance();
+			OdDocument* doc = app->getDocumentManager()->getActiveDocument();
+			doc->editor->processEvents(&input);
 		}
 
 		void OdWindow::closeEvents()

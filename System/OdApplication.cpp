@@ -18,7 +18,6 @@
 
 
 #include "System/OdApplication.h"
-#include "System/OdEditor.h"
 
 
 using namespace OD::Graphics;
@@ -47,7 +46,6 @@ namespace OD::System
 		delete resManager;
 		delete mainWindow;
 		delete documentManager;
-		delete editor;
 	}
 
 	void OdApplication::initialise()
@@ -56,7 +54,6 @@ namespace OD::System
 		resManager = new OdResourceManager();
 		documentManager = new OdDocumentManager();
 		system = OdSystem::getInstance();
-		editor = new OdEditor(this);
 		mainWindow = new OdMainWindow(1280, 720, "OpenDraft");
 		mainWindow->resourceManager = resManager;
 		mainWindow->initialise();

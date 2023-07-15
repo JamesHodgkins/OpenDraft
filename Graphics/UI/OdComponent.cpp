@@ -272,6 +272,8 @@ namespace OD::Graphics
 		// Process child components
 		for (std::shared_ptr<OdComponent> control : childComponents)
 			control->processEvents(aInput);
+
+		actionEvents(aInput);
 	}
 
 

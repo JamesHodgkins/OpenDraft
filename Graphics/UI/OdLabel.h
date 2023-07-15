@@ -45,6 +45,8 @@ namespace OD
 			 */
 			virtual void onFrame(NVGcontext* aContext) override;
 
+			void actionEvents(GrInputMap* aInput);
+
 		};
 
 	} // namespace Graphics
