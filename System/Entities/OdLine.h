@@ -99,7 +99,7 @@ namespace OD
 			//
 			// Draw
 			//
-			void draw(NVGcontext* aContext, const OdVector2* aView) override
+			void draw(NVGcontext* aContext, const OdVector2* aView, const float aScale) override
 			{
 				// To do: get line weight from layer
 				//int lineWidthIndex = getLineWeight();
@@ -108,10 +108,15 @@ namespace OD
 				OdColour drawColour = getDrawColour();
 				float lineWeight = getDrawLineWeight();
 
+				float xStart = (location.x + aView->x) * aScale;
+				float yStart = (location.y + aView->y) * aScale;
+				float xEnd   = (end.x      + aView->x) * aScale;
+				float yEnd   = (end.y      + aView->y) * aScale;
+
 				// Draw line
 				nvgBeginPath(aContext);
-				nvgMoveTo(aContext, location.x + aView->x, location.y + aView->y);
-				nvgLineTo(aContext, end.x + aView->x, end.y + aView->y);
+				nvgMoveTo(aContext, xStart, yStart);
+				nvgLineTo(aContext, xEnd,   yEnd);
 				nvgStrokeColor(aContext, drawColour.asNvgColour());
 				nvgStrokeWidth(aContext, lineWeight);
 				nvgStroke(aContext);

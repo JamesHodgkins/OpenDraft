@@ -90,6 +90,9 @@ namespace OD
 			// Callback function for mouse clicks
 			static void mouseClickEventCallback(GLFWwindow* aWindow, int aButton, int aAction, int aMods);
 
+			// Callback function for mouse scroll
+			static void mouseScrollEventCallback(GLFWwindow* aWindow, double aOffsetX, double aOffsetY);
+
 			// Callback function for key events
 			static void keyEventCallback(GLFWwindow* aWindow, int aKey, int aScancode, int aAction, int aMods);
 

@@ -82,6 +82,7 @@ namespace OD
 			// Set the callback function for mouse movement
 			glfwSetCursorPosCallback(glfwHandle, mousePositionEventCallback);
 			glfwSetMouseButtonCallback(glfwHandle, mouseClickEventCallback);
+			glfwSetScrollCallback(glfwHandle, mouseScrollEventCallback);
 			glfwSetKeyCallback(glfwHandle, keyEventCallback);
 			glfwSetWindowSizeCallback(glfwHandle, windowResizeCallback);
 
@@ -134,6 +135,16 @@ namespace OD
 						windowInstance->input.mouse.middleButton.changeState(false);
 					break;
 				}
+			}
+		}
+
+		// Callback function for mouse scroll
+		void OdWindow::mouseScrollEventCallback(GLFWwindow* aWindow, double aOffsetX, double aOffsetY)
+		{
+			OdWindow* windowInstance = static_cast<OdWindow*>(glfwGetWindowUserPointer(aWindow));
+			if (windowInstance) {
+				// Access the instance and store the mouse scroll offset
+				windowInstance->input.mouse.scroll = static_cast<int>(aOffsetY);
 			}
 		}
 
@@ -228,11 +239,13 @@ namespace OD
 			input.mouse.leftButton.changeState(input.mouse.leftButton.isDown());
 			input.mouse.middleButton.changeState(input.mouse.middleButton.isDown());
 			input.mouse.rightButton.changeState(input.mouse.rightButton.isDown());
+			input.mouse.scroll = 0;
 
 			for (auto& pair : input.keys) {
 				int key = pair.first;
 				input.keys[key].changeState(input.keys[key].isDown());
 			}
+
 		}
 	} // namespace Graphics
 } // namespace OD

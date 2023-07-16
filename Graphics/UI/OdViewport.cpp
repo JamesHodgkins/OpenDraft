@@ -107,7 +107,7 @@ namespace OD::Graphics
 				continue;
 
 			// Draw entity
-			entity->draw(aContext, &position);
+			entity->draw(aContext, &position, scale);
 		}
 		
 		// Undo translation
@@ -120,7 +120,6 @@ namespace OD::Graphics
 	{
 		if (aInput == nullptr)
 			return;
-
 
 		// Use mouse to move viewport position
 		if (aInput->keys[GLFW_KEY_LEFT].isDown())
@@ -135,28 +134,36 @@ namespace OD::Graphics
 		if (aInput->keys[GLFW_KEY_DOWN].isDown())
 			translatePosition(0, 1);
 
-		// Use mouse to move viewport position
-		if (aInput->mouse.middleButton.isDown())
+		// Was mouse pressed
+		if (aInput->mouse.middleButton.isPressDown())
 		{
-			// if dragState is false, set dragState to true and set dragStart to mouse position
-			if (!dragState)
+			if (mouseOver)
 			{
 				dragState = true;
 				dragStart = OdVector2(aInput->mouse.position.x, aInput->mouse.position.y);
 			}
-
-			// If dragState is true, translate position by difference between dragStart and mouse position
- 			else
+		}
+		
+		if (aInput->mouse.middleButton.isDown())	// Use mouse to move viewport position
+		{
+			// if dragState is false, set dragState to true and set dragStart to mouse position
+			if (dragState)
  			{
 				translatePosition(aInput->mouse.position.x - dragStart.x, aInput->mouse.position.y - dragStart.y);
  				dragStart = OdVector2(aInput->mouse.position.x, aInput->mouse.position.y);
  			}
 		}
-
-		// If middle button is not down, set dragState to false
-		else
+		else	// If middle button is not down, set dragState to false
+		{
 			dragState = false;
+		}
 
+		// Scale viewport
+		if (aInput->mouse.scroll > 0)
+			scaleIn();
+
+		if (aInput->mouse.scroll < 0)
+			scaleOut();
 	}
 
 
@@ -175,6 +182,21 @@ namespace OD::Graphics
 	OdVector2 OdViewport::getPosition()
 	{
 		return position;
+	}
+
+	void OdViewport::setScale(float aScale)
+	{
+		scale = aScale;
+	}
+
+	void OdViewport::scaleIn()
+	{
+		scale += 0.1f;
+	}
+
+	void OdViewport::scaleOut()
+	{
+		scale -= 0.1f;
 	}
 
 }

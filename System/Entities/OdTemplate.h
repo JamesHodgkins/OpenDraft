@@ -53,7 +53,7 @@ namespace OD
 			//
 			// Draw
 			//
-			void draw(NVGcontext* aContext, const OdVector2* aView) override
+			void draw(NVGcontext* aContext, const OdVector2* aView, const float aScale) override
 			{
 				
 			}

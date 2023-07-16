@@ -39,6 +39,7 @@ namespace OD
 		private:
 			bool dragState = false;
 			OdVector2 dragStart;
+			float scale = 1.0f;
 
 		protected:
 			OdVector2 position;
@@ -55,6 +56,9 @@ namespace OD
 			void translatePosition(float aX, float aY);
 			void setPosition(float aX, float aY);
 			OdVector2 getPosition();
+			void setScale(float aScale);
+			void scaleIn();
+			void scaleOut();
 
 		};
 

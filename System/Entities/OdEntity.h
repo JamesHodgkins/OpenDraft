@@ -69,7 +69,7 @@ namespace OD
 			void setLayer(std::string aLayer);
 
 			// Methods
-			virtual void draw(NVGcontext* aContext, const OdVector2* aView) = 0;
+			virtual void draw(NVGcontext* aContext, const OdVector2* aView, const float aScale) = 0;
 			
 		};
 

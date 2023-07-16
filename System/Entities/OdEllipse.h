@@ -103,24 +103,31 @@ namespace OD
 			// Draw
 			//
 
-			void draw(NVGcontext* aContext, const OdVector2* aView) override
+			void draw(NVGcontext* aContext, const OdVector2* aView, const float aScale) override
 			{
 				// To do: get line weight from layer
 				//int lineWidthIndex = getLineWeight();
 				//float lineWeight = OdSystem::getRegistryVariableByName("lineWidth");
 
+				// Get scaled centre
+				float x = (location.x + aView->x) * aScale;
+				float y = (location.y + aView->y) * aScale;
+				float rMajor = majorRadius * aScale;
+				float rMinor = minorRadius * aScale;
 
 				nvgSave(aContext);
 
-				nvgTranslate(aContext, location.x + aView->x, location.y + aView->y);
+				nvgTranslate(aContext, x, y);
 				nvgRotate(aContext, rotation * -OD_RAD2DEG_FACTOR);
 
 				// Get draw colour
 				OdColour drawColour = getDrawColour();
 
+				
+
 				// Draw ellipse
 				nvgBeginPath(aContext);
-				nvgEllipse(aContext, 0, 0, majorRadius, minorRadius);
+				nvgEllipse(aContext, x, y, rMajor, rMinor);
 				nvgStrokeColor(aContext, drawColour.asNvgColour());
 				nvgStrokeWidth(aContext, 3.0f);
 				nvgStroke(aContext);

@@ -65,9 +65,12 @@ namespace OD
 			// Draw
 			//
 
-			void draw(NVGcontext* aContext, const OdVector2* aView) override
+			void draw(NVGcontext* aContext, const OdVector2* aView, const float aScale) override
 			{
 				OdColour drawColour = getDrawColour();
+
+				float x = (location.x + aView->x) *aScale;
+				float y = (location.y + aView->y) *aScale;
 
 				// Draw text
 				nvgBeginPath(aContext);
@@ -75,7 +78,7 @@ namespace OD
 				nvgFontFace(aContext, "sans");
 				nvgTextAlign(aContext, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
 				nvgFillColor(aContext, drawColour.asNvgColour());
-				nvgText(aContext, location.x + aView->x, location.y + aView->y, "Text", NULL);
+				nvgText(aContext, x, y, "Text", NULL);
 			}
 
 			

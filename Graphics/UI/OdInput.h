@@ -69,10 +69,13 @@ namespace OD
 				OdKeyInput middleButton;
 				OdKeyInput rightButton;
 				PositionStruct position;
+				int scroll;
 			} mouse;
 
 			GrInputMap()
 			{
+				mouse.scroll = 0;
+
 				keys = {
 					{GLFW_KEY_A, OdKeyInput()},
 					{GLFW_KEY_B, OdKeyInput()},

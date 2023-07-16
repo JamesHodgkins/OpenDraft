@@ -110,15 +110,19 @@ namespace OD
 			//
 			// Draw
 			//
-			void draw(NVGcontext* aContext, const OdVector2* aView) override
+			void draw(NVGcontext* aContext, const OdVector2* aView, const float aScale) override
 			{
 				OdColour drawColour = getDrawColour();
+
+				// Calculate scaled centre
+				float x = (location.x + aView->x) * aScale;
+				float y = (location.y + aView->y) * aScale;
 
 				// To do: get line weight from layer
 				nvgStrokeWidth(aContext, 1.0f);
 				nvgStrokeColor(aContext, drawColour.asNvgColour());
 				nvgBeginPath(aContext);
-				nvgArc(aContext, location.x + aView->x, location.y + aView->y, radius, startAngle, endAngle, NVG_CCW);
+				nvgArc(aContext, x, y, radius, startAngle, endAngle, NVG_CCW);
 				nvgStroke(aContext);
 			}
 

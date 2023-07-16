@@ -87,17 +87,19 @@ namespace OD
 			// Draw
 			//
 
-			void draw(NVGcontext* aContext, const OdVector2* aView) override
+			void draw(NVGcontext* aContext, const OdVector2* aView, const float aScale) override
 			{
 				// To do: get line weight from layer
 				//int lineWidthIndex = getLineWeight();
 				//float lineWeight = OdSystem::getRegistryVariableByName("lineWidth");
 
 				OdColour drawColour = getDrawColour();
+				float x = (location.x + aView->x) * aScale;
+				float y = (location.y + aView->y) * aScale;
 
 				// Draw point
 				nvgBeginPath(aContext);
-				nvgCircle(aContext, location.x + aView->x, location.y + aView->y, 0.8);
+				nvgCircle(aContext, x, y, 0.8);
 				nvgFillColor(aContext, drawColour.asNvgColour());
 				nvgFill(aContext);
 			}
