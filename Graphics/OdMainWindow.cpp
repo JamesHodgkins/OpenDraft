@@ -136,7 +136,7 @@ namespace OD::Graphics
 		vp->backColour = OdColour(0,0,0,50);
 		addChildControl(vp);
 
-		OdEllipse *ellipse1 = new OdEllipse(250, 250, 50, 20);
+		/*OdEllipse *ellipse1 = new OdEllipse(250, 250, 50, 20);
 		ellipse1->rotation = 45;
 		ellipse1->setColour(2);
 		db->addCreatedEntity(ellipse1);
@@ -144,7 +144,7 @@ namespace OD::Graphics
 		OdEllipse* ellipse2 = new OdEllipse(50, 50, 50, 20);
 		ellipse2->rotation = -45;
 		ellipse2->setColour(10);
-		db->addCreatedEntity(ellipse2);
+		db->addCreatedEntity(ellipse2);*/
 		
 		OdLine* line1 = new OdLine(100, 100, 250, 250);
 		line1->setColour(3);
