@@ -40,6 +40,7 @@ namespace OD
 			bool dragState = false;
 			OdVector2 dragStart;
 			float scale = 1.0f;
+			OdVector2 absolutePosition;
 
 		protected:
 			OdVector2 position;
@@ -59,6 +60,9 @@ namespace OD
 			void setScale(float aScale);
 			void scaleIn();
 			void scaleOut();
+
+			// User input methods
+			OdVector2 getCoordinatesAtScreenPosition(float x, float y);
 
 		};
 

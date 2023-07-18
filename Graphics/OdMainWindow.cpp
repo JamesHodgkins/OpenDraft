@@ -108,6 +108,10 @@ namespace OD::Graphics
 		tabV->setActiveTab(0);
 
 
+		OdLabel* lbl1 = new OdLabel(1000, 7, 100, 20, "Hello World");
+		addChildControl(lbl1);
+
+
 		//
 		// 
 		// 
@@ -210,6 +214,18 @@ namespace OD::Graphics
 		//if (childComponents[1]->isMouseDown())
 		//	childComponents[2]->enabled = false;
 
+		std::string newText = "";
+
+		float mouseX = input.mouse.position.x;
+		float mouseY = input.mouse.position.y;
+
+		// Cast childComponent[2] as OdViewport
+		OdViewport* vp = static_cast<OdViewport*>(childComponents[2].get());
+		OdVector2 cursorPos = vp->getCoordinatesAtScreenPosition(mouseX, mouseY);
+
+		newText += "Mouse Position: " + std::to_string(cursorPos.x) + ", " + std::to_string(cursorPos.y) + "\n";
+
+		childComponents[1]->text = newText;
 
 
 		// Draw child UI components

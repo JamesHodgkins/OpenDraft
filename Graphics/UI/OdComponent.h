@@ -58,14 +58,15 @@ namespace OD
 			OdAnchor anchor[4] = { OdAnchor(), OdAnchor(), OdAnchor(), OdAnchor() };
 
 			// Parent-child relationship
-			OdComponent* parent;                        // Parent container control for the control.
+			OdComponent* parent;										// Parent container control for the control.
 			std::vector<std::shared_ptr<OdComponent>> childComponents;	// Child Components
 
 			// Component properties
-			OdVector2 location = { 0,0 };			// Location of component
+			OdVector2 location = { 0,0 };		// Location of component
 			OdVector2 size = { 50,50 };			// Size of component
 
 		public:
+
 			// Component properties
 			std::string name;							// Name of the control.
 
