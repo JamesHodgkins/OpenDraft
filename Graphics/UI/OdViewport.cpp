@@ -40,7 +40,7 @@ namespace OD::Graphics
 		foreColour = OdColour(255, 255, 255, 200);
 
 		position = OdVector2(0, 0);
-		absolutePosition = OdVector2(0, 0);
+		absoluteLocation = OdVector2(0, 0);
 
 		text = "";
 	}
@@ -118,8 +118,8 @@ namespace OD::Graphics
 		float matrix[6];
 		nvgCurrentTransform(aContext, matrix);
 
-		absolutePosition.x = matrix[4];
-		absolutePosition.y = matrix[5];
+		absoluteLocation.x = matrix[4]; // + location.x;
+		absoluteLocation.y = matrix[5]; // + location.y;
 
 
 		// Undo translation
@@ -161,7 +161,10 @@ namespace OD::Graphics
 			// if dragState is false, set dragState to true and set dragStart to mouse position
 			if (dragState)
  			{
-				translatePosition(aInput->mouse.position.x - dragStart.x, aInput->mouse.position.y - dragStart.y);
+				float newX = (aInput->mouse.position.x - dragStart.x) / scale;
+				float newY = (aInput->mouse.position.y - dragStart.y) / scale;
+				translatePosition(newX, newY);
+
  				dragStart = OdVector2(aInput->mouse.position.x, aInput->mouse.position.y);
  			}
 		}
@@ -214,10 +217,13 @@ namespace OD::Graphics
 
 	OdVector2 OdViewport::getCoordinatesAtScreenPosition(float x, float y)
 	{
+		// Get inverse scale
+		float invScale = 1.0f / scale;
+
 		// Get offset for viewport position
 		OdVector2 result = OdVector2();
-		result.x = x - absolutePosition.x - position.x;
-		result.y = y - absolutePosition.y - position.y;
+		result.x = (x - absoluteLocation.x - position.x) * invScale;
+		result.y = (y - absoluteLocation.y - position.y) * invScale;
 		return result;
 	}
 

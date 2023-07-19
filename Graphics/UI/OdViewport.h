@@ -40,12 +40,13 @@ namespace OD
 			bool dragState = false;
 			OdVector2 dragStart;
 			float scale = 1.0f;
-			OdVector2 absolutePosition;
+			OdVector2 absoluteLocation;
 
 		protected:
 			OdVector2 position;
 
 		public:
+			// Properties
 			std::vector<OdEntity*>* entities;
 
 			// Constructor
