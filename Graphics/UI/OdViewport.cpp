@@ -214,6 +214,11 @@ namespace OD::Graphics
 		scale -= 0.1f;
 	}
 
+	float OdViewport::getScale()
+	{
+		return scale;
+	}
+
 
 	OdVector2 OdViewport::getCoordinatesAtScreenPosition(float x, float y)
 	{
@@ -222,8 +227,8 @@ namespace OD::Graphics
 
 		// Get offset for viewport position
 		OdVector2 result = OdVector2();
-		result.x = (x - absoluteLocation.x - position.x) * invScale;
-		result.y = (y - absoluteLocation.y - position.y) * invScale;
+		result.x = (x - absoluteLocation.x) * invScale - (position.x);
+		result.y = (y - absoluteLocation.y) * invScale - (position.y);
 		return result;
 	}
 

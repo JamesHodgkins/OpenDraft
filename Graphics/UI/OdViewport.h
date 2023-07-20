@@ -61,6 +61,7 @@ namespace OD
 			void setScale(float aScale);
 			void scaleIn();
 			void scaleOut();
+			float getScale();
 
 			// User input methods
 			OdVector2 getCoordinatesAtScreenPosition(float x, float y);
