@@ -227,8 +227,8 @@ namespace OD::Graphics
 
 		// Get offset for viewport position
 		OdVector2 result = OdVector2();
-		result.x = (x - absoluteLocation.x) * invScale - (position.x);
-		result.y = (y - absoluteLocation.y) * invScale - (position.y);
+		result.x = ((x - absoluteLocation.x) * invScale) - position.x;
+		result.y = ((y - absoluteLocation.y) * invScale) - position.y;
 		return result;
 	}
 
