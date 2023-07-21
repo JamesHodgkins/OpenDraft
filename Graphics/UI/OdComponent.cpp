@@ -111,6 +111,21 @@ namespace OD::Graphics
 	}
 
 
+	OdVector2 OdComponent::getOffset() const
+	{
+		OdVector2 result;
+
+		if (parent != nullptr)
+		{
+			OdVector2 parentOffset = parent->getOffset();
+			result.x = parentOffset.x + location.x;
+			result.y = parentOffset.y + location.y;
+		}
+
+		return result;
+	}
+
+
 
 	//
 	// Mouse Events
@@ -225,10 +240,11 @@ namespace OD::Graphics
 		int mousePosY = static_cast<int>(aInput->mouse.position.y);
 
 		// Calculate object boundaries
-		int objectLeft   = static_cast<int>(getLocation().x);
-		int objectRight  = static_cast<int>(location.x + size.x);
-		int objectTop    = static_cast<int>(getLocation().y);
-		int objectBottom = static_cast<int>(location.y + size.y);
+		OdVector2 offset = getOffset();
+		int objectLeft   = static_cast<int>(offset.x);
+		int objectTop    = static_cast<int>(offset.y);
+		int objectRight  = static_cast<int>(objectLeft + size.x);
+		int objectBottom = static_cast<int>(objectTop  + size.y);
 
 		// Check if mouse is within object boundaries
 		if (mousePosX >= objectLeft && mousePosX <= objectRight && mousePosY >= objectTop && mousePosY <= objectBottom)

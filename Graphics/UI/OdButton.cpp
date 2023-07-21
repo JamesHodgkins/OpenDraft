@@ -34,6 +34,8 @@ namespace OD::Graphics
 		foreColourHover = OdColour::WHITE;
 		foreColourActive = OdColour::PRIMARY;
 
+		padding = 10;
+
 		stroke = OdColour(0, 0, 0, 0);
 
 		backgroundImage = nullptr;
@@ -102,7 +104,7 @@ namespace OD::Graphics
 
 		// Draw background image if set
 		if (backgroundImage != nullptr)
-			OdDraw::ResourceImage(aContext, x, y, size.x, size.y, backgroundImage);
+			OdDraw::ResourceImage(aContext, x + (padding/2), y + (padding/2), size.x - padding, size.y - padding, backgroundImage);
 
 
 		OdDraw::RectStroke(aContext, x, y, size.x, size.y, stroke);

@@ -81,7 +81,6 @@ namespace OD
 			bool enabled = true;                         // Control is enabled or disabled.
 			bool show;                                   // Visible or hidden.
 			bool overflow = true;                        // Determines whether the control can draw child components outside its boundaries.
-
 			int tabIndex;                                // Tab order of the control within its container.
 
 			// Text properties
@@ -106,6 +105,7 @@ namespace OD
 			void setSize(OdVector2 aSize);
 			void setWidth(int aWidth);
 			void setHeight(int aHeight);
+			OdVector2 getOffset() const;
 
 			// Getters
 			std::string getText();

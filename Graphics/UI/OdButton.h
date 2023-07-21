@@ -27,14 +27,15 @@ namespace OD
 		class OdButton : public OdComponent
 		{
 		protected:
+			OdImage* backgroundImage;
+			float fontSize;
+			float padding;
+
+		public:
 			OdColour backColourHover;
 			OdColour foreColourHover;
 			OdColour backColourActive;
 			OdColour foreColourActive;
-			OdImage* backgroundImage;
-			float fontSize;
-
-		public:
 
 			/**
 			 * \brief Constructs a Button object with the specified attributes.

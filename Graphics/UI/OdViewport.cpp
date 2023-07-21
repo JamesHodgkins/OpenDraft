@@ -40,7 +40,6 @@ namespace OD::Graphics
 		foreColour = OdColour(255, 255, 255, 200);
 
 		position = OdVector2(0, 0);
-		absoluteLocation = OdVector2(0, 0);
 
 		text = "";
 	}
@@ -110,17 +109,6 @@ namespace OD::Graphics
 			// Draw entity
 			entity->draw(aContext, &position, scale);
 		}
-
-
-
-
-		// Get the current transformation matrix
-		float matrix[6];
-		nvgCurrentTransform(aContext, matrix);
-
-		absoluteLocation.x = matrix[4]; // + location.x;
-		absoluteLocation.y = matrix[5]; // + location.y;
-
 
 		// Undo translation
 		OdDraw::Translate(aContext, -location.x, -location.y);
@@ -224,6 +212,7 @@ namespace OD::Graphics
 	{
 		// Get inverse scale
 		float invScale = 1.0f / scale;
+		OdVector2 absoluteLocation = getOffset();
 
 		// Get offset for viewport position
 		OdVector2 result = OdVector2();

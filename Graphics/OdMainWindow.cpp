@@ -89,18 +89,21 @@ namespace OD::Graphics
 		OdTab* tabView = tabV->getTab(3);
 		OdTab* tabHelp = tabV->getTab(4);
 
-		OdButton* btn3 = new OdButton(10, 10, 24, 24, "");
+		OdButton* btn3 = new OdButton(10, 10, 34, 34, "");
 		btn3->backColour = OdColour::CLEAR;
+		btn3->backColourHover = OdColour::BACKGROUND1;
 		btn3->setBackgroundImage(resourceManager->images["ico_circle"]);
 		tabDraw->addPanelChildControl(btn3);
 
-		OdButton* btn4 = new OdButton(55, 10, 24, 24, "");
+		OdButton* btn4 = new OdButton(55, 10, 34, 34, "");
 		btn4->backColour = OdColour::CLEAR;
+		btn4->backColourHover = OdColour::BACKGROUND1;
 		btn4->setBackgroundImage(resourceManager->images["ico_line"]);
 		tabDraw->addPanelChildControl(btn4);
 
-		OdButton* btn5 = new OdButton(100, 10, 24, 24, "");
+		OdButton* btn5 = new OdButton(100, 10, 34, 34, "");
 		btn5->backColour = OdColour::CLEAR;
+		btn5->backColourHover = OdColour::BACKGROUND1;
 		btn5->setBackgroundImage(resourceManager->images["ico_polyline"]);
 		tabDraw->addPanelChildControl(btn5);
 
