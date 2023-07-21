@@ -88,6 +88,8 @@ namespace OD
 			// Draw tab button
 			button->onFrame(aContext);
 
+			panel->setWidth(parent->getWidth());
+
 			// Draw tab panel is tab is active (enabled)
 			if (enabled)
 				panel->onFrame(aContext);
@@ -148,14 +150,7 @@ namespace OD
 
 
 		void OdTabView::onFrame(NVGcontext* aContext)
-		{
-			if (!enabled)
-				return;
-
-			if (aContext == nullptr)
-				return;
-
-			
+		{			
 			// Update states
 			for (std::shared_ptr<OdComponent> component : childComponents)
 			{
@@ -176,7 +171,7 @@ namespace OD
 
 
 			// Drawing window
-			OdDraw::Rect(aContext, x, y, w, h, OdColour::PRIMARY);
+			//OdDraw::Rect(aContext, x, y, w, h, OdColour::PRIMARY);
 			
 			OdDraw::RectStroke(aContext, x, y, w, h, stroke);
 

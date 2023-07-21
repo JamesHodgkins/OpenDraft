@@ -21,6 +21,27 @@
 namespace OD::Graphics
 {
 	//
+	// Invoke onFrame with a header
+	//
+	void OdComponent::invokeOnFrame(NVGcontext* aContext)
+	{
+		// Check if component is enabled, and return if not
+		if (!enabled)
+			return;
+
+		// Check if NVG context is null, and return if so
+		if (aContext == nullptr)
+			return;
+
+		// Update size based on any anchors that are enabled
+		updateSizeForAnchors();
+
+		// Invoke onFrame
+		onFrame(aContext);
+	}
+
+
+	//
 	//	Getters and Setters
 	//
 
@@ -201,6 +222,26 @@ namespace OD::Graphics
 			anchor[3].offset = location.x;
 	}
 
+	void OdComponent::updateSizeForAnchors()
+	{
+		// Update horizontal size based on anchor points
+		// Anchor top=0, right=1, bottom=2, left=3
+
+		// If let and right anchors are enabled
+		if (anchor[3].enabled && anchor[1].enabled)
+		{
+			// Calculate new width
+			size.x = parent->getSize().x - anchor[3].offset - anchor[1].offset - location.x;
+		}
+
+		// If right anchor is enabled
+		else if (!anchor[3].enabled && anchor[1].enabled)
+		{
+			// Calculate new location, pinning the right side
+			location.x = parent->getSize().x - anchor[1].offset - size.x;
+		}
+	}
+
 	//
 	// Child Component Management
 	//
@@ -263,11 +304,9 @@ namespace OD::Graphics
 			mouseOver = false;
 
 			// Check if mouse left the object
-			if (mouseEnter)
-			{
-				mouseEnter = false;
-				// Handle mouse leave event
-			}
+			if (!mouseLeave)
+				mouseLeave = true;
+			
 		}
 
 
@@ -310,7 +349,7 @@ namespace OD::Graphics
 			if (!overflow)
 				disableOverflow(aContext);
 				
-			control->onFrame(aContext);
+			control->invokeOnFrame(aContext);
 		}
 
 		// Translate back

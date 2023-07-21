@@ -30,6 +30,9 @@ namespace OD
 			// Load required resources
 			void loadResources();
 
+			// Properties
+			OdViewport* viewport;
+
 		public:
 
 			// Constructor

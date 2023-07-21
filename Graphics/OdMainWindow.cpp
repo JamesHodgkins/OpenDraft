@@ -75,6 +75,8 @@ namespace OD::Graphics
 		addChildControl(pnl1);	*/
 
 		OdTabView* tabV = new OdTabView(0, 0, 1280, 100);
+		tabV->setAnchor(OdAnchor::Direction::Left, true);
+		tabV->setAnchor(OdAnchor::Direction::Right, true);
 		addChildControl(tabV);
 
 		tabV->addTab("Home");
@@ -95,13 +97,13 @@ namespace OD::Graphics
 		btn3->setBackgroundImage(resourceManager->images["ico_circle"]);
 		tabDraw->addPanelChildControl(btn3);
 
-		OdButton* btn4 = new OdButton(55, 10, 34, 34, "");
+		OdButton* btn4 = new OdButton(46, 10, 34, 34, "");
 		btn4->backColour = OdColour::CLEAR;
 		btn4->backColourHover = OdColour::BACKGROUND1;
 		btn4->setBackgroundImage(resourceManager->images["ico_line"]);
 		tabDraw->addPanelChildControl(btn4);
 
-		OdButton* btn5 = new OdButton(100, 10, 34, 34, "");
+		OdButton* btn5 = new OdButton(82, 10, 34, 34, "");
 		btn5->backColour = OdColour::CLEAR;
 		btn5->backColourHover = OdColour::BACKGROUND1;
 		btn5->setBackgroundImage(resourceManager->images["ico_polyline"]);
@@ -138,11 +140,12 @@ namespace OD::Graphics
 		doc->comments = L"This is a test document comment";
 		doc->company = L"OpenDraft";
 		
+		viewport = new OdViewport(0, 100, 1280, 700);
+		viewport->setAnchor(OdAnchor::Direction::Left, true);
+		viewport->setAnchor(OdAnchor::Direction::Right, true);
+		viewport->backColour = OdColour(0,0,0,50);
+		addChildControl(viewport);
 		
-		OdViewport* vp = new OdViewport(0, 100, 1280, 700);
-		vp->backColour = OdColour(0,0,0,50);
-		addChildControl(vp);
-
 		/*OdEllipse *ellipse1 = new OdEllipse(250, 250, 50, 20);
 		ellipse1->rotation = 45;
 		ellipse1->setColour(2);
@@ -192,7 +195,6 @@ namespace OD::Graphics
 		nvgReset(context);
 
 		OdApplication* app = OdApplication::getInstance();
-		OdWindow* wnd = app->getMainWindow();
 
 		glClearColor(
 			OdColour::BACKGROUND1.getRedNorm(),
@@ -200,6 +202,14 @@ namespace OD::Graphics
 			OdColour::BACKGROUND1.getBlueNorm(),
 			1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+
+		// Hide cursor when over viewport
+		if (viewport->isMouseOver())
+			glfwSetInputMode(glfwHandle, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+		else
+			glfwSetInputMode(glfwHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		
 
 		// Cast window size
 		float w = static_cast<float>(size.x);

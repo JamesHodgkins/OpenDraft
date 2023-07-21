@@ -28,6 +28,7 @@ namespace OD
 		class OdDraw
 		{
 		public:
+			static void Line(NVGcontext* aContext, float aX1, float aY1, float aX2, float aY2, float thickness, OdColour aColour);
 			static void Rect(NVGcontext* aContext, float aX, float aY, float aWidth, float aHeight, OdColour aColour);
 			static void RectStroke(NVGcontext* aContext, float aX, float aY, float aWidth, float aHeight, OdColour aColour);
 			static void Text(NVGcontext* aContext, float aX, float aY, float aWidth, float aHeight, float aSize, OdColour aColour, const char* aText);

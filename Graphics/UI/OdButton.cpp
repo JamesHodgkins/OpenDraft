@@ -66,27 +66,6 @@ namespace OD::Graphics
 
 	void OdButton::onFrame(NVGcontext* aContext)
 	{
-		if (!enabled)
-			return;
-
-		if (aContext == nullptr)
-			return;
-
-
-
-		// Update horizontal size based on anchor points
-		// Anchor top=0, right=1, bottom=2, left=3
-
-		if (anchor[3].enabled && anchor[1].enabled)
-			size.x = parent->getSize().x - anchor[1].offset - anchor[3].offset;
-
-		else if (anchor[3].enabled)
-			size.x = parent->getSize().x - location.x - anchor[3].offset;
-
-		else if (anchor[1].enabled)
-			size.x = location.x - anchor[1].offset;
-
-
 		// Calculate draw location
 		float x = getLocation().x;
 		float y = getLocation().y;

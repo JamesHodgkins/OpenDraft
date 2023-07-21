@@ -64,12 +64,6 @@ namespace OD
 		*/
 		void OdPanel::onFrame(NVGcontext* aContext)
 		{
-			if (!enabled)
-				return;
-
-			if (aContext == nullptr)
-				return;
-
 			// Static cast properties
 			float x = getLocation().x;
 			float y = getLocation().y;

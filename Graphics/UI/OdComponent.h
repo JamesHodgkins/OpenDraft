@@ -94,6 +94,7 @@ namespace OD
 
 			// Virtual Functions
 			virtual void onFrame(NVGcontext* aContext) = 0;
+			void invokeOnFrame(NVGcontext* aContext);
 
 			// Setters
 			void setLocation(int aX, int aY);
@@ -127,6 +128,7 @@ namespace OD
 			bool isAnchorSet(OdAnchor::Direction direction) const;
 			void setAnchor(OdAnchor::Direction direction, bool aAnchor);
 			void updateAnchor(OdAnchor::Direction direction);
+			void updateSizeForAnchors();
 
 
 			// Child Component Management

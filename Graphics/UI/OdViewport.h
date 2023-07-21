@@ -39,6 +39,7 @@ namespace OD
 		private:
 			bool dragState = false;
 			OdVector2 dragStart;
+			OdVector2 cursorPosition;
 			float scale = 1.0f;
 
 		protected:

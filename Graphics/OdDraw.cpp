@@ -19,9 +19,21 @@
 
 namespace OD::Graphics
 {
+	void OdDraw::Line(NVGcontext* aContext, float aX1, float aY1, float aX2, float aY2, float thickness, OdColour aColour)
+	{
+		nvgBeginPath(aContext);
+		nvgMoveTo(aContext, aX1, aY1);
+		nvgLineTo(aContext, aX2, aY2);
+		nvgStrokeWidth(aContext, thickness);
+		nvgStrokeColor(aContext, aColour.asNvgColour());
+		nvgStroke(aContext);
+		nvgClosePath(aContext);
+	}
+
 	void OdDraw::Rect(NVGcontext* aContext, float aX, float aY, float aWidth, float aHeight, const OdColour aColour)
 	{
 		nvgBeginPath(aContext);
+		nvgMoveTo(aContext, aX, aY);
 		nvgRect(aContext, aX, aY, aWidth, aHeight);
 		nvgFillColor(aContext, aColour.asNvgColour());
 		nvgFill(aContext);

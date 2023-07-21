@@ -35,6 +35,8 @@ namespace OD::Graphics
 		size.x = aWidth;
 		size.y = aHeight;
 
+		cursorPosition = OdVector2(0, 0);
+
 		backColour = OdColour::BACKGROUND1;
 		stroke = OdColour(0, 0, 0, 0);
 		foreColour = OdColour(255, 255, 255, 200);
@@ -46,14 +48,6 @@ namespace OD::Graphics
 
 	void OdViewport::onFrame(NVGcontext* aContext) 
 	{
-		// Check if enabled
-		if (!enabled)
-			return;
-
-		// Check if context is null
-		if (aContext == nullptr)
-			return;
-
 		// Static cast properties
 		float x = getLocation().x;
 		float y = getLocation().y;
@@ -110,6 +104,13 @@ namespace OD::Graphics
 			entity->draw(aContext, &position, scale);
 		}
 
+		// Draw cursor
+		if (mouseOver)
+		{
+			OdDraw::Line(aContext, 0, cursorPosition.y, size.x, cursorPosition.y, 0.8, OdColour::LIME);	// Horizontal
+			OdDraw::Line(aContext, cursorPosition.x, 0, cursorPosition.x, size.y, 0.8, OdColour::RED);	// Vertical
+		}
+
 		// Undo translation
 		OdDraw::Translate(aContext, -location.x, -location.y);
 
@@ -118,8 +119,15 @@ namespace OD::Graphics
 
 	void OdViewport::actionEvents(GrInputMap* aInput)
 	{
+		// Check if mouse is over viewport
 		if (aInput == nullptr)
 			return;
+		
+		
+		// Update cursor position
+		cursorPosition.x = aInput->mouse.position.x - location.x;
+		cursorPosition.y = aInput->mouse.position.y - location.y;
+
 
 		// Use mouse to move viewport position
 		if (aInput->keys[GLFW_KEY_LEFT].isDown())
@@ -134,6 +142,7 @@ namespace OD::Graphics
 		if (aInput->keys[GLFW_KEY_DOWN].isDown())
 			translatePosition(0, 1);
 
+
 		// Was mouse pressed
 		if (aInput->mouse.middleButton.isPressDown())
 		{
@@ -143,18 +152,18 @@ namespace OD::Graphics
 				dragStart = OdVector2(aInput->mouse.position.x, aInput->mouse.position.y);
 			}
 		}
-		
+
 		if (aInput->mouse.middleButton.isDown())	// Use mouse to move viewport position
 		{
 			// if dragState is false, set dragState to true and set dragStart to mouse position
 			if (dragState)
- 			{
+			{
 				float newX = (aInput->mouse.position.x - dragStart.x) / scale;
 				float newY = (aInput->mouse.position.y - dragStart.y) / scale;
 				translatePosition(newX, newY);
 
- 				dragStart = OdVector2(aInput->mouse.position.x, aInput->mouse.position.y);
- 			}
+				dragStart = OdVector2(aInput->mouse.position.x, aInput->mouse.position.y);
+			}
 		}
 		else	// If middle button is not down, set dragState to false
 		{
@@ -167,6 +176,7 @@ namespace OD::Graphics
 
 		if (aInput->mouse.scroll < 0)
 			scaleOut();
+
 	}
 
 
