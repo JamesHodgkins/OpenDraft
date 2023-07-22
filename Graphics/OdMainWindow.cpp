@@ -143,6 +143,8 @@ namespace OD::Graphics
 		viewport = new OdViewport(0, 100, 1280, 700);
 		viewport->setAnchor(OdAnchor::Direction::Left, true);
 		viewport->setAnchor(OdAnchor::Direction::Right, true);
+		viewport->setAnchor(OdAnchor::Direction::Top, true);
+		viewport->setAnchor(OdAnchor::Direction::Bottom, true);
 		viewport->backColour = OdColour(0,0,0,50);
 		addChildControl(viewport);
 		

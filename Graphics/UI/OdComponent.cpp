@@ -227,7 +227,7 @@ namespace OD::Graphics
 		// Update horizontal size based on anchor points
 		// Anchor top=0, right=1, bottom=2, left=3
 
-		// If let and right anchors are enabled
+		// If left and right anchors are enabled
 		if (anchor[3].enabled && anchor[1].enabled)
 		{
 			// Calculate new width
@@ -239,6 +239,20 @@ namespace OD::Graphics
 		{
 			// Calculate new location, pinning the right side
 			location.x = parent->getSize().x - anchor[1].offset - size.x;
+		}
+
+		// If top and bottom anchors are enabled
+		if (anchor[0].enabled && anchor[2].enabled)
+		{
+			// Calculate new height
+			size.y = parent->getSize().y - anchor[0].offset - anchor[2].offset - location.y;
+		}
+
+		// If bottom anchor is enabled
+		else if (!anchor[0].enabled && anchor[2].enabled)
+		{
+			// Calculate new location, pinning the bottom side
+			location.y = parent->getSize().y - anchor[2].offset - size.y;
 		}
 	}
 
