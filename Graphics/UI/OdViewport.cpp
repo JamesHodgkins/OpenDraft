@@ -129,18 +129,27 @@ namespace OD::Graphics
 		cursorPosition.y = aInput->mouse.position.y - location.y;
 
 
+		//
 		// Use mouse to move viewport position
+		//
+
+		// If shift is selected, add speed multiplier
+		int multiplier = 1;
+
+		if (aInput->keys[GLFW_KEY_LEFT_SHIFT].isDown())
+			multiplier = 7;
+
 		if (aInput->keys[GLFW_KEY_LEFT].isDown())
-			translatePosition(-2, 0);
+			translatePosition(-1*multiplier, 0);
 
 		if (aInput->keys[GLFW_KEY_RIGHT].isDown())
-			translatePosition(2, 0);
+			translatePosition(1*multiplier, 0);
 
 		if (aInput->keys[GLFW_KEY_UP].isDown())
-			translatePosition(0, -1);
+			translatePosition(0, -1*multiplier);
 
 		if (aInput->keys[GLFW_KEY_DOWN].isDown())
-			translatePosition(0, 1);
+			translatePosition(0, 1*multiplier);
 
 
 		// Was mouse pressed
