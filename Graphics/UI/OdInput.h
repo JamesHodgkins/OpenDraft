@@ -75,6 +75,8 @@ namespace OD
 			GrInputMap()
 			{
 				mouse.scroll = 0;
+				mouse.position.x = 0;
+				mouse.position.y = 0;
 
 				keys = {
 					{GLFW_KEY_A, OdKeyInput()},

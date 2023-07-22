@@ -106,6 +106,7 @@ namespace OD
 			if (windowInstance) {
 				// Access the instance and update size
 				windowInstance->updateProperties();
+				windowInstance->onFrame(windowInstance->context);
 			}
 		}
 

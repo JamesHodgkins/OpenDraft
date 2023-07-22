@@ -53,7 +53,7 @@ namespace OD
 			void initialise() override;
 
 			// Render the window and UI components
-			virtual void onFrame(NVGcontext* NULLREF = nullptr, OdComponent* aParent = nullptr);
+			virtual void onFrame(NVGcontext* NULLREF = nullptr) override;
 
 			// Action window events
 			void actionEvents(GrInputMap* aInput);

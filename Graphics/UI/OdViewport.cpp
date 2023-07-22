@@ -134,7 +134,7 @@ namespace OD::Graphics
 		//
 
 		// If shift is selected, add speed multiplier
-		int multiplier = 1;
+		float multiplier = 3;
 
 		if (aInput->keys[GLFW_KEY_LEFT_SHIFT].isDown())
 		{
@@ -144,9 +144,12 @@ namespace OD::Graphics
 			if (multiplierVar != nullptr)
 				multiplier = std::get<int>(multiplierVar->getValue());
 			else
-				multiplier = 10;
+				multiplier = 10; // Default value if variable is not found
+		}
 
-
+		if (aInput->keys[GLFW_KEY_LEFT_CONTROL].isDown())
+		{
+			multiplier = 0.5;
 		}
 
 		if (aInput->keys[GLFW_KEY_LEFT].isDown())

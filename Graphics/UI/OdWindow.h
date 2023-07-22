@@ -72,7 +72,7 @@ namespace OD
 			virtual void initialise();
 
 			// Render the window and UI components
-			virtual void onFrame(NVGcontext* context);
+			virtual void onFrame(NVGcontext* context) override;
 
 			// Action window events
 			void actionEvents(GrInputMap* aInput);

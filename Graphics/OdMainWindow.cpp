@@ -192,7 +192,7 @@ namespace OD::Graphics
 
 
 	// Render the window and UI components
-	void OdMainWindow::onFrame(NVGcontext* NULLREF, OdComponent* aParent)
+	void OdMainWindow::onFrame(NVGcontext* NULLREF)
 	{
 		nvgReset(context);
 
