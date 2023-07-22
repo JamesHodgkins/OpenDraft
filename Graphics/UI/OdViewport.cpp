@@ -137,7 +137,17 @@ namespace OD::Graphics
 		int multiplier = 1;
 
 		if (aInput->keys[GLFW_KEY_LEFT_SHIFT].isDown())
-			multiplier = 7;
+		{
+			OdSystem* system = OdSystem::getInstance();
+			OdSystemVariable* multiplierVar = system->getRegistryVariableByName("viewport_speed_multiplier");
+			
+			if (multiplierVar != nullptr)
+				multiplier = std::get<int>(multiplierVar->getValue());
+			else
+				multiplier = 10;
+
+
+		}
 
 		if (aInput->keys[GLFW_KEY_LEFT].isDown())
 			translatePosition(-1*multiplier, 0);

@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <systemVariables>
   <variable>
+    <key>viewport_speed_multiplier</key>
+    <value type="int">10</value>
+  </variable>
+  <variable>
     <key>gridSize</key>
     <value type="int">10</value>
   </variable>
