@@ -33,11 +33,11 @@ namespace OD::Graphics
 		resourceManager->importImageFromFile(context, 32, 32, "ico_circle", "..\\Resources\\Icons\\circle.png");
 		resourceManager->importImageFromFile(context, 32, 32, "ico_line", "..\\Resources\\Icons\\line.png");
 		resourceManager->importImageFromFile(context, 32, 32, "ico_mirror", "..\\Resources\\Icons\\mirror.png");
+		resourceManager->importImageFromFile(context, 32, 32, "ico_polyline", "..\\Resources\\Icons\\polyline.png");
+		resourceManager->importImageFromFile(context, 32, 32, "ico_rectangle", "..\\Resources\\Icons\\rectangle.png");
 		resourceManager->importImageFromFile(context, 32, 32, "ico_newfile", "..\\Resources\\Icons\\new_file.png");
 		resourceManager->importImageFromFile(context, 32, 32, "ico_open", "..\\Resources\\Icons\\open.png");
-		resourceManager->importImageFromFile(context, 32, 32, "ico_polyline", "..\\Resources\\Icons\\polyline.png");
 		resourceManager->importImageFromFile(context, 32, 32, "ico_print", "..\\Resources\\Icons\\print.png");
-		resourceManager->importImageFromFile(context, 32, 32, "ico_rectangle", "..\\Resources\\Icons\\rectangle.png");
 		resourceManager->importImageFromFile(context, 32, 32, "ico_redo", "..\\Resources\\Icons\\redo.png");
 		resourceManager->importImageFromFile(context, 32, 32, "ico_save", "..\\Resources\\Icons\\save.png");
 		resourceManager->importImageFromFile(context, 32, 32, "ico_saveas", "..\\Resources\\Icons\\save_as.png");
@@ -69,10 +69,9 @@ namespace OD::Graphics
 		btn2->setAnchor(OdAnchor::Direction::Left, true);*/
 
 
+		//
 		// Start Ribbon Area
-		/*OdPanel* pnl1 = new OdPanel(0, 400, size.x, 100);
-		pnl1->backColour = OdColour::BACKGROUND2;
-		addChildControl(pnl1);	*/
+		//
 
 		OdTabView* tabV = new OdTabView(0, 0, 1280, 100);
 		tabV->setAnchor(OdAnchor::Direction::Left, true);
@@ -91,30 +90,68 @@ namespace OD::Graphics
 		OdTab* tabView = tabV->getTab(3);
 		OdTab* tabHelp = tabV->getTab(4);
 
-		OdButton* btn3 = new OdButton(10, 10, 34, 34, "");
-		btn3->backColour = OdColour::CLEAR;
-		btn3->backColourHover = OdColour::BACKGROUND1;
-		btn3->setBackgroundImage(resourceManager->images["ico_circle"]);
-		tabDraw->addPanelChildControl(btn3);
+		int BUTTON_SIZE = 34;
+		int BUTTON_MARGIN = 2;
 
-		OdButton* btn4 = new OdButton(46, 10, 34, 34, "");
-		btn4->backColour = OdColour::CLEAR;
-		btn4->backColourHover = OdColour::BACKGROUND1;
-		btn4->setBackgroundImage(resourceManager->images["ico_line"]);
-		tabDraw->addPanelChildControl(btn4);
 
-		OdButton* btn5 = new OdButton(82, 10, 34, 34, "");
-		btn5->backColour = OdColour::CLEAR;
-		btn5->backColourHover = OdColour::BACKGROUND1;
-		btn5->setBackgroundImage(resourceManager->images["ico_polyline"]);
-		tabDraw->addPanelChildControl(btn5);
+		// Home Tab
 
+		std::vector<std::string> homeButtons = { "newfile", "open", "save", "saveas", "print", "undo", "redo" };
+
+		for (int i = 0; i < homeButtons.size(); i++)
+		{
+			OdButton* btn = new OdButton(10 + (BUTTON_SIZE + BUTTON_MARGIN) * i, 10, BUTTON_SIZE, BUTTON_SIZE, "");
+			btn->backColour = OdColour::CLEAR;
+			btn->backColourHover = OdColour::BACKGROUND1;
+			btn->setBackgroundImage(resourceManager->images["ico_" + homeButtons[i]]);
+			tabHome->addPanelChildControl(btn);
+		}
+
+
+
+		// Draw Tab
+
+		std::vector<std::string> drawButtons = { "line", "polyline", "rectangle", "circle" };
+
+		for (int i = 0; i < drawButtons.size(); i++)
+		{
+			OdButton* btn = new OdButton(10 + (BUTTON_SIZE + BUTTON_MARGIN) * i, 10, BUTTON_SIZE, BUTTON_SIZE, "");
+			btn->backColour = OdColour::CLEAR;
+			btn->backColourHover = OdColour::BACKGROUND1;
+			btn->setBackgroundImage(resourceManager->images["ico_" + drawButtons[i]]);
+			tabDraw->addPanelChildControl(btn);
+		}
+
+
+		// Modify Tab
+
+		std::vector<std::string> modifyButtons = { "mirror" };
+
+		for (int i = 0; i < modifyButtons.size(); i++)
+		{
+			OdButton* btn = new OdButton(10 + (BUTTON_SIZE + BUTTON_MARGIN) * i, 10, BUTTON_SIZE, BUTTON_SIZE, "");
+			btn->backColour = OdColour::CLEAR;
+			btn->backColourHover = OdColour::BACKGROUND1;
+			btn->setBackgroundImage(resourceManager->images["ico_" + modifyButtons[i]]);
+			tabModify->addPanelChildControl(btn);
+		}
+
+		// End Ribbon Area
+
+		
 		// Set tab 1 as active
 		tabV->setActiveTab(0);
 
+		// Setup the viewport
+		viewport = new OdViewport(0, 100, 1280, 700);
+		viewport->setAnchor(OdAnchor::Direction::Left, true);
+		viewport->setAnchor(OdAnchor::Direction::Right, true);
+		viewport->setAnchor(OdAnchor::Direction::Top, true);
+		viewport->setAnchor(OdAnchor::Direction::Bottom, true);
+		viewport->backColour = OdColour(0, 0, 0, 50);
+		addChildControl(viewport);
 
-		OdLabel* lbl1 = new OdLabel(800, 7, 100, 20, "Hello World");
-		addChildControl(lbl1);
+
 
 
 		//
@@ -124,6 +161,9 @@ namespace OD::Graphics
 		//
 		//
 		//
+
+		OdLabel* lbl1 = new OdLabel(800, 7, 100, 20, "Hello World");
+		addChildControl(lbl1);
 
 		OdApplication* app = OdApplication::getInstance();
 		OdDocumentManager* docManager = app->getDocumentManager();
@@ -140,14 +180,7 @@ namespace OD::Graphics
 		doc->comments = L"This is a test document comment";
 		doc->company = L"OpenDraft";
 		
-		viewport = new OdViewport(0, 100, 1280, 700);
-		viewport->setAnchor(OdAnchor::Direction::Left, true);
-		viewport->setAnchor(OdAnchor::Direction::Right, true);
-		viewport->setAnchor(OdAnchor::Direction::Top, true);
-		viewport->setAnchor(OdAnchor::Direction::Bottom, true);
-		viewport->backColour = OdColour(0,0,0,50);
-		addChildControl(viewport);
-		
+
 		/*OdEllipse *ellipse1 = new OdEllipse(250, 250, 50, 20);
 		ellipse1->rotation = 45;
 		ellipse1->setColour(2);
