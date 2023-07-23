@@ -29,19 +29,19 @@ namespace OD::Graphics
 	{
 		resourceManager->importFontFromFile(context, "sans", "..\\Resources\\Fonts\\OpenSans.ttf");
 
-		// Load 32x32 GUI PNG icons
-		resourceManager->importImageFromFile(context, 32, 32, "ico_circle", "..\\Resources\\Icons\\circle.png");
-		resourceManager->importImageFromFile(context, 32, 32, "ico_line", "..\\Resources\\Icons\\line.png");
-		resourceManager->importImageFromFile(context, 32, 32, "ico_mirror", "..\\Resources\\Icons\\mirror.png");
-		resourceManager->importImageFromFile(context, 32, 32, "ico_polyline", "..\\Resources\\Icons\\polyline.png");
-		resourceManager->importImageFromFile(context, 32, 32, "ico_rectangle", "..\\Resources\\Icons\\rectangle.png");
-		resourceManager->importImageFromFile(context, 32, 32, "ico_newfile", "..\\Resources\\Icons\\new_file.png");
-		resourceManager->importImageFromFile(context, 32, 32, "ico_open", "..\\Resources\\Icons\\open.png");
-		resourceManager->importImageFromFile(context, 32, 32, "ico_print", "..\\Resources\\Icons\\print.png");
-		resourceManager->importImageFromFile(context, 32, 32, "ico_redo", "..\\Resources\\Icons\\redo.png");
-		resourceManager->importImageFromFile(context, 32, 32, "ico_save", "..\\Resources\\Icons\\save.png");
-		resourceManager->importImageFromFile(context, 32, 32, "ico_saveas", "..\\Resources\\Icons\\save_as.png");
-		resourceManager->importImageFromFile(context, 32, 32, "ico_undo", "..\\Resources\\Icons\\undo.png");
+		std::vector<std::string> icons = {
+			"new_file", "open", "save", "save_as", "print", "undo", "redo",
+			"line", "polyline", "rectangle", "circle",
+			"move", "rotate", "mirror"
+		};
+
+		for (int i = 0; i < icons.size(); i++)
+		{
+			std::string name = "ico_" + icons[i];
+			std::string path = "..\\Resources\\Icons\\" + icons[i] + ".png";
+			resourceManager->importImageFromFile(context, 32, 32, name.c_str(), path.c_str());
+		}
+
 	}
 
 
@@ -94,9 +94,9 @@ namespace OD::Graphics
 		int BUTTON_MARGIN = 2;
 
 
-		// Home Tab
 
-		std::vector<std::string> homeButtons = { "newfile", "open", "save", "saveas", "print", "undo", "redo" };
+		// Home Tab
+		std::vector<std::string> homeButtons = { "new_file", "open", "save", "save_as", "print", "undo", "redo" };
 
 		for (int i = 0; i < homeButtons.size(); i++)
 		{
@@ -110,7 +110,6 @@ namespace OD::Graphics
 
 
 		// Draw Tab
-
 		std::vector<std::string> drawButtons = { "line", "polyline", "rectangle", "circle" };
 
 		for (int i = 0; i < drawButtons.size(); i++)
@@ -120,12 +119,12 @@ namespace OD::Graphics
 			btn->backColourHover = OdColour::BACKGROUND1;
 			btn->setBackgroundImage(resourceManager->images["ico_" + drawButtons[i]]);
 			tabDraw->addPanelChildControl(btn);
+
 		}
 
 
 		// Modify Tab
-
-		std::vector<std::string> modifyButtons = { "mirror" };
+		std::vector<std::string> modifyButtons = { "move", "rotate", "mirror" };
 
 		for (int i = 0; i < modifyButtons.size(); i++)
 		{
