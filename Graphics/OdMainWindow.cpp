@@ -31,7 +31,7 @@ namespace OD::Graphics
 
 		std::vector<std::string> icons = {
 			"new_file", "open", "save", "save_as", "print", "undo", "redo",
-			"line", "polyline", "rectangle", "circle",
+			"line", "polyline", "rectangle", "circle", "text",
 			"move", "rotate", "mirror"
 		};
 
@@ -110,7 +110,7 @@ namespace OD::Graphics
 
 
 		// Draw Tab
-		std::vector<std::string> drawButtons = { "line", "polyline", "rectangle", "circle" };
+		std::vector<std::string> drawButtons = { "line", "polyline", "rectangle", "circle", "text"};
 
 		for (int i = 0; i < drawButtons.size(); i++)
 		{
