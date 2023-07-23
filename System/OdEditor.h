@@ -6,7 +6,7 @@
 *-------------------------------------------------------------------------------------*
 * Filename:     OdEditor.h                                                            *
 * Contributors: James Hodgkins                                                        *
-* Date:         14 July, 2023                                                         *
+* Date:         23 July, 2023                                                         *
 * Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
@@ -14,26 +14,53 @@
 ***************************************************************************************/
 
 
-#include "System/Entities/OdEntity.h"
+
+#include "System/OdCore.h"
+#include "System/OdEditorInput.h"
+
 
 namespace OD
 {
 	// Forward declarations
-	namespace Graphics
-	{
+	namespace Graphics {
 		class GrInputMap;
 	}
+
+	namespace Geometry {
+		class OdEntity;
+	}
+	// End forward declarations
+
 
 	namespace System
 	{
 		class OdEditor
 		{
 		private:
+			Graphics::GrInputMap* input = nullptr;
+			std::atomic<bool> terminateFlag{false};
+			std::thread commandThread;
+			
 
 		public:
-			void processEvents(Graphics::GrInputMap* input);
-
+			// Constructor and destructor
 			OdEditor();
+			~OdEditor();
+
+			// Update events
+			//void processEvents(Graphics::GrInputMap* input);
+
+			// Command events
+			void startCommand(void (*commandFunction)());
+			void endCommand();
+
+			OdValuePromptResult getValueUserInput();
+			OdPointPromptResult getPointUserInput();
+			OdEntityPromptResult getEntityUserInput();
+			OdSelectionPromptResult getSelectionUserInput();
+			OdStringPromptResult getStringUserInput();
+			OdIntegerPromptResult getIntegerUserInput();
+
 
 		};
 	}

@@ -226,5 +226,8 @@
     <ClInclude Include="..\System\OdEditor.h">
       <Filter>System</Filter>
     </ClInclude>
+    <ClInclude Include="..\System\OdEditorInput.h">
+      <Filter>System</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

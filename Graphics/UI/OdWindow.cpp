@@ -232,7 +232,6 @@ namespace OD
 
 			OdApplication* app = OdApplication::getInstance();
 			OdDocument* doc = app->getDocumentManager()->getActiveDocument();
-			doc->editor->processEvents(&input);
 		}
 
 		void OdWindow::closeEvents()
