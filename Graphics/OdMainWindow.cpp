@@ -32,7 +32,7 @@ namespace OD::Graphics
 		std::vector<std::string> icons = {
 			"new_file", "open", "save", "save_as", "print", "undo", "redo",
 			"line", "polyline", "rectangle", "circle", "text",
-			"move", "rotate", "mirror"
+			"move", "rotate", "mirror", "array"
 		};
 
 		for (int i = 0; i < icons.size(); i++)
@@ -124,7 +124,7 @@ namespace OD::Graphics
 
 
 		// Modify Tab
-		std::vector<std::string> modifyButtons = { "move", "rotate", "mirror" };
+		std::vector<std::string> modifyButtons = { "move", "rotate", "mirror", "array"};
 
 		for (int i = 0; i < modifyButtons.size(); i++)
 		{
