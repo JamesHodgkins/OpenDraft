@@ -7,7 +7,7 @@
 * Filename:     OdEntities.h                                                          *
 * Contributors: James Hodgkins                                                        *
 * Date:         June 28, 2023                                                         *
-* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+* Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   Header file collates all OD native entities                                       *

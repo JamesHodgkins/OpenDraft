@@ -7,7 +7,7 @@
 * Filename:     OdButton.h                                                            *
 * Contributors: James Hodgkins                                                        *
 * Date:         June 21, 2023                                                         *
-* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+* Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   A GUI button class derived from OdComponent                                       *

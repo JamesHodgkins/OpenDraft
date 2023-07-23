@@ -7,7 +7,7 @@
 * Filename:     OdResourceManager.h                                                 *
 * Contributors: James Hodgkins                                                        *
 * Date:         June 17, 2023                                                         *
-* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+* Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   Central manager for system resources (images, fonts etc)                          *

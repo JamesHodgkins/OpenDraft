@@ -7,7 +7,7 @@
 * Filename:     OdLabel.cpp                                                           *
 * Contributors: James Hodgkins                                                        *
 * Date:         June 23, 2023                                                         *
-* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+* Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   A GUI label class derived by OdComponent                                          *

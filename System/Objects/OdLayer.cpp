@@ -7,7 +7,7 @@
 * Filename:     OdLayer.cpp                                                           *
 * Contributors: James Hodgkins                                                        *
 * Date:         July 10, 2023                                                         *
-* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+* Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   Entity layer class for OpenDraft framework.                                       *

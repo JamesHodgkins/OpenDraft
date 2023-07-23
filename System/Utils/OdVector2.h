@@ -7,7 +7,7 @@
 * Filename:     OdVector2.h                                                           *
 * Contributors: James Hodgkins                                                        *
 * Date:         June 27, 2023                                                         *
-* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+* Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   A 2D vector class for the OpenDraft framework for geometry elements               *

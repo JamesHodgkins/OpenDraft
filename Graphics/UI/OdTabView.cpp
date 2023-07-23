@@ -7,7 +7,7 @@
 * Filename:     OdTabView.cpp                                                         *
 * Contributors: James Hodgkins                                                        *
 * Date:         June 22, 2023                                                         *
-* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+* Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   A GUI tab view class derived from OdComponent                                     *

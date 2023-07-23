@@ -7,7 +7,7 @@
 * Filename:     OdArc.h                                                               *
 * Contributors: James Hodgkins                                                        *
 * Date:         June 27, 2023                                                         *
-* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+* Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   Arc Entity class for OpenDraft framework.                                         *

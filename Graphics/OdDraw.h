@@ -7,7 +7,7 @@
 * Filename:     OdDraw.h                                                            *
 * Contributors: James Hodgkins                                                        *
 * Date:         June 15, 2023                                                         *
-* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+* Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   Draw routine wrappers for NanoVG intended for GUI rendering                       *

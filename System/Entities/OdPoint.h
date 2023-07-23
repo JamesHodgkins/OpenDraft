@@ -7,7 +7,7 @@
 * Filename:     OdPoint.h                                                             *
 * Contributors: James Hodgkins                                                        *
 * Date:         July 02, 2023                                                         *
-* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+* Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   Point Entity class for OpenDraft framework.                                       *

@@ -7,7 +7,7 @@
 * Filename:     OdImage.h                                                           *
 * Contributors: James Hodgkins                                                        *
 * Date:         June 15, 2023                                                         *
-* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+* Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   An image wrapper class for the OpenDraft framework                                 *

@@ -7,7 +7,7 @@
 * Filename:     OdEllipse.h                                                           *
 * Contributors: James Hodgkins                                                        *
 * Date:         July 03, 2023                                                         *
-* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+* Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   Ellipse Entity class for OpenDraft framework.                                     *

@@ -7,7 +7,7 @@
 * Filename:     OdEditor.h                                                            *
 * Contributors: James Hodgkins                                                        *
 * Date:         23 July, 2023                                                         *
-* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+* Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   An editor class to handle user input/output.                                      *

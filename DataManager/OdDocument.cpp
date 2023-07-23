@@ -7,7 +7,7 @@
 * Filename:     OdDocument.cpp                                                        *
 * Contributors: James Hodgkins                                                        *
 * Date:         June 28, 2023                                                         *
-* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+* Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   Document class for OpenDraft framework.                                           *

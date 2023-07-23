@@ -7,7 +7,7 @@
 * Filename:     OdXmlReader.h                                                         *
 * Contributors: James Hodgkins                                                        *
 * Date:         July 01, 2023                                                         *
-* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+* Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   A XML file IO class.                                                              *

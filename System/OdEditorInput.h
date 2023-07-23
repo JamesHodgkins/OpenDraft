@@ -7,7 +7,7 @@
 * Filename:     OdEditorInput.h                                                       *
 * Contributors: James Hodgkins                                                        *
 * Date:         July 23, 2023                                                         *
-* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+* Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *    Classes to handle user input results.                                            *

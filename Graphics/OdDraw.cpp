@@ -7,7 +7,7 @@
 * Filename:     OdDraw.cpp                                                            *
 * Contributors: James Hodgkins                                                        *
 * Date:         June 21, 2023                                                         *
-* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+* Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   Draw routine wrappers for NanoVG intended for GUI rendering                       *

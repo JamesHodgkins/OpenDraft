@@ -7,7 +7,7 @@
 * Filename:     OdColour.h                                                            *
 * Contributors: James Hodgkins                                                        *
 * Date:         July 08, 2023                                                         *
-* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+* Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   A class for the main application window                                           *

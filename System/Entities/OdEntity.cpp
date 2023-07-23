@@ -7,7 +7,7 @@
 * Filename:     OdEntity.cpp                                                          *
 * Contributors: James Hodgkins                                                        *
 * Date:         June 30, 2023                                                         *
-* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+* Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   Base Entity class for OpenDraft framework.                                        *

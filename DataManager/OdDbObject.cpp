@@ -7,7 +7,7 @@
 * Filename:     OdDbObject.cpp                                                        *
 * Contributors: James Hodgkins                                                        *
 * Date:         July 04, 2023                                                         *
-* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+* Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   DB Object class for OpenDraft framework.                                          *

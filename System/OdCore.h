@@ -7,7 +7,7 @@
 * Filename:     OdCore.h                                                            *
 * Contributors: James Hodgkins                                                        *
 * Date:         June 10, 2023                                                         *
-* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+* Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   Used to load all primitive system classes. System classes should be free from     *

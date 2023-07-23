@@ -7,7 +7,7 @@
 * Filename:     OdSystem.cpp                                                          *
 * Contributors: James Hodgkins                                                        *
 * Date:         July 01, 2023                                                         *
-* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+* Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   System class for managing setting variables and other related tasks.              *

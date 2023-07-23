@@ -7,7 +7,7 @@
 * Filename:     OdInput.h                                                         *
 * Contributors: James Hodgkins                                                        *
 * Date:         June 9, 2023                                                          *
-* Copyright:    ©2023 OpenDraft. All Rights Reserved.                                 *
+* Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
 *   Inptut map to store the state of inputs against a glfw window instance            *
