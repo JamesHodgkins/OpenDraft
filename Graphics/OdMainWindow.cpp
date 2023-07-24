@@ -220,6 +220,9 @@ namespace OD::Graphics
 		doc->updateDocument();
 
 		
+		OdTextbox* tb1 = new OdTextbox(600, 300, 100, 20, "Hello World");
+		addChildControl(tb1);
+
 	}
 
 
@@ -300,4 +303,4 @@ namespace OD::Graphics
 
 }// namespace OD::Graphics
 
-#endif // OD_GR_MAIN_WINDOW_CPP
+#endif // !OD_GR_MAIN_WINDOW_CPP
