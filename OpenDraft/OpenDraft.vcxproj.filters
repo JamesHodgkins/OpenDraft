@@ -110,6 +110,9 @@
     <ClCompile Include="..\System\OdEditor.cpp">
       <Filter>System</Filter>
     </ClCompile>
+    <ClCompile Include="..\Graphics\UI\OdTextbox.cpp">
+      <Filter>Graphics\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\System\Entities\OdEntity.h">
@@ -228,6 +231,9 @@
     </ClInclude>
     <ClInclude Include="..\System\OdEditorInput.h">
       <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Graphics\UI\OdTextbox.h">
+      <Filter>Graphics\UI</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

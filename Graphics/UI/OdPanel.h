@@ -61,4 +61,4 @@ namespace OD
 }// namespace OD
 
 
-#endif // OD_GR_UI_PANEL_H
+#endif // !OD_GR_UI_PANEL_H

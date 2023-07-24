@@ -108,4 +108,4 @@ namespace OD::Graphics
 
 } // namespace OD::Graphics
 
-#endif // OD_GR_DRAW_CPP
+#endif // !OD_GR_DRAW_CPP

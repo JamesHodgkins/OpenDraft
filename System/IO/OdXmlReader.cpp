@@ -45,4 +45,4 @@ namespace OD::IO
 
 }// namespace OD::IO
 
-#endif // OD_IO_XMLREADER_CPP
+#endif // !OD_IO_XMLREADER_CPP

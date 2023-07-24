@@ -21,7 +21,8 @@
 #include "UI/OdLabel.h"
 #include "UI/OdPanel.h"
 #include "UI/OdTabView.h"
+#include "UI/OdTextBox.h"
 #include "UI/OdWindow.h"
 #include "UI/OdViewport.h"
 
-#endif // OD_GR_UI_COMPONENTS_H
+#endif // !OD_GR_UI_COMPONENTS_H

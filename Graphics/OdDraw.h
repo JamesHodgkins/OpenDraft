@@ -43,4 +43,4 @@ namespace OD
 	} // OD::Graphics
 } // namespace OD
 
-#endif // OD_GR_DRAW_H
+#endif // !OD_GR_DRAW_H

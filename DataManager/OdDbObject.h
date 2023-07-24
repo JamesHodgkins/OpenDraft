@@ -65,4 +65,4 @@ namespace OD
 	} // namespace OD::Data
 } // namespace OD
 
-#endif // OD_DAT_DBOBJECT_H
+#endif // !OD_DAT_DBOBJECT_H

@@ -39,7 +39,7 @@ namespace OD::System
 
 } // namespace OD::System
 
-#endif // OD_SY_FONT_H
+#endif // !OD_SY_FONT_H
 
 
 //

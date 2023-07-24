@@ -25,4 +25,4 @@
 //#include "System/Entities/OdRectangle.h"
 #include "System/Entities/OdText.h"
 
-#endif // OD_GR_ENTITIES_H
+#endif // !OD_GR_ENTITIES_H

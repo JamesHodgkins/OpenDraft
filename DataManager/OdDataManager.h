@@ -32,4 +32,4 @@ namespace OD
 	}// namespace OD::Data
 } // namespace OD
 
-#endif // OD_DM_DATAMANAGER_H
+#endif // !OD_DM_DATAMANAGER_H

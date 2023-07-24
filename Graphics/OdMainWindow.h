@@ -63,4 +63,4 @@ namespace OD
 	} // namespace Graphics
 }// namespace OD
 
-#endif // OD_GR_MAIN_WINDOW_H
+#endif // !OD_GR_MAIN_WINDOW_H

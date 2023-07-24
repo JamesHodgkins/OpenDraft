@@ -82,4 +82,4 @@ namespace OD
 	}// namespace OD::System
 } // namespace OD
 
-#endif // OD_SY_APPLICATION_H
+#endif // !OD_SY_APPLICATION_H

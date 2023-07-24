@@ -116,4 +116,4 @@ namespace OD
 	} // namespace System
 } // namespace OD
 
-#endif // OD_SY_COLOUR_H
+#endif // !OD_SY_COLOUR_H

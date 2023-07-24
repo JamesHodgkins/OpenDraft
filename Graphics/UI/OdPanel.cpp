@@ -97,4 +97,4 @@ namespace OD
 }// namespace OD
 
 
-#endif // OD_GR_UI_PANEL_CPP
+#endif // !OD_GR_UI_PANEL_CPP

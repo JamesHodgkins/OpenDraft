@@ -37,4 +37,4 @@ namespace OD::System
 
 } // namespace OD::System
 
-#endif // OD_SY_IMAGE_H
+#endif // !OD_SY_IMAGE_H

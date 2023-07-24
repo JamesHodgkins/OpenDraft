@@ -123,4 +123,4 @@ namespace OD
 	} // namespace Graphics
 } // namespace OpenDraft
 
-#endif // OD_GR_UI_INPUT_H
+#endif // !OD_GR_UI_INPUT_H

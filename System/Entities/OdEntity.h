@@ -76,4 +76,4 @@ namespace OD
 	} // namespace OD::Geometry
 } // namespace OD
 
-#endif // OD_SY_ENTITY_H
+#endif // !OD_SY_ENTITY_H

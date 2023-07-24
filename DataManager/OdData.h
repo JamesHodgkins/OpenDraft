@@ -177,4 +177,4 @@ namespace OD
 	} // namespace Graphics
 }// namespace OD
 
-#endif // OD_DAT_DATA_H
+#endif // !OD_DAT_DATA_H

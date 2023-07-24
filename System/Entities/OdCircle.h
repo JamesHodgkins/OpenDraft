@@ -161,4 +161,4 @@ namespace OD
 }
 
 
-#endif // OD_SY_CIRCLE_H
+#endif // !OD_SY_CIRCLE_H

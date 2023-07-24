@@ -255,4 +255,4 @@ namespace OD::Graphics
 
 }
 
-#endif // OD_GR_GRAPHICS_CPP
+#endif // !OD_GR_GRAPHICS_CPP

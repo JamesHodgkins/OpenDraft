@@ -94,4 +94,4 @@ namespace OD::Geometry
 
 } // namespace OD::Geometry
 
-#endif // OD_SY_ENTITY_CPP
+#endif // !OD_SY_ENTITY_CPP

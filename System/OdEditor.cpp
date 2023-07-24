@@ -41,19 +41,14 @@ namespace OD::System
 
 	}
 
-	// Update events
-	/*void OdEditor::processEvents(GrInputMap* input)
-	{
-
-	}*/
-
 	// Command events
 	void OdEditor::startCommand(void (*commandFunction)())
 	{
+		terminateFlag.store(false); // Reset the flag
+
 		// Check if the previous thread is joinable (detached threads are not joinable)
-		if (commandThread.joinable()) {
-			commandThread.join(); // Join the previous thread if it is still running
-		}
+		if (commandThread.joinable())
+			return;
 
 		// Create a background worker thread to handle the command
 		commandThread = std::thread(commandFunction);
@@ -228,4 +223,4 @@ namespace OD::System
 
 }
 
-#endif // OD_SY_EDITOR_CPP
+#endif // !OD_SY_EDITOR_CPP

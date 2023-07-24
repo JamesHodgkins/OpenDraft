@@ -101,4 +101,4 @@ namespace OD::System
 
 } // namespace OD::System
 
-#endif // OD_SY_APPLICATION_CPP
+#endif // !OD_SY_APPLICATION_CPP

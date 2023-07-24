@@ -72,4 +72,4 @@ namespace OD
 	} // namespace Graphics
 } // namespace OD
 
-#endif // OD_GR_UI_LABEL_CPP
+#endif // !OD_GR_UI_LABEL_CPP

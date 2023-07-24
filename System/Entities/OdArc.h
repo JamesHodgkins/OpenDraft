@@ -160,4 +160,4 @@ namespace OD
 }
 
 
-#endif // OD_SY_ARC_H
+#endif // !OD_SY_ARC_H

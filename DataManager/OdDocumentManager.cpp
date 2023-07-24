@@ -138,4 +138,4 @@ namespace OD::Data
 
 } // namespace OD::Data
 
-#endif // OD_DAT_DOCUMENTMANAGER_CPP
+#endif // !OD_DAT_DOCUMENTMANAGER_CPP

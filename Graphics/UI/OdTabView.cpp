@@ -311,4 +311,4 @@ namespace OD
 	} // namespace Graphics
 } // namespace OpenDraft
 
-#endif // OD_GR_UI_BUTTON_CPP
+#endif // !OD_GR_UI_BUTTON_CPP

@@ -109,4 +109,4 @@ namespace OD
 }
 
 
-#endif // OD_SY_POINT_H
+#endif // !OD_SY_POINT_H

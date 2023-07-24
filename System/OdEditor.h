@@ -66,4 +66,4 @@ namespace OD
 	}
 }
 
-#endif // OD_SY_EDITOR_H
+#endif // !OD_SY_EDITOR_H

@@ -28,4 +28,4 @@ namespace OD::Data
 
 } // namespace OD::Data
 
-#endif // OD_DAT_DBOBJECT_CPP
+#endif // !OD_DAT_DBOBJECT_CPP

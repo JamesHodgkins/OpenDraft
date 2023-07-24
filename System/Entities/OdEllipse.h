@@ -156,4 +156,4 @@ namespace OD
 }
 
 
-#endif // OD_SY_ELLIPSE_H
+#endif // !OD_SY_ELLIPSE_H

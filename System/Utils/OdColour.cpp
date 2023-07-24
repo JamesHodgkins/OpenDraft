@@ -375,4 +375,4 @@ namespace OD
 	} // namespace System
 } // namespace OD
 
-#endif // OD_SY_COLOUR_CPP
+#endif // !OD_SY_COLOUR_CPP

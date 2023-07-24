@@ -279,4 +279,4 @@ namespace OD::Data
 
 }// namespace OD::System
 
-#endif // OD_SY_DOCUMENT_H
+#endif // !OD_SY_DOCUMENT_H

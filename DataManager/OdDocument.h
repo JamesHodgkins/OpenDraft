@@ -123,4 +123,4 @@ namespace OD
 	}// namespace OD::Data
 } // namespace OD
 
-#endif // OD_SY_DOCUMENT_H
+#endif // !OD_SY_DOCUMENT_H

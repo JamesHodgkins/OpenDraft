@@ -147,4 +147,4 @@ namespace OD
 	} // namespace OD::Graphics
 } // namespace OD
 
-#endif // OD_GR_UI_COMPONENT_H
+#endif // !OD_GR_UI_COMPONENT_H

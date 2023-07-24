@@ -52,4 +52,4 @@ namespace OD
 	} // namespace Graphics
 }// namespace OD
 
-#endif // OD_GR_UI_LABEL_H
+#endif // !OD_GR_UI_LABEL_H

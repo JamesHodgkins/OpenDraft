@@ -53,4 +53,4 @@ namespace OD
 	} // namespace OD::Data
 } // namespace OD
 
-#endif // OD_DAT_DOCUMENTMANAGER_H
+#endif // !OD_DAT_DOCUMENTMANAGER_H

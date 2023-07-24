@@ -123,4 +123,4 @@ namespace OD
 	} // namespace System
 } // namespace OD
 
-#endif // OD_SY_RESOURCE_MANAGER_H
+#endif // !OD_SY_RESOURCE_MANAGER_H

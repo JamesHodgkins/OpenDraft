@@ -392,4 +392,4 @@ namespace OD::Graphics
 } // namespace OD::Graphics
 
 
-#endif // OD_GR_UI_COMPONENT_CPP
+#endif // !OD_GR_UI_COMPONENT_CPP

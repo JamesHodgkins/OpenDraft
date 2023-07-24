@@ -200,4 +200,4 @@ namespace OD
 }
 
 
-#endif // OD_GEO_LINE_H
+#endif // !OD_GEO_LINE_H

@@ -51,4 +51,4 @@ namespace OD
 	}// namespace OD::IO
 } // namespace OD
 
-#endif // OD_IO_XMLREADER_H
+#endif // !OD_IO_XMLREADER_H

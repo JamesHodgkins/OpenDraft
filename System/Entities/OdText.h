@@ -87,4 +87,4 @@ namespace OD
 	} // namespace Geometry
 } // namespace OD
 
-#endif // OD_SY_TEXT_H
+#endif // !OD_SY_TEXT_H

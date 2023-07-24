@@ -54,14 +54,14 @@ namespace OD::Graphics
 		backgroundImage = nullptr;
 	}
 
-	void OdButton::DrawButtonState(NVGcontext* aContext, const float x, const float y, const OdColour& backColour, const OdColour& foreColor)
+	void OdButton::DrawButtonState(NVGcontext* aContext, const float x, const float y, const OdColour& backColour, const OdColour& foreColour)
 	{
 		// Static cast parameters to int
 		int w = static_cast<int>(size.x);
 		int h = static_cast<int>(size.y);
 
 		OdDraw::Rect(aContext, x, y, w, h, backColour);
-		OdDraw::Text(aContext, x, y, w, h, fontSize, foreColor, text.c_str());
+		OdDraw::Text(aContext, x, y, w, h, fontSize, foreColour, text.c_str());
 	}
 
 	void OdButton::onFrame(NVGcontext* aContext)
@@ -99,4 +99,4 @@ namespace OD::Graphics
 
 } // namespace OD::Graphics
 
-#endif // OD_GR_UI_BUTTON_CPP
+#endif // !OD_GR_UI_BUTTON_CPP

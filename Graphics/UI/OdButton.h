@@ -73,7 +73,7 @@ namespace OD
 			 * \param backColour The background colour of the button.
 			 * \param foreColor The foreground colour of the button.
 			 */
-			void DrawButtonState(NVGcontext* aContext, const float x, const float y, const OdColour& backColour, const OdColour& foreColor);
+			void DrawButtonState(NVGcontext* aContext, const float x, const float y, const OdColour& backColour, const OdColour& foreColour);
 
 			/**
 			 * \brief Renders a default OD-GUI Button to a given NanoVG context (NVGContext) with the specified attributes.
@@ -82,11 +82,11 @@ namespace OD
 			virtual void onFrame(NVGcontext* aContext) override;
 
 
-			void actionEvents(GrInputMap* aInput);
+			void actionEvents(GrInputMap* aInput) override;
 
 		};
 
 	} // namespace Graphics
 } // namespace OpenDraft
 
-#endif // OD_GR_UI_BUTTON_H
+#endif // !OD_GR_UI_BUTTON_H

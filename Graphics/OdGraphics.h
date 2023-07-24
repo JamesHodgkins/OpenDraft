@@ -37,4 +37,4 @@ namespace OD
 	} // namespace Graphics
 }// namespace OD
 
-#endif // OD_GR_GRAPHICS_H
+#endif // !OD_GR_GRAPHICS_H
