@@ -58,8 +58,16 @@ namespace OD
 				float w = size.x;
 				float h = size.y;
 
+				OdDraw::TextStyle labelTextStyle =
+				{
+					14,
+					"sans",
+					foreColour,
+					OdDraw::Alignment::Center
+				};
+
 				OdDraw::Rect(aContext, x, y, w, h, backColour);
-				OdDraw::Text(aContext, x, y, w, h, 14.0f, foreColour, text.c_str());
+				OdDraw::Text(aContext, x, y, w, h, labelTextStyle, text.c_str());
 
 			}
 

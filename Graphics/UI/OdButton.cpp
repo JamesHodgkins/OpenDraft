@@ -60,8 +60,26 @@ namespace OD::Graphics
 		int w = static_cast<int>(size.x);
 		int h = static_cast<int>(size.y);
 
+		/*
+		* struct TextStyle
+			{
+				int size;
+				const char* font;
+				OdColour colour;
+				Alignment alignment;
+			};
+		*/
+
+		OdDraw::TextStyle buttonTextStyle =
+		{
+			fontSize,
+			"sans",
+			foreColour,
+			OdDraw::Alignment::Center
+		};
+
 		OdDraw::Rect(aContext, x, y, w, h, backColour);
-		OdDraw::Text(aContext, x, y, w, h, fontSize, foreColour, text.c_str());
+		OdDraw::Text(aContext, x, y, w, h, buttonTextStyle, text.c_str());
 	}
 
 	void OdButton::onFrame(NVGcontext* aContext)

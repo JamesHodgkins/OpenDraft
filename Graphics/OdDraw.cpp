@@ -49,14 +49,22 @@ namespace OD::Graphics
 		nvgClosePath(aContext);
 	}
 
-	void OdDraw::Text(NVGcontext* aContext, float aX, float aY, float aWidth, float aHeight, float aSize, OdColour aColour, const char* text)
+	void OdDraw::Text(NVGcontext* aContext, float aX, float aY, float aWidth, float aHeight, TextStyle aStyle, const char* text)
 	{
 		nvgBeginPath(aContext);
-		nvgFillColor(aContext, aColour.asNvgColour());
+		nvgFillColor(aContext, aStyle.colour.asNvgColour());
 		nvgFill(aContext);
-		nvgFontSize(aContext, aSize);
-		nvgFontFace(aContext, "sans");
-		nvgTextAlign(aContext, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+		nvgFontSize(aContext, aStyle.size);
+		nvgFontFace(aContext, aStyle.font);
+
+		// Set text alignment - TODO: Add support for vertical alignment
+		if (aStyle.alignment == Alignment::Left)
+			nvgTextAlign(aContext, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
+		else if (aStyle.alignment == Alignment::Right)
+			nvgTextAlign(aContext, NVG_ALIGN_RIGHT | NVG_ALIGN_MIDDLE);
+		else
+			nvgTextAlign(aContext, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+		
 		nvgText(aContext, aX + aWidth / 2, aY + aHeight / 2, text, nullptr);
 		nvgClosePath(aContext);
 	}

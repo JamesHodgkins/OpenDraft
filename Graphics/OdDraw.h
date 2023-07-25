@@ -28,10 +28,26 @@ namespace OD
 		class OdDraw
 		{
 		public:
+
+			enum class Alignment
+			{
+				Left,
+				Center,
+				Right
+			};
+
+			struct TextStyle
+			{
+				int size;
+				const char* font;
+				OdColour colour;
+				Alignment alignment;
+			};
+
 			static void Line(NVGcontext* aContext, float aX1, float aY1, float aX2, float aY2, float thickness, OdColour aColour);
 			static void Rect(NVGcontext* aContext, float aX, float aY, float aWidth, float aHeight, OdColour aColour);
 			static void RectStroke(NVGcontext* aContext, float aX, float aY, float aWidth, float aHeight, OdColour aColour);
-			static void Text(NVGcontext* aContext, float aX, float aY, float aWidth, float aHeight, float aSize, OdColour aColour, const char* aText);
+			static void Text(NVGcontext* aContext, float aX, float aY, float aWidth, float aHeight, TextStyle aStyle, const char* aText);
 			static void ResourceImage(NVGcontext* aContext, float aX, float aY, float aWidth, float aHeight, OdImage* aImage);
 			static void ResourceImage(NVGcontext* aContext, float aX, float aY, OdImage* aImage);
 			static void Translate(NVGcontext* aContext, float aX, float aY);
