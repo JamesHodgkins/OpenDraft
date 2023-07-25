@@ -27,6 +27,7 @@ namespace OD::Graphics
 		cursorIndex = 0;
 		cursorBlinkTimer = 0;
 		foreColour = OdColour::BLACK;
+		backColour = OdColour::WHITE;
 	}
 
 	OdTextbox::OdTextbox(int aX, int aY, int aWidth, int aHeight, std::string aText)
@@ -36,6 +37,7 @@ namespace OD::Graphics
 		size.x = aWidth;
 		size.y = aHeight;
 		foreColour = OdColour::BLACK;
+		backColour = OdColour::WHITE;
 		text = aText;
 		cursorIndex = 0;
 		cursorBlinkTimer = 0;
@@ -46,6 +48,7 @@ namespace OD::Graphics
 		location.x = aLocation.x;
 		location.y = aLocation.y;
 		foreColour = OdColour::BLACK;
+		backColour = OdColour::WHITE;
 		text = aText;
 		cursorIndex = 0;
 		cursorBlinkTimer = 0;
@@ -53,9 +56,24 @@ namespace OD::Graphics
 
 
 
-	int OdTextbox::calculateCursorPosition()
+	int OdTextbox::calculateCursorPosition(NVGcontext* aContext, int aIndex)
 	{
-		return 20;
+		// Use nanovg to calculate text width
+		float bounds[4];
+
+		// Static cast properties
+		float textboxX = getWidth();
+		float textboxY = getHeight();
+
+		// Get characters of text property up to aIndex
+		std::string subText = text.substr(0, aIndex);
+
+		nvgReset(aContext);
+		nvgTextBounds(aContext, textboxX, textboxY, subText.c_str(), nullptr, bounds);
+
+
+		return (int)(bounds[2]-bounds[0]);
+
 	}
 
 
@@ -72,14 +90,22 @@ namespace OD::Graphics
 		int x = static_cast<int>(location.x);
 		int y = static_cast<int>(location.y);
 
+		OdDraw::TextStyle textboxTextStyle =
+		{
+			14,
+			"sans",
+			foreColour,
+			OdDraw::Alignment::Left
+		};
+
 		OdDraw::Rect(aContext, x, y, w, h, backColour);
-		OdDraw::Text(aContext, x, y, w, h, fontSize, foreColour, text.c_str());
+		OdDraw::Text(aContext, x - (w/2), y +2, w, h, textboxTextStyle, text.c_str());
 
 		// if cursorBlinkTimer is less than half the time, draw the cursor
 		if (cursorBlinkTimer < CURSOR_BLINK_FRAME_COUNT)
 		{
-			int cursorX = calculateCursorPosition() + x;
-			OdDraw::Line(aContext, cursorX, y, cursorX, y + h, 1, OdColour::RED);
+			int cursorX = calculateCursorPosition(aContext, cursorIndex) + x;
+			OdDraw::Line(aContext, cursorX, y, cursorX, y + h, 2, OdColour::RED);
 		}
 
 		// Decrement cursor timer
@@ -90,6 +116,51 @@ namespace OD::Graphics
 
 	void OdTextbox::actionEvents(GrInputMap* aInput)
 	{
+		for (int key = GLFW_KEY_0; key <= GLFW_KEY_9; key++) {
+			if (aInput->keys[key].isPressDown())
+			{
+				// Convert the GLFW keycode to its corresponding character using ASCII values
+				char character = static_cast<char>(key);
+				text += character;
+				cursorIndex++;
+			}
+		}
+
+		for (int key = GLFW_KEY_A; key <= GLFW_KEY_Z; key++) {
+			if (aInput->keys[key].isPressDown())
+			{
+				if (aInput->keys[GLFW_KEY_LEFT_SHIFT].isDown())
+				{
+					// Convert the GLFW keycode to its corresponding character using ASCII values
+					char character = static_cast<char>(key);
+					text += character;
+					cursorIndex++;
+				}
+				else
+				{
+					// Convert the GLFW keycode to its corresponding character using ASCII values
+					char character = static_cast<char>(key + 32);
+					text += character;
+					cursorIndex++;
+				}
+			}
+		}
+
+		if (aInput->keys[GLFW_KEY_SPACE].isPressDown())
+		{
+			text += " ";
+			cursorIndex++;
+		}
+
+		// Backspace
+		if (aInput->keys[GLFW_KEY_BACKSPACE].isPressDown())
+		{
+			if (text.length() > 0)
+			{
+				text.pop_back();
+				cursorIndex--;
+			}
+		}
 
 	}
 

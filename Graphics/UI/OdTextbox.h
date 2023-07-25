@@ -15,6 +15,7 @@
 
 
 
+#include <unordered_map>
 #include "System/OdCore.h"
 #include "Graphics/UI/OdComponent.h"
 #include "Graphics/OdDraw.h"
@@ -24,12 +25,11 @@ namespace OD
 {
 	namespace Graphics
 	{
-
 		class OdTextbox : public OdComponent
 		{
 		protected:
 			// Constants
-			const int CURSOR_BLINK_FRAME_COUNT = 20;
+			const int CURSOR_BLINK_FRAME_COUNT = 25;
 
 			// Properties
 			bool isActive;
@@ -44,7 +44,8 @@ namespace OD
 			OdTextbox(OdVector2 aLocation, std::string aText);
 
 
-			int calculateCursorPosition();
+			int calculateCursorPosition(NVGcontext* aContext, int aIndex);
+
 
 			virtual void onFrame(NVGcontext* aContext) override;
 			void actionEvents(GrInputMap* aInput) override;
