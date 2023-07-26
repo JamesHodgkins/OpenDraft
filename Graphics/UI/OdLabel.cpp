@@ -63,11 +63,11 @@ namespace OD
 					14,
 					"sans",
 					foreColour,
-					OdDraw::Alignment::Center
+					OdDraw::AlignH::Center
 				};
 
 				OdDraw::Rect(aContext, x, y, w, h, backColour);
-				OdDraw::Text(aContext, x, y, w, h, labelTextStyle, text.c_str());
+				OdDraw::Text(aContext, x, y, w, h, &labelTextStyle, text.c_str());
 
 			}
 

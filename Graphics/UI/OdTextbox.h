@@ -33,9 +33,14 @@ namespace OD
 
 			// Properties
 			bool isActive;
-			float fontSize;
 			int cursorIndex;
 			int cursorBlinkTimer;
+
+			OdDraw::TextStyle textStyle;
+
+
+			// Protected Methods
+			int calculateCursorPosition(NVGcontext* aContext, int aIndex, const OdDraw::TextStyle* aStyle);
 
 
 		public:
@@ -44,11 +49,25 @@ namespace OD
 			OdTextbox(OdVector2 aLocation, std::string aText);
 
 
-			int calculateCursorPosition(NVGcontext* aContext, int aIndex);
+			// Getters and Setters
+			bool getActive();
+			void setActive(bool aActive);
+			float getFontSize();
+			void setFontSize(float aSize);
+			void setTextStyle(OdDraw::TextStyle* aStyle);
+			const char* getFont();
+			void setFont(const char* aFont);
+			OdDraw::AlignH getAlignH();
+			void setAlignH(OdDraw::AlignH aAlignH);
+			OdColour getColour();
+			void setColour(OdColour aColour);
 
 
+
+
+			// Virtual method overrides
 			virtual void onFrame(NVGcontext* aContext) override;
-			void actionEvents(GrInputMap* aInput) override;
+			virtual void actionEvents(GrInputMap* aInput) override;
 
 		};
 

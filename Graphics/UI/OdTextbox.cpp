@@ -28,6 +28,12 @@ namespace OD::Graphics
 		cursorBlinkTimer = 0;
 		foreColour = OdColour::BLACK;
 		backColour = OdColour::WHITE;
+
+		// Set default text style
+		textStyle.font = "sans";
+		textStyle.size = 12.f;
+		textStyle.alignH = OdDraw::AlignH::Left;
+		textStyle.colour = OdColour::BLACK;
 	}
 
 	OdTextbox::OdTextbox(int aX, int aY, int aWidth, int aHeight, std::string aText)
@@ -41,6 +47,12 @@ namespace OD::Graphics
 		text = aText;
 		cursorIndex = 0;
 		cursorBlinkTimer = 0;
+
+		// Set default text style
+		textStyle.font = "sans";
+		textStyle.size = 12.f;
+		textStyle.alignH = OdDraw::AlignH::Left;
+		textStyle.colour = OdColour::BLACK;
 	}
 
 	OdTextbox::OdTextbox(OdVector2 aLocation, std::string aText)
@@ -52,11 +64,81 @@ namespace OD::Graphics
 		text = aText;
 		cursorIndex = 0;
 		cursorBlinkTimer = 0;
+
+		// Set default text style
+		textStyle.font = "sans";
+		textStyle.size = 12.f;
+		textStyle.alignH = OdDraw::AlignH::Left;
+		textStyle.colour = OdColour::BLACK;
+	}
+
+
+	//
+	// Getters and Setters
+	//
+	
+	// Active
+	bool OdTextbox::getActive()
+	{
+		return isActive;
+	}
+	void OdTextbox::setActive(bool aActive)
+	{
+		isActive = aActive;
+	}
+
+	// Font Size
+	float OdTextbox::getFontSize()
+	{
+		return textStyle.size;
+	}
+	void OdTextbox::setFontSize(float aSize)
+	{
+		textStyle.size = aSize;
+	}
+	
+	// Text Style
+	void OdTextbox::setTextStyle(OdDraw::TextStyle* aStyle)
+	{
+		textStyle.font = aStyle->font;
+		textStyle.size = aStyle->size;
+		textStyle.alignH = aStyle->alignH;
+		textStyle.colour = aStyle->colour;
+	}
+
+	// Font
+	const char* OdTextbox::getFont()
+	{
+		return textStyle.font;
+	}
+	void OdTextbox::setFont(const char* aFont)
+	{
+		textStyle.font = aFont;
+	}
+	
+	// Text Horizontal Alignment
+	OdDraw::AlignH OdTextbox::getAlignH()
+	{
+		return textStyle.alignH;
+	}
+	void OdTextbox::setAlignH(OdDraw::AlignH aAlignH)
+	{
+		textStyle.alignH = aAlignH;
+	}
+	
+	// Text Colour
+	OdColour OdTextbox::getColour()
+	{
+		return textStyle.colour;
+	}
+	void OdTextbox::setColour(OdColour aColour)
+	{
+		textStyle.colour = aColour;
 	}
 
 
 
-	int OdTextbox::calculateCursorPosition(NVGcontext* aContext, int aIndex)
+	int OdTextbox::calculateCursorPosition(NVGcontext* aContext, int aIndex, const OdDraw::TextStyle* aStyle)
 	{
 		// Use nanovg to calculate text width
 		float bounds[4];
@@ -69,6 +151,17 @@ namespace OD::Graphics
 		std::string subText = text.substr(0, aIndex);
 
 		nvgReset(aContext);
+		nvgFontSize(aContext, aStyle->size);
+		nvgFontFace(aContext, aStyle->font);
+		nvgFontBlur(aContext, 0);
+		
+		if (aStyle->alignH == OdDraw::AlignH::Center)
+			nvgTextAlign(aContext, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+		else if (aStyle->alignH == OdDraw::AlignH::Right)
+			nvgTextAlign(aContext, NVG_ALIGN_RIGHT | NVG_ALIGN_MIDDLE);
+		else
+			nvgTextAlign(aContext, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
+
 		nvgTextBounds(aContext, textboxX, textboxY, subText.c_str(), nullptr, bounds);
 
 
@@ -90,21 +183,14 @@ namespace OD::Graphics
 		int x = static_cast<int>(location.x);
 		int y = static_cast<int>(location.y);
 
-		OdDraw::TextStyle textboxTextStyle =
-		{
-			14,
-			"sans",
-			foreColour,
-			OdDraw::Alignment::Left
-		};
 
 		OdDraw::Rect(aContext, x, y, w, h, backColour);
-		OdDraw::Text(aContext, x - (w/2), y +2, w, h, textboxTextStyle, text.c_str());
+		OdDraw::Text(aContext, x - (w/2), y +2, w, h, &textStyle, text.c_str());
 
 		// if cursorBlinkTimer is less than half the time, draw the cursor
 		if (cursorBlinkTimer < CURSOR_BLINK_FRAME_COUNT)
 		{
-			int cursorX = calculateCursorPosition(aContext, cursorIndex) + x;
+			int cursorX = calculateCursorPosition(aContext, cursorIndex, &textStyle) + x;
 			OdDraw::Line(aContext, cursorX, y, cursorX, y + h, 2, OdColour::RED);
 		}
 
@@ -113,56 +199,116 @@ namespace OD::Graphics
 	}
 
 
+	
 
 	void OdTextbox::actionEvents(GrInputMap* aInput)
 	{
-		for (int key = GLFW_KEY_0; key <= GLFW_KEY_9; key++) {
-			if (aInput->keys[key].isPressDown())
-			{
-				// Convert the GLFW keycode to its corresponding character using ASCII values
-				char character = static_cast<char>(key);
-				text += character;
-				cursorIndex++;
-			}
-		}
+		bool wasShifted = aInput->keys[GLFW_KEY_LEFT_SHIFT].isDown() || aInput->keys[GLFW_KEY_RIGHT_SHIFT].isDown();
 
-		for (int key = GLFW_KEY_A; key <= GLFW_KEY_Z; key++) {
-			if (aInput->keys[key].isPressDown())
-			{
-				if (aInput->keys[GLFW_KEY_LEFT_SHIFT].isDown())
-				{
-					// Convert the GLFW keycode to its corresponding character using ASCII values
-					char character = static_cast<char>(key);
-					text += character;
-					cursorIndex++;
-				}
-				else
-				{
-					// Convert the GLFW keycode to its corresponding character using ASCII values
-					char character = static_cast<char>(key + 32);
-					text += character;
-					cursorIndex++;
-				}
-			}
-		}
-
-		if (aInput->keys[GLFW_KEY_SPACE].isPressDown())
-		{
-			text += " ";
+		// Helper function to insert a character at the cursor index
+		auto insertCharacter = [&](char character) {
+			text.insert(cursorIndex, 1, character);
 			cursorIndex++;
+		};
+
+		// Numeric keys
+		for (int key = GLFW_KEY_0; key <= GLFW_KEY_9; key++) {
+			if (aInput->keys[key].isPressDown()) {
+				char character = static_cast<char>(key);
+				insertCharacter(character);
+			}
 		}
 
-		// Backspace
-		if (aInput->keys[GLFW_KEY_BACKSPACE].isPressDown())
-		{
-			if (text.length() > 0)
-			{
-				text.pop_back();
+		// Alphabets (supports lowercase and uppercase)
+		for (int key = GLFW_KEY_A; key <= GLFW_KEY_Z; key++) {
+			if (aInput->keys[key].isPressDown()) {
+				char character = wasShifted? static_cast<char>(key) : std::tolower(static_cast<char>(key));
+				insertCharacter(character);
+			}
+		}
+
+		// Special characters with Shift key support
+		if (aInput->keys[GLFW_KEY_MINUS].isPressDown()) {
+			insertCharacter(wasShifted? '_' : '-');
+		}
+
+		if (aInput->keys[GLFW_KEY_EQUAL].isPressDown()) {
+			insertCharacter(wasShifted? '+' : '=');
+		}
+
+		if (aInput->keys[GLFW_KEY_LEFT_BRACKET].isPressDown()) {
+			insertCharacter(wasShifted? '{' : '[');
+		}
+
+		if (aInput->keys[GLFW_KEY_RIGHT_BRACKET].isPressDown()) {
+			insertCharacter(wasShifted? '}' : ']');
+		}
+
+		if (aInput->keys[GLFW_KEY_BACKSLASH].isPressDown()) {
+			insertCharacter(wasShifted? '~' : '#');
+		}
+
+		if (aInput->keys[GLFW_KEY_SEMICOLON].isPressDown()) {
+			insertCharacter(wasShifted? ':' : ';');
+		}
+
+		if (aInput->keys[GLFW_KEY_APOSTROPHE].isPressDown()) {
+			insertCharacter(wasShifted? '@' : '\'');
+		}
+
+		if (aInput->keys[GLFW_KEY_GRAVE_ACCENT].isPressDown()) {
+			insertCharacter(wasShifted? '¬' : '`');
+		}
+
+		//if (aInput->keys[].isPressDown()) {
+			//insertCharacter(wasShifted ? '¬' : '`');
+		//}
+
+		if (aInput->keys[GLFW_KEY_COMMA].isPressDown()) {
+			insertCharacter(wasShifted? '<' : ',');
+		}
+
+		if (aInput->keys[GLFW_KEY_PERIOD].isPressDown()) {
+			insertCharacter(wasShifted? '>' : '.');
+		}
+
+		if (aInput->keys[GLFW_KEY_SLASH].isPressDown()) {
+			insertCharacter(wasShifted? '?' : '/');
+		}
+
+
+		// Common special characters
+		if (aInput->keys[GLFW_KEY_SPACE].isPressDown()) {
+			insertCharacter(' ');
+		}
+
+		if (aInput->keys[GLFW_KEY_BACKSPACE].isPressDown()) {
+			if (cursorIndex > 0) {
+				text.erase(cursorIndex - 1, 1);
 				cursorIndex--;
 			}
 		}
 
+		if (aInput->keys[GLFW_KEY_DELETE].isPressDown()) {
+			if (cursorIndex < text.length()) {
+				text.erase(cursorIndex, 1);
+			}
+		}
+
+		if (aInput->keys[GLFW_KEY_LEFT].isPressDown()) {
+			if (cursorIndex > 0) {
+				cursorIndex--;
+			}
+		}
+
+		if (aInput->keys[GLFW_KEY_RIGHT].isPressDown()) {
+			if (cursorIndex < text.length()) {
+				cursorIndex++;
+			}
+		}
 	}
+
+
 
 
 

@@ -75,11 +75,11 @@ namespace OD::Graphics
 			fontSize,
 			"sans",
 			foreColour,
-			OdDraw::Alignment::Center
+			OdDraw::AlignH::Center
 		};
 
 		OdDraw::Rect(aContext, x, y, w, h, backColour);
-		OdDraw::Text(aContext, x, y, w, h, buttonTextStyle, text.c_str());
+		OdDraw::Text(aContext, x, y, w, h, &buttonTextStyle, text.c_str());
 	}
 
 	void OdButton::onFrame(NVGcontext* aContext)
