@@ -164,8 +164,17 @@ namespace OD::Graphics
 
 		nvgTextBounds(aContext, textboxX, textboxY, subText.c_str(), nullptr, bounds);
 
+		int cursorX = bounds[2]-bounds[0];
 
-		return (int)(bounds[2]-bounds[0]);
+		// If text ends with a space, add a space to the end of the cursor
+		if (text.length() > 0)
+			if (text[aIndex - 1] == ' ')
+			{
+				int charWidth = static_cast<int>(aStyle->size/3);
+				cursorX += charWidth;
+			}
+
+		return cursorX;
 
 	}
 
@@ -259,10 +268,6 @@ namespace OD::Graphics
 		if (aInput->keys[GLFW_KEY_GRAVE_ACCENT].isPressDown()) {
 			insertCharacter(wasShifted? '¬' : '`');
 		}
-
-		//if (aInput->keys[].isPressDown()) {
-			//insertCharacter(wasShifted ? '¬' : '`');
-		//}
 
 		if (aInput->keys[GLFW_KEY_COMMA].isPressDown()) {
 			insertCharacter(wasShifted? '<' : ',');
