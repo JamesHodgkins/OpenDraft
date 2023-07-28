@@ -181,17 +181,19 @@ namespace OD::Graphics
 
 	void OdTextbox::onFrame(NVGcontext* aContext)
 	{
+		// If context is null, return
+		if (aContext == nullptr)
+			return;
+
 		// If cursor timer is 0, reset it. Multiply by 2, half time is on and half off
 		if (cursorBlinkTimer < 1)
 			cursorBlinkTimer = CURSOR_BLINK_FRAME_COUNT*2;
-
 
 		// Static cast parameters to int
 		int w = static_cast<int>(size.x);
 		int h = static_cast<int>(size.y);
 		int x = static_cast<int>(location.x);
 		int y = static_cast<int>(location.y);
-
 
 		OdDraw::Rect(aContext, x, y, w, h, backColour);
 		OdDraw::Text(aContext, x - (w/2), y +2, w, h, &textStyle, text.c_str());
@@ -213,6 +215,8 @@ namespace OD::Graphics
 	void OdTextbox::actionEvents(GrInputMap* aInput)
 	{
 		bool wasShifted = aInput->keys[GLFW_KEY_LEFT_SHIFT].isDown() || aInput->keys[GLFW_KEY_RIGHT_SHIFT].isDown();
+		bool caps = (wasShifted || aInput->capsLock);
+		
 
 		// Helper function to insert a character at the cursor index
 		auto insertCharacter = [&](char character) {

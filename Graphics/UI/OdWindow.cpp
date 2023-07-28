@@ -86,6 +86,9 @@ namespace OD
 			glfwSetKeyCallback(glfwHandle, keyEventCallback);
 			glfwSetWindowSizeCallback(glfwHandle, windowResizeCallback);
 
+			// Capture caps lock state
+			glfwSetInputMode(glfwHandle, GLFW_LOCK_KEY_MODS, GLFW_TRUE);
+
 			// Update some properties following intitialisation
 			updateProperties();
 		}
@@ -165,6 +168,13 @@ namespace OD
 				// Change button state to up
 				if (aAction == GLFW_RELEASE)
 					map->keys[aKey].changeState(false);
+
+
+				if (aMods & GLFW_MOD_CAPS_LOCK)
+					map->capsLock = true;
+				else
+					map->capsLock = false;
+				
 
 			}
 		}
