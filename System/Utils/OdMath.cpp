@@ -20,135 +20,156 @@
 
 namespace OD::Math
 {
-
-	// Conversions
-	float OdMath::deg2rad(float deg)
-	{
-		return deg; // *OD_DEG2RAD_FACTOR;
-	}
-
-	float OdMath::rad2deg(float rad)
-	{
-		return rad; // *OD_RAD2DEG_FACTOR;
-	}
-
-
 	// Trigonometry
-	float OdMath::sin(float angle)
+	float OdMath::sin(float aAngle)
 	{
-		return sinf(angle);
+		return sinf(aAngle);
 	}
 
-	float OdMath::cos(float angle)
+	float OdMath::cos(float aAngle)
 	{
-		return cosf(angle);
+		return cosf(aAngle);
 	}
 
-	float OdMath::tan(float angle)
+	float OdMath::tan(float aAngle)
 	{
-		return tanf(angle);
+		return tanf(aAngle);
 	}
 
-	float OdMath::asin(float angle)
+	float OdMath::asin(float aAngle)
 	{
-		return asinf(angle);
+		return asinf(aAngle);
 	}
 
-	float OdMath::acos(float angle)
+	float OdMath::acos(float aAngle)
 	{
-		return acosf(angle);
+		return acosf(aAngle);
 	}
-	float OdMath::atan(float angle)
+	float OdMath::atan(float aAngle)
 	{
-		return atanf(angle);
+		return atanf(aAngle);
 	}
-	float OdMath::atan2(float y, float x)
+	float OdMath::atan2(float aY, float aX)
 	{
-		return atan2f(y, x);
+		return atan2f(aY, aX);
 	}
 
 	// Rounding
-	float OdMath::ceil(float value)
+	float OdMath::ceil(float aValue)
 	{
-		return ceilf(value);
+		return ceilf(aValue);
 	}
 
-	float OdMath::floor(float value)
+	float OdMath::floor(float aValue)
 	{
-		return floorf(value);
+		return floorf(aValue);
 	}
 
-	float OdMath::round(float value)
+	float OdMath::round(float aValue)
 	{
-		return roundf(value);
+		return roundf(aValue);
 	}
 
-	float round(float value, int precision)
+	float OdMath::round(float aValue, int aPrecision)
 	{
-		return roundf(value * pow(10, precision)) / pow(10, precision);
+		return roundf(aValue * pow(10, aPrecision)) / pow(10, aPrecision);
 	}
 
-	float OdMath::round(float value, int precision, bool truncate)
+	float OdMath::round(float aValue, int aPrecision, bool aTruncate)
 	{
-		if (truncate)
+		if (aTruncate)
 		{
-			return floorf(value * pow(10, precision)) / pow(10, precision);
+			return floorf(aValue * pow(10, aPrecision)) / pow(10, aPrecision);
 		}
 		else
 		{
-			return roundf(value * pow(10, precision)) / pow(10, precision);
+			return roundf(aValue * pow(10, aPrecision)) / pow(10, aPrecision);
 		}
+	}
+
+
+	// Min/max and clamp
+	float OdMath::min2(float aValue1, float aValue2)
+	{
+		// Calculate the minimum value
+		return (aValue1 < aValue2)? aValue1 : aValue2;
+	}
+	
+	float OdMath::max2(float aValue1, float aValue2)
+	{
+		// Calculate the maximum value
+		return (aValue1 > aValue2)? aValue1 : aValue2;
+	}
+	
+	float OdMath::min3(float aValue1, float aValue2, float aValue3)
+	{
+		return (aValue1 < aValue2)? ((aValue1 < aValue3)? aValue1 : aValue3) : ((aValue2 < aValue3)? aValue2 : aValue3);
+	}
+	
+	float OdMath::max3(float aValue1, float aValue2, float aValue3)
+	{
+		return (aValue1 > aValue2)? ((aValue1 > aValue3)? aValue1 : aValue3) : ((aValue2 > aValue3)? aValue2 : aValue3);
+	}
+
+	float OdMath::clamp(float aValue, float aMin, float aMax)
+	{
+		if (aValue < aMin)
+			return aMin;
+		else if (aValue > aMax)
+			return aMax;
+		else
+			return aValue;
 	}
 
 
 
 
 	// Exponents
-	float OdMath::pow(float base, float exponent)
+	float OdMath::pow(float aBase, float aExponent)
 	{
-		return powf(base, exponent);
+		return powf(aBase, aExponent);
 	}
 
-	float OdMath::sqrt(float value)
+	float OdMath::sqrt(float aValue)
 	{
-		return sqrtf(value);
+		return sqrtf(aValue);
 	}
 
-	float OdMath::cbrt(float value)
+	float OdMath::cbrt(float aValue)
 	{
-		return cbrtf(value);
+		return cbrtf(aValue);
 	}
 
-	float root(float value, float root)
+	float root(float aValue, float aRoot)
 	{
-		return powf(value, 1 / root);
+		return powf(aValue, 1 / aRoot);
 	}
 
 	// Logarithms
-	float OdMath::log(float value)
+	float OdMath::log(float aValue)
 	{
-		return logf(value);
+		return logf(aValue);
 	}
 
-	float OdMath::log(float value, float base)
+	float OdMath::log(float aValue, float aBase)
 	{
-		return logf(value) / logf(base);
+		return logf(aValue) / logf(aBase);
 	}
 
-	float OdMath::log2(float value)
+	float OdMath::log2(float aValue)
 	{
-		return logf(value) / logf(2);
+		return logf(aValue) / logf(2);
 	}
 
-	float OdMath::log10(float value)
+	float OdMath::log10(float aValue)
 	{
-		return log10f(value);
+		return log10f(aValue);
 	}
 
 	// Absolute value
-	float OdMath::abs(float value)
+	float OdMath::abs(float aValue)
 	{
-		return fabsf(value);
+		return fabsf(aValue);
 	}
 
 

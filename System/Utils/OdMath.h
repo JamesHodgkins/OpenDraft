@@ -17,10 +17,10 @@
 #include <cmath>
 
 // Define constants
-#define OD_PI 3.14159265358979323846
-#define OD_E 2.71828182845904523536
-#define OD_RAD2DEG_FACTOR 0.01745329251994329577
-#define OD_DEG2RAD_FACTOR 57.2957795130823208768
+constexpr double OD_PI = 3.14159265358979323846;
+constexpr double OD_E = 2.71828182845904523536;
+constexpr double OD_RAD2DEG_FACTOR = 0.01745329251994329577;
+constexpr double OD_DEG2RAD_FACTOR = 57.2957795130823208768;
 
 namespace OD
 {
@@ -34,39 +34,45 @@ namespace OD
 		public:
 
 			// Conversions
-			float deg2rad(float deg);
-			float rad2deg(float rad);
+			static inline float deg2rad(float aDeg) { return aDeg * OD_RAD2DEG_FACTOR; }
+			static inline float rad2deg(float aRad) { return aRad * OD_DEG2RAD_FACTOR; }
 
 			// Trigonometry
-			float sin(float angle);
-			float cos(float angle);
-			float tan(float angle);
-			float asin(float angle);
-			float acos(float angle);
-			float atan(float angle);
-			float atan2(float y, float x);
+			static float sin(float aAngle);
+			static float cos(float aAngle);
+			static float tan(float aAngle);
+			static float asin(float aAngle);
+			static float acos(float aAngle);
+			static float atan(float aAngle);
+			static float atan2(float aY, float aX);
 
 			// Rounding
-			float ceil(float value);
-			float floor(float value);
-			float round(float value);
-			float round(float value, int precision);
-			float round(float value, int precision, bool truncate);
+			static float ceil(float aValue);
+			static float floor(float aValue);
+			static float round(float aValue);
+			static float round(float aValue, int aPrecision);
+			static float round(float aValue, int aPrecision, bool aTruncate);
+
+			// Min/max and clamp
+			static float min2(float aValue1, float aValue2);
+			static float max2(float aValue1, float aValue2);
+			static float min3(float aValue1, float aValue2, float aValue3);
+			static float max3(float aValue1, float aValue2, float aValue3);
+			static float clamp(float aValue, float aMin, float aMax);
 
 			// Exponents
-			float pow(float base, float exponent);
-			float sqrt(float value);
-			float cbrt(float value);
-			float root(float value, float root);
+			static float pow(float aBase, float aExponent);
+			static float sqrt(float aValue);
+			static float cbrt(float aValue);
 
 			// Logarithms
-			float log(float value);
-			float log(float value, float base);
-			float log2(float value);
-			float log10(float value);
+			static float log(float aValue);
+			static float log(float aValue, float aBase);
+			static float log2(float aValue);
+			static float log10(float aValue);
 
 			// Absolute value
-			float abs(float value);
+			static float abs(float aValue);
 
 			// Min/max
 			//static float min(float value1, float value2)

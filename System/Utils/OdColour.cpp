@@ -10,7 +10,7 @@
 * Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
-*   A colour class for the OpenDraft framework.                                       *
+*   A aColour class for the OpenDraft framework.                                       *
 ***************************************************************************************/
 
 
@@ -21,7 +21,7 @@ namespace OD
 {
 	namespace System
 	{
-		// Get colour by index
+		// Get aColour by index
 		const OdColour OdColour::colourByIndex(int index)
 		{
 			OdColour result = OdColour();
@@ -289,21 +289,124 @@ namespace OD
 		}
 
 		// Conversions
-		const OdColour OdColour::asHSL(const OdColour& colour)
+		const float OdColour::getHue(const OdColour& aColour)
 		{
-			// Convert the colour to HSL
-			float H, S, L;
+			float r = aColour.getRed();
+			float g = aColour.getGreen();
+			float b = aColour.getBlue();
+			
+			float max_val = OdMath::max3(r, g, b);
+			float min_val = OdMath::min3(r, g, b);
+			float chroma = max_val - min_val;
+			float hue = 0.0;
+
+			if (chroma != 0.0)
+			{
+				if (max_val == r)
+				{
+					hue = fmod((60 * ((g - b) / chroma) + 360), 360);
+				}
+				else if (max_val == g)
+				{
+					hue = fmod((60 * ((b - r) / chroma) + 120), 360);
+				}
+				else // max_val == b
+				{
+					hue = fmod((60 * ((r - g) / chroma) + 240), 360);
+				}
+			}
+
+			return hue;
+
+		}
+		
+		const float OdColour::getSaturation(const OdColour& aColour)
+		{
+			float r = aColour.getRed();
+			float g = aColour.getGreen();
+			float b = aColour.getBlue();
+
+			float max_val = OdMath::max3(r, g, b);
+			float min_val = OdMath::min3(r, g, b);
+			float chroma = max_val - min_val;
+			float lightness = (max_val + min_val) / 2.0;
+			float saturation = 0.0;
+
+			if (chroma != 0.0)
+			{
+				saturation = chroma / (1 - OdMath::abs(2 * lightness - 1));
+			}
+
+			return saturation;
+		}
+		
+		const float OdColour::getLightness(const OdColour& aColour)
+		{
+			float r = aColour.getRed();
+			float g = aColour.getGreen();
+			float b = aColour.getBlue();
+
+			float max_val = std::max(r, std::max(g, b));
+			float min_val = std::min(r, std::min(g, b));
+			float lightness = (max_val + min_val) / 2.0;
+
+			return lightness;
+		}
+		
+		const OdColour OdColour::asHex(const OdColour& aColour)
+		{
 			return OdColour();
 		}
 		
-		const OdColour OdColour::asHex(const OdColour& colour)
+		const OdColour OdColour::fromHSL(float aH, float aS, float aL)
 		{
-			return OdColour();
-		}
-		
-		const OdColour OdColour::fromHSL(float h, float s, float l)
-		{
-			return OdColour();
+			double mapValue(double value, double inMin, double inMax, double outMin, double outMax) {
+				return outMin + (outMax - outMin) * ((value - inMin) / (inMax - inMin));
+			}
+
+			double c = (1.0 - std::abs(2.0 * aH - 1.0)) * aS;
+			double h = aH / 60.0;
+			double x = c * (1.0 - std::abs(fmod(h, 2.0) - 1.0));
+			double m = aL - c / 2.0;
+
+			double r, g, b;
+			if (h >= 0 && h < 1) {
+				r = c;
+				g = x;
+				b = 0;
+			}
+			else if (h >= 1 && h < 2) {
+				r = x;
+				g = c;
+				b = 0;
+			}
+			else if (h >= 2 && h < 3) {
+				r = 0;
+				g = c;
+				b = x;
+			}
+			else if (h >= 3 && h < 4) {
+				r = 0;
+				g = x;
+				b = c;
+			}
+			else if (h >= 4 && h < 5) {
+				r = x;
+				g = 0;
+				b = c;
+			}
+			else {
+				r = c;
+				g = 0;
+				b = x;
+			}
+
+			RGB rgb;
+			rgb.r = (r + m);
+			rgb.g = (g + m);
+			rgb.b = (b + m);
+
+			return rgb;
 		}
 		
 		const OdColour OdColour::fromHex(int hex)
@@ -312,50 +415,55 @@ namespace OD
 		}
 
 		// Colour utilities
-		const OdColour OdColour::lighten(const OdColour& colour, float amount)
+		const OdColour OdColour::lighten(const OdColour& aColour, float aAmount)
 		{
-			// Lighten the colour by the specified amount
-			float newR = colour.r + (1.0f - colour.r) * amount;
-			float newG = colour.g + (1.0f - colour.g) * amount;
-			float newB = colour.b + (1.0f - colour.b) * amount;
-			return OdColour(newR, newG, newB, colour.a);
+			// Check aAmount is between 0 and 1
+			OdMath::clamp(aAmount, 0, 1);
+
+			// Lighten the aColour by the specified aAmount
+			float newR = OdMath::clamp(aColour.r *aAmount, 0, 255);
+			float newG = OdMath::clamp(aColour.g *aAmount, 0, 255);
+			float newB = OdMath::clamp(aColour.b *aAmount, 0, 255);
+			return OdColour(newR, newG, newB, aColour.a);
 		}
 
-		const OdColour OdColour::darken(const OdColour& colour, float amount)
+		const OdColour OdColour::darken(const OdColour& aColour, float aAmount)
 		{
-			// Darken the colour by the specified amount
-			float newR = colour.r * (1.0f - amount);
-			float newG = colour.g * (1.0f - amount);
-			float newB = colour.b * (1.0f - amount);
-			return OdColour(newR, newG, newB, colour.a);
+			// Check aAmount is between 0 and 1
+			OdMath::clamp(aAmount, 0, 1);
+
+			// Darken the aColour by the specified aAmount
+			float newR = OdMath::clamp(aColour.r *(1 -aAmount), 0, 255);
+			float newG = OdMath::clamp(aColour.g *(1 -aAmount), 0, 255);
+			float newB = OdMath::clamp(aColour.b *(1 -aAmount), 0, 255);
+			return OdColour(newR, newG, newB, aColour.a);
 		}
 
-		const OdColour OdColour::saturate(const OdColour& colour, float amount)
+		const OdColour OdColour::saturate(const OdColour& aColour, float aAmount)
 		{
-			// Saturate the colour by the specified amount
-			float grey = colour.r * 0.3f + colour.g * 0.59f + colour.b * 0.11f;
-			float newR = grey + (colour.r - grey) * amount;
-			float newG = grey + (colour.g - grey) * amount;
-			float newB = grey + (colour.b - grey) * amount;
-			return OdColour(newR, newG, newB, colour.a);
+			// Check aAmount is between 0 and 1
+			OdMath::clamp(aAmount, 0, 1);
+
+			// Saturate the aColour by the specified aAmount
+			float H = getHue(aColour);
+			float S = getSaturation(aColour);
+			float L = getLightness(aColour);
+
+			float newS = OdMath::clamp(S + aAmount, 0, 1);
+			return fromHSL(H, newS, L);
 		}
 
-		const OdColour OdColour::desaturate(const OdColour& colour, float amount)
+		const OdColour OdColour::mix(const OdColour& aColour1, const OdColour& aColour2, float aAmount)
 		{
 			return OdColour();
 		}
 
-		const OdColour OdColour::mix(const OdColour& colour1, const OdColour& colour2, float amount)
+		const OdColour OdColour::invert(const OdColour& aColour)
 		{
 			return OdColour();
 		}
 
-		const OdColour OdColour::invert(const OdColour& colour)
-		{
-			return OdColour();
-		}
-
-		const OdColour OdColour::lerp(const OdColour& colour1, const OdColour& colour2, float amount)
+		const OdColour OdColour::lerp(const OdColour& aColour1, const OdColour& aColour2, float aAmount)
 		{
 			return OdColour();
 		}
@@ -417,7 +525,7 @@ namespace OD
 			a = aAlpha;
 		}
 
-		// Returns the colour as NVGcolor
+		// Returns the aColour as NVGcolor
 		NVGcolor OdColour::asNvgColour() const
 		{
 			return nvgRGBA(getRed(), getGreen(), getBlue(), getAlpha());

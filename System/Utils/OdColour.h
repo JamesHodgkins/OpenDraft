@@ -10,15 +10,18 @@
 * Copyright:    ©2023 OpenDraft. GPLv3                                                *
 *-------------------------------------------------------------------------------------*
 * Description:                                                                        *
-*   A colour class for the OpenDraft framework.                                       *
+*   A aColour class for the OpenDraft framework.                                       *
 ***************************************************************************************/
 
 
 
 #include <nanovg.h>
+#include "System/Utils/OdMath.h"
 
 namespace OD
 {
+	using namespace Math;
+
 	namespace System
 	{
 
@@ -34,23 +37,24 @@ namespace OD
 			// Static methods
 			//
 			
-			// Get colour by index
+			// Get aColour by index
 			const static OdColour colourByIndex(int index);
 
 			// Conversions
-			const static OdColour asHSL(const OdColour& colour);
-			const static OdColour asHex(const OdColour& colour);
+			const static float getHue(const OdColour& aColour);
+			const static float getSaturation(const OdColour& aColour);
+			const static float getLightness(const OdColour& aColour);
+			const static OdColour asHex(const OdColour& aColour);
 			const static OdColour fromHSL(float h, float s, float l);
 			const static OdColour fromHex(int hex);
 
 			// Colour utilities
-			const static OdColour lighten(const OdColour& colour, float amount);
-			const static OdColour darken(const OdColour& colour, float amount);
-			const static OdColour saturate(const OdColour& colour, float amount);
-			const static OdColour desaturate(const OdColour& colour, float amount);
-			const static OdColour mix(const OdColour& colour1, const OdColour& colour2, float amount);
-			const static OdColour invert(const OdColour& colour);
-			const static OdColour lerp(const OdColour& colour1, const OdColour& colour2, float amount);
+			const static OdColour lighten(const OdColour& aColour, float aAmount);
+			const static OdColour darken(const OdColour& aColour, float aAmount);
+			const static OdColour saturate(const OdColour& aColour, float aAmount);
+			const static OdColour mix(const OdColour& colour1, const OdColour& colour2, float aAmount);
+			const static OdColour invert(const OdColour& aColour);
+			const static OdColour lerp(const OdColour& colour1, const OdColour& colour2, float aAmount);
 
 			// Theme colours
 			const static OdColour BACKGROUND1;
@@ -112,10 +116,10 @@ namespace OD
 			float getAlphaNorm() const;
 			void setAlpha(int aAlpha);
 
-			// Set colour by RGB or RGBA
+			// Set aColour by RGB or RGBA
 			void setRGB(int aRed, int aGreen, int aBlue, int aAlpha=255);
 
-			// Returns the colour as a NanoVG colour
+			// Returns the aColour as a NanoVG aColour
 			NVGcolor asNvgColour() const;
 
 
