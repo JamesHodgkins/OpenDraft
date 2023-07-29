@@ -165,6 +165,7 @@
     <ClCompile Include="..\System\OdApplication.cpp" />
     <ClCompile Include="..\System\OdSystem.cpp" />
     <ClCompile Include="..\System\Utils\OdColour.cpp" />
+    <ClCompile Include="..\System\Utils\OdMath.cpp" />
     <ClCompile Include="..\System\Utils\OdVector2.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="..\System\OdEditor.cpp" />

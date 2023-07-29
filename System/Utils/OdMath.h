@@ -29,137 +29,44 @@ namespace OD
 
 		class OdMath
 		{
+
 		// Static methods
 		public:
+
 			// Conversions
-			static float deg2rad(float deg)
-			{
-				return deg; // *OD_DEG2RAD_FACTOR;
-			}
-
-			static float rad2deg(float rad)
-			{
-				return rad; // *OD_RAD2DEG_FACTOR;
-			}
-
+			float deg2rad(float deg);
+			float rad2deg(float rad);
 
 			// Trigonometry
-			static float sin(float angle)
-			{
-				return sinf(angle);
-			}
-
-			static float cos(float angle)
-			{
-				return cosf(angle);
-			}
-
-			static float tan(float angle)
-			{
-				return tanf(angle);
-			}
-
-			static float asin(float angle)
-			{
-				return asinf(angle);
-			}
-
-			static float acos(float angle)
-			{
-				return acosf(angle);
-			}
-			static float atan(float angle)
-			{
-				return atanf(angle);
-			}
-			static float atan2(float y, float x)
-			{
-				return atan2f(y, x);
-			}
+			float sin(float angle);
+			float cos(float angle);
+			float tan(float angle);
+			float asin(float angle);
+			float acos(float angle);
+			float atan(float angle);
+			float atan2(float y, float x);
 
 			// Rounding
-			static float ceil(float value)
-			{
-				return ceilf(value);
-			}
-
-			static float floor(float value)
-			{
-				return floorf(value);
-			}
-
-			static float round(float value)
-			{
-				return roundf(value);
-			}
-
-			static float round(float value, int precision)
-			{
-				return roundf(value * pow(10, precision)) / pow(10, precision);
-			}
-
-			static float round(float value, int precision, bool truncate)
-			{
-				if (truncate)
-				{
-					return floorf(value * pow(10, precision)) / pow(10, precision);
-				}
-				else
-				{
-					return roundf(value * pow(10, precision)) / pow(10, precision);
-				}
-			}
-
-
-
+			float ceil(float value);
+			float floor(float value);
+			float round(float value);
+			float round(float value, int precision);
+			float round(float value, int precision, bool truncate);
 
 			// Exponents
-			static float pow(float base, float exponent)
-			{
-				return powf(base, exponent);
-			}
-
-			static float sqrt(float value)
-			{
-				return sqrtf(value);
-			}
-
-			static float cbrt(float value)
-			{
-				return cbrtf(value);
-			}
-
-			static float root(float value, float root)
-			{
-				return powf(value, 1 / root);
-			}
+			float pow(float base, float exponent);
+			float sqrt(float value);
+			float cbrt(float value);
+			float root(float value, float root);
 
 			// Logarithms
-			static float log(float value)
-			{
-				return logf(value);
-			}
-
-			static float log(float value, float base)
-			{
-				return logf(value) / logf(base);
-			}
-
-			static float log2(float value)
-			{
-				return logf(value) / logf(2);
-			}
-
-			static float log10(float value)
-			{
-				return log10f(value);
-			}
+			float log(float value);
+			float log(float value, float base);
+			float log2(float value);
+			float log10(float value);
 
 			// Absolute value
-			static float abs(float value)
-			{
-				return fabsf(value);
-			}
+			float abs(float value);
 
 			// Min/max
 			//static float min(float value1, float value2)

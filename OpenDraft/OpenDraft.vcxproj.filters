@@ -113,6 +113,9 @@
     <ClCompile Include="..\Graphics\UI\OdTextbox.cpp">
       <Filter>Graphics\UI</Filter>
     </ClCompile>
+    <ClCompile Include="..\System\Utils\OdMath.cpp">
+      <Filter>System\Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\System\Entities\OdEntity.h">
