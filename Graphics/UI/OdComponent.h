@@ -65,6 +65,9 @@ namespace OD
 			OdVector2 location = { 0,0 };		// Location of component
 			OdVector2 size = { 50,50 };			// Size of component
 
+			// Event Handling
+			bool active;						// Control is active or inactive.
+
 		public:
 
 			// Component properties
@@ -116,6 +119,7 @@ namespace OD
 			OdVector2 getSize() const;
 			int getWidth() const;
 			int getHeight() const;
+			bool isActive() const;
 
 			// Mouse Events
 			bool isMouseOver() const;

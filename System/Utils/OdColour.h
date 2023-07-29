@@ -37,6 +37,21 @@ namespace OD
 			// Get colour by index
 			const static OdColour colourByIndex(int index);
 
+			// Conversions
+			const static OdColour asHSL(const OdColour& colour);
+			const static OdColour asHex(const OdColour& colour);
+			const static OdColour fromHSL(float h, float s, float l);
+			const static OdColour fromHex(int hex);
+
+			// Colour utilities
+			const static OdColour lighten(const OdColour& colour, float amount);
+			const static OdColour darken(const OdColour& colour, float amount);
+			const static OdColour saturate(const OdColour& colour, float amount);
+			const static OdColour desaturate(const OdColour& colour, float amount);
+			const static OdColour mix(const OdColour& colour1, const OdColour& colour2, float amount);
+			const static OdColour invert(const OdColour& colour);
+			const static OdColour lerp(const OdColour& colour1, const OdColour& colour2, float amount);
+
 			// Theme colours
 			const static OdColour BACKGROUND1;
 			const static OdColour BACKGROUND2;

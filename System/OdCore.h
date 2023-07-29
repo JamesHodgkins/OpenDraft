@@ -16,16 +16,12 @@
 ***************************************************************************************/
 
 
+#include "System/Utils/OdMath.h"
 #include "System/Utils/OdColour.h"
 #include "System/Utils/OdFont.h"
 #include "System/Utils/OdImage.h"
 #include "System/Utils/OdVector2.h"
 #include "System/OdResourceManager.h"
 
-// Define constants
-#define OD_PI 3.14159265358979323846
-#define OD_E 2.71828182845904523536
-#define OD_RAD2DEG_FACTOR 0.01745329251994329577
-#define OD_DEG2RAD_FACTOR 57.2957795130823208768
 
 #endif // !OD_SY_CORE_H

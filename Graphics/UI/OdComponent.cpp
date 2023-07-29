@@ -131,6 +131,11 @@ namespace OD::Graphics
 		return static_cast<int>(size.y);
 	}
 
+	bool OdComponent::isActive() const
+	{
+		return active;
+	}
+
 
 	OdVector2 OdComponent::getOffset() const
 	{
@@ -325,7 +330,10 @@ namespace OD::Graphics
 
 
 		if (mouseOver && aInput->mouse.leftButton.isPressDown())
+		{
 			mousePressDown = true;
+			active = true;
+		}
 
 		// Check if mouse was pressed down
 		if (!aInput->mouse.leftButton.isDown())
@@ -336,6 +344,9 @@ namespace OD::Graphics
 			mousePressUp = true;
 		else
 			mousePressUp = false;
+
+		if(!mouseOver && aInput->mouse.leftButton.isPressUp())
+			active = false;
 
 
 		// Process child components

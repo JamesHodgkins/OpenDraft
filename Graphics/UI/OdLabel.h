@@ -15,6 +15,7 @@
 
 
 
+#include <string>
 #include "System/OdCore.h"
 #include "Graphics/UI/OdComponent.h"
 #include "Graphics/OdDraw.h"

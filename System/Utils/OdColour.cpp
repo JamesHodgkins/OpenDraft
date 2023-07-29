@@ -288,6 +288,79 @@ namespace OD
 			return result;
 		}
 
+		// Conversions
+		const OdColour OdColour::asHSL(const OdColour& colour)
+		{
+			// Convert the colour to HSL
+			float H, S, L;
+			return OdColour();
+		}
+		
+		const OdColour OdColour::asHex(const OdColour& colour)
+		{
+			return OdColour();
+		}
+		
+		const OdColour OdColour::fromHSL(float h, float s, float l)
+		{
+			return OdColour();
+		}
+		
+		const OdColour OdColour::fromHex(int hex)
+		{
+			return OdColour();
+		}
+
+		// Colour utilities
+		const OdColour OdColour::lighten(const OdColour& colour, float amount)
+		{
+			// Lighten the colour by the specified amount
+			float newR = colour.r + (1.0f - colour.r) * amount;
+			float newG = colour.g + (1.0f - colour.g) * amount;
+			float newB = colour.b + (1.0f - colour.b) * amount;
+			return OdColour(newR, newG, newB, colour.a);
+		}
+
+		const OdColour OdColour::darken(const OdColour& colour, float amount)
+		{
+			// Darken the colour by the specified amount
+			float newR = colour.r * (1.0f - amount);
+			float newG = colour.g * (1.0f - amount);
+			float newB = colour.b * (1.0f - amount);
+			return OdColour(newR, newG, newB, colour.a);
+		}
+
+		const OdColour OdColour::saturate(const OdColour& colour, float amount)
+		{
+			// Saturate the colour by the specified amount
+			float grey = colour.r * 0.3f + colour.g * 0.59f + colour.b * 0.11f;
+			float newR = grey + (colour.r - grey) * amount;
+			float newG = grey + (colour.g - grey) * amount;
+			float newB = grey + (colour.b - grey) * amount;
+			return OdColour(newR, newG, newB, colour.a);
+		}
+
+		const OdColour OdColour::desaturate(const OdColour& colour, float amount)
+		{
+			return OdColour();
+		}
+
+		const OdColour OdColour::mix(const OdColour& colour1, const OdColour& colour2, float amount)
+		{
+			return OdColour();
+		}
+
+		const OdColour OdColour::invert(const OdColour& colour)
+		{
+			return OdColour();
+		}
+
+		const OdColour OdColour::lerp(const OdColour& colour1, const OdColour& colour2, float amount)
+		{
+			return OdColour();
+		}
+
+
 		// Theme colours
 		const OdColour OdColour::BACKGROUND1 = OdColour(31, 39, 48, 255);
 		const OdColour OdColour::BACKGROUND2 = OdColour(41, 51, 61, 255);

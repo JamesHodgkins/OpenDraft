@@ -235,5 +235,8 @@
     <ClInclude Include="..\Graphics\UI\OdTextbox.h">
       <Filter>Graphics\UI</Filter>
     </ClInclude>
+    <ClInclude Include="..\System\Utils\OdMath.h">
+      <Filter>System\Utils</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

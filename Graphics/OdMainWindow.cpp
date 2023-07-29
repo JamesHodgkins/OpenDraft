@@ -219,10 +219,6 @@ namespace OD::Graphics
 		doc->modifiedDate = timestamp;
 		doc->updateDocument();
 
-		
-		OdTextbox* tb1 = new OdTextbox(300, 300, 500, 20, "");
-		addChildControl(tb1);
-
 	}
 
 

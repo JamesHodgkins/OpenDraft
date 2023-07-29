@@ -60,16 +60,6 @@ namespace OD::Graphics
 		int w = static_cast<int>(size.x);
 		int h = static_cast<int>(size.y);
 
-		/*
-		* struct TextStyle
-			{
-				int size;
-				const char* font;
-				OdColour colour;
-				Alignment alignment;
-			};
-		*/
-
 		OdDraw::TextStyle buttonTextStyle =
 		{
 			fontSize,
@@ -105,6 +95,9 @@ namespace OD::Graphics
 
 
 		OdDraw::RectStroke(aContext, x, y, size.x, size.y, stroke);
+
+		if (active)
+			OdDraw::RectStroke(aContext, x + 1, y + 1, size.x - 2, size.y - 2, OdColour::BACKGROUND2);
 
 	}
 
