@@ -204,6 +204,10 @@ namespace OD::Graphics
 		db->addCreatedEntity(circle1);
 
 
+		OdTextbox* text1 = new OdTextbox(100, 100, 50, 20, "");
+		tabHome->addPanelChildControl(text1);
+		text1->zOrder = 2;
+
 		
 
 		// Get current date as unix timestamp

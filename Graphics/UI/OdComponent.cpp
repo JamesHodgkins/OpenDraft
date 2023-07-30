@@ -364,11 +364,23 @@ namespace OD::Graphics
 	// Draw child components
 	void OdComponent::drawChildComponents(NVGcontext* aContext)
 	{
+		// Draw child components in order of draw priority
+		std::vector<std::shared_ptr<OdComponent>> drawStack;
+		for (std::shared_ptr<OdComponent> control : childComponents)
+			drawStack.push_back(control);
+
+
+		// Sort child components by draw 'zOrder'
+		std::sort(drawStack.begin(), drawStack.end(), [](const std::shared_ptr<OdComponent>& a, const std::shared_ptr<OdComponent>& b) {
+			return a->zOrder < b->zOrder;
+			});
+
+
 		// Translate by location
 		OdDraw::Translate(aContext, location.x, location.y);
 
 		// Update child UI components
-		for (std::shared_ptr<OdComponent> control : childComponents) {
+		for (std::shared_ptr<OdComponent> control : drawStack) {
 
 			// Check for overflow restriction
 			if (!overflow)

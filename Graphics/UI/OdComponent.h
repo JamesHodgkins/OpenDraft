@@ -71,29 +71,30 @@ namespace OD
 		public:
 
 			// Component properties
-			std::string name;							// Name of the control.
+			std::string name;					// Name of the control.
 
 			// Appearance properties
-			float strokeWidth;                           // Width of stroke
-			void* font;                                  // Font of the text displayed by the control.
-			OdColour backColour;                         // Background colour of the control.
-			OdColour stroke;                             // Stroke colour
-			OdColour foreColour;                         // Foreground colour of the control.
+			float strokeWidth;					// Width of stroke
+			void* font;							// Font of the text displayed by the control.
+			OdColour backColour;				// Background colour of the control.
+			OdColour stroke;					// Stroke colour
+			OdColour foreColour;				// Foreground colour of the control.
 
 			// Behavior properties
-			bool enabled = true;                         // Control is enabled or disabled.
-			bool show;                                   // Visible or hidden.
-			bool overflow = true;                        // Determines whether the control can draw child components outside its boundaries.
-			int tabIndex;                                // Tab order of the control within its container.
+			bool enabled = true;				// Control is enabled or disabled.
+			bool show;							// Visible or hidden.
+			bool overflow = true;				// Determines whether the control can draw child components outside its boundaries.
+			int tabIndex;						// Tab order of the control within its container.
+			int zOrder = 0;						// Z-order of the control within its container.
 
 			// Text properties
-			std::string text;                            // Text associated with the control.
+			std::string text;					// Text associated with the control.
 
 			// Resource properties
-			OdResourceManager* resourceManager;          // Pointer to injected resource manager.
+			OdResourceManager* resourceManager;	// Pointer to injected resource manager.
 
 			// Destructor
-			virtual ~OdComponent() = default;			// Default destructor
+			virtual ~OdComponent() = default;	// Default destructor
 
 			// Virtual Functions
 			virtual void onFrame(NVGcontext* aContext) = 0;

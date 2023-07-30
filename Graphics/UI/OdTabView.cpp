@@ -60,12 +60,16 @@ namespace OD
 			float buttonX = button->getWidth();
 			float buttonY = button->getHeight();
 
+			nvgSave(aContext);
+
 			nvgReset(aContext);
 			nvgTextBounds(aContext, buttonX, buttonY, button->text.c_str(), nullptr, bounds);
 
 			int padding = ((OdTabView*)parent)->PADDING;
 			int newSize = (bounds[2] - bounds[0]) + padding; // Where bounds[2]-[0] is the width of the text
 			button->setWidth(newSize);
+
+			nvgRestore(aContext);
 
 			// Reset flag
 			resizeFlag = false;

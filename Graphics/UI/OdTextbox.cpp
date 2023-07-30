@@ -150,6 +150,7 @@ namespace OD::Graphics
 		// Get characters of text property up to aIndex
 		std::string subText = text.substr(0, aIndex);
 
+		nvgSave(aContext);
 		nvgReset(aContext);
 		nvgFontSize(aContext, aStyle->size);
 		nvgFontFace(aContext, aStyle->font);
@@ -173,6 +174,8 @@ namespace OD::Graphics
 				int charWidth = static_cast<int>(aStyle->size/3);
 				cursorX += charWidth;
 			}
+
+		nvgRestore(aContext);
 
 		return cursorX;
 
