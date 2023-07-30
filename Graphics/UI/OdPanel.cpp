@@ -78,7 +78,7 @@ namespace OD
 			if (backgroundImage != nullptr)
 				OdDraw::ResourceImage(aContext, x, y, w, h, backgroundImage);
 
-			OdDraw::RectStroke(aContext, x, y, w, h, stroke);
+			OdDraw::RectStroke(aContext, x, y, w, h, 0.5, stroke);
 
 			// Draw child UI components
 			drawChildComponents(aContext);

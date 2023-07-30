@@ -59,7 +59,7 @@ namespace OD::Graphics
 		// Begin background
 		//
 		OdDraw::Rect(aContext, x, y, w, h, backColour);
-		OdDraw::RectStroke(aContext, x, y, w, h, stroke);
+		OdDraw::RectStroke(aContext, x, y, w, h, 0.5, stroke);
 
 		disableOverflow(aContext);
 

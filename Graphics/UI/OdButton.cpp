@@ -94,10 +94,10 @@ namespace OD::Graphics
 			OdDraw::ResourceImage(aContext, x + (padding/2), y + (padding/2), size.x - padding, size.y - padding, backgroundImage);
 
 
-		OdDraw::RectStroke(aContext, x, y, size.x, size.y, stroke);
+		OdDraw::RectStroke(aContext, x, y, size.x, size.y, 1, stroke);
 
 		if (active)
-			OdDraw::RectStroke(aContext, x + 1, y + 1, size.x - 2, size.y - 2, OdColour::BACKGROUND2);
+			OdDraw::RectStroke(aContext, x + 1, y + 1, size.x - 2, size.y - 2, 0.6, OdColour::WHITE);
 
 	}
 

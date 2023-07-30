@@ -40,11 +40,12 @@ namespace OD::Graphics
 		nvgClosePath(aContext);
 	}
 
-	void OdDraw::RectStroke(NVGcontext* aContext, float aX, float aY, float aWidth, float aHeight, const OdColour aColour)
+	void OdDraw::RectStroke(NVGcontext* aContext, float aX, float aY, float aWidth, float aHeight, float aWeight, const OdColour aColour)
 	{
 		nvgBeginPath(aContext);
 		nvgRect(aContext, aX, aY, aWidth, aHeight);
 		nvgStrokeColor(aContext, aColour.asNvgColour());
+		nvgStrokeWidth(aContext, aWeight);
 		nvgStroke(aContext);
 		nvgClosePath(aContext);
 	}

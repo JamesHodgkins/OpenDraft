@@ -173,11 +173,11 @@ namespace OD
 			// Drawing window
 			//OdDraw::Rect(aContext, x, y, w, h, OdColour::PRIMARY);
 			
-			OdDraw::RectStroke(aContext, x, y, w, h, stroke);
+			OdDraw::RectStroke(aContext, x, y, w, h, 0.5, stroke);
 
 			// Draw header
 			OdDraw::Rect(aContext, x, y, w, HEADER_HEIGHT, OdColour::BACKGROUND1);
-			OdDraw::RectStroke(aContext, x, y, h, HEADER_HEIGHT, stroke);
+			OdDraw::RectStroke(aContext, x, y, h, HEADER_HEIGHT, 0.5, stroke);
 
 			// Create running offset for tab buttons
 			int offset = 0;

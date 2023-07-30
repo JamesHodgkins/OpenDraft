@@ -71,7 +71,8 @@ namespace OD
 			glewInit();                               // Initialize glew
 
 			// Initialize NanoVG context (OpenGL backend)
-			context = nvgCreateGL3(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
+			//context = nvgCreateGL3(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
+			context = nvgCreateGL3(0);
 			if (context == nullptr) {
 				return;
 			}

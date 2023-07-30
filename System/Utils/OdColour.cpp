@@ -407,21 +407,15 @@ namespace OD::System
 	// Colour utilities
 	const OdColour OdColour::lighten(const OdColour& aColour, float aAmount)
 	{
-		// Check aAmount is between 0 and 1
-		OdMath::clamp(aAmount, 0, 1);
-
 		// Lighten the aColour by the specified aAmount
-		float newR = OdMath::clamp(aColour.r *aAmount, 0, 255);
-		float newG = OdMath::clamp(aColour.g *aAmount, 0, 255);
-		float newB = OdMath::clamp(aColour.b *aAmount, 0, 255);
+		float newR = OdMath::clamp(aColour.r + (aColour.r * aAmount), 0, 255);
+		float newG = OdMath::clamp(aColour.g + (aColour.g * aAmount), 0, 255);
+		float newB = OdMath::clamp(aColour.b + (aColour.b * aAmount), 0, 255);
 		return OdColour(newR, newG, newB, aColour.a);
 	}
 
 	const OdColour OdColour::darken(const OdColour& aColour, float aAmount)
 	{
-		// Check aAmount is between 0 and 1
-		OdMath::clamp(aAmount, 0, 1);
-
 		// Darken the aColour by the specified aAmount
 		float newR = OdMath::clamp(aColour.r *(1 -aAmount), 0, 255);
 		float newG = OdMath::clamp(aColour.g *(1 -aAmount), 0, 255);
