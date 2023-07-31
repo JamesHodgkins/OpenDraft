@@ -45,31 +45,31 @@ namespace OD::System
 		//
 
 		// Magnitude
-		double Magnitude();
+		double magnitude();
 
 		// Normalized
-		OdVector2 Normalized();
+		OdVector2 normalized();
 
 		// Dot product
-		double Dot(OdVector2 aVector);
+		double dot(OdVector2 aVector);
 
 		// Cross product
-		double Cross(OdVector2 aVector);
+		double cross(OdVector2 aVector);
 
 		// Angle between vectors
-		double Angle(OdVector2 aVector);
+		double angle(OdVector2 aVector);
 
 		// Lerp
-		OdVector2 Lerp(OdVector2 aVector, double aT);
+		OdVector2 lerp(OdVector2 aVector, double aT);
 
 		// Rotate
-		OdVector2 Rotate(double aAngle);
+		OdVector2 rotate(double aAngle);
 
 		// RotateAround
-		OdVector2 RotateAround(OdVector2 aPoint, double aAngle);
+		OdVector2 rotateAround(OdVector2 aPoint, double aAngle);
 
 		// Scale
-		OdVector2 Scale(OdVector2 aScale);
+		OdVector2 scale(OdVector2 aScale);
 
 
 

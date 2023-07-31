@@ -43,49 +43,49 @@ namespace OD::System
 	//
 
 	// Magnitude
-	double OdVector2::Magnitude()
+	double OdVector2::magnitude()
 	{
 		return sqrt(x * x + y * y);
 	}
 
 	// Normalized
-	OdVector2 OdVector2::Normalized()
+	OdVector2 OdVector2::normalized()
 	{
-		return OdVector2(x / Magnitude(), y / Magnitude());
+		return OdVector2(x / magnitude(), y / magnitude());
 	}
 
 	// Dot product
-	double OdVector2::Dot(OdVector2 aVector)
+	double OdVector2::dot(OdVector2 aVector)
 	{
 		return x * aVector.x + y * aVector.y;
 	}
 
 	// Cross product
-	double OdVector2::Cross(OdVector2 aVector)
+	double OdVector2::cross(OdVector2 aVector)
 	{
 		return x * aVector.y - y * aVector.x;
 	}
 
 	// Angle between vectors
-	double OdVector2::Angle(OdVector2 aVector)
+	double OdVector2::angle(OdVector2 aVector)
 	{
-		return acos(Dot(aVector) / (Magnitude() * aVector.Magnitude()));
+		return acos(dot(aVector) / (magnitude() * aVector.magnitude()));
 	}
 
 	// Lerp
-	OdVector2 OdVector2::Lerp(OdVector2 aVector, double aT)
+	OdVector2 OdVector2::lerp(OdVector2 aVector, double aT)
 	{
 		return OdVector2(x + (aVector.x - x) * aT, y + (aVector.y - y) * aT);
 	}
 
 	// Rotate
-	OdVector2 OdVector2::Rotate(double aAngle)
+	OdVector2 OdVector2::rotate(double aAngle)
 	{
 		return OdVector2(x * cos(aAngle) - y * sin(aAngle), x * sin(aAngle) + y * cos(aAngle));
 	}
 
 	// RotateAround
-	OdVector2 OdVector2::RotateAround(OdVector2 aPoint, double aAngle)
+	OdVector2 OdVector2::rotateAround(OdVector2 aPoint, double aAngle)
 	{
 		OdVector2 offset = *this - aPoint;
 		double cosAngle = cos(aAngle);
@@ -97,7 +97,7 @@ namespace OD::System
 	}
 
 	// Scale
-	OdVector2 OdVector2::Scale(OdVector2 aScale)
+	OdVector2 OdVector2::scale(OdVector2 aScale)
 	{
 		return OdVector2(x * aScale.x, y * aScale.y);
 	}
