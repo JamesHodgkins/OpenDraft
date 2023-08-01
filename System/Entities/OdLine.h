@@ -96,31 +96,7 @@ namespace OD
 			}
 
 
-			//
-			// Draw
-			//
-			void draw(NVGcontext* aContext, const OdVector2* aView, const float aScale) override
-			{
-				// To do: get line weight from layer
-				//int lineWidthIndex = getLineWeight();
-				//float lineWeight = OdSystem::getRegistryVariableByName("lineWidth");
-
-				OdColour drawColour = getDrawColour();
-				float lineWeight = getDrawLineWeight();
-
-				float xStart = (location.x + aView->x) * aScale;
-				float yStart = (location.y + aView->y) * aScale;
-				float xEnd   = (end.x      + aView->x) * aScale;
-				float yEnd   = (end.y      + aView->y) * aScale;
-
-				// Draw line
-				nvgBeginPath(aContext);
-				nvgMoveTo(aContext, xStart, yStart);
-				nvgLineTo(aContext, xEnd,   yEnd);
-				nvgStrokeColor(aContext, drawColour.asNvgColour());
-				nvgStrokeWidth(aContext, lineWeight);
-				nvgStroke(aContext);
-			}
+			
 
 
 			//
@@ -193,6 +169,72 @@ namespace OD
 					((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4));
 
 				return OdVector2(x, y);
+			}
+
+			// Closest Point
+			OdVector2 closestPointTo(const OdVector2& aPoint) const
+			{
+				OdVector2 startV = location;
+				OdVector2 endV = end;
+				OdVector2 point = aPoint;
+
+
+				OdVector2 line = endV - startV;
+				OdVector2 pointToStart = point - startV;
+				double t = pointToStart.dot(line) / line.dot(line);
+
+				if (t < 0.0)
+					return startV;
+				else if (t > 1.0)
+					return endV;
+				else
+					return startV + line * t;
+			}
+
+
+			//
+			// Draw
+			//
+			void draw(NVGcontext* aContext, const OdVector2* aView, const float aScale) override
+			{
+				// To do: get line weight from layer
+				//int lineWidthIndex = getLineWeight();
+				//float lineWeight = OdSystem::getRegistryVariableByName("lineWidth");
+
+				OdColour drawColour = getDrawColour();
+				float lineWeight = getDrawLineWeight();
+
+				float xStart = (location.x + aView->x) * aScale;
+				float yStart = (location.y + aView->y) * aScale;
+				float xEnd = (end.x + aView->x) * aScale;
+				float yEnd = (end.y + aView->y) * aScale;
+
+				// Draw line
+				nvgBeginPath(aContext);
+				nvgMoveTo(aContext, xStart, yStart);
+				nvgLineTo(aContext, xEnd, yEnd);
+				nvgStrokeColor(aContext, drawColour.asNvgColour());
+				nvgStrokeWidth(aContext, lineWeight);
+				nvgStroke(aContext);
+
+				// Draw highlight
+				if (isHighlighted())
+				{
+					nvgBeginPath(aContext);
+					nvgMoveTo(aContext, xStart, yStart);
+					nvgLineTo(aContext, xEnd, yEnd);
+					nvgStrokeColor(aContext, OdColour(255, 255, 255, 100).asNvgColour());
+					nvgStrokeWidth(aContext, lineWeight + 2);
+					nvgStroke(aContext);
+				}
+			}
+
+			virtual bool hitTest(OdVector2 aPoint, int aMargin)
+			{
+				// Is point within margin of line?
+				OdVector2 closestPoint = closestPointTo(aPoint);
+				double distance = closestPoint.distanceTo(aPoint);
+				return distance <= aMargin;
 			}
 
 		};
