@@ -136,6 +136,11 @@ namespace OD::Graphics
 		return active;
 	}
 
+	OdComponent* OdComponent::getParent() const
+	{
+		return parent;
+	}
+
 
 	OdVector2 OdComponent::getOffset() const
 	{
@@ -285,8 +290,6 @@ namespace OD::Graphics
 		aChild->parent = this;
 		childComponents.push_back(std::shared_ptr<OdComponent>(aChild));
 	}
-
-
 
 
 	//

@@ -121,6 +121,7 @@ namespace OD
 			int getWidth() const;
 			int getHeight() const;
 			bool isActive() const;
+			OdComponent* getParent() const;
 
 			// Mouse Events
 			bool isMouseOver() const;
@@ -134,7 +135,6 @@ namespace OD
 			void setAnchor(OdAnchor::Direction direction, bool aAnchor);
 			void updateAnchor(OdAnchor::Direction direction);
 			void updateSizeForAnchors();
-
 
 			// Child Component Management
 			virtual void addChildControl(OdComponent* aChild);
