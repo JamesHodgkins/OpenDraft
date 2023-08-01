@@ -58,13 +58,16 @@ namespace OD
 			void translatePosition(float aX, float aY);
 			void setPosition(float aX, float aY);
 			OdVector2 getPosition();
-			void setScale(float aScale);
-			void scaleIn();
-			void scaleOut();
+			void setScale(float aScale, int aMouseX, int aMouseY);
+			void scaleByAmount(float aAmount, int aMouseX, int aMouseY);
 			float getScale();
 
 			// User input methods
 			OdVector2 getCoordinatesAtScreenPosition(float x, float y);
+			OdVector2 getScreenPositionAtCoordinates(float x, float y);
+
+			// Check entities
+			void updateEntityStates(OdVector2 aPoint);
 
 		};
 

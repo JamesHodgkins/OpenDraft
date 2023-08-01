@@ -194,11 +194,13 @@ namespace OD::Graphics
 
 		// Scale viewport
 		if (aInput->mouse.scroll > 0)
-			scaleIn();
+			scaleByAmount(0.01, aInput->mouse.position.x, aInput->mouse.position.y);
 
 		if (aInput->mouse.scroll < 0)
-			scaleOut();
+			scaleByAmount(-0.01, aInput->mouse.position.x, aInput->mouse.position.y);
 
+		OdVector2 worldMouse = getCoordinatesAtScreenPosition(aInput->mouse.position.x, aInput->mouse.position.y);
+		updateEntityStates(worldMouse);
 	}
 
 
@@ -219,20 +221,30 @@ namespace OD::Graphics
 		return position;
 	}
 
-	void OdViewport::setScale(float aScale)
+	void OdViewport::setScale(float aScale, int aMouseX, int aMouseY)
 	{
 		scale = aScale;
 	}
 
-	void OdViewport::scaleIn()
+	void OdViewport::scaleByAmount(float aAmount, int aMouseX, int aMouseY)
 	{
-		scale += 0.1f;
+		// TODO: Fix translation when scaling
+
+		OdVector2 mB = OdVector2(aMouseX, aMouseY);
+		auto mBw = getCoordinatesAtScreenPosition(mB.x, mB.y);
+		
+
+		float oldScale = scale;
+		scale += aAmount;
+
+		float deltaFactor = scale/oldScale;
+
+		float deltaX = mB.x - (mB.x * deltaFactor);
+		float deltaY = mB.y - (mB.y * deltaFactor);
+
+		translatePosition(deltaX, -deltaY);
 	}
 
-	void OdViewport::scaleOut()
-	{
-		scale -= 0.1f;
-	}
 
 	float OdViewport::getScale()
 	{
@@ -251,6 +263,61 @@ namespace OD::Graphics
 		result.x = ((x - absoluteLocation.x) * invScale) - position.x;
 		result.y = ((y - absoluteLocation.y) * invScale) - position.y;
 		return result;
+	}
+
+	OdVector2 OdViewport::getScreenPositionAtCoordinates(float worldX, float worldY)
+	{
+		// Get inverse scale
+		float invScale = 1.0f / scale;
+		OdVector2 absoluteLocation = getOffset();
+
+		// Calculate screen coordinates from world coordinates
+		OdVector2 result = OdVector2();
+		result.x = (worldX + position.x) * scale + absoluteLocation.x;
+		result.y = (worldY + position.y) * scale + absoluteLocation.y;
+		return result;
+	}
+
+	void OdViewport::updateEntityStates(OdVector2 aPoint)
+	{
+		// Get active document
+		OdDocument* doc = OdApplication::getInstance()->getDocumentManager()->getActiveDocument();
+
+		// Check if document is null
+		if (doc == nullptr)
+			return;
+
+		OdDrawingDb* db = doc->getDatabase();
+
+		// Check if database is null
+		if (db == nullptr)
+			return;
+
+		// Number of entities
+		int numEntities = db->getRecordCount();
+
+
+		// Update entity states
+		for (int i = 0; i < numEntities; i++)
+		{
+			// Get entity
+			OdDbObject* dbObject = db->getRecordByIndex(i);
+
+			// Check if entity is null
+			if (dbObject == nullptr)
+				continue;
+
+			// Can item be cast as an OdEntity
+			OdEntity* entity = dynamic_cast<OdEntity*>(dbObject);
+
+			// Check if entity is null
+			if (entity == nullptr)
+				continue;
+
+			// Invoke entity hit test
+			bool isHighlighted = entity->hitTest(aPoint, 5);
+			entity->setHighlight(isHighlighted);
+		}
 	}
 
 }
