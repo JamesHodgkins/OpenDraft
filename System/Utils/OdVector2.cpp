@@ -15,10 +15,13 @@
 
 
 #include "System/Utils/OdVector2.h"
+#include "System/Utils/OdMath.h"
 
+using namespace OD::Math;
 
 namespace OD::System
 {
+
 	// Constructors
 	OdVector2::OdVector2() : x(0), y(0) {}
 	OdVector2::OdVector2(float aX, float aY) : x(aX), y(aY) {}
@@ -100,6 +103,13 @@ namespace OD::System
 	OdVector2 OdVector2::scale(OdVector2 aScale)
 	{
 		return OdVector2(x * aScale.x, y * aScale.y);
+	}
+
+	// Distance to
+	double OdVector2::distanceTo(const OdVector2& other) const {
+		double dx = other.x - x;
+		double dy = other.y - y;
+		return OdMath::sqrt(dx * dx + dy * dy);
 	}
 
 

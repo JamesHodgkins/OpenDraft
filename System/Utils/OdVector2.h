@@ -71,7 +71,8 @@ namespace OD::System
 		// Scale
 		OdVector2 scale(OdVector2 aScale);
 
-
+		// Distance to
+		double distanceTo(const OdVector2& other) const;
 
 		//
 		// Operators
