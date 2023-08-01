@@ -114,7 +114,29 @@ namespace OD
 				nvgStrokeColor(aContext, drawColour.asNvgColour());
 				nvgStrokeWidth(aContext, 3);
 				nvgStroke(aContext);
+
+				// Draw highlight
+				if (isHighlighted())
+				{
+					nvgBeginPath(aContext);
+					nvgCircle(aContext, x, y, r);
+					nvgStrokeColor(aContext, OdColour(255,255,255,100).asNvgColour());
+					nvgStrokeWidth(aContext, 6);
+					nvgStroke(aContext);
+				}
 			}
+
+			virtual bool hitTest(OdVector2 aPoint, int aMargin) override
+			{
+				// is the point within the radius of the circle?
+				bool withinOuter = (aPoint - location).magnitude() <= radius + aMargin;
+
+				// is the point outside the inner radius?
+				bool outsideInner = (aPoint - location).magnitude() >= radius - aMargin;
+
+				return withinOuter && outsideInner;
+			}
+
 
 			//
 			// Calculated Properties
