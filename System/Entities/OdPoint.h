@@ -104,6 +104,17 @@ namespace OD
 				nvgFill(aContext);
 			}
 
+			virtual bool hitTest(OdVector2 aPoint, int aMargin)
+			{
+				// is the point within the radius of the circle?
+				bool withinOuter = (aPoint - location).magnitude() <= aMargin;
+
+				// is the point outside the inner radius?
+				bool outsideInner = (aPoint - location).magnitude() >= - aMargin;
+
+				return withinOuter && outsideInner;
+			}
+
 		};
 	}
 }
