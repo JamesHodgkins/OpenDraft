@@ -91,6 +91,16 @@ namespace OD::Geometry
 		}
 	}
 
+	void OdEntity::setHighlight(bool aState)
+	{
+		highlight = aState;
+	}
+
+	bool OdEntity::isHighlighted() const
+	{
+		return highlight;
+	}
+
 
 } // namespace OD::Geometry
 

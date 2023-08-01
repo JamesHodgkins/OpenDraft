@@ -40,6 +40,7 @@ namespace OD
 			int lineType = 0;
 			int lineWeight = 0;
 			OdLayer* layer = nullptr;
+			bool highlight = false;
 
 
 		public:
@@ -68,8 +69,12 @@ namespace OD
 			void setLayer(OdLayer* aLayer);
 			void setLayer(std::string aLayer);
 
+			void setHighlight(bool aState);
+			bool isHighlighted() const;
+
 			// Methods
 			virtual void draw(NVGcontext* aContext, const OdVector2* aView, const float aScale) = 0;
+			virtual bool hitTest(OdVector2 aPoint, int aMargin) = 0;
 			
 		};
 
