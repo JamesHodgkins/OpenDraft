@@ -138,11 +138,23 @@ namespace OD
 				nvgStrokeWidth(aContext, 3.0f);
 				nvgStroke(aContext);
 
+				// Draw highlight
+				if (highlight)
+				{
+					nvgBeginPath(aContext);
+					nvgEllipse(aContext, 0, 0, rMajor, rMinor); // Draw ellipse centered at (0, 0)
+					nvgStrokeColor(aContext, OdColour(255,255,255,150).asNvgColour());
+					nvgStrokeWidth(aContext, 5.0f);
+					nvgStroke(aContext);
+				}
+
 				nvgRestore(aContext);
 			}
 
 			virtual bool hitTest(OdVector2 aPoint, int aMargin)
 			{
+				// TODO: Update hit test for rotated ellipses
+
 				double x = aPoint.x;
 				double y = aPoint.y;
 				double centerX = location.x;
