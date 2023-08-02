@@ -29,8 +29,8 @@ namespace OD
 		public:
 
 			double radius;
-			double startAngle;
-			double endAngle;
+			double startAngle = 90;
+			double endAngle = 0;
 
 
 			// Override Get Type
@@ -118,12 +118,87 @@ namespace OD
 				float x = (location.x + aView->x) * aScale;
 				float y = (location.y + aView->y) * aScale;
 
+				float a0 = OdMath::deg2rad(startAngle);
+				float a1 = OdMath::deg2rad(endAngle);
+
+
 				// To do: get line weight from layer
-				nvgStrokeWidth(aContext, 1.0f);
-				nvgStrokeColor(aContext, drawColour.asNvgColour());
 				nvgBeginPath(aContext);
-				nvgArc(aContext, x, y, radius, startAngle, endAngle, NVG_CCW);
+				nvgArc(aContext, x, y, radius, a0, a1, NVG_CCW);
+				nvgStrokeWidth(aContext, 2.0f);
+				nvgStrokeColor(aContext, drawColour.asNvgColour());
 				nvgStroke(aContext);
+
+				// Draw highlight
+				if (highlight) {
+					nvgBeginPath(aContext);
+					nvgArc(aContext, x, y, radius, a0, a1, NVG_CCW);
+					nvgStrokeWidth(aContext, 4.0f);
+					nvgStrokeColor(aContext, OdColour(255,255,255,150).asNvgColour());
+					nvgStroke(aContext);
+				}
+			}
+
+			virtual bool hitTest(OdVector2 aPoint, int aMargin)
+			{
+				double x = aPoint.x;
+				double y = aPoint.y;
+				double centerX = location.x;
+				double centerY = location.y;
+				double rad = radius;
+				double a0 = OdMath::deg2rad(startAngle);
+				double a1 = OdMath::deg2rad(endAngle);
+
+				// Adjust the arc by adding the margin to the radius
+				rad += aMargin;
+
+				// is the point within the radius of the circle?
+				bool withinOuter = (aPoint - location).magnitude() <= radius + aMargin;
+
+				// is the point outside the inner radius?
+				bool outsideInner = (aPoint - location).magnitude() >= radius - aMargin;
+
+
+				bool onCircle = (withinOuter && outsideInner);
+
+				if (onCircle)
+				{
+					// Calculate the angle between the point and the center of the circle
+					double angle = atan2(y - centerY, x - centerX);
+
+					// Normalize the angle to be between 0 and 2*pi
+					if (angle < 0)
+					{
+						angle += 2 * OD_PI;
+					}
+
+					// Normalize startAngle and endAngle to be between 0 and 2*pi
+					if (a0 < 0)
+					{
+						a0 += 2 * OD_PI;
+					}
+
+					if (a1 < 0)
+					{
+						a1 += 2 * OD_PI;
+					}
+
+					// Ensure a0 is less than a1
+					if (a0 > a1)
+					{
+						std::swap(a0, a1);
+					}
+
+					// Check if the angle lies outside the arc range
+					if (angle < a0 || angle > a1)
+					{
+						return true; // Point is inside the arc
+					}
+					
+				}
+
+				return false; // Point is outside the arc
+				
 			}
 
 
