@@ -105,10 +105,6 @@ namespace OD
 
 			void draw(NVGcontext* aContext, const OdVector2* aView, const float aScale) override
 			{
-				// To do: get line weight from layer
-				//int lineWidthIndex = getLineWeight();
-				//float lineWeight = OdSystem::getRegistryVariableByName("lineWidth");
-
 				// Get scaled centre
 				float x = (location.x + aView->x) * aScale;
 				float y = (location.y + aView->y) * aScale;
@@ -117,23 +113,54 @@ namespace OD
 
 				nvgSave(aContext);
 
-				nvgTranslate(aContext, x, y);
+				// Get existing nvg transform
+				float nvgTransform[6];
+				nvgCurrentTransform(aContext, nvgTransform);
+
+				// get existing translation
+				float nvgTranslation[2] = { nvgTransform[4], nvgTransform[5] };
+
+				nvgResetTransform(aContext);
+
+				// Translate first (without rotation)
+				nvgTranslate(aContext, x + nvgTranslation[0], y + nvgTranslation[1]);
+
+				// Rotate around the translated point
 				nvgRotate(aContext, rotation * -OD_RAD2DEG_FACTOR);
 
 				// Get draw colour
 				OdColour drawColour = getDrawColour();
 
-				
-
 				// Draw ellipse
 				nvgBeginPath(aContext);
-				nvgEllipse(aContext, x, y, rMajor, rMinor);
+				nvgEllipse(aContext, 0, 0, rMajor, rMinor); // Draw ellipse centered at (0, 0)
 				nvgStrokeColor(aContext, drawColour.asNvgColour());
 				nvgStrokeWidth(aContext, 3.0f);
 				nvgStroke(aContext);
 
 				nvgRestore(aContext);
 			}
+
+			virtual bool hitTest(OdVector2 aPoint, int aMargin)
+			{
+				double x = aPoint.x;
+				double y = aPoint.y;
+				double centerX = location.x;
+				double centerY = location.y;
+				double a = majorRadius;
+				double b = minorRadius;
+
+				// Adjust the ellipse by subtracting the margin from a and b
+				a -= aMargin;
+				b -= aMargin;
+
+				// Calculate the left-hand side of the ellipse equation
+				double lhs = pow((x - centerX) / a, 2) + pow((y - centerY) / b, 2);
+
+				// Check if the point is inside the adjusted ellipse (with margin)
+				return lhs <= 1.0;
+			}
+
 
 			//
 			// Calculated Properties
