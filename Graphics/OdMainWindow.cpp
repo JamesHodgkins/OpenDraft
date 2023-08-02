@@ -161,8 +161,10 @@ namespace OD::Graphics
 		//
 		//
 
-		OdLabel* lbl1 = new OdLabel(800, 7, 100, 20, "Hello World");
-		addChildControl(lbl1);
+		/*OdLabel* lbl1 = new OdLabel(750, 150, 500, 20, "Hello World");
+		lbl1->backColour = OdColour::RED;
+		lbl1->zOrder = 200;
+		addChildControl(lbl1);*/
 
 		OdApplication* app = OdApplication::getInstance();
 		OdDocumentManager* docManager = app->getDocumentManager();
@@ -180,11 +182,11 @@ namespace OD::Graphics
 		doc->company = L"OpenDraft";
 		
 
-		/*OdEllipse *ellipse1 = new OdEllipse(250, 250, 50, 20);
+		OdEllipse* ellipse1 = new OdEllipse(250, 250, 50, 20);
 		ellipse1->rotation = 45;
 		ellipse1->setColour(2);
 		db->addCreatedEntity(ellipse1);
-
+		/*
 		OdEllipse* ellipse2 = new OdEllipse(50, 50, 50, 20);
 		ellipse2->rotation = -45;
 		ellipse2->setColour(10);
@@ -203,10 +205,9 @@ namespace OD::Graphics
 		circle1->setColour(4);
 		db->addCreatedEntity(circle1);
 
-
-		OdTextbox* text1 = new OdTextbox(100, 100, 50, 20, "");
-		tabHome->addPanelChildControl(text1);
-		text1->zOrder = 2;
+		OdArc *arc1 = new OdArc(200, 100, 40, 0, 90);
+		arc1->setColour(5);
+		db->addCreatedEntity(arc1);
 
 		
 
@@ -267,19 +268,19 @@ namespace OD::Graphics
 		std::string newText = "";
 
 		// Cast childComponent[2] as OdViewport
-		OdViewport* vp = static_cast<OdViewport*>(childComponents[2].get());
+		/*OdViewport* vp = static_cast<OdViewport*>(childComponents[1].get());
 		
 		float mouseX = input.mouse.position.x;
 		float mouseY = input.mouse.position.y;
 		float scaleF = vp->getScale();
-		OdVector2 pos = vp->getPosition();
 
 		OdVector2 cursorPos = vp->getCoordinatesAtScreenPosition(mouseX, mouseY);
+		OdVector2 screenPos = vp->getScreenPositionAtCoordinates(cursorPos.x, cursorPos.y);
 
-		newText += "Mouse Position: " + std::to_string(cursorPos.x) + ", " + std::to_string(cursorPos.y)
-			+ ", " + std::to_string(scaleF) + " " + std::to_string(pos.x) + ", " + std::to_string(pos.y) + ")" + "\n";
+		newText += "Mouse Position: " + std::to_string(screenPos.x) + ", " + std::to_string(screenPos.y)
+			+ " / " + std::to_string(mouseX) + ", " + std::to_string(mouseY) + ")" + "\n";
 
-		childComponents[1]->text = newText;
+		childComponents[2]->text = newText;*/
 
 
 		// Draw child UI components
