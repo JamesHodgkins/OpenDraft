@@ -66,6 +66,37 @@ namespace OD
 				wrapText = aWrapText;
 			}
 
+			OdAlign OdLabel::getAlign() const
+			{
+				return align;
+			}
+			
+			void OdLabel::setAlign(OdAlign aAlign)
+			{
+				align = aAlign;
+			}
+			
+			float OdLabel::getLineSpacingFactor() const
+			{
+				return lineSpacingFactor;
+			}
+
+			void OdLabel::setLineSpacingFactor(float aLineSpacingFactor)
+			{
+				lineSpacingFactor = aLineSpacingFactor;
+			}
+
+			// Text Functions
+			std::vector<std::string> OdLabel::getTextByLines() const
+			{
+				std::vector<std::string> lines;
+				std::string line;
+				std::istringstream iss(text);
+				while (std::getline(iss, line))
+					lines.push_back(line);
+				return lines;
+			}
+
 
 			/**
 			 * \brief Renders a default OD-GUI Label to a given NanoVG context (NVGContext) with the specified attributes.
@@ -84,6 +115,17 @@ namespace OD
 				float w = size.x;
 				float h = size.y;
 
+				// Has size changed?
+				if (w != lastSize.x || h != lastSize.y)
+				{
+					linesDirty = true;
+					lastSize = size;
+				}
+
+				// Recalculate lines if dirty (text changes, or resize)
+				if (linesDirty)
+					lines = getTextByLines();
+				
 				OdDraw::TextStyle labelTextStyle =
 				{
 					14,
@@ -91,6 +133,7 @@ namespace OD
 					foreColour,
 					OdAlign(OdAlign::LEFT | OdAlign::MIDDLE)
 				};
+
 
 				if (singleLine)
 				{
@@ -104,24 +147,18 @@ namespace OD
 					nvgScissor(aContext, x, y, w, h);
 
 					OdDraw::Rect(aContext, x, y, w, h, backColour);
-					OdDraw::Text(aContext, x, y, w, h, &labelTextStyle, text.c_str());
+					OdDraw::Text(aContext, x, y, w, h, &labelTextStyle, lines[0].c_str());
 
 					nvgRestore(aContext);
+
 				}
 				else if (!wrapText)
 				{
 					// Get bounding box
 					OdDraw::Rect(aContext, x, y, w, h, backColour);
 
-					// Get bounding box
-					std::vector<std::string> lines;
-					std::istringstream iss(text);
-					std::string line;
-
-					// Split text into lines
-					while (std::getline(iss, line, '\n')) {
-						lines.push_back(line);
-					}
+					// Total height
+					float totalHeight = lines.size() * lineSpacingFactor * labelTextStyle.size;
 
 					// Draw each line
 					for (int i = 0; i < lines.size(); i++)

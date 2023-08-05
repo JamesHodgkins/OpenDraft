@@ -104,7 +104,7 @@ namespace OD
 			void setLocation(int aX, int aY);
 			void setLocation(double aX, double aY);
 			void setLocation(OdVector2 aPoint);
-			void setText(std::string aText);
+			virtual void setText(std::string aText);
 			void setSize(int aWidth, int aHeight);
 			void setSize(double aWidth, double aHeight);
 			void setSize(OdVector2 aSize);

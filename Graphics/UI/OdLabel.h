@@ -34,6 +34,11 @@ namespace OD
 			OdAlign align = OdAlign(OdAlign::LEFT | OdAlign::MIDDLE);
 			float lineSpacingFactor = 1.0f;
 
+			// Cached calculated lines
+			std::vector<std::string> lines;
+			bool linesDirty = true;
+			OdVector2 lastSize;
+
 		public:
 
 			/**
@@ -49,8 +54,13 @@ namespace OD
 			void setSingleLine(bool aSingleLine);
 			bool isTextWrap() const;
 			void setTextWrap(bool aWrapText);
-			OdAlign getAlignH() const;
+			OdAlign getAlign() const;
 			void setAlign(OdAlign aAlign);
+			float getLineSpacingFactor() const;
+			void setLineSpacingFactor(float aLineSpacingFactor);
+
+			// Text Functions
+			std::vector<std::string> getTextByLines() const;
 
 			/**
 			 * \brief Renders a default OD-GUI Label to a given NanoVG context (NVGContext) with the specified attributes.

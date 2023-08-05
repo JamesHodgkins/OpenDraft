@@ -57,8 +57,8 @@ namespace OD
 			void setTextStyle(OdDraw::TextStyle* aStyle);
 			const char* getFont();
 			void setFont(const char* aFont);
-			OdAlign getAlignH();
-			void setAlignH(OdAlign aAlignH);
+			OdAlign getAlign();
+			void setAlign(OdAlign aAlign);
 			OdColour getColour();
 			void setColour(OdColour aColour);
 

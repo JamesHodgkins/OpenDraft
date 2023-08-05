@@ -117,11 +117,11 @@ namespace OD::Graphics
 	}
 	
 	// Text Horizontal Alignment
-	OdAlign OdTextbox::getAlignH()
+	OdAlign OdTextbox::getAlign()
 	{
 		return textStyle.align;
 	}
-	void OdTextbox::setAlignH(OdAlign aAlign)
+	void OdTextbox::setAlign(OdAlign aAlign)
 	{
 		textStyle.align = aAlign;
 	}
