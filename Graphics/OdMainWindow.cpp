@@ -152,6 +152,15 @@ namespace OD::Graphics
 
 
 
+		// DEBUG & TESTING
+
+		OdLabel* lbl1 = new OdLabel(100, 600, 60, 20, "Hello World");
+		lbl1->backColour = OdColour::RED;
+		lbl1->zOrder = 200;
+		addChildControl(lbl1);
+
+		// !DEBUG & TESTING
+
 
 		//
 		// 

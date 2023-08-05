@@ -29,6 +29,9 @@ namespace OD
 		class OdLabel : public OdComponent
 		{
 		protected:
+			bool singleLine = true;
+			bool wrapText = false;
+			OdAlign align = OdAlign(OdAlign::LEFT | OdAlign::MIDDLE);
 
 		public:
 
@@ -39,6 +42,14 @@ namespace OD
 			 * \param text (std::string) The text displayed on the Label.
 			 */
 			OdLabel(int aX = 0, int aY = 0, int aWidth = 150, int aHeight = 30, std::string aText = "Label");
+
+			// Getters and Setters
+			bool isSingleLine() const;
+			void setSingleLine(bool aSingleLine);
+			bool isTextWrap() const;
+			void setTextWrap(bool aWrapText);
+			OdAlign getAlignH() const;
+			void setAlign(OdAlign aAlign);
 
 			/**
 			 * \brief Renders a default OD-GUI Label to a given NanoVG context (NVGContext) with the specified attributes.

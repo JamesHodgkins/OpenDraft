@@ -58,6 +58,11 @@ namespace OD
 				
 			}
 
+			virtual bool hitTest(OdVector2 aPoint, int aMargin)
+			{
+				return false;
+			}
+
 		};
 
 	}

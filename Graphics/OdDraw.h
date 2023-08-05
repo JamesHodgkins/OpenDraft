@@ -29,12 +29,8 @@ namespace OD
 		{
 		public:
 
-			// Enumerations
-			enum class AlignH{ Left, Center, Right };
-			enum class AlignV{ Top, Middle, Bottom };
-
 			// Structures
-			struct TextStyle { int size; const char* font; OdColour colour; AlignH alignH; };
+			struct TextStyle { int size; const char* font; OdColour colour; OdAlign align; };
 
 			// Methods
 			static void Line(NVGcontext* aContext, float aX1, float aY1, float aX2, float aY2, float thickness, OdColour aColour);

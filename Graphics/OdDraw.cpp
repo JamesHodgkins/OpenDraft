@@ -59,14 +59,23 @@ namespace OD::Graphics
 		nvgFontFace(aContext, aStyle->font);
 
 		// Set text alignment - TODO: Add support for vertical alignment
-		if (aStyle->alignH == AlignH::Left)
+		if (aStyle->align.getAlign() & OdAlign::LEFT)
+		{
 			nvgTextAlign(aContext, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
-		else if (aStyle->alignH == AlignH::Right)
+			nvgText(aContext, aX, aY + aHeight / 2, text, nullptr);
+		}
+		else if (aStyle->align.getAlign() & OdAlign::RIGHT)
+		{
 			nvgTextAlign(aContext, NVG_ALIGN_RIGHT | NVG_ALIGN_MIDDLE);
+			nvgText(aContext, aX + aWidth / 2, aY + aHeight / 2, text, nullptr);
+		}
 		else
+		{
 			nvgTextAlign(aContext, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+			nvgText(aContext, aX + aWidth / 2, aY + aHeight / 2, text, nullptr);
+
+		}
 		
-		nvgText(aContext, aX + aWidth / 2, aY + aHeight / 2, text, nullptr);
 		nvgClosePath(aContext);
 	}
 

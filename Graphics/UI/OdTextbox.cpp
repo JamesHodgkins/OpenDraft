@@ -32,7 +32,7 @@ namespace OD::Graphics
 		// Set default text style
 		textStyle.font = "sans";
 		textStyle.size = 12.f;
-		textStyle.alignH = OdDraw::AlignH::Left;
+		textStyle.align = OdAlign(OdAlign::LEFT | OdAlign::MIDDLE);
 		textStyle.colour = OdColour::BLACK;
 	}
 
@@ -51,7 +51,7 @@ namespace OD::Graphics
 		// Set default text style
 		textStyle.font = "sans";
 		textStyle.size = 12.f;
-		textStyle.alignH = OdDraw::AlignH::Left;
+		textStyle.align = OdAlign(OdAlign::LEFT | OdAlign::MIDDLE);
 		textStyle.colour = OdColour::BLACK;
 	}
 
@@ -68,7 +68,7 @@ namespace OD::Graphics
 		// Set default text style
 		textStyle.font = "sans";
 		textStyle.size = 12.f;
-		textStyle.alignH = OdDraw::AlignH::Left;
+		textStyle.align = OdAlign(OdAlign::LEFT | OdAlign::MIDDLE);
 		textStyle.colour = OdColour::BLACK;
 	}
 
@@ -102,7 +102,7 @@ namespace OD::Graphics
 	{
 		textStyle.font = aStyle->font;
 		textStyle.size = aStyle->size;
-		textStyle.alignH = aStyle->alignH;
+		textStyle.align = aStyle->align;
 		textStyle.colour = aStyle->colour;
 	}
 
@@ -117,13 +117,13 @@ namespace OD::Graphics
 	}
 	
 	// Text Horizontal Alignment
-	OdDraw::AlignH OdTextbox::getAlignH()
+	OdAlign OdTextbox::getAlignH()
 	{
-		return textStyle.alignH;
+		return textStyle.align;
 	}
-	void OdTextbox::setAlignH(OdDraw::AlignH aAlignH)
+	void OdTextbox::setAlignH(OdAlign aAlign)
 	{
-		textStyle.alignH = aAlignH;
+		textStyle.align = aAlign;
 	}
 	
 	// Text Colour
@@ -156,9 +156,9 @@ namespace OD::Graphics
 		nvgFontFace(aContext, aStyle->font);
 		nvgFontBlur(aContext, 0);
 		
-		if (aStyle->alignH == OdDraw::AlignH::Center)
+		if (aStyle->align.getAlign() & OdAlign::CENTRE)
 			nvgTextAlign(aContext, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-		else if (aStyle->alignH == OdDraw::AlignH::Right)
+		else if (aStyle->align.getAlign() & OdAlign::RIGHT)
 			nvgTextAlign(aContext, NVG_ALIGN_RIGHT | NVG_ALIGN_MIDDLE);
 		else
 			nvgTextAlign(aContext, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);

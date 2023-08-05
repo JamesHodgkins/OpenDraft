@@ -16,6 +16,7 @@
 ***************************************************************************************/
 
 
+#include "System/Utils/OdAlign.h"
 #include "System/Utils/OdMath.h"
 #include "System/Utils/OdColour.h"
 #include "System/Utils/OdFont.h"

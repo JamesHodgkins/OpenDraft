@@ -81,6 +81,11 @@ namespace OD
 				nvgText(aContext, x, y, "Text", NULL);
 			}
 
+			virtual bool hitTest(OdVector2 aPoint, int aMargin)
+			{
+				return false;
+			}
+
 			
 		};
 

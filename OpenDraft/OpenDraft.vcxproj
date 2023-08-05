@@ -212,6 +212,7 @@
     <ClInclude Include="..\Graphics\UI\OdViewport.h" />
     <ClInclude Include="..\System\OdEditor.h" />
     <ClInclude Include="..\System\Utils\OdMath.h" />
+    <ClInclude Include="..\System\Utils\OdAlign.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

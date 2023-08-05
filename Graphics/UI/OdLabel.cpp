@@ -41,6 +41,30 @@ namespace OD
 			}
 
 
+			// Getters and Setters
+
+			// Getters and Setters
+			bool OdLabel::isSingleLine() const
+			{
+				return singleLine;
+			}
+
+			void OdLabel::setSingleLine(bool aSingleLine)
+			{
+				singleLine = aSingleLine;
+			}
+
+			bool OdLabel::isTextWrap() const
+			{
+				return wrapText;
+			}
+
+			void OdLabel::setTextWrap(bool aWrapText)
+			{
+				wrapText = aWrapText;
+			}
+
+
 			/**
 			 * \brief Renders a default OD-GUI Label to a given NanoVG context (NVGContext) with the specified attributes.
 			 * \param context (NVGcontext*) The nanovg pointer for rendering.
@@ -63,11 +87,34 @@ namespace OD
 					14,
 					"sans",
 					foreColour,
-					OdDraw::AlignH::Center
+					OdAlign(OdAlign::LEFT | OdAlign::MIDDLE)
 				};
 
-				OdDraw::Rect(aContext, x, y, w, h, backColour);
-				OdDraw::Text(aContext, x, y, w, h, &labelTextStyle, text.c_str());
+				if (singleLine)
+				{
+					// Get bounding box
+					float x = location.x;
+					float y = location.y;
+					float w = size.x;
+					float h = size.y;
+
+					nvgSave(aContext);
+					nvgScissor(aContext, x, y, w, h);
+
+					OdDraw::Rect(aContext, x, y, w, h, backColour);
+					OdDraw::Text(aContext, x, y, w, h, &labelTextStyle, text.c_str());
+
+					nvgRestore(aContext);
+				}
+				else if (!wrapText)
+				{
+					
+
+					OdDraw::Rect(aContext, x, y, w, h, backColour);
+					OdDraw::Text(aContext, x, y, w, h, &labelTextStyle, text.c_str());
+				}
+
+
 
 			}
 

@@ -241,5 +241,8 @@
     <ClInclude Include="..\System\Utils\OdMath.h">
       <Filter>System\Utils</Filter>
     </ClInclude>
+    <ClInclude Include="..\System\Utils\OdAlign.h">
+      <Filter>System\Utils</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

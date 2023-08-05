@@ -65,7 +65,7 @@ namespace OD::Graphics
 			fontSize,
 			"sans",
 			foreColour,
-			OdDraw::AlignH::Center
+			OdAlign(OdAlign::CENTRE | OdAlign::MIDDLE)
 		};
 
 		OdDraw::Rect(aContext, x, y, w, h, backColour);
