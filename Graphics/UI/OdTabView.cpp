@@ -40,8 +40,7 @@ namespace OD
 
 		OdTab::~OdTab()
 		{
-			// Delete button
-			//delete button;
+
 		}
 
 		void OdTab::setText(std::string aText)

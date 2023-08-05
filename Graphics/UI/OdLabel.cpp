@@ -15,6 +15,8 @@
 
 
 
+#include <iostream>
+#include <sstream>
 #include "Graphics/UI/OdLabel.h"
 
 
@@ -108,11 +110,30 @@ namespace OD
 				}
 				else if (!wrapText)
 				{
-					
-
+					// Get bounding box
 					OdDraw::Rect(aContext, x, y, w, h, backColour);
-					OdDraw::Text(aContext, x, y, w, h, &labelTextStyle, text.c_str());
+
+					// Get bounding box
+					std::vector<std::string> lines;
+					std::istringstream iss(text);
+					std::string line;
+
+					// Split text into lines
+					while (std::getline(iss, line, '\n')) {
+						lines.push_back(line);
+					}
+
+					// Draw each line
+					for (int i = 0; i < lines.size(); i++)
+					{
+						float lineY = y + (i * lineSpacingFactor * labelTextStyle.size);
+						OdDraw::Text(aContext, x, lineY, w, h, &labelTextStyle, lines[i].c_str());
+					}
+
+
+
 				}
+
 
 
 

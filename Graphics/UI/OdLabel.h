@@ -32,6 +32,7 @@ namespace OD
 			bool singleLine = true;
 			bool wrapText = false;
 			OdAlign align = OdAlign(OdAlign::LEFT | OdAlign::MIDDLE);
+			float lineSpacingFactor = 1.0f;
 
 		public:
 
