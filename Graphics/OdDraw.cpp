@@ -73,7 +73,6 @@ namespace OD::Graphics
 		{
 			nvgTextAlign(aContext, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
 			nvgText(aContext, aX + aWidth / 2, aY + aHeight / 2, text, nullptr);
-
 		}
 		
 		nvgClosePath(aContext);

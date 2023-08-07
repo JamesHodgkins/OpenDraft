@@ -135,7 +135,7 @@ namespace OD
 				};
 
 
-				if (singleLine)
+				if (singleLine || !wrapText)
 				{
 					// Get bounding box
 					float x = location.x;
@@ -152,27 +152,29 @@ namespace OD
 					nvgRestore(aContext);
 
 				}
-				else if (!wrapText)
+				else if (wrapText)
 				{
 					// Get bounding box
 					OdDraw::Rect(aContext, x, y, w, h, backColour);
 
-					// Total height
-					float totalHeight = lines.size() * lineSpacingFactor * labelTextStyle.size;
+					// Calculate the total height of all lines with appropriate spacing
+					float lineSpace = labelTextStyle.size * lineSpacingFactor;
+					float totalHeight = lines.size() * lineSpace;
+
+					// Calculate the starting y position to center the multiline text vertically
+					float centreY = y + h/2.0f - lineSpace;
+					float startY = centreY - totalHeight / lines.size();
+
 
 					// Draw each line
 					for (int i = 0; i < lines.size(); i++)
 					{
-						float lineY = y + (i * lineSpacingFactor * labelTextStyle.size);
-						OdDraw::Text(aContext, x, lineY, w, h, &labelTextStyle, lines[i].c_str());
+						// Update the y position for each line
+						float lineY = startY + i * labelTextStyle.size * lineSpacingFactor;
+						OdDraw::Text(aContext, x, lineY, w, labelTextStyle.size, &labelTextStyle, lines[i].c_str());
 					}
 
-
-
 				}
-
-
-
 
 			}
 
