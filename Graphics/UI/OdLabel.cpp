@@ -159,20 +159,47 @@ namespace OD
 
 					// Calculate the total height of all lines with appropriate spacing
 					float lineSpace = labelTextStyle.size * lineSpacingFactor;
-					float totalHeight = lines.size() * lineSpace;
-
-					// Calculate the starting y position to center the multiline text vertically
-					float centreY = y + h/2.0f - lineSpace;
-					float startY = centreY - totalHeight / lines.size();
 
 
-					// Draw each line
-					for (int i = 0; i < lines.size(); i++)
+					if (align.getAlign() & OdAlign::MIDDLE)
 					{
-						// Update the y position for each line
-						float lineY = startY + i * labelTextStyle.size * lineSpacingFactor;
-						OdDraw::Text(aContext, x, lineY, w, labelTextStyle.size, &labelTextStyle, lines[i].c_str());
+						float totalHeight = lines.size() * lineSpace;
+
+						// Calculate the starting y position to center the multiline text vertically
+						float centreY = y + h / 2.0f - lineSpace;
+						float startY = centreY - totalHeight / lines.size();
+
+
+						// Draw each line
+						for (int i = 0; i < lines.size(); i++)
+						{
+							// Update the y position for each line
+							float lineY = startY + i * labelTextStyle.size * lineSpacingFactor;
+							OdDraw::Text(aContext, x, lineY, w, labelTextStyle.size, &labelTextStyle, lines[i].c_str());
+						}
 					}
+					else if (align.getAlign() & OdAlign::TOP)
+					{
+						
+					}
+					else if (align.getAlign() & OdAlign::BOTTOM)
+					{
+						float totalHeight = lines.size() * lineSpace;
+
+						// Calculate the starting y position to center the multiline text vertically
+						float bottomY = y + h - lineSpace;
+						float startY = bottomY - totalHeight / lines.size();
+
+						// Draw each line
+						for (int i = 0; i < lines.size(); i++)
+						{
+							// Update the y position for each line
+							float lineY = startY + i * labelTextStyle.size * lineSpacingFactor;
+							OdDraw::Text(aContext, x, lineY, w, labelTextStyle.size, &labelTextStyle, lines[i].c_str());
+						}
+					}
+
+					
 
 				}
 

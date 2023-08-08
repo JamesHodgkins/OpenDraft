@@ -159,6 +159,7 @@ namespace OD::Graphics
 		//OdLabel* lbl1 = new OdLabel(100, 600, 150, 50, "Hello World\nHello World 2\nHello World 3\nHello World 4");
 		lbl1->backColour = OdColour::RED;
 		lbl1->setSingleLine(false);
+		lbl1->setAlign(OdAlign(OdAlign::LEFT | OdAlign::BOTTOM));
 		lbl1->setTextWrap(true);
 		lbl1->zOrder = 200;
 		addChildControl(lbl1);

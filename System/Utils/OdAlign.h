@@ -34,6 +34,14 @@ public:
 		return align_;
 	}
 
+	OdAlign operator|(const OdAlign& other) const {
+		return OdAlign(align_ | other.align_);
+	}
+
+	OdAlign operator|(const int rhs) {
+		return OdAlign(getAlign() | rhs);
+	}
+
 private:
 	int align_;
 };
