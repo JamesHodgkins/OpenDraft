@@ -159,44 +159,25 @@ namespace OD
 
 					// Calculate the total height of all lines with appropriate spacing
 					float lineSpace = labelTextStyle.size * lineSpacingFactor;
-
+					float startY = y;
 
 					if (align.getAlign() & OdAlign::MIDDLE)
 					{
-						float totalHeight = lines.size() * lineSpace;
-
-						// Calculate the starting y position to center the multiline text vertically
-						float centreY = y + h / 2.0f - lineSpace;
-						float startY = centreY - totalHeight / lines.size();
-
-
-						// Draw each line
-						for (int i = 0; i < lines.size(); i++)
-						{
-							// Update the y position for each line
-							float lineY = startY + i * labelTextStyle.size * lineSpacingFactor;
-							OdDraw::Text(aContext, x, lineY, w, labelTextStyle.size, &labelTextStyle, lines[i].c_str());
-						}
+						startY = y + (h - (lines.size() * lineSpace)) / 2;
 					}
-					else if (align.getAlign() & OdAlign::TOP)
+					
+					if (align.getAlign() & OdAlign::BOTTOM)
 					{
-						
+						startY = y + h - (lines.size() * lineSpace);
 					}
-					else if (align.getAlign() & OdAlign::BOTTOM)
+
+
+					// Print lines from startY
+					for (int i = 0; i < lines.size(); i++)
 					{
-						float totalHeight = lines.size() * lineSpace;
-
-						// Calculate the starting y position to center the multiline text vertically
-						float bottomY = y + h - lineSpace;
-						float startY = bottomY - totalHeight / lines.size();
-
-						// Draw each line
-						for (int i = 0; i < lines.size(); i++)
-						{
-							// Update the y position for each line
-							float lineY = startY + i * labelTextStyle.size * lineSpacingFactor;
-							OdDraw::Text(aContext, x, lineY, w, labelTextStyle.size, &labelTextStyle, lines[i].c_str());
-						}
+						// Update the y position for each line
+						float lineY = startY + i * lineSpace;
+						OdDraw::Text(aContext, x, lineY, w, labelTextStyle.size, &labelTextStyle, lines[i].c_str());
 					}
 
 					
