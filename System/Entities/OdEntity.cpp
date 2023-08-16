@@ -101,6 +101,12 @@ namespace OD::Geometry
 		return highlight;
 	}
 
+	// Selection Methods
+	void OdEntity::setSelected(bool aSelected)
+	{
+		selected = aSelected;
+	}
+
 
 } // namespace OD::Geometry
 

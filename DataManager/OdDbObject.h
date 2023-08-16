@@ -34,7 +34,7 @@ namespace OD
 
 		private:
 
-			unsigned int handle;	// -1 = not set
+			unsigned int handle;	// 0 = not set
 			unsigned int parent;	// 0 = drawing root
 
 			
@@ -45,7 +45,7 @@ namespace OD
 		public:
 
 			// Constructors & Destructors
-			OdDbObject() : handle(-1), parent(-1) {};
+			OdDbObject() : handle(0), parent(-1) {};
 
 			// Get Type
 			virtual const char* getType() const = 0;

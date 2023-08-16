@@ -38,8 +38,10 @@ namespace OD
 		{
 		private:
 			Graphics::GrInputMap* input = nullptr;
+			
 			std::atomic<bool> terminateFlag{false};
 			std::thread commandThread;
+
 			
 
 		public:
@@ -60,6 +62,13 @@ namespace OD
 			OdSelectionPromptResult getSelectionUserInput();
 			OdStringPromptResult getStringUserInput();
 			OdIntegerPromptResult getIntegerUserInput();
+
+
+			// Selection events
+			void addEntityToSelection(unsigned int entityID);
+			void removeEntityFromSelection(unsigned int entityID);
+			bool isEntitySelected(unsigned int entityID);
+			void clearSelection();
 
 
 		};

@@ -190,6 +190,12 @@ namespace OD::Data
 		return activeLayer;
 	}
 
+	// Get Document Editor
+	System::OdEditor* OdDocument::getEditor()
+	{
+		return editor;
+	}
+
 	std::vector<wchar_t> OdDocument::compileFileHeader()
 	{
 		// Create vector to store file header

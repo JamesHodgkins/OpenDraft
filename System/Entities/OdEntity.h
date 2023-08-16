@@ -41,6 +41,7 @@ namespace OD
 			int lineWeight = 0;
 			OdLayer* layer = nullptr;
 			bool highlight = false;
+			bool selected = false;
 
 
 		public:
@@ -72,9 +73,13 @@ namespace OD
 			void setHighlight(bool aState);
 			bool isHighlighted() const;
 
+			// Selection Methods
+			void setSelected(bool aSelected);
+			
 			// Methods
 			virtual void draw(NVGcontext* aContext, const OdVector2* aView, const float aScale) = 0;
 			virtual bool hitTest(OdVector2 aPoint, int aMargin) = 0;
+
 			
 		};
 

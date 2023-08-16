@@ -19,6 +19,7 @@
 #include "Graphics/OdMainWindow.h"
 #include "System/OdApplication.h"
 #include "DataManager/OdData.h"
+#include "System/OdEditor.h"
 
 
 namespace OD::Graphics
@@ -154,9 +155,9 @@ namespace OD::Graphics
 
 		// DEBUG & TESTING
 
-		OdLabel* lbl1 = new OdLabel(100, 600, 150, 50, "Hello World");
+		//OdLabel* lbl1 = new OdLabel(100, 600, 150, 50, "Hello World");
 		//OdLabel* lbl1 = new OdLabel(100, 600, 150, 50, "Hello World\nHello World 2");
-		//OdLabel* lbl1 = new OdLabel(100, 600, 150, 50, "Hello World\nHello World 2\nHello World 3\nHello World 4");
+		OdLabel* lbl1 = new OdLabel(100, 600, 150, 50, "Hello World\nHello World 2\nHello World 3\nHello World 4");
 		lbl1->backColour = OdColour::RED;
 		lbl1->setSingleLine(false);
 		lbl1->setAlign(OdAlign(OdAlign::LEFT | OdAlign::MIDDLE));
@@ -189,6 +190,7 @@ namespace OD::Graphics
 
 		OdDocument* doc = docManager->getActiveDocument();
 		OdDrawingDb* db = doc->getDatabase();
+		OdEditor* ed = doc->getEditor();
 
 
 		doc->author = L"James Hodgkins";
@@ -200,6 +202,7 @@ namespace OD::Graphics
 		ellipse1->rotation = 45;
 		ellipse1->setColour(2);
 		db->addCreatedEntity(ellipse1);
+		ed->addEntityToSelection(ellipse1->getHandle());
 		/*
 		OdEllipse* ellipse2 = new OdEllipse(50, 50, 50, 20);
 		ellipse2->rotation = -45;

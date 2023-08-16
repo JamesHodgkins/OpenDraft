@@ -108,6 +108,8 @@ namespace OD
 			// Get Document Active Layer
 			OdLayer* getActiveLayer();
 
+			// Get Document Editor
+			OdEditor* getEditor();
 
 			//
 			// File structure methods

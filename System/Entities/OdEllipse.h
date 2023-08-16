@@ -148,6 +148,15 @@ namespace OD
 					nvgStroke(aContext);
 				}
 
+				if (selected)
+				{
+					nvgBeginPath(aContext);
+					nvgEllipse(aContext, 0, 0, rMajor, rMinor); // Draw ellipse centered at (0, 0)
+					nvgStrokeColor(aContext, OdColour(0, 0, 255, 100).asNvgColour());
+					nvgStrokeWidth(aContext, 12.0f);
+					nvgStroke(aContext);
+				}
+
 				nvgRestore(aContext);
 			}
 

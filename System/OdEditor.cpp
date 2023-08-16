@@ -221,6 +221,28 @@ namespace OD::System
 	}
 
 
+	// Selection events
+	void OdEditor::addEntityToSelection(unsigned int entityID)
+	{
+		
+	}
+
+	void OdEditor::removeEntityFromSelection(unsigned int entityID)
+	{
+
+	}
+
+	bool OdEditor::isEntitySelected(unsigned int entityID)
+	{
+		return false;
+	}
+	
+	void OdEditor::clearSelection()
+	{
+
+	}
+
+
 }
 
 #endif // !OD_SY_EDITOR_CPP
