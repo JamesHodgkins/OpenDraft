@@ -202,7 +202,7 @@ namespace OD::Graphics
 		ellipse1->rotation = 45;
 		ellipse1->setColour(2);
 		db->addCreatedEntity(ellipse1);
-		ed->addEntityToSelection(ellipse1->getHandle());
+		ed->addEntityToSelection(ellipse1);
 		/*
 		OdEllipse* ellipse2 = new OdEllipse(50, 50, 50, 20);
 		ellipse2->rotation = -45;

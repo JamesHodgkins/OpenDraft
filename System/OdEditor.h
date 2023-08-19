@@ -17,10 +17,14 @@
 
 #include "System/OdCore.h"
 #include "System/OdEditorInput.h"
+#include "System/Entities/OdEntity.h"
 
 
 namespace OD
 {
+	using namespace Geometry;
+
+
 	// Forward declarations
 	namespace Graphics {
 		class GrInputMap;
@@ -41,6 +45,9 @@ namespace OD
 			
 			std::atomic<bool> terminateFlag{false};
 			std::thread commandThread;
+
+			// Selection
+			std::vector<OdEntity*> selectionSet;
 
 			
 
@@ -65,9 +72,9 @@ namespace OD
 
 
 			// Selection events
-			void addEntityToSelection(unsigned int entityID);
-			void removeEntityFromSelection(unsigned int entityID);
-			bool isEntitySelected(unsigned int entityID);
+			void addEntityToSelection(OdEntity* aEntity);
+			void removeEntityFromSelection(OdEntity* aEntity);
+			bool isEntitySelected(OdEntity* aEntity);
 			void clearSelection();
 
 

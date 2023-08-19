@@ -107,6 +107,11 @@ namespace OD::Geometry
 		selected = aSelected;
 	}
 
+	bool OdEntity::isSelected() const
+	{
+		return selected;
+	}
+
 
 } // namespace OD::Geometry
 

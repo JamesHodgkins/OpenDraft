@@ -152,8 +152,8 @@ namespace OD
 				{
 					nvgBeginPath(aContext);
 					nvgEllipse(aContext, 0, 0, rMajor, rMinor); // Draw ellipse centered at (0, 0)
-					nvgStrokeColor(aContext, OdColour(0, 0, 255, 100).asNvgColour());
-					nvgStrokeWidth(aContext, 12.0f);
+					nvgStrokeColor(aContext, OdColour(0, 255, 255, 100).asNvgColour());
+					nvgStrokeWidth(aContext, 10.0f);
 					nvgStroke(aContext);
 				}
 

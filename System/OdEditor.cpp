@@ -19,6 +19,7 @@
 #include "System/OdEditor.h"
 #include "Graphics/UI/OdInput.h"
 
+
 using namespace OD::Graphics;
 
 namespace OD::System
@@ -222,24 +223,29 @@ namespace OD::System
 
 
 	// Selection events
-	void OdEditor::addEntityToSelection(unsigned int entityID)
+	void OdEditor::addEntityToSelection(OdEntity* aEntity)
 	{
-		
+		aEntity->setSelected(true);
 	}
 
-	void OdEditor::removeEntityFromSelection(unsigned int entityID)
+	void OdEditor::removeEntityFromSelection(OdEntity* aEntity)
 	{
+		aEntity->setSelected(false);
 
 	}
 
-	bool OdEditor::isEntitySelected(unsigned int entityID)
+	bool OdEditor::isEntitySelected(OdEntity* aEntity)
 	{
-		return false;
+		return aEntity->isSelected();
 	}
 	
 	void OdEditor::clearSelection()
 	{
-
+		// Iterate through all entities and set their selected flag to false
+		for (auto& entity : selectionSet)
+		{
+			entity->setSelected(false);
+		}
 	}
 
 

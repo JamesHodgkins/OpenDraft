@@ -75,6 +75,7 @@ namespace OD
 
 			// Selection Methods
 			void setSelected(bool aSelected);
+			bool isSelected() const;
 			
 			// Methods
 			virtual void draw(NVGcontext* aContext, const OdVector2* aView, const float aScale) = 0;
