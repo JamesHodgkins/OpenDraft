@@ -9,6 +9,7 @@ namespace OpenDraft.ViewModels
     public class MainWindowViewModel : ViewModelBase
     {
         public ODDataManager DataManager { get; }
+        public IEditorInputService InputService { get; }
         public ODEditor EditorRoot { get; private set; }
 
         public ObservableCollection<ODElement> GeometryElements => DataManager.Elements;
@@ -19,7 +20,8 @@ namespace OpenDraft.ViewModels
         {
             // Initialize the DataManager and Editor
             DataManager = new ODDataManager();
-            EditorRoot = new ODEditor(DataManager);
+            InputService = new EditorInputService();
+            EditorRoot = new ODEditor(DataManager, InputService);
 
             // Set up layers (this can stay as-is)
             DataManager.LayerManager.AddLayer("New Layer");

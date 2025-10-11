@@ -11,6 +11,7 @@ namespace OpenDraft.ODCore.ODEditor
     {
         private readonly ODEditor _editor;
         private readonly ODDataManager _dataManager;
+        private readonly IEditorInputService _inputService;
         private readonly CancellationTokenSource _cancellationTokenSource;
 
         private TaskCompletionSource<ODPoint>? _pointWaiter;
@@ -21,16 +22,37 @@ namespace OpenDraft.ODCore.ODEditor
         public ODDataManager DataManager => _dataManager;
         public CancellationToken CancellationToken => _cancellationTokenSource.Token;
 
-        public ODEditorContext(ODEditor editor, ODDataManager dataManager)
+        public ODEditorContext(ODEditor editor, ODDataManager dataManager, IEditorInputService inputService)
         {
             _editor = editor;
             _dataManager = dataManager;
+            _inputService = inputService;
             _cancellationTokenSource = new CancellationTokenSource();
+
+            // Subscribe to input service events
+            _inputService.PointProvided += OnPointProvided;
+            _inputService.NumberInput += OnNumberProvided;
+            _inputService.TextInput += OnTextProvided;
+        }
+
+        private void OnPointProvided(ODPoint point)
+        {
+            ProvidePoint(point);
+        }
+
+        private void OnNumberProvided(double number)
+        {
+            ProvideNumber(number);
+        }
+
+        private void OnTextProvided(string text)
+        {
+            ProvideText(text);
         }
 
         public Task<ODPoint> GetPointAsync(string prompt)
         {
-            _editor.SetStatus(prompt);
+            _editor.SetStatus(prompt); // FIXED: Now calls editor method
             ClearAllWaiters();
             _pointWaiter = new TaskCompletionSource<ODPoint>();
             return _pointWaiter.Task;
@@ -38,7 +60,7 @@ namespace OpenDraft.ODCore.ODEditor
 
         public Task<double> GetNumberAsync(string prompt)
         {
-            _editor.SetStatus(prompt);
+            _editor.SetStatus(prompt); // FIXED
             ClearAllWaiters();
             _numberWaiter = new TaskCompletionSource<double>();
             return _numberWaiter.Task;
@@ -46,7 +68,7 @@ namespace OpenDraft.ODCore.ODEditor
 
         public Task<string> GetTextAsync(string prompt)
         {
-            _editor.SetStatus(prompt);
+            _editor.SetStatus(prompt); // FIXED
             ClearAllWaiters();
             _textWaiter = new TaskCompletionSource<string>();
             return _textWaiter.Task;
@@ -54,7 +76,7 @@ namespace OpenDraft.ODCore.ODEditor
 
         public Task<string> GetChoiceAsync(string prompt, params string[] options)
         {
-            _editor.SetStatus(prompt);
+            _editor.SetStatus(prompt); // FIXED
             ClearAllWaiters();
             _choiceWaiter = new TaskCompletionSource<string>();
             return _choiceWaiter.Task;
@@ -98,10 +120,9 @@ namespace OpenDraft.ODCore.ODEditor
         public void Cancel()
         {
             _cancellationTokenSource.Cancel();
-            _pointWaiter?.TrySetCanceled();
-            _numberWaiter?.TrySetCanceled();
-            _textWaiter?.TrySetCanceled();
-            _choiceWaiter?.TrySetCanceled();
+            _inputService.PointProvided -= OnPointProvided;
+            _inputService.NumberInput -= OnNumberProvided;
+            _inputService.TextInput -= OnTextProvided;
             ClearAllWaiters();
         }
 

@@ -1,4 +1,5 @@
-﻿using Avalonia.Threading;
+﻿using Avalonia.Input;
+using Avalonia.Threading;
 using OpenDraft.ODCore.ODEditor.ODCommands;
 using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODGeometry;
@@ -13,26 +14,55 @@ namespace OpenDraft.ODCore.ODEditor
     {
         private readonly ODDataManager _dataManager;
         private readonly ODCommandRegistry _commandRegistry;
+        private readonly IEditorInputService _inputService;
         private ODEditorContext? _currentContext;
         private IODEditorCommand? _currentCommand;
 
         public event EventHandler<MessageEventArgs>? ShowMessageRequested;
-        public event EventHandler<BoolEventArgs>? InputModeChanged;
         public event EventHandler<MessageEventArgs>? StatusMessageChanged;
 
-        public ODEditor(ODDataManager dataManager)
+        public ODEditor(ODDataManager dataManager, IEditorInputService inputService)
         {
             _dataManager = dataManager;
+            _inputService = inputService;
             _commandRegistry = new ODCommandRegistry();
             _commandRegistry.RegisterAssembly(typeof(ODEditor).Assembly);
+
+            // Subscribe to input events
+            _inputService.KeyPressed += OnKeyPressed;
+            _inputService.CancelRequested += OnCancelRequested;
         }
 
-        // THIS METHOD WAS ACCIDENTALLY REMOVED - RESTORE IT
+        private void OnKeyPressed(Key key)
+        {
+            // Handle specific keys we care about
+            switch (key)
+            {
+                case Key.Escape:
+                    CancelCurrentCommand();
+                    break;
+                    // Future: handle Enter, Space, etc.
+            }
+        }
+
+        private void OnCancelRequested()
+        {
+            CancelCurrentCommand();
+        }
+
+        // ADD THIS MISSING METHOD
+        public void CancelCurrentCommand()
+        {
+            _currentContext?.Cancel();
+            _currentContext = null;
+            _currentCommand = null;
+            SetStatus("Command cancelled");
+        }
+
         public void ExecuteCommand(string commandName)
         {
             Debug.WriteLine($"ExecuteCommand: {commandName}");
 
-            // Cancel any running command and clear context
             CancelCurrentCommand();
 
             var command = _commandRegistry.CreateCommand(commandName);
@@ -43,9 +73,8 @@ namespace OpenDraft.ODCore.ODEditor
             }
 
             _currentCommand = command;
-            _currentContext = new ODEditorContext(this, _dataManager);
+            _currentContext = new ODEditorContext(this, _dataManager, _inputService);
 
-            // Use proper async execution
             async Task RunCommandAsync()
             {
                 try
@@ -69,28 +98,7 @@ namespace OpenDraft.ODCore.ODEditor
             _ = RunCommandAsync();
         }
 
-        public void HandlePointInput(ODPoint point)
-        {
-            _currentContext?.ProvidePoint(point);
-        }
-
-        public void HandleNumberInput(double number)
-        {
-            _currentContext?.ProvideNumber(number);
-        }
-
-        public void HandleTextInput(string text)
-        {
-            _currentContext?.ProvideText(text);
-        }
-
-        public void CancelCurrentCommand()
-        {
-            _currentContext?.Cancel();
-            _currentContext = null;
-            _currentCommand = null;
-        }
-
+        // ADD THESE MISSING METHODS
         public void SetStatus(string message)
         {
             Debug.WriteLine("SetStatus: " + message);
@@ -111,10 +119,13 @@ namespace OpenDraft.ODCore.ODEditor
 
         public void Dispose()
         {
+            _inputService.KeyPressed -= OnKeyPressed;
+            _inputService.CancelRequested -= OnCancelRequested;
             CancelCurrentCommand();
         }
     }
 
+    // MOVE THIS CLASS INSIDE ODEditor.cs OR CREATE SEPARATE FILE
     public class MessageEventArgs : EventArgs
     {
         public string Message { get; }

@@ -308,21 +308,16 @@ namespace OpenDraft
             if (e.InitialPressMouseButton == MouseButton.Left)
             {
                 Point worldPos = GetWorldMousePosition();
+                var odPoint = new ODPoint(worldPos.X, worldPos.Y);
                 Debug.WriteLine($"Left click released at: ({worldPos.X}, {worldPos.Y})");
 
-                // Send to editor if it's waiting for input
-                if (Editor != null)
-                {
-                    var odPoint = new ODPoint(worldPos.X, worldPos.Y);
-                    Debug.WriteLine($"Sending point to editor: ({odPoint.X}, {odPoint.Y})");
-                    Editor.SendPoint(odPoint);
-                    e.Handled = true; // Prevent normal processing
-                }
+                // Send directly to editor (no threading)
+                Editor?.HandlePointInput(odPoint);
+                e.Handled = true;
             }
-            
+
             if (e.InitialPressMouseButton == MouseButton.Middle)
                 isPanning = false;
-
         }
 
         private void OnPointerMoved(object? sender, PointerEventArgs e)
@@ -407,6 +402,8 @@ namespace OpenDraft
             {
                 foreach (var element in Elements)
                 {
+                    Debug.WriteLine($"Drawing element ID: {element.Id}, Type: {element.GetType().Name}");
+
                     var layer = LayerManager?.GetLayerByID(element.LayerId);
 
                     if (layer != null)
@@ -425,6 +422,7 @@ namespace OpenDraft
 Path: .\ODCore\ODData\ODDataManager.cs
 
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using OpenDraft.ODCore.ODGeometry;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -445,8 +443,11 @@ namespace OpenDraft.ODCore.ODData
         }
 
 
-        public void AddElement(ODGeometry.ODElement element)
+        public void AddElement(ODElement element)
         {
+            if (element == null)
+                throw new ArgumentNullException(nameof(element));
+
             element.LayerId = LayerManager.GetActiveLayer();
             Elements.Add(element);
         }
@@ -619,30 +620,23 @@ namespace OpenDraft.ODCore.ODEditor.ODCommands
 ** ODEditor.cs **
 Path: .\ODCore\ODEditor\ODEditor.cs
 
-﻿// ODEditor.cs
-using Avalonia.Threading;
+﻿using Avalonia.Threading;
 using OpenDraft.ODCore.ODEditor.ODCommands;
 using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODGeometry;
 using System;
-using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace OpenDraft.ODCore.ODEditor
 {
     public class ODEditor : IDisposable
     {
-        private readonly ODCommandRegistry _commandRegistry;
         private readonly ODDataManager _dataManager;
-
-        // Input ports - only one active at a time
-        private TaskCompletionSource<ODPoint>? _pointWaiter;
-        private TaskCompletionSource<double>? _numberWaiter;
-        private TaskCompletionSource<string>? _textWaiter;
-        private TaskCompletionSource<string>? _choiceWaiter;
-
-        // Current command
-        private Task? _currentCommandTask;
+        private readonly ODCommandRegistry _commandRegistry;
+        private ODEditorContext? _currentContext;
+        private IODEditorCommand? _currentCommand;
 
         public event EventHandler<MessageEventArgs>? ShowMessageRequested;
         public event EventHandler<BoolEventArgs>? InputModeChanged;
@@ -652,21 +646,16 @@ namespace OpenDraft.ODCore.ODEditor
         {
             _dataManager = dataManager;
             _commandRegistry = new ODCommandRegistry();
-
-            // Register commands from current assembly
             _commandRegistry.RegisterAssembly(typeof(ODEditor).Assembly);
         }
 
-        // Public command execution
+        // THIS METHOD WAS ACCIDENTALLY REMOVED - RESTORE IT
         public void ExecuteCommand(string commandName)
         {
-            Debug.WriteLine("ExecuteCommand called with: " + commandName);
+            Debug.WriteLine($"ExecuteCommand: {commandName}");
 
-            if (_currentCommandTask != null && !_currentCommandTask.IsCompleted)
-            {
-                ShowMessage("Another command is already running");
-                return;
-            }
+            // Cancel any running command and clear context
+            CancelCurrentCommand();
 
             var command = _commandRegistry.CreateCommand(commandName);
             if (command == null)
@@ -675,133 +664,55 @@ namespace OpenDraft.ODCore.ODEditor
                 return;
             }
 
-            var gateway = new ODEditorGateway(this, _dataManager);
+            _currentCommand = command;
+            _currentContext = new ODEditorContext(this, _dataManager);
 
-            _currentCommandTask = Task.Run(async () =>
+            // Use proper async execution
+            async Task RunCommandAsync()
             {
                 try
                 {
-                    SetStatus($"Starting {commandName}...");
-                    await command.ExecuteAsync(gateway);
-                }
-                catch (TaskCanceledException)
-                {
-                    SetStatus($"{commandName} cancelled");
+                    await command.ExecuteAsync(_currentContext);
                 }
                 catch (Exception ex)
                 {
                     SetStatus($"Error in {commandName}: {ex.Message}");
+                    Debug.WriteLine($"Command error: {ex.Message}");
                 }
                 finally
                 {
-                    // Ensure all UI updates happen on UI thread
-                    Dispatcher.UIThread.Post(() =>
+                    if (_currentCommand == command)
                     {
-                        CloseAllPortsInternal();
-                    });
+                        CancelCurrentCommand();
+                    }
                 }
-            });
+            }
+
+            _ = RunCommandAsync();
         }
 
-        // Input port methods - called by commands
-        public Task<ODPoint> WaitForPointAsync()
+        public void HandlePointInput(ODPoint point)
         {
-            CloseAllPortsInternal();
-            _pointWaiter = new TaskCompletionSource<ODPoint>();
-            RaiseInputModeChanged(true);
-            return _pointWaiter.Task;
+            _currentContext?.ProvidePoint(point);
         }
 
-        public Task<double> WaitForNumberAsync()
+        public void HandleNumberInput(double number)
         {
-            CloseAllPortsInternal();
-            _numberWaiter = new TaskCompletionSource<double>();
-            RaiseInputModeChanged(true);
-            return _numberWaiter.Task;
+            _currentContext?.ProvideNumber(number);
         }
 
-        public Task<string> WaitForTextAsync()
+        public void HandleTextInput(string text)
         {
-            CloseAllPortsInternal();
-            _textWaiter = new TaskCompletionSource<string>();
-            RaiseInputModeChanged(true);
-            return _textWaiter.Task;
+            _currentContext?.ProvideText(text);
         }
 
-        public Task<string> WaitForChoiceAsync(string[] options)
+        public void CancelCurrentCommand()
         {
-            CloseAllPortsInternal();
-            _choiceWaiter = new TaskCompletionSource<string>();
-            RaiseInputModeChanged(true);
-            SetStatus($"Options: {string.Join(", ", options)}");
-            return _choiceWaiter.Task;
+            _currentContext?.Cancel();
+            _currentContext = null;
+            _currentCommand = null;
         }
 
-        // Input gateway methods - called by viewport
-        public void SendPoint(ODPoint point)
-        {
-            Dispatcher.UIThread.Post(() =>
-            {
-                _pointWaiter?.TrySetResult(point);
-                CloseAllPortsInternal();
-            });
-        }
-
-        public void SendNumber(double number)
-        {
-            Dispatcher.UIThread.Post(() =>
-            {
-                _numberWaiter?.TrySetResult(number);
-                CloseAllPortsInternal();
-            });
-        }
-
-        public void SendText(string text)
-        {
-            Dispatcher.UIThread.Post(() =>
-            {
-                _textWaiter?.TrySetResult(text);
-                CloseAllPortsInternal();
-            });
-        }
-
-        public void SendChoice(string choice)
-        {
-            Dispatcher.UIThread.Post(() =>
-            {
-                _choiceWaiter?.TrySetResult(choice);
-                CloseAllPortsInternal();
-            });
-        }
-
-        public void CancelInput()
-        {
-            Dispatcher.UIThread.Post(() =>
-            {
-                _pointWaiter?.TrySetCanceled();
-                _numberWaiter?.TrySetCanceled();
-                _textWaiter?.TrySetCanceled();
-                _choiceWaiter?.TrySetCanceled();
-                CloseAllPortsInternal();
-            });
-        }
-
-        // Internal method to close all ports and update input mode
-        private void CloseAllPortsInternal()
-        {
-            _pointWaiter = null;
-            _numberWaiter = null;
-            _textWaiter = null;
-            _choiceWaiter = null;
-            RaiseInputModeChanged(false);
-        }
-
-        private void RaiseInputModeChanged(bool value)
-        {
-            InputModeChanged?.Invoke(this, new BoolEventArgs(value));
-        }
-
-        // Status methods
         public void SetStatus(string message)
         {
             Debug.WriteLine("SetStatus: " + message);
@@ -822,12 +733,10 @@ namespace OpenDraft.ODCore.ODEditor
 
         public void Dispose()
         {
-            CancelInput();
-            _currentCommandTask?.Dispose();
+            CancelCurrentCommand();
         }
     }
 
-    // Custom EventArgs types
     public class MessageEventArgs : EventArgs
     {
         public string Message { get; }
@@ -841,6 +750,138 @@ namespace OpenDraft.ODCore.ODEditor
     }
 }
 
+
+
+
+** ODEditorContext.cs **
+Path: .\ODCore\ODEditor\ODEditorContext.cs
+
+﻿using OpenDraft.ODCore.ODData;
+using OpenDraft.ODCore.ODEditor.ODCommands;
+using OpenDraft.ODCore.ODGeometry;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace OpenDraft.ODCore.ODEditor
+{
+    public class ODEditorContext : IODEditorGateway
+    {
+        private readonly ODEditor _editor;
+        private readonly ODDataManager _dataManager;
+        private readonly CancellationTokenSource _cancellationTokenSource;
+
+        private TaskCompletionSource<ODPoint>? _pointWaiter;
+        private TaskCompletionSource<double>? _numberWaiter;
+        private TaskCompletionSource<string>? _textWaiter;
+        private TaskCompletionSource<string>? _choiceWaiter;
+
+        public ODDataManager DataManager => _dataManager;
+        public CancellationToken CancellationToken => _cancellationTokenSource.Token;
+
+        public ODEditorContext(ODEditor editor, ODDataManager dataManager)
+        {
+            _editor = editor;
+            _dataManager = dataManager;
+            _cancellationTokenSource = new CancellationTokenSource();
+        }
+
+        public Task<ODPoint> GetPointAsync(string prompt)
+        {
+            _editor.SetStatus(prompt);
+            ClearAllWaiters();
+            _pointWaiter = new TaskCompletionSource<ODPoint>();
+            return _pointWaiter.Task;
+        }
+
+        public Task<double> GetNumberAsync(string prompt)
+        {
+            _editor.SetStatus(prompt);
+            ClearAllWaiters();
+            _numberWaiter = new TaskCompletionSource<double>();
+            return _numberWaiter.Task;
+        }
+
+        public Task<string> GetTextAsync(string prompt)
+        {
+            _editor.SetStatus(prompt);
+            ClearAllWaiters();
+            _textWaiter = new TaskCompletionSource<string>();
+            return _textWaiter.Task;
+        }
+
+        public Task<string> GetChoiceAsync(string prompt, params string[] options)
+        {
+            _editor.SetStatus(prompt);
+            ClearAllWaiters();
+            _choiceWaiter = new TaskCompletionSource<string>();
+            return _choiceWaiter.Task;
+        }
+
+        public void ProvidePoint(ODPoint point)
+        {
+            if (point == null)
+                throw new ArgumentNullException(nameof(point));
+
+            if (_pointWaiter != null && !_pointWaiter.Task.IsCompleted)
+            {
+                _pointWaiter.TrySetResult(point);
+            }
+        }
+
+        public void ProvideNumber(double number)
+        {
+            if (_numberWaiter != null && !_numberWaiter.Task.IsCompleted)
+            {
+                _numberWaiter.TrySetResult(number);
+            }
+        }
+
+        public void ProvideText(string text)
+        {
+            if (_textWaiter != null && !_textWaiter.Task.IsCompleted)
+            {
+                _textWaiter.TrySetResult(text);
+            }
+        }
+
+        public void ProvideChoice(string choice)
+        {
+            if (_choiceWaiter != null && !_choiceWaiter.Task.IsCompleted)
+            {
+                _choiceWaiter.TrySetResult(choice);
+            }
+        }
+
+        public void Cancel()
+        {
+            _cancellationTokenSource.Cancel();
+            _pointWaiter?.TrySetCanceled();
+            _numberWaiter?.TrySetCanceled();
+            _textWaiter?.TrySetCanceled();
+            _choiceWaiter?.TrySetCanceled();
+            ClearAllWaiters();
+        }
+
+        private void ClearAllWaiters()
+        {
+            _pointWaiter = null;
+            _numberWaiter = null;
+            _textWaiter = null;
+            _choiceWaiter = null;
+        }
+
+        public void SetStatus(string message)
+        {
+            _editor.SetStatus(message);
+        }
+
+        public void ShowMessage(string message)
+        {
+            _editor.ShowMessage(message);
+        }
+    }
+}
 
 
 
@@ -868,6 +909,7 @@ Path: .\ODCore\ODEditor\ODCommands\IODEditorGateway.cs
 
 ﻿using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODGeometry;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace OpenDraft.ODCore.ODEditor.ODCommands
@@ -883,6 +925,9 @@ namespace OpenDraft.ODCore.ODEditor.ODCommands
 
         void SetStatus(string message);
         void ShowMessage(string message);
+
+        // Add cancellation token for long-running operations
+        CancellationToken CancellationToken { get; }
     }
 }
 
@@ -893,6 +938,7 @@ namespace OpenDraft.ODCore.ODEditor.ODCommands
 Path: .\ODCore\ODEditor\ODCommands\ODBaseEditorCommand.cs
 
 ﻿// ODBaseEditorCommand.cs
+using OpenDraft.ODCore.ODGeometry;
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -921,6 +967,17 @@ namespace OpenDraft.ODCore.ODEditor.ODCommands
         }
 
         public abstract Task ExecuteAsync(IODEditorGateway editor);
+
+        // Helper method for common validation
+        protected void ValidatePoint(ODPoint point, string paramName)
+        {
+            if (point == null)
+                throw new ArgumentNullException(paramName);
+
+            if (double.IsNaN(point.X) || double.IsNaN(point.Y) ||
+                double.IsInfinity(point.X) || double.IsInfinity(point.Y))
+                throw new ArgumentException($"Invalid point coordinates: ({point.X}, {point.Y})", paramName);
+        }
     }
 }
 
@@ -938,16 +995,15 @@ using System.Threading.Tasks;
 namespace OpenDraft.ODCore.ODEditor.ODCommands
 {
     [ODCommand("CIRCLE", "Creates a circle", "C")]
-    public class ODCircleCommand : ODBaseEditorCommand  // or just implement IODEditorCommand directly
+    public class ODCircleCommand : ODBaseEditorCommand
     {
         public override async Task ExecuteAsync(IODEditorGateway editor)
         {
-            // This is exactly your ideal flow!
             var center = await editor.GetPointAsync("Specify center point:");
             var radius = await editor.GetNumberAsync("Specify radius:");
 
             var circle = new ODCircle(center, radius);
-            editor.DataManager.AddElement(circle);
+            editor.DataManager.AddElement(circle); // Use DataManager directly
 
             editor.SetStatus("Circle created successfully");
         }
@@ -1031,71 +1087,12 @@ namespace OpenDraft.ODCore.ODEditor.ODCommands
 
 
 
-** ODEditorGateway.cs **
-Path: .\ODCore\ODEditor\ODCommands\ODEditorGateway.cs
-
-﻿using OpenDraft.ODCore.ODData;
-using OpenDraft.ODCore.ODGeometry;
-using System.Threading.Tasks;
-
-namespace OpenDraft.ODCore.ODEditor.ODCommands
-{
-    public class ODEditorGateway : IODEditorGateway
-    {
-        private readonly ODEditor _editor;
-
-        public ODDataManager DataManager { get; }
-
-        public ODEditorGateway(ODEditor editor, ODDataManager dataManager)
-        {
-            _editor = editor;
-            DataManager = dataManager;
-        }
-
-        public Task<ODPoint> GetPointAsync(string prompt)
-        {
-            _editor.SetStatus(prompt);
-            return _editor.WaitForPointAsync();
-        }
-
-        public Task<double> GetNumberAsync(string prompt)
-        {
-            _editor.SetStatus(prompt);
-            return _editor.WaitForNumberAsync();
-        }
-
-        public Task<string> GetTextAsync(string prompt)
-        {
-            _editor.SetStatus(prompt);
-            return _editor.WaitForTextAsync();
-        }
-
-        public Task<string> GetChoiceAsync(string prompt, params string[] options)
-        {
-            _editor.SetStatus(prompt);
-            return _editor.WaitForChoiceAsync(options);
-        }
-
-        public void SetStatus(string message)
-        {
-            _editor.SetStatus(message);
-        }
-
-        public void ShowMessage(string message)
-        {
-            _editor.ShowMessage(message);
-        }
-    }
-}
-
-
-
-
 ** ODLineCommand.cs **
 Path: .\ODCore\ODEditor\ODCommands\ODLineCommand.cs
 
 ﻿using OpenDraft.ODCore.ODEditor.ODCommands;
 using OpenDraft.ODCore.ODGeometry;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace OpenDraft.ODCore.ODEditor.ODCommands
@@ -1105,17 +1102,22 @@ namespace OpenDraft.ODCore.ODEditor.ODCommands
     {
         public override async Task ExecuteAsync(IODEditorGateway editor)
         {
-            // Get first point
+            Debug.WriteLine("ODLineCommand starting...");
+
             var startPoint = await editor.GetPointAsync("Specify first point:");
+            Debug.WriteLine($"Got first point: ({startPoint.X}, {startPoint.Y})");
 
-            // Get second point  
             var endPoint = await editor.GetPointAsync("Specify second point:");
+            Debug.WriteLine($"Got second point: ({endPoint.X}, {endPoint.Y})");
 
-            // Create and register the line
+            Debug.WriteLine("Creating line element...");
             var line = new ODLine(startPoint, endPoint);
             editor.DataManager.AddElement(line);
 
+            Debug.WriteLine("ODLineCommand completed successfully");
             editor.SetStatus("Line created successfully");
+
+            // The context will be cleared in the finally block of RunCommandAsync
         }
     }
 }
@@ -1380,7 +1382,10 @@ namespace OpenDraft.ViewModels
 
             ODLayer? lay = DataManager.LayerManager.GetLayerByName("New Layer");
             if (lay != null)
+            {
                 lay.Color = "#00FF00";
+                lay.LineWeight = 2.0f;
+            }
 
 
             // This would create the same square using the LINE command

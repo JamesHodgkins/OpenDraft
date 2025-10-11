@@ -37,6 +37,9 @@ namespace OpenDraft
         public static readonly StyledProperty<ODEditor> EditorProperty =
             AvaloniaProperty.Register<Viewport, ODEditor>(nameof(Editor));
 
+        public static readonly StyledProperty<IEditorInputService> InputServiceProperty =
+        AvaloniaProperty.Register<Viewport, IEditorInputService>(nameof(InputService));
+
         public ObservableCollection<ODElement> Elements
         {
             get => GetValue(ElementsProperty);
@@ -53,6 +56,12 @@ namespace OpenDraft
         {
             get => GetValue(EditorProperty);
             set => SetValue(EditorProperty, value);
+        }
+
+        public IEditorInputService InputService
+        {
+            get => GetValue(InputServiceProperty);
+            set => SetValue(InputServiceProperty, value);
         }
 
         private readonly ViewportCamera Camera = new();
@@ -144,8 +153,8 @@ namespace OpenDraft
                 var odPoint = new ODPoint(worldPos.X, worldPos.Y);
                 Debug.WriteLine($"Left click released at: ({worldPos.X}, {worldPos.Y})");
 
-                // Send directly to editor (no threading)
-                Editor?.HandlePointInput(odPoint);
+                // Use input service instead of direct editor call
+                InputService?.RaisePointProvided(odPoint);
                 e.Handled = true;
             }
 
@@ -235,8 +244,6 @@ namespace OpenDraft
             {
                 foreach (var element in Elements)
                 {
-                    Debug.WriteLine($"Drawing element ID: {element.Id}, Type: {element.GetType().Name}");
-
                     var layer = LayerManager?.GetLayerByID(element.LayerId);
 
                     if (layer != null)

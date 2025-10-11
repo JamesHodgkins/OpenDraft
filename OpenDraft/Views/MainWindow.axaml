@@ -29,7 +29,8 @@
                     VerticalAlignment="Stretch"
                     Elements="{Binding GeometryElements}"
                     LayerManager="{Binding LayerManager}"
-                    Editor="{Binding Editor}"/>
+                    Editor="{Binding Editor}"
+                    InputService ="{Binding InputService}"/>
 
   </Grid>
 </Window>
