@@ -14,14 +14,14 @@ namespace OpenDraft.ODCore.ODEditor
     {
         private readonly ODDataManager _dataManager;
         private readonly ODCommandRegistry _commandRegistry;
-        private readonly IEditorInputService _inputService;
+        private readonly IODEditorInputService _inputService;
         private ODEditorContext? _currentContext;
         private IODEditorCommand? _currentCommand;
 
         public event EventHandler<MessageEventArgs>? ShowMessageRequested;
         public event EventHandler<MessageEventArgs>? StatusMessageChanged;
 
-        public ODEditor(ODDataManager dataManager, IEditorInputService inputService)
+        public ODEditor(ODDataManager dataManager, IODEditorInputService inputService)
         {
             _dataManager = dataManager;
             _inputService = inputService;

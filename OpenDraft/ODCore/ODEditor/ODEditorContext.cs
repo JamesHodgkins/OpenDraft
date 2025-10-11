@@ -11,7 +11,7 @@ namespace OpenDraft.ODCore.ODEditor
     {
         private readonly ODEditor _editor;
         private readonly ODDataManager _dataManager;
-        private readonly IEditorInputService _inputService;
+        private readonly IODEditorInputService _inputService;
         private readonly CancellationTokenSource _cancellationTokenSource;
 
         private TaskCompletionSource<ODPoint>? _pointWaiter;
@@ -22,7 +22,7 @@ namespace OpenDraft.ODCore.ODEditor
         public ODDataManager DataManager => _dataManager;
         public CancellationToken CancellationToken => _cancellationTokenSource.Token;
 
-        public ODEditorContext(ODEditor editor, ODDataManager dataManager, IEditorInputService inputService)
+        public ODEditorContext(ODEditor editor, ODDataManager dataManager, IODEditorInputService inputService)
         {
             _editor = editor;
             _dataManager = dataManager;

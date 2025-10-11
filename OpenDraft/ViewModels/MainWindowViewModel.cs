@@ -9,7 +9,7 @@ namespace OpenDraft.ViewModels
     public class MainWindowViewModel : ViewModelBase
     {
         public ODDataManager DataManager { get; }
-        public IEditorInputService InputService { get; }
+        public IODEditorInputService InputService { get; }
         public ODEditor EditorRoot { get; private set; }
 
         public ObservableCollection<ODElement> GeometryElements => DataManager.Elements;
@@ -20,7 +20,7 @@ namespace OpenDraft.ViewModels
         {
             // Initialize the DataManager and Editor
             DataManager = new ODDataManager();
-            InputService = new EditorInputService();
+            InputService = new ODEditorInputService();
             EditorRoot = new ODEditor(DataManager, InputService);
 
             // Set up layers (this can stay as-is)
@@ -37,7 +37,8 @@ namespace OpenDraft.ViewModels
 
             // This would create the same square using the LINE command
             // Note: This is still interactive and will wait for user input
-            Editor.ExecuteCommand("LINE"); // Then user clicks two points
+            Editor.ExecuteCommand("CIRCLE"); // Then user clicks two points
+            
         }
 
         

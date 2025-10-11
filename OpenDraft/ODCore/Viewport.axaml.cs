@@ -37,8 +37,8 @@ namespace OpenDraft
         public static readonly StyledProperty<ODEditor> EditorProperty =
             AvaloniaProperty.Register<Viewport, ODEditor>(nameof(Editor));
 
-        public static readonly StyledProperty<IEditorInputService> InputServiceProperty =
-        AvaloniaProperty.Register<Viewport, IEditorInputService>(nameof(InputService));
+        public static readonly StyledProperty<IODEditorInputService> InputServiceProperty =
+        AvaloniaProperty.Register<Viewport, IODEditorInputService>(nameof(InputService));
 
         public ObservableCollection<ODElement> Elements
         {
@@ -58,7 +58,7 @@ namespace OpenDraft
             set => SetValue(EditorProperty, value);
         }
 
-        public IEditorInputService InputService
+        public IODEditorInputService InputService
         {
             get => GetValue(InputServiceProperty);
             set => SetValue(InputServiceProperty, value);
@@ -151,8 +151,7 @@ namespace OpenDraft
             {
                 Point worldPos = GetWorldMousePosition();
                 var odPoint = new ODPoint(worldPos.X, worldPos.Y);
-                Debug.WriteLine($"Left click released at: ({worldPos.X}, {worldPos.Y})");
-
+                
                 // Use input service instead of direct editor call
                 InputService?.RaisePointProvided(odPoint);
                 e.Handled = true;
@@ -166,8 +165,7 @@ namespace OpenDraft
         {
             _mousePosition = e.GetPosition(this);
             Point world = GetWorldMousePosition();
-            //Debug.WriteLine($"Mouse moved to: ({_mousePosition.X}, {_mousePosition.Y}) => World: ({world.X}, {world.Y})");
-
+            
 
             if (!isPanning) return;
 

@@ -5,7 +5,7 @@ using System;
 
 namespace OpenDraft.ODCore.ODEditor
 {
-    public interface IEditorInputService
+    public interface IODEditorInputService
     {
         // Events for different input types
         event Action<Key> KeyPressed;
