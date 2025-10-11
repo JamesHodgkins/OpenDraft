@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OpenDraft.Core.ODGeometry
+namespace OpenDraft.ODCore.ODGeometry
 {
-    internal class ODPoint : ODElement
+    public class ODPoint : ODElement
     {
         public float X { get; set; }
         public float Y { get; set; }

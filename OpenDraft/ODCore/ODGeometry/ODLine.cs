@@ -1,14 +1,14 @@
 ﻿using Avalonia;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
-using OpenDraft.Core.ODData;
+using OpenDraft.ODCore.ODData;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OpenDraft.Core.ODGeometry
+namespace OpenDraft.ODCore.ODGeometry
 {
     internal class ODLine : ODElement
     {

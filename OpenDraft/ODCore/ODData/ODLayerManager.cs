@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OpenDraft.Core.ODData
+namespace OpenDraft.ODCore.ODData
 {
     public class ODLayerManager
     {

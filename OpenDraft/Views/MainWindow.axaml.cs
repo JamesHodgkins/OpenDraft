@@ -1,6 +1,6 @@
 using Avalonia.Controls;
-using OpenDraft.Core.ODData;
-using OpenDraft.Core.ODGeometry;
+using OpenDraft.ODCore.ODData;
+using OpenDraft.ODCore.ODGeometry;
 
 namespace OpenDraft.Views
 {

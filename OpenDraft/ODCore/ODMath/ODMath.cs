@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OpenDraft.Core.ODMath
+namespace OpenDraft.ODCore.ODMath
 {
     public class Vector2
         {

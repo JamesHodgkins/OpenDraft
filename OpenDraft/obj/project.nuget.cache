@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "aqPt4FVur7s=",
+  "dgSpecHash": "bAAKmhEColM=",
   "success": true,
-  "projectFilePath": "D:\\CS\\OpenDraft\\OpenDraft\\OpenDraft.csproj",
+  "projectFilePath": "D:\\OpenDraft\\OpenDraft\\OpenDraft.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\jlh33\\.nuget\\packages\\avalonia\\11.3.0\\avalonia.11.3.0.nupkg.sha512",
     "C:\\Users\\jlh33\\.nuget\\packages\\avalonia.angle.windows.natives\\2.1.22045.20230930\\avalonia.angle.windows.natives.2.1.22045.20230930.nupkg.sha512",

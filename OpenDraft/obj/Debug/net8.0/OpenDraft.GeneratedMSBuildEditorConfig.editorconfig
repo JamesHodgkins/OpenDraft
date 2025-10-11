@@ -15,17 +15,17 @@ build_property.PlatformNeutralAssembly =
 build_property.EnforceExtendedAnalyzerRules = 
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = OpenDraft
-build_property.ProjectDir = D:\CS\OpenDraft\OpenDraft\
+build_property.ProjectDir = D:\OpenDraft\OpenDraft\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.EffectiveAnalysisLevelStyle = 8.0
 build_property.EnableCodeStyleSeverity = 
 
-[D:/CS/OpenDraft/OpenDraft/App.axaml]
+[D:/OpenDraft/OpenDraft/App.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 
-[D:/CS/OpenDraft/OpenDraft/Core/Viewport.axaml]
+[D:/OpenDraft/OpenDraft/ODCore/Viewport.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 
-[D:/CS/OpenDraft/OpenDraft/Views/MainWindow.axaml]
+[D:/OpenDraft/OpenDraft/Views/MainWindow.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml

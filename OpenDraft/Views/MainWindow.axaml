@@ -9,7 +9,9 @@
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="OpenDraft"
-        WindowState="Maximized">
+        Width="500"
+        Height="300">
+  <!-- WindowState="Maximized"> -->
 
   <Design.DataContext>
     <vm:MainWindowViewModel/>
@@ -26,6 +28,8 @@
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
                     Elements="{Binding GeometryElements}"
-                    LayerManager="{Binding LayerManager}"/>
+                    LayerManager="{Binding LayerManager}"
+                    Editor="{Binding Editor}"/>
+
   </Grid>
 </Window>

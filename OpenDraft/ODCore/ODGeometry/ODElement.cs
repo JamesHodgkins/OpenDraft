@@ -1,13 +1,13 @@
 ﻿using Avalonia;
 using Avalonia.Media;
-using OpenDraft.Core.ODData;
+using OpenDraft.ODCore.ODData;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OpenDraft.Core.ODGeometry
+namespace OpenDraft.ODCore.ODGeometry
 {
     public class ODElement
     {
