@@ -1,9 +1,12 @@
 ﻿using Avalonia.Input;
 using Avalonia.Threading;
-using OpenDraft.ODCore.ODEditor.ODCommands;
 using OpenDraft.ODCore.ODData;
+using OpenDraft.ODCore.ODEditor.ODCommands;
+using OpenDraft.ODCore.ODEditor.ODDynamics;
 using OpenDraft.ODCore.ODGeometry;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,6 +18,9 @@ namespace OpenDraft.ODCore.ODEditor
         private readonly ODDataManager _dataManager;
         private readonly ODCommandRegistry _commandRegistry;
         private readonly IODEditorInputService _inputService;
+
+        public ObservableCollection<ODDynamicElement> DynamicElements { get; } = new();
+
         private ODEditorContext? _currentContext;
         private IODEditorCommand? _currentCommand;
 
@@ -33,6 +39,36 @@ namespace OpenDraft.ODCore.ODEditor
             _inputService.CancelRequested += OnCancelRequested;
         }
 
+        /* DYNAMIC ELEMENTS MANAGEMENT */
+
+        public void restoreDefaultDynamicElements()
+        {
+            DynamicElements.Clear();
+            // Future: Add default dynamic elements if any <<<< TODO IMPLEMENT <<<<
+        }
+
+        public void ClearDynamicElements()
+        {
+            DynamicElements.Clear();
+        }
+
+        // ADD THIS: Method to add dynamic elements
+        public void AddDynamicElement(ODDynamicElement element)
+        {
+            Debug.WriteLine("AddDynamicElement: " + element.GetType().Name);
+            DynamicElements.Add(element);
+        }
+
+        // ADD THIS: Method to remove specific dynamic element
+        public void RemoveDynamicElement(ODDynamicElement element)
+        {
+            DynamicElements.Remove(element);
+        }
+
+
+
+        /* COMMAND EXECUTION AND INPUT HANDLING  */
+
         private void OnKeyPressed(Key key)
         {
             // Handle specific keys we care about
@@ -50,9 +86,11 @@ namespace OpenDraft.ODCore.ODEditor
             CancelCurrentCommand();
         }
 
-        // ADD THIS MISSING METHOD
+        
         public void CancelCurrentCommand()
         {
+            restoreDefaultDynamicElements();
+
             _currentContext?.Cancel();
             _currentContext = null;
             _currentCommand = null;

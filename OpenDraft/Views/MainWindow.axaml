@@ -9,28 +9,89 @@
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="OpenDraft"
-        Width="500"
-        Height="300">
+        Width="800"
+        Height="400">
   <!-- WindowState="Maximized"> -->
 
+  <!-- Top Menu -->
   <Design.DataContext>
     <vm:MainWindowViewModel/>
   </Design.DataContext>
 
   <Grid>
     <Grid.RowDefinitions>
-      <RowDefinition Height="Auto"/>
-      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto"/>      <!-- Menu strip -->
+      <RowDefinition Height="Auto"/>      <!-- Toolbar -->
+      <RowDefinition Height="*"/>         <!-- Viewport (fills space) -->
+      <RowDefinition Height="Auto"/>      <!-- Status bar -->
     </Grid.RowDefinitions>
 
+    <Menu Grid.Row="0" Height="22">
+      <MenuItem Header="_File">
+        <MenuItem Header="_New"/>
+        <MenuItem Header="_Open"/>
+        <MenuItem Header="_Save" />
+        <MenuItem Header="Save _As" />
+        <Separator/>
+        <MenuItem Header="E_xit" />
+      </MenuItem>
+      <MenuItem Header="_Edit">
+        <MenuItem Header="_Undo" />
+        <MenuItem Header="_Redo" />
+        <Separator/>
+        <MenuItem Header="Cu_t" />
+        <MenuItem Header="_Copy" />
+        <MenuItem Header="_Paste" />
+        <Separator/>
+        <MenuItem Header="_Delete" />
+        <Separator/>
+        <MenuItem Header="Select _All" />
+      </MenuItem>
+      <MenuItem Header="_View">
+        <MenuItem Header="Zoom _In" />
+        <MenuItem Header="Zoom _Out" />
+        <MenuItem Header="_Reset Zoom" />
+        <Separator/>
+        <MenuItem Header="_Grid Settings..." />
+      </MenuItem>
+      <MenuItem Header="_Help">
+        <MenuItem Header="_About" />
+      </MenuItem>
+    </Menu>
+
+
+    <!-- Toolbar -->
+    <StackPanel
+      Classes="toolbar"
+      Grid.Row="1"
+      HorizontalAlignment="Stretch"
+      Orientation="Horizontal">
+        <Button Content="Select" />
+        <Button Content="Line" />
+        <Button Content="Circle" />
+    </StackPanel>
+    
+    
     <!-- Use Grid.Row attached property -->
-    <local:Viewport Grid.Row="1"
+    <local:Viewport Grid.Row="2"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
                     Elements="{Binding GeometryElements}"
+                    DynamicElements="{Binding Editor.DynamicElements}"
                     LayerManager="{Binding LayerManager}"
                     Editor="{Binding Editor}"
                     InputService ="{Binding InputService}"/>
 
+    <!-- Status Bar -->
+    <StackPanel
+      Classes="statusbar"
+      Grid.Row="3"
+      HorizontalAlignment="Stretch"
+      Orientation="Horizontal">
+      <Button Content="Select" />
+      <Button Content="Line" />
+      <Button Content="Circle" />
+    </StackPanel>
+    
   </Grid>
 </Window>

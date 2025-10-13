@@ -37,7 +37,7 @@ namespace OpenDraft.ViewModels
 
             // This would create the same square using the LINE command
             // Note: This is still interactive and will wait for user input
-            Editor.ExecuteCommand("CIRCLE"); // Then user clicks two points
+            Editor.ExecuteCommand("LINE"); // Then user clicks two points
             
         }
 

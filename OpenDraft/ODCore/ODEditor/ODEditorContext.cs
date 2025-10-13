@@ -1,5 +1,6 @@
 ﻿using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODEditor.ODCommands;
+using OpenDraft.ODCore.ODEditor.ODDynamics;
 using OpenDraft.ODCore.ODGeometry;
 using System;
 using System.Threading;
@@ -33,6 +34,21 @@ namespace OpenDraft.ODCore.ODEditor
             _inputService.PointProvided += OnPointProvided;
             _inputService.NumberInput += OnNumberProvided;
             _inputService.TextInput += OnTextProvided;
+        }
+
+        public void AddDynamicElement(ODDynamicElement element)
+        {
+            _editor.AddDynamicElement(element);
+        }
+
+        public void RemoveDynamicElement(ODDynamicElement element)
+        {
+            _editor.RemoveDynamicElement(element);
+        }
+
+        public void ClearDynamicElements()
+        {
+            _editor.ClearDynamicElements();
         }
 
         private void OnPointProvided(ODPoint point)

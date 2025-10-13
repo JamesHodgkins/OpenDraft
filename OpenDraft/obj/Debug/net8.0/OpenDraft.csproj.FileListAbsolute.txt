@@ -74,6 +74,9 @@ D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.AssemblyInfoInputs.cache
 D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.AssemblyInfo.cs
 D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.csproj.CoreCompileInputs.cache
 D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.sourcelink.json
+D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.dll
+D:\OpenDraft\OpenDraft\obj\Debug\net8.0\refint\OpenDraft.dll
+D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.pdb
 D:\OpenDraft\OpenDraft\bin\Debug\net8.0\OpenDraft.exe
 D:\OpenDraft\OpenDraft\bin\Debug\net8.0\OpenDraft.deps.json
 D:\OpenDraft\OpenDraft\bin\Debug\net8.0\OpenDraft.runtimeconfig.json
@@ -130,8 +133,5 @@ D:\OpenDraft\OpenDraft\bin\Debug\net8.0\runtimes\win-arm64\native\libSkiaSharp.d
 D:\OpenDraft\OpenDraft\bin\Debug\net8.0\runtimes\win-x64\native\libSkiaSharp.dll
 D:\OpenDraft\OpenDraft\bin\Debug\net8.0\runtimes\win-x86\native\libSkiaSharp.dll
 D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.csproj.Up2Date
-D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.dll
-D:\OpenDraft\OpenDraft\obj\Debug\net8.0\refint\OpenDraft.dll
-D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.pdb
 D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.genruntimeconfig.cache
 D:\OpenDraft\OpenDraft\obj\Debug\net8.0\ref\OpenDraft.dll

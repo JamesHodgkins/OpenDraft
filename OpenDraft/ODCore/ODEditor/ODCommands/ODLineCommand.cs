@@ -1,21 +1,28 @@
-﻿using OpenDraft.ODCore.ODEditor.ODCommands;
+﻿// Example of using dynamic elements in a command
+using OpenDraft.ODCore.ODEditor.ODCommands;
+using OpenDraft.ODCore.ODEditor.ODDynamics;
 using OpenDraft.ODCore.ODGeometry;
 using System.Diagnostics;
 using System.Threading.Tasks;
 
-namespace OpenDraft.ODCore.ODEditor.ODCommands
+[ODCommand("LINE", "Creates a line", "L")]
+public class ODLineCommand : ODBaseEditorCommand
 {
-    [ODCommand("LINE", "Creates a line", "L")]
-    public class ODLineCommand : ODBaseEditorCommand
+    public override async Task ExecuteAsync(IODEditorGateway editor)
     {
-        public override async Task ExecuteAsync(IODEditorGateway editor)
-        {
-            var startPoint = await editor.GetPointAsync("Specify first point:");
-            var endPoint = await editor.GetPointAsync("Specify second point:");
-            var line = new ODLine(startPoint, endPoint);
-            
-            editor.DataManager.AddElement(line);
-            editor.SetStatus("Line created successfully");
-        }
+        var startPoint = await editor.GetPointAsync("Specify first point:");
+
+        // ADD THIS: Create crosshair at start point
+        var crosshair = new CrosshairElement(startPoint);
+        editor.AddDynamicElement(crosshair);
+
+        var endPoint = await editor.GetPointAsync("Specify second point:");
+
+        // ADD THIS: Clear dynamic elements when command completes
+        editor.ClearDynamicElements();
+
+        var line = new ODLine(startPoint, endPoint);
+        editor.DataManager.AddElement(line);
+        editor.SetStatus("Line created successfully");
     }
 }

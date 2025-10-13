@@ -1,4 +1,5 @@
 ﻿using OpenDraft.ODCore.ODData;
+using OpenDraft.ODCore.ODEditor.ODDynamics;
 using OpenDraft.ODCore.ODGeometry;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,7 +18,10 @@ namespace OpenDraft.ODCore.ODEditor.ODCommands
         void SetStatus(string message);
         void ShowMessage(string message);
 
-        // Add cancellation token for long-running operations
+        void AddDynamicElement(ODDynamicElement element);
+        void RemoveDynamicElement(ODDynamicElement element);
+        void ClearDynamicElements();
+
         CancellationToken CancellationToken { get; }
     }
 }

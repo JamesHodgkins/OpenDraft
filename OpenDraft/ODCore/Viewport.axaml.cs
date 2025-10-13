@@ -4,6 +4,7 @@ using Avalonia.Input;
 using Avalonia.Media;
 using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODEditor;
+using OpenDraft.ODCore.ODEditor.ODDynamics;
 using OpenDraft.ODCore.ODGeometry;
 using System;
 using System.Collections.ObjectModel;
@@ -40,6 +41,9 @@ namespace OpenDraft
         public static readonly StyledProperty<IODEditorInputService> InputServiceProperty =
         AvaloniaProperty.Register<Viewport, IODEditorInputService>(nameof(InputService));
 
+        public static readonly StyledProperty<ObservableCollection<ODDynamicElement>> DynamicElementsProperty =
+        AvaloniaProperty.Register<Viewport, ObservableCollection<ODDynamicElement>>(nameof(DynamicElements));
+
         public ObservableCollection<ODElement> Elements
         {
             get => GetValue(ElementsProperty);
@@ -64,6 +68,12 @@ namespace OpenDraft
             set => SetValue(InputServiceProperty, value);
         }
 
+        public ObservableCollection<ODDynamicElement> DynamicElements
+        {
+            get => GetValue(DynamicElementsProperty);
+            set => SetValue(DynamicElementsProperty, value);
+        }
+
         private readonly ViewportCamera Camera = new();
         private bool isPanning = false;
         private Point _lastPointerDragPosition;
@@ -77,7 +87,13 @@ namespace OpenDraft
             Background = Brushes.Transparent;
 
             Elements ??= new ObservableCollection<ODElement>();
+            DynamicElements ??= new ObservableCollection<ODDynamicElement>();
+
             SubscribeToElements();
+            SubscribeToDynamicElements();
+
+            // ADD DEBUG
+            Debug.WriteLine($"Viewport constructor - Elements: {Elements?.Count}, DynamicElements: {DynamicElements?.Count}");
 
             PointerPressed += OnPointerPressed;
             PointerReleased += OnPointerReleased;
@@ -96,7 +112,21 @@ namespace OpenDraft
             }
         }
 
+        private void SubscribeToDynamicElements()
+        {
+            if (DynamicElements != null)
+            {
+                DynamicElements.CollectionChanged -= OnDynamicElementsChanged;
+                DynamicElements.CollectionChanged += OnDynamicElementsChanged;
+            }
+        }
+
         private void OnElementsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            InvalidateVisual();
+        }
+
+        private void OnDynamicElementsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
             InvalidateVisual();
         }
@@ -132,7 +162,24 @@ namespace OpenDraft
             base.OnPropertyChanged(change);
 
             if (change.Property == ElementsProperty)
+            {
+                Debug.WriteLine($"Elements property changed: {Elements?.Count}");
                 SubscribeToElements();
+            }
+            else if (change.Property == DynamicElementsProperty)
+            {
+                Debug.WriteLine($"DynamicElements property changed: {DynamicElements?.Count}");
+                SubscribeToDynamicElements();
+            }
+            else if (change.Property == EditorProperty)
+            {
+                Debug.WriteLine($"Editor property changed: {Editor != null}");
+                // Check if we can access Editor.DynamicElements
+                if (Editor != null)
+                {
+                    Debug.WriteLine($"Editor.DynamicElements count: {Editor.DynamicElements?.Count}");
+                }
+            }
         }
 
 
@@ -228,7 +275,8 @@ namespace OpenDraft
 
         private void DrawScene(DrawingContext context)
         {
-            if (Elements == null || Elements.Count == 0)
+            if ((Elements == null || Elements.Count == 0) &&
+                    (DynamicElements == null || DynamicElements.Count == 0))
                 return;
 
             var matrix = new Matrix(
@@ -238,15 +286,29 @@ namespace OpenDraft
                 Camera.Position.Y * Camera.Scale + Bounds.Height
             );
 
-            using (context.PushTransform(matrix))
+            // Draw static elements first
+            if (Elements != null)
             {
-                foreach (var element in Elements)
+                using (context.PushTransform(matrix))
                 {
-                    var layer = LayerManager?.GetLayerByID(element.LayerId);
+                    foreach (var element in Elements)
+                    {
+                        var layer = LayerManager?.GetLayerByID(element.LayerId);
 
-                    if (layer != null)
-                        element.Draw(context, layer);
+                        if (layer != null)
+                            element.Draw(context, layer);
+                    }
+                    
+                    // Draw dynamic elements on top
+                    if (DynamicElements != null)
+                    {
+                        foreach (var element in DynamicElements)
+                        {
+                            element.Draw(context);
+                        }
+                    }
                 }
+
             }
         }
     }
