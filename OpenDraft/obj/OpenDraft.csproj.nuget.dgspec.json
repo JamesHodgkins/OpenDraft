@@ -52,27 +52,27 @@
           "dependencies": {
             "Avalonia": {
               "target": "Package",
-              "version": "[11.3.0, )"
+              "version": "[11.3.7, )"
             },
             "Avalonia.Desktop": {
               "target": "Package",
-              "version": "[11.3.0, )"
+              "version": "[11.3.7, )"
             },
             "Avalonia.Diagnostics": {
               "target": "Package",
-              "version": "[11.3.0, )"
+              "version": "[11.3.7, )"
             },
             "Avalonia.Fonts.Inter": {
               "target": "Package",
-              "version": "[11.3.0, )"
+              "version": "[11.3.7, )"
             },
             "Avalonia.Themes.Fluent": {
               "target": "Package",
-              "version": "[11.3.0, )"
+              "version": "[11.3.7, )"
             },
             "CommunityToolkit.Mvvm": {
               "target": "Package",
-              "version": "[8.2.1, )"
+              "version": "[8.4.0, )"
             }
           },
           "imports": [
@@ -91,7 +91,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
