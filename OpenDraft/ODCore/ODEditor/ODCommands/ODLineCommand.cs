@@ -13,7 +13,7 @@ public class ODLineCommand : ODBaseEditorCommand
         var startPoint = await editor.GetPointAsync("Specify first point:");
 
         // ADD THIS: Create crosshair at start point
-        var crosshair = new CrosshairElement(startPoint);
+        var crosshair = new ODCrosshairElement(startPoint);
         editor.AddDynamicElement(crosshair);
 
         var endPoint = await editor.GetPointAsync("Specify second point:");

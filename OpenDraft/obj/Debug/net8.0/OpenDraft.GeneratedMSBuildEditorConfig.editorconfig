@@ -29,6 +29,12 @@ build_property.EnableCodeStyleSeverity =
 [D:/OpenDraft/OpenDraft/App.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 
+[D:/OpenDraft/OpenDraft/ODCore/DynamicCanvas.axaml]
+build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
+
+[D:/OpenDraft/OpenDraft/ODCore/StaticCanvas.axaml]
+build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
+
 [D:/OpenDraft/OpenDraft/ODCore/Viewport.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 

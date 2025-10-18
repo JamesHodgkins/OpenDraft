@@ -27,6 +27,9 @@ namespace OpenDraft.ODCore.ODEditor
         public event EventHandler<MessageEventArgs>? ShowMessageRequested;
         public event EventHandler<MessageEventArgs>? StatusMessageChanged;
 
+        ODCrosshairElement ch = new ODCrosshairElement(new ODPoint (0,0));
+
+
         public ODEditor(ODDataManager dataManager, IODEditorInputService inputService)
         {
             _dataManager = dataManager;
@@ -37,6 +40,8 @@ namespace OpenDraft.ODCore.ODEditor
             // Subscribe to input events
             _inputService.KeyPressed += OnKeyPressed;
             _inputService.CancelRequested += OnCancelRequested;
+
+            DynamicElements.Add(ch);
         }
 
         /* DYNAMIC ELEMENTS MANAGEMENT */
@@ -45,11 +50,13 @@ namespace OpenDraft.ODCore.ODEditor
         {
             DynamicElements.Clear();
             // Future: Add default dynamic elements if any <<<< TODO IMPLEMENT <<<<
+            DynamicElements.Add(ch);
         }
 
         public void ClearDynamicElements()
         {
             DynamicElements.Clear();
+            DynamicElements.Add(ch);
         }
 
         // ADD THIS: Method to add dynamic elements
@@ -136,7 +143,7 @@ namespace OpenDraft.ODCore.ODEditor
             _ = RunCommandAsync();
         }
 
-        // ADD THESE MISSING METHODS
+        
         public void SetStatus(string message)
         {
             Debug.WriteLine("SetStatus: " + message);
@@ -161,9 +168,14 @@ namespace OpenDraft.ODCore.ODEditor
             _inputService.CancelRequested -= OnCancelRequested;
             CancelCurrentCommand();
         }
+
+        public void UpdateCrosshairPosition(ODPoint position)
+        {
+            ch.Center = position;
+        }
     }
 
-    // MOVE THIS CLASS INSIDE ODEditor.cs OR CREATE SEPARATE FILE
+    
     public class MessageEventArgs : EventArgs
     {
         public string Message { get; }

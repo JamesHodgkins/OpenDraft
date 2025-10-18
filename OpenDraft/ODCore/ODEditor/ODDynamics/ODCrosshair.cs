@@ -7,12 +7,12 @@ using System;
 namespace OpenDraft.ODCore.ODEditor.ODDynamics
 {
     // Example dynamic element classes
-    public class CrosshairElement : ODDynamicElement
+    public class ODCrosshairElement : ODDynamicElement
     {
         public ODPoint Center { get; set; }
         public double Size { get; set; } = 20.0;
 
-        public CrosshairElement(ODPoint center)
+        public ODCrosshairElement(ODPoint center)
         {
             Center = center;
         }

@@ -1,0 +1,4 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             x:Class="OpenDraft.StaticCanvas"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+</UserControl>

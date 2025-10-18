@@ -2,31 +2,16 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Threading;
 using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODEditor;
 using OpenDraft.ODCore.ODEditor.ODDynamics;
 using OpenDraft.ODCore.ODGeometry;
 using System;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
-
 
 namespace OpenDraft
 {
-    public class ViewportCamera
-    {
-        public Point Position { get; set; }
-        public float Scale { get; set; }
-
-        public ViewportCamera(Point? position = null, float scale = 1.0f)
-        {
-            Position = position ?? new Point(0, 0);
-            Scale = scale;
-        }
-
-        public void MoveBy(Vector delta) => Position += new Point(delta.X, delta.Y);
-    }
-
     public partial class Viewport : UserControl
     {
         public static readonly StyledProperty<ObservableCollection<ODElement>> ElementsProperty =
@@ -39,10 +24,10 @@ namespace OpenDraft
             AvaloniaProperty.Register<Viewport, ODEditor>(nameof(Editor));
 
         public static readonly StyledProperty<IODEditorInputService> InputServiceProperty =
-        AvaloniaProperty.Register<Viewport, IODEditorInputService>(nameof(InputService));
+            AvaloniaProperty.Register<Viewport, IODEditorInputService>(nameof(InputService));
 
         public static readonly StyledProperty<ObservableCollection<ODDynamicElement>> DynamicElementsProperty =
-        AvaloniaProperty.Register<Viewport, ObservableCollection<ODDynamicElement>>(nameof(DynamicElements));
+            AvaloniaProperty.Register<Viewport, ObservableCollection<ODDynamicElement>>(nameof(DynamicElements));
 
         public ObservableCollection<ODElement> Elements
         {
@@ -89,46 +74,73 @@ namespace OpenDraft
             Elements ??= new ObservableCollection<ODElement>();
             DynamicElements ??= new ObservableCollection<ODDynamicElement>();
 
-            SubscribeToElements();
-            SubscribeToDynamicElements();
-
-            // ADD DEBUG
-            Debug.WriteLine($"Viewport constructor - Elements: {Elements?.Count}, DynamicElements: {DynamicElements?.Count}");
+            SubscribeToCollection(Elements, OnElementsChanged);
+            SubscribeToCollection(DynamicElements, OnDynamicElementsChanged);
 
             PointerPressed += OnPointerPressed;
             PointerReleased += OnPointerReleased;
             PointerMoved += OnPointerMoved;
             PointerWheelChanged += OnPointerWheelChanged;
 
-            InvalidateVisual();
+            SetupStaticCanvas();
+            SetupDynamicCanvas();
         }
 
-        private void SubscribeToElements()
+        private void SubscribeToCollection<T>(ObservableCollection<T> collection, System.Collections.Specialized.NotifyCollectionChangedEventHandler handler)
         {
-            if (Elements != null)
-            {
-                Elements.CollectionChanged -= OnElementsChanged;
-                Elements.CollectionChanged += OnElementsChanged;
-            }
-        }
-
-        private void SubscribeToDynamicElements()
-        {
-            if (DynamicElements != null)
-            {
-                DynamicElements.CollectionChanged -= OnDynamicElementsChanged;
-                DynamicElements.CollectionChanged += OnDynamicElementsChanged;
-            }
+            if (collection == null) return;
+            collection.CollectionChanged -= handler;
+            collection.CollectionChanged += handler;
         }
 
         private void OnElementsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            InvalidateVisual();
+            StaticCanvas?.InvalidateVisual();
         }
 
         private void OnDynamicElementsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            InvalidateVisual();
+            DynamicCanvas?.InvalidateVisual();
+        }
+
+        private void SetupStaticCanvas()
+        {
+            StaticCanvas.OnRender = (context, bounds) =>
+            {
+                if (Elements == null) return;
+                var matrix = Camera.GetMatrix(bounds.Height);
+
+                using (context.PushTransform(matrix))
+                {
+                    foreach (var element in Elements)
+                    {
+                        var layer = LayerManager?.GetLayerByID(element.LayerId);
+                        if (layer != null)
+                            element.Draw(context, layer);
+                    }
+                }
+            };
+            StaticCanvas.InvalidateVisual();
+        }
+
+        private void SetupDynamicCanvas()
+        {
+            DynamicCanvas.OnRender = (context, bounds) =>
+            {
+                var matrix = Camera.GetMatrix(bounds.Height);
+                using (context.PushTransform(matrix))
+                {
+                    if (DynamicElements != null)
+                        foreach (var element in DynamicElements) element.Draw(context);
+
+                    if (Editor?.DynamicElements != null)
+                        foreach (var element in Editor.DynamicElements) element.Draw(context);
+                }
+            };
+
+            var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
+            timer.Tick += (_, _) => DynamicCanvas?.InvalidateVisual();
+            timer.Start();
         }
 
         protected override Size ArrangeOverride(Size finalSize)
@@ -136,52 +148,33 @@ namespace OpenDraft
             if (!_isInitialized)
             {
                 _isInitialized = true;
-                Camera.Position = new Point(-finalSize.Width / 2 / Camera.Scale,
-                                            -finalSize.Height / 2 / Camera.Scale);
+                Camera.Position = new Point(-finalSize.Width / 2 / Camera.Scale, -finalSize.Height / 2 / Camera.Scale);
             }
             else
             {
-                // Keep view centered on resize
-                Camera.Position -= new Point(
+                Camera.Position -= new Vector(
                     (finalSize.Width - _lastSize.Width) / 2 / Camera.Scale,
-                    (finalSize.Height - _lastSize.Height) / 2 / Camera.Scale
-                );
+                    (finalSize.Height - _lastSize.Height) / 2 / Camera.Scale);
             }
 
             _lastSize = finalSize;
-
-            // Force redraw
-            InvalidateVisual();
-
+            StaticCanvas?.InvalidateVisual();
             return base.ArrangeOverride(finalSize);
         }
-
 
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
         {
             base.OnPropertyChanged(change);
+            if (!_isInitialized) return;
 
             if (change.Property == ElementsProperty)
-            {
-                Debug.WriteLine($"Elements property changed: {Elements?.Count}");
-                SubscribeToElements();
-            }
+                SubscribeToCollection(Elements, OnElementsChanged);
             else if (change.Property == DynamicElementsProperty)
-            {
-                Debug.WriteLine($"DynamicElements property changed: {DynamicElements?.Count}");
-                SubscribeToDynamicElements();
-            }
-            else if (change.Property == EditorProperty)
-            {
-                Debug.WriteLine($"Editor property changed: {Editor != null}");
-                // Check if we can access Editor.DynamicElements
-                if (Editor != null)
-                {
-                    Debug.WriteLine($"Editor.DynamicElements count: {Editor.DynamicElements?.Count}");
-                }
-            }
-        }
+                SubscribeToCollection(DynamicElements, OnDynamicElementsChanged);
 
+            StaticCanvas?.InvalidateVisual();
+            DynamicCanvas?.InvalidateVisual();
+        }
 
         private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
         {
@@ -196,10 +189,7 @@ namespace OpenDraft
         {
             if (e.InitialPressMouseButton == MouseButton.Left)
             {
-                Point worldPos = GetWorldMousePosition();
-                var odPoint = new ODPoint(worldPos.X, worldPos.Y);
-                
-                // Use input service instead of direct editor call
+                var odPoint = new ODPoint(GetWorldMousePosition().X, GetWorldMousePosition().Y);
                 InputService?.RaisePointProvided(odPoint);
                 e.Handled = true;
             }
@@ -211,23 +201,23 @@ namespace OpenDraft
         private void OnPointerMoved(object? sender, PointerEventArgs e)
         {
             _mousePosition = e.GetPosition(this);
-            Point world = GetWorldMousePosition();
-            
+            Editor?.UpdateCrosshairPosition(new ODPoint(GetWorldMousePosition().X, GetWorldMousePosition().Y));
+
+            DynamicCanvas?.InvalidateVisual();
 
             if (!isPanning) return;
 
-            Point current = e.GetPosition(this);
+            var current = e.GetPosition(this);
             Camera.MoveBy(new Vector(-(current.X - _lastPointerDragPosition.X) / Camera.Scale,
                                      (current.Y - _lastPointerDragPosition.Y) / Camera.Scale));
             _lastPointerDragPosition = current;
 
-            InvalidateVisual();
+            StaticCanvas?.InvalidateVisual();
         }
 
         private void OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
         {
-            Point mousePos = e.GetPosition(this);
-
+            var mousePos = e.GetPosition(this);
             float zoomFactor = 1.1f;
             float oldScale = Camera.Scale;
             float newScale = oldScale * (float)Math.Pow(zoomFactor, e.Delta.Y > 0 ? 1 : -1);
@@ -238,78 +228,18 @@ namespace OpenDraft
             var oldWorld = ScreenToWorld(mousePos, oldScale);
             var newWorld = ScreenToWorld(mousePos, newScale);
 
-            Camera.Position += oldWorld - newWorld;
+            Camera.Position += oldWorld - newWorld; // <--- fix here
             Camera.Scale = newScale;
 
-            InvalidateVisual();
+            StaticCanvas?.InvalidateVisual();
+            DynamicCanvas?.InvalidateVisual();
         }
 
-        public override void Render(DrawingContext context)
-        {
-            base.Render(context);
 
-            var bounds = new Rect(0, 0, Bounds.Width, Bounds.Height);
-            using (context.PushClip(bounds))
-            {
-                DrawScene(context);
-            }
-        }
+        public Point GetScreenMousePosition() => _mousePosition;
 
-        public Point GetScreenMousePosition()
-        {
-             return _mousePosition;
-        }
-
-        public Point GetWorldMousePosition()
-        {
-            return ScreenToWorld(_mousePosition);
-        }
-
-        private Point ScreenToWorld(Point screenPoint)
-        {
-            return new Point(
-                screenPoint.X / Camera.Scale + Camera.Position.X,
-                (Bounds.Height - screenPoint.Y) / Camera.Scale + Camera.Position.Y
-            );
-        }
-
-        private void DrawScene(DrawingContext context)
-        {
-            if ((Elements == null || Elements.Count == 0) &&
-                    (DynamicElements == null || DynamicElements.Count == 0))
-                return;
-
-            var matrix = new Matrix(
-                Camera.Scale, 0,
-                0, -Camera.Scale,
-                -Camera.Position.X * Camera.Scale,
-                Camera.Position.Y * Camera.Scale + Bounds.Height
-            );
-
-            // Draw static elements first
-            if (Elements != null)
-            {
-                using (context.PushTransform(matrix))
-                {
-                    foreach (var element in Elements)
-                    {
-                        var layer = LayerManager?.GetLayerByID(element.LayerId);
-
-                        if (layer != null)
-                            element.Draw(context, layer);
-                    }
-                    
-                    // Draw dynamic elements on top
-                    if (DynamicElements != null)
-                    {
-                        foreach (var element in DynamicElements)
-                        {
-                            element.Draw(context);
-                        }
-                    }
-                }
-
-            }
-        }
+        public Point GetWorldMousePosition() =>
+            new Point(_mousePosition.X / Camera.Scale + Camera.Position.X,
+                      (Bounds.Height - _mousePosition.Y) / Camera.Scale + Camera.Position.Y);
     }
 }

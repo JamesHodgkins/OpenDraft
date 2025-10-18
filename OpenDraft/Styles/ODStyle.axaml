@@ -1,8 +1,20 @@
 <Styles xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+	<Styles.Resources>
+		<Color x:Key="BackgroundDark">#141415</Color>
+		<Color x:Key="BackgroundLight">#1E2024</Color>
+        <Color x:Key="PrimaryColor">#333</Color>
+        <Color x:Key="AccentColor">#FF0000</Color>
+		<SolidColorBrush x:Key="BackgroundDarkBrush" Color="{DynamicResource BackgroundDark}"/>
+		<SolidColorBrush x:Key="BackgroundLightBrush" Color="{DynamicResource BackgroundLight}"/>
+        <SolidColorBrush x:Key="PrimaryBrush" Color="{DynamicResource PrimaryColor}"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="{DynamicResource AccentColor}"/>
+    </Styles.Resources>
+
 	<Style Selector="Window">
 		<Setter Property="FontSize" Value="12"/>
+		<Setter Property="Background" Value="{DynamicResource BackgroundDarkBrush}"/>
 	</Style>
   
 	<Style Selector="Button">
@@ -13,20 +25,46 @@
 		<Setter Property="Height" Value="36"/>
 	</Style>
 
+	<Style Selector="Menu">
+		<Setter Property="Background" Value="{DynamicResource BackgroundDarkBrush}"/>
+		<Setter Property="Height" Value="22"/>
+	</Style>
+
+	<Style Selector="MenuItem">
+		<Setter Property="Background" Value="Transparent"/>
+		<Setter Property="Foreground" Value="#CCC"/>
+		<Setter Property="CornerRadius" Value="4"/>
+	</Style>
+
+
+
+
+	
+
+	<Style Selector="MenuItem:pointerover /template/ Border#PART_LayoutRoot">
+		<Setter Property="Background" Value="#80FF0000"/>
+	</Style>
+	
+
+
+
+
+
+
 	<Style Selector="StackPanel.toolbar">
-		<Setter Property="Background" Value="#333"/>
+		<Setter Property="Background" Value="{DynamicResource BackgroundLightBrush}"/>
 		<Setter Property="Height" Value="40"/>
 		<Setter Property="Orientation" Value="Horizontal"/>
 	</Style>
 
 	<Style Selector="StackPanel.statusbar">
-		<Setter Property="Background" Value="#333"/>
+		<Setter Property="Background" Value="{DynamicResource BackgroundLightBrush}"/>
 		<Setter Property="Height" Value="32"/>
 		<Setter Property="Orientation" Value="Horizontal"/>
 	</Style>
 
 	<Style Selector="StackPanel.toolbar > Button">
-		<Setter Property="Background" Value="Red"/>
+		<Setter Property="Background" Value="{DynamicResource BackgroundLightBrush}"/>
 		<Setter Property="Width" Value="28"/>
 		<Setter Property="Height" Value="28"/>
 	</Style>
