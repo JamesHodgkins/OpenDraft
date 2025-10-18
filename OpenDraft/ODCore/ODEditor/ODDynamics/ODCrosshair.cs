@@ -17,7 +17,7 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
             Center = center;
         }
 
-        public override void Draw(DrawingContext context)
+        public override void Draw(DrawingContext context, float scale)
         {
             var pen = new Pen(Brushes.Red, 2.0);
 

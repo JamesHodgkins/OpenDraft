@@ -130,11 +130,8 @@ namespace OpenDraft
                 var matrix = Camera.GetMatrix(bounds.Height);
                 using (context.PushTransform(matrix))
                 {
-                    if (DynamicElements != null)
-                        foreach (var element in DynamicElements) element.Draw(context);
-
                     if (Editor?.DynamicElements != null)
-                        foreach (var element in Editor.DynamicElements) element.Draw(context);
+                        foreach (var element in Editor.DynamicElements) element.Draw(context, Camera.Scale);
                 }
             };
 
