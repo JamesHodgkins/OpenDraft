@@ -1,6 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.Media;
 using OpenDraft.ODCore.ODData;
+using OpenDraft.ODCore.ODGeometry;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,7 +21,7 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
             Id = Guid.NewGuid();
         }
 
-        public virtual void Draw(DrawingContext context, float scale)
+        public virtual void Draw(DrawingContext context, float scale, ODPoint vpWorldSize)
         {
             // Base draw method, to be overridden by derived classes
         }

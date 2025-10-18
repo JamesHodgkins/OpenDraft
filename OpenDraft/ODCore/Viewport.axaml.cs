@@ -9,6 +9,7 @@ using OpenDraft.ODCore.ODEditor.ODDynamics;
 using OpenDraft.ODCore.ODGeometry;
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 
 namespace OpenDraft
 {
@@ -65,6 +66,7 @@ namespace OpenDraft
         private Point _mousePosition;
         private Size _lastSize;
         private bool _isInitialized = false;
+        private bool _isMouseInside = false;
 
         public Viewport()
         {
@@ -81,6 +83,8 @@ namespace OpenDraft
             PointerReleased += OnPointerReleased;
             PointerMoved += OnPointerMoved;
             PointerWheelChanged += OnPointerWheelChanged;
+            PointerEntered += OnPointerEntered;
+            PointerExited += OnPointerExited;
 
             SetupStaticCanvas();
             SetupDynamicCanvas();
@@ -127,11 +131,15 @@ namespace OpenDraft
         {
             DynamicCanvas.OnRender = (context, bounds) =>
             {
+                if (DynamicElements == null) return;
+
+                ODPoint vpWorldSize = new ODPoint(bounds.Width / Camera.Scale, bounds.Height / Camera.Scale);
+
                 var matrix = Camera.GetMatrix(bounds.Height);
                 using (context.PushTransform(matrix))
                 {
                     if (Editor?.DynamicElements != null)
-                        foreach (var element in Editor.DynamicElements) element.Draw(context, Camera.Scale);
+                        foreach (var element in Editor.DynamicElements) element.Draw(context, Camera.Scale, vpWorldSize);
                 }
             };
 
@@ -199,6 +207,7 @@ namespace OpenDraft
         {
             _mousePosition = e.GetPosition(this);
             Editor?.UpdateCrosshairPosition(new ODPoint(GetWorldMousePosition().X, GetWorldMousePosition().Y));
+            Debug.WriteLine($"Mouse World Position: {GetWorldMousePosition().X}, {GetWorldMousePosition().Y}");
 
             DynamicCanvas?.InvalidateVisual();
 
@@ -210,6 +219,18 @@ namespace OpenDraft
             _lastPointerDragPosition = current;
 
             StaticCanvas?.InvalidateVisual();
+        }
+
+        private void OnPointerEntered(object? sender, PointerEventArgs e)
+        {
+            _isMouseInside = true;
+            Editor.ShowCrosshair();
+        }
+
+        private void OnPointerExited(object? sender, PointerEventArgs e)
+        {
+            _isMouseInside = false;
+            Editor.HideCrosshair();
         }
 
         private void OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)

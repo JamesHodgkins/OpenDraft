@@ -173,6 +173,18 @@ namespace OpenDraft.ODCore.ODEditor
         {
             ch.Center = position;
         }
+
+        public void HideCrosshair()
+        {
+            ch.hide();
+            Debug.WriteLine("Crosshair hidden");
+        }
+
+        public void ShowCrosshair()
+        {
+            ch.show();
+            Debug.WriteLine("Crosshair shown");
+        }
     }
 
     
