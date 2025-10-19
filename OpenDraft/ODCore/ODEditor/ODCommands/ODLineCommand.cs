@@ -10,18 +10,9 @@ public class ODLineCommand : ODBaseEditorCommand
 {
     public override async Task ExecuteAsync(IODEditorGateway editor)
     {
-        var startPoint = await editor.GetPointAsync("Specify first point:");
+        var vec = await editor.GetLineAsync("Specify start point:", "Specify end point:");
 
-        // ADD THIS: Create crosshair at start point
-        var crosshair = new ODCrosshairElement(startPoint);
-        editor.AddDynamicElement(crosshair);
-
-        var endPoint = await editor.GetPointAsync("Specify second point:");
-
-        // ADD THIS: Clear dynamic elements when command completes
-        editor.ClearDynamicElements();
-
-        var line = new ODLine(startPoint, endPoint);
+        var line = new ODLine(vec.start, vec.end);
         editor.DataManager.AddElement(line);
         editor.SetStatus("Line created successfully");
     }

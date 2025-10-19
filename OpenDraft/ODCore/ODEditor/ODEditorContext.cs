@@ -2,7 +2,9 @@
 using OpenDraft.ODCore.ODEditor.ODCommands;
 using OpenDraft.ODCore.ODEditor.ODDynamics;
 using OpenDraft.ODCore.ODGeometry;
+using OpenDraft.ODCore.ODMath;
 using System;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -88,6 +90,15 @@ namespace OpenDraft.ODCore.ODEditor
             ClearAllWaiters();
             _textWaiter = new TaskCompletionSource<string>();
             return _textWaiter.Task;
+        }
+
+        public async Task<(ODPoint start, ODPoint end)> GetLineAsync(string promptStart, string promptEnd)
+        {
+            var start = await GetPointAsync(promptStart);
+            _editor.AddDynamicElement(new ODRubberBandLine(start));
+            var end = await GetPointAsync(promptEnd);
+
+            return (start, end);
         }
 
         public Task<string> GetChoiceAsync(string prompt, params string[] options)

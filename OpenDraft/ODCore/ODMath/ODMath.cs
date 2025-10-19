@@ -6,35 +6,35 @@ using System.Threading.Tasks;
 
 namespace OpenDraft.ODCore.ODMath
 {
-    public class Vector2
+    public class ODVec2
         {
         public float X { get; set; }
         public float Y { get; set; }
-        public Vector2(float x, float y)
+        public ODVec2(float x, float y)
         {
             X = x;
             Y = y;
         }
-        public static Vector2 operator +(Vector2 a, Vector2 b)
+        public static ODVec2 operator +(ODVec2 a, ODVec2 b)
         {
-            return new Vector2(a.X + b.X, a.Y + b.Y);
+            return new ODVec2(a.X + b.X, a.Y + b.Y);
         }
 
-        public static Vector2 operator -(Vector2 a, Vector2 b)
+        public static ODVec2 operator -(ODVec2 a, ODVec2 b)
         {
-            return new Vector2(a.X - b.X, a.Y - b.Y);
+            return new ODVec2(a.X - b.X, a.Y - b.Y);
         }
 
-        public static Vector2 operator *(Vector2 a, float scalar)
+        public static ODVec2 operator *(ODVec2 a, float scalar)
         {
-            return new Vector2(a.X * scalar, a.Y * scalar);
+            return new ODVec2(a.X * scalar, a.Y * scalar);
         }
         
-        public static Vector2 operator /(Vector2 a, float scalar)
+        public static ODVec2 operator /(ODVec2 a, float scalar)
         {
             if (scalar == 0)
                 throw new DivideByZeroException("Cannot divide by zero.");
-            return new Vector2(a.X / scalar, a.Y / scalar);
+            return new ODVec2(a.X / scalar, a.Y / scalar);
         }
         
         public float Magnitude()
@@ -42,7 +42,7 @@ namespace OpenDraft.ODCore.ODMath
             return (float)Math.Sqrt(X * X + Y * Y);
         }
         
-        public Vector2 Normalize()
+        public ODVec2 Normalize()
         {
             float magnitude = Magnitude();
             if (magnitude == 0)

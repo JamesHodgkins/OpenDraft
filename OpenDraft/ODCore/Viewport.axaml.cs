@@ -134,12 +134,13 @@ namespace OpenDraft
                 if (DynamicElements == null) return;
 
                 ODPoint vpWorldSize = new ODPoint(bounds.Width / Camera.Scale, bounds.Height / Camera.Scale);
+                ODPoint worldMousePoint = new ODPoint(GetWorldMousePosition().X, GetWorldMousePosition().Y);
 
                 var matrix = Camera.GetMatrix(bounds.Height);
                 using (context.PushTransform(matrix))
                 {
                     if (Editor?.DynamicElements != null)
-                        foreach (var element in Editor.DynamicElements) element.Draw(context, Camera.Scale, vpWorldSize);
+                        foreach (var element in Editor.DynamicElements) element.Draw(context, Camera.Scale, vpWorldSize, worldMousePoint);
                 }
             };
 
@@ -206,9 +207,6 @@ namespace OpenDraft
         private void OnPointerMoved(object? sender, PointerEventArgs e)
         {
             _mousePosition = e.GetPosition(this);
-            Editor?.UpdateCrosshairPosition(new ODPoint(GetWorldMousePosition().X, GetWorldMousePosition().Y));
-            Debug.WriteLine($"Mouse World Position: {GetWorldMousePosition().X}, {GetWorldMousePosition().Y}");
-
             DynamicCanvas?.InvalidateVisual();
 
             if (!isPanning) return;

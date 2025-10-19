@@ -27,7 +27,7 @@ namespace OpenDraft.ODCore.ODEditor
         public event EventHandler<MessageEventArgs>? ShowMessageRequested;
         public event EventHandler<MessageEventArgs>? StatusMessageChanged;
 
-        ODCrosshairElement ch = new ODCrosshairElement(new ODPoint (0,0));
+        ODCrosshairElement ch = new ODCrosshairElement();
 
 
         public ODEditor(ODDataManager dataManager, IODEditorInputService inputService)
@@ -169,21 +169,14 @@ namespace OpenDraft.ODCore.ODEditor
             CancelCurrentCommand();
         }
 
-        public void UpdateCrosshairPosition(ODPoint position)
-        {
-            ch.Center = position;
-        }
-
         public void HideCrosshair()
         {
-            ch.hide();
-            Debug.WriteLine("Crosshair hidden");
+            ch.IsVisible = false;
         }
 
         public void ShowCrosshair()
         {
-            ch.show();
-            Debug.WriteLine("Crosshair shown");
+            ch.IsVisible = true;
         }
     }
 

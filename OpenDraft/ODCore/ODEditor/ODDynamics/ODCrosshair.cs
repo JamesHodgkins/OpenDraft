@@ -6,57 +6,107 @@ using System;
 
 namespace OpenDraft.ODCore.ODEditor.ODDynamics
 {
-    // Example dynamic element classes
     public class ODCrosshairElement : ODDynamicElement
     {
         public ODPoint Center { get; set; }
-        private bool isVisible = true;
-        private int size = 10;
-        private Color hColor = Colors.Red;
-        private Color vColor = Colors.Lime;
-        private Color cColor = Colors.White;
+        public float Weight { get; set; } = 1.0f;
 
+        // Visibility
+        public bool IsVisible { get; set; } = true;
 
-        SolidColorBrush hBrush;
-        SolidColorBrush vBrush;
-        SolidColorBrush cBrush;
-
-        Pen hPen;
-        Pen vPen;
-        Pen cPen;
-
-
-
-        public ODCrosshairElement(ODPoint center)
+        // Style properties
+        private int _size = 10;
+        public int Size
         {
-            Center = center;
-
-            hBrush = new SolidColorBrush(hColor);
-            vBrush = new SolidColorBrush(vColor);
-            cBrush = new SolidColorBrush(cColor);
-
-            hPen = new Pen(hBrush);
-            vPen = new Pen(vBrush);
-            cPen = new Pen(cBrush);
+            get => _size;
+            set => _size = value;
         }
 
-        public void show() => isVisible = true;
-        public void hide() => isVisible = false;
-
-        public override void Draw(DrawingContext context, float scale, ODPoint vpWorldSize)
+        private float _thickness = 2.0f;
+        public float Thickness
         {
-            if (!isVisible)
+            get => _thickness;
+            set
+            {
+                _thickness = value;
+                UpdatePens();
+            }
+        }
+
+        private Color _hColor = Colors.Red;
+        public Color HColor
+        {
+            get => _hColor;
+            set
+            {
+                _hColor = value;
+                UpdatePens();
+            }
+        }
+
+        private Color _vColor = Colors.Lime;
+        public Color VColor
+        {
+            get => _vColor;
+            set
+            {
+                _vColor = value;
+                UpdatePens();
+            }
+        }
+
+        private Color _cColor = Colors.White;
+        public Color CColor
+        {
+            get => _cColor;
+            set
+            {
+                _cColor = value;
+                UpdatePens();
+            }
+        }
+
+        private SolidColorBrush hBrush, vBrush, cBrush;
+        private Pen hPen, vPen, cPen;
+
+        public ODCrosshairElement()
+        {
+            UpdatePens();
+        }
+
+        private void UpdatePens()
+        {
+            hBrush = new SolidColorBrush(_hColor);
+            vBrush = new SolidColorBrush(_vColor);
+            cBrush = new SolidColorBrush(_cColor);
+
+            hPen = new Pen(hBrush, _thickness);
+            vPen = new Pen(vBrush, _thickness);
+            cPen = new Pen(cBrush, _thickness);
+        }
+
+        public void SetColours(string hCol, string vCol, string cCol)
+        {
+            HColor = Avalonia.Media.Color.Parse(hCol);
+            VColor = Avalonia.Media.Color.Parse(vCol);
+            CColor = Avalonia.Media.Color.Parse(cCol);
+        }
+
+        public override void Draw(DrawingContext context, float scale, ODPoint vpWorldSize, ODPoint worldMousePosition)
+        {
+            if (!IsVisible)
                 return;
 
-            float vpWidth = vpWorldSize.X;
-            float vpHeight = vpWorldSize.Y;
-            float thickness = 1.0f / scale;
+            Center = worldMousePosition;
 
-            hPen.Thickness = thickness;
-            vPen.Thickness = thickness;
-            cPen.Thickness = thickness;
+            float cSize = Size / scale; // Size still scales with zoom
+                                        // Use constant thickness in screen pixels
 
-            float cSize = size / scale;
+            _thickness = Weight / scale;
+            hPen.Thickness = _thickness;
+            vPen.Thickness = _thickness;
+            cPen.Thickness = _thickness;
+
 
             // Centre square
             context.DrawRectangle(null, cPen,
@@ -65,27 +115,16 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
                     new Size(cSize, cSize)
                 ));
 
+            var top = new Point(Center.X, Center.Y + vpWorldSize.Y);
+            var bottom = new Point(Center.X, Center.Y - vpWorldSize.Y);
+            var left = new Point(Center.X - vpWorldSize.X, Center.Y);
+            var right = new Point(Center.X + vpWorldSize.X, Center.Y);
 
-            // Vertical line (Top)
-            context.DrawLine(vPen,
-                new Point(Center.X, Center.Y + vpHeight),
-                new Point(Center.X, Center.Y + cSize/2));
-            
-            // Horizontal line (Left)
-            context.DrawLine(hPen,
-                new Point(Center.X - vpWidth, Center.Y),
-                new Point(Center.X - cSize/2, Center.Y));
-
-            // Vertical line (Bottom)
-            context.DrawLine(vPen,
-                new Point(Center.X, Center.Y - cSize/2),
-                new Point(Center.X, Center.Y - vpHeight));
-
-            // Horizontal line (Right)
-            context.DrawLine(hPen,
-                new Point(Center.X + cSize/2, Center.Y),
-                new Point(Center.X + vpWidth, Center.Y));
-
+            context.DrawLine(vPen, top, new Point(Center.X, Center.Y + cSize / 2));
+            context.DrawLine(vPen, new Point(Center.X, Center.Y - cSize / 2), bottom);
+            context.DrawLine(hPen, left, new Point(Center.X - cSize / 2, Center.Y));
+            context.DrawLine(hPen, new Point(Center.X + cSize / 2, Center.Y), right);
         }
+
     }
 }

@@ -14,6 +14,7 @@ namespace OpenDraft.ODCore.ODEditor.ODCommands
         Task<double> GetNumberAsync(string prompt);
         Task<string> GetTextAsync(string prompt);
         Task<string> GetChoiceAsync(string prompt, params string[] options);
+        Task<(ODPoint start, ODPoint end)> GetLineAsync(string promptStart, string promptEnd);
 
         void SetStatus(string message);
         void ShowMessage(string message);

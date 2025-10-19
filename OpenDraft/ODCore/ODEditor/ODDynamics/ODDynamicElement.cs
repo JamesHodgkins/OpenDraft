@@ -21,7 +21,7 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
             Id = Guid.NewGuid();
         }
 
-        public virtual void Draw(DrawingContext context, float scale, ODPoint vpWorldSize)
+        public virtual void Draw(DrawingContext context, float scale, ODPoint vpWorldSize, ODPoint mousePosition)
         {
             // Base draw method, to be overridden by derived classes
         }
