@@ -1,5 +1,6 @@
 ﻿using Avalonia;
 using Avalonia.Media;
+using OpenDraft;
 using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODGeometry;
 using System;
@@ -8,9 +9,6 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
 {
     public class ODCrosshairElement : ODDynamicElement
     {
-        public ODPoint Center { get; set; }
-        public float Weight { get; set; } = 1.0f;
-
         // Visibility
         public bool IsVisible { get; set; } = true;
 
@@ -22,94 +20,34 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
             set => _size = value;
         }
 
-        private float _thickness = 2.0f;
-        public float Thickness
-        {
-            get => _thickness;
-            set
-            {
-                _thickness = value;
-                UpdatePens();
-            }
-        }
-
-        private Color _hColor = Colors.Red;
-        public Color HColor
-        {
-            get => _hColor;
-            set
-            {
-                _hColor = value;
-                UpdatePens();
-            }
-        }
-
-        private Color _vColor = Colors.Lime;
-        public Color VColor
-        {
-            get => _vColor;
-            set
-            {
-                _vColor = value;
-                UpdatePens();
-            }
-        }
-
-        private Color _cColor = Colors.White;
-        public Color CColor
-        {
-            get => _cColor;
-            set
-            {
-                _cColor = value;
-                UpdatePens();
-            }
-        }
-
-        private SolidColorBrush hBrush, vBrush, cBrush;
-        private Pen hPen, vPen, cPen;
-
         public ODCrosshairElement()
         {
-            UpdatePens();
+
         }
 
-        private void UpdatePens()
-        {
-            hBrush = new SolidColorBrush(_hColor);
-            vBrush = new SolidColorBrush(_vColor);
-            cBrush = new SolidColorBrush(_cColor);
-
-            hPen = new Pen(hBrush, _thickness);
-            vPen = new Pen(vBrush, _thickness);
-            cPen = new Pen(cBrush, _thickness);
-        }
-
-        public void SetColours(string hCol, string vCol, string cCol)
-        {
-            HColor = Avalonia.Media.Color.Parse(hCol);
-            VColor = Avalonia.Media.Color.Parse(vCol);
-            CColor = Avalonia.Media.Color.Parse(cCol);
-        }
-
-        public override void Draw(DrawingContext context, float scale, ODPoint vpWorldSize, ODPoint worldMousePosition)
+        public override void Draw(DrawingContext context, ODLayer layer, float scale, ODPoint vpWorldSize, ODPoint worldMousePosition)
         {
             if (!IsVisible)
                 return;
 
-            Center = worldMousePosition;
+            // Get layer
+            Pen pen = new Pen(new SolidColorBrush(Avalonia.Media.Color.Parse(layer.Color)), layer.LineWeight / scale);
+            ODPoint Center = worldMousePosition;
+            float cSize = Size / scale; // Centre square size
 
-            float cSize = Size / scale; // Size still scales with zoom
-                                        // Use constant thickness in screen pixels
+            // Get styles from registry
+            Color xColour = Avalonia.Media.Color.Parse(ODSystem.GetRegistrValueAsString("style/crosshair_x_colour") ?? "Red");
+            Color yColour = Avalonia.Media.Color.Parse(ODSystem.GetRegistrValueAsString("style/crosshair_y_colour") ?? "Lime");
+            Color sqColour = Avalonia.Media.Color.Parse(ODSystem.GetRegistrValueAsString("style/crosshair_sq_colour") ?? "White");
+            float xThickness = ODSystem.GetRegistrValueAsDecimal("style/crosshair_line_weight") ?? 1;
 
-            _thickness = Weight / scale;
-            hPen.Thickness = _thickness;
-            vPen.Thickness = _thickness;
-            cPen.Thickness = _thickness;
+            Pen xPen = new Pen(new SolidColorBrush(xColour), xThickness / scale);
+            Pen yPen = new Pen(new SolidColorBrush(yColour), xThickness / scale);
+            Pen sqPen = new Pen(new SolidColorBrush(sqColour), xThickness / scale);
 
 
             // Centre square
-            context.DrawRectangle(null, cPen,
+            context.DrawRectangle(null, pen,
                 new Rect(
                     new Point(Center.X - cSize / 2, Center.Y - cSize / 2),
                     new Size(cSize, cSize)
@@ -120,10 +58,10 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
             var left = new Point(Center.X - vpWorldSize.X, Center.Y);
             var right = new Point(Center.X + vpWorldSize.X, Center.Y);
 
-            context.DrawLine(vPen, top, new Point(Center.X, Center.Y + cSize / 2));
-            context.DrawLine(vPen, new Point(Center.X, Center.Y - cSize / 2), bottom);
-            context.DrawLine(hPen, left, new Point(Center.X - cSize / 2, Center.Y));
-            context.DrawLine(hPen, new Point(Center.X + cSize / 2, Center.Y), right);
+            context.DrawLine(yPen, top, new Point(Center.X, Center.Y + cSize / 2)); // Top
+            context.DrawLine(xPen, left, new Point(Center.X - cSize / 2, Center.Y)); // Left
+            context.DrawLine(yPen, new Point(Center.X, Center.Y - cSize / 2), bottom); // Bottom
+            context.DrawLine(xPen, new Point(Center.X + cSize / 2, Center.Y), right); // Right
         }
 
     }

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://xsvg-standard.org/schema/v1.0",
+  "xsvgVersion": "0.0.1",
+  "author": {
+    "name": "OpenDraft",
+    "version": "0.0.01",
+    "url": "https://opendraft.org"
+  },
+  "drawing": {
+    "units": "mm",
+    "precision": 3,
+    "created": "2025-10-15T10:30:00Z",
+    "modified": "2025-10-19T11:00:00Z"
+  },
+  "layers": [
+    {
+      "id": "layer-0",
+      "name": "Default",
+      "color": "#FF0000",
+      "lineWeight": 0.6
+    }
+  ]
+}

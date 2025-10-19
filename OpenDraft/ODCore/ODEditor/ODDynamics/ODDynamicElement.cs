@@ -15,13 +15,14 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
         public Guid Id { get; set; }
         public string Color { get; set; } = "#FF0000";
         public float LineWeight { get; set; } = 2.0f;
+        public ushort LayerId { get; set; } = 0; // Default layer ID
 
         public ODDynamicElement()
         {
             Id = Guid.NewGuid();
         }
 
-        public virtual void Draw(DrawingContext context, float scale, ODPoint vpWorldSize, ODPoint mousePosition)
+        public virtual void Draw(DrawingContext context, ODLayer layer, float scale, ODPoint vpWorldSize, ODPoint mousePosition)
         {
             // Base draw method, to be overridden by derived classes
         }

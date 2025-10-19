@@ -15,6 +15,15 @@ namespace OpenDraft.ODCore.ODData
         {
             // Add a default layer
             AddLayer("Default");
+
+            AddLayer("Crosshair X");
+            GetLayerByName("Crosshair X")!.IsSystemLayer = true;
+            AddLayer("Crosshair Y");
+            GetLayerByName("Crosshair Y")!.IsSystemLayer = true;
+            AddLayer("Crosshair Square");
+            GetLayerByName("Crosshair Square")!.IsSystemLayer = true;
+
+
         }
 
 
@@ -74,6 +83,11 @@ namespace OpenDraft.ODCore.ODData
 
             if (layerToRemove != null)
             {
+                if (layerToRemove.IsSystemLayer)
+                {
+                    throw new InvalidOperationException("Cannot remove a system layer.");
+                }
+
                 if (ActiveLayer == layerToRemove.getID())
                 {
                     SetActiveLayer("Default");

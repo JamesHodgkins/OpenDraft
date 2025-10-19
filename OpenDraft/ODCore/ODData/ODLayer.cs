@@ -15,7 +15,8 @@ namespace OpenDraft.ODCore.ODData
         public float LineWeight { get; set; } = 0.6f;
         public bool IsVisible { get; set; } = true;
         public bool IsLocked { get; set; } = false;
-        
+        public bool IsSystemLayer { get; set; } = false;
+
         public ODLayer(ushort id, String name)
         {
             _id = id;

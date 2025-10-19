@@ -95,7 +95,9 @@ namespace OpenDraft.ODCore.ODEditor
         public async Task<(ODPoint start, ODPoint end)> GetLineAsync(string promptStart, string promptEnd)
         {
             var start = await GetPointAsync(promptStart);
-            _editor.AddDynamicElement(new ODRubberBandLine(start));
+            ODRubberBandLine rubberBandLine = new ODRubberBandLine(start);
+            rubberBandLine.LayerId = _dataManager.LayerManager.GetActiveLayer();
+            _editor.AddDynamicElement(rubberBandLine);
             var end = await GetPointAsync(promptEnd);
 
             return (start, end);

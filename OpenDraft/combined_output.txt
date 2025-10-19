@@ -8,15 +8,15 @@ Path: .\App.axaml
              x:Class="OpenDraft.App"
              xmlns:local="using:OpenDraft"
              RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
-    <Application.DataTemplates>
-        <local:ViewLocator/>
-    </Application.DataTemplates>
-  
-    <Application.Styles>
-        <FluentTheme />
-    </Application.Styles>
+  <Application.DataTemplates>
+    <local:ViewLocator/>
+  </Application.DataTemplates>
+
+  <Application.Styles>
+    <FluentTheme />
+    <StyleInclude Source="avares://OpenDraft/Styles/ODStyle.axaml"/>
+  </Application.Styles>
 </Application>
 
 
@@ -147,6 +147,81 @@ namespace OpenDraft
 
 
 
+** DynamicCanvas.axaml **
+Path: .\ODCore\DynamicCanvas.axaml
+
+<UserControl xmlns="https://github.com/avaloniaui"
+             x:Class="OpenDraft.DynamicCanvas"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+</UserControl>
+
+
+
+
+
+** DynamicCanvas.axaml.cs **
+Path: .\ODCore\DynamicCanvas.axaml.cs
+
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Markup.Xaml;
+using Avalonia.Media;
+using System;
+
+namespace OpenDraft;
+
+public partial class DynamicCanvas : Control
+{
+    public Action<DrawingContext, Rect>? OnRender { get; set; }
+
+    public override void Render(DrawingContext context)
+    {
+        base.Render(context);
+        OnRender?.Invoke(context, Bounds);
+    }
+}
+
+
+
+
+
+** StaticCanvas.axaml **
+Path: .\ODCore\StaticCanvas.axaml
+
+<UserControl xmlns="https://github.com/avaloniaui"
+             x:Class="OpenDraft.StaticCanvas"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+</UserControl>
+
+
+
+
+** StaticCanvas.axaml.cs **
+Path: .\ODCore\StaticCanvas.axaml.cs
+
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Markup.Xaml;
+using Avalonia.Media;
+using System;
+
+namespace OpenDraft;
+
+public partial class StaticCanvas : Control
+{
+    public Action<DrawingContext, Rect>? OnRender { get; set; }
+
+    public override void Render(DrawingContext context)
+    {
+        base.Render(context);
+        OnRender?.Invoke(context, Bounds);
+    }
+}
+
+
+
+
+
 ** Viewport.axaml **
 Path: .\ODCore\Viewport.axaml
 
@@ -154,9 +229,37 @@ Path: .\ODCore\Viewport.axaml
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:Class="OpenDraft.Viewport">
+             xmlns:local="clr-namespace:OpenDraft"
+             mc:Ignorable="d"
+             x:Class="OpenDraft.Viewport"
+             d:DesignWidth="800" d:DesignHeight="450">
+
+    <UserControl.Styles>
+        <Style Selector="local|Viewport">
+            <Setter Property="Cursor" Value="Arrow"/>
+        </Style>
+
+        <Style Selector="local|Viewport:pointerover">
+            <Setter Property="Cursor" Value="None"/>
+        </Style>
+    </UserControl.Styles>
+
+
+
+	<Grid Background="Transparent">
+        <local:StaticCanvas x:Name="StaticCanvas"
+							IsHitTestVisible="False"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch" />
+        <local:DynamicCanvas x:Name="DynamicCanvas"
+							 IsHitTestVisible="False"
+                             HorizontalAlignment="Stretch"
+                             VerticalAlignment="Stretch" />
+    </Grid>
+
+
 </UserControl>
+
 
 
 
@@ -168,30 +271,17 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Threading;
 using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODEditor;
+using OpenDraft.ODCore.ODEditor.ODDynamics;
 using OpenDraft.ODCore.ODGeometry;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 
-
 namespace OpenDraft
 {
-    public class ViewportCamera
-    {
-        public Point Position { get; set; }
-        public float Scale { get; set; }
-
-        public ViewportCamera(Point? position = null, float scale = 1.0f)
-        {
-            Position = position ?? new Point(0, 0);
-            Scale = scale;
-        }
-
-        public void MoveBy(Vector delta) => Position += new Point(delta.X, delta.Y);
-    }
-
     public partial class Viewport : UserControl
     {
         public static readonly StyledProperty<ObservableCollection<ODElement>> ElementsProperty =
@@ -204,7 +294,10 @@ namespace OpenDraft
             AvaloniaProperty.Register<Viewport, ODEditor>(nameof(Editor));
 
         public static readonly StyledProperty<IODEditorInputService> InputServiceProperty =
-        AvaloniaProperty.Register<Viewport, IODEditorInputService>(nameof(InputService));
+            AvaloniaProperty.Register<Viewport, IODEditorInputService>(nameof(InputService));
+
+        public static readonly StyledProperty<ObservableCollection<ODDynamicElement>> DynamicElementsProperty =
+            AvaloniaProperty.Register<Viewport, ObservableCollection<ODDynamicElement>>(nameof(DynamicElements));
 
         public ObservableCollection<ODElement> Elements
         {
@@ -230,12 +323,19 @@ namespace OpenDraft
             set => SetValue(InputServiceProperty, value);
         }
 
+        public ObservableCollection<ODDynamicElement> DynamicElements
+        {
+            get => GetValue(DynamicElementsProperty);
+            set => SetValue(DynamicElementsProperty, value);
+        }
+
         private readonly ViewportCamera Camera = new();
         private bool isPanning = false;
         private Point _lastPointerDragPosition;
         private Point _mousePosition;
         private Size _lastSize;
         private bool _isInitialized = false;
+        private bool _isMouseInside = false;
 
         public Viewport()
         {
@@ -243,28 +343,83 @@ namespace OpenDraft
             Background = Brushes.Transparent;
 
             Elements ??= new ObservableCollection<ODElement>();
-            SubscribeToElements();
+            DynamicElements ??= new ObservableCollection<ODDynamicElement>();
+
+            SubscribeToCollection(Elements, OnElementsChanged);
+            SubscribeToCollection(DynamicElements, OnDynamicElementsChanged);
 
             PointerPressed += OnPointerPressed;
             PointerReleased += OnPointerReleased;
             PointerMoved += OnPointerMoved;
             PointerWheelChanged += OnPointerWheelChanged;
+            PointerEntered += OnPointerEntered;
+            PointerExited += OnPointerExited;
 
-            InvalidateVisual();
+            SetupStaticCanvas();
+            SetupDynamicCanvas();
         }
 
-        private void SubscribeToElements()
+        private void SubscribeToCollection<T>(ObservableCollection<T> collection, System.Collections.Specialized.NotifyCollectionChangedEventHandler handler)
         {
-            if (Elements != null)
-            {
-                Elements.CollectionChanged -= OnElementsChanged;
-                Elements.CollectionChanged += OnElementsChanged;
-            }
+            if (collection == null) return;
+            collection.CollectionChanged -= handler;
+            collection.CollectionChanged += handler;
         }
 
         private void OnElementsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            InvalidateVisual();
+            StaticCanvas?.InvalidateVisual();
+        }
+
+        private void OnDynamicElementsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            DynamicCanvas?.InvalidateVisual();
+        }
+
+        private void SetupStaticCanvas()
+        {
+            StaticCanvas.OnRender = (context, bounds) =>
+            {
+                if (Elements == null) return;
+                var matrix = Camera.GetMatrix(bounds.Height);
+
+                using (context.PushTransform(matrix))
+                {
+                    foreach (var element in Elements)
+                    {
+                        var layer = LayerManager?.GetLayerByID(element.LayerId);
+                        if (layer != null)
+                            element.Draw(context, layer);
+                    }
+                }
+            };
+            StaticCanvas.InvalidateVisual();
+        }
+
+        private void SetupDynamicCanvas()
+        {
+            DynamicCanvas.OnRender = (context, bounds) =>
+            {
+                if (DynamicElements == null) return;
+
+                ODPoint vpWorldSize = new ODPoint(bounds.Width / Camera.Scale, bounds.Height / Camera.Scale);
+                ODPoint worldMousePoint = new ODPoint(GetWorldMousePosition().X, GetWorldMousePosition().Y);
+
+                var matrix = Camera.GetMatrix(bounds.Height);
+                using (context.PushTransform(matrix))
+                {
+                    if (Editor?.DynamicElements != null)
+                        foreach (ODDynamicElement element in Editor.DynamicElements)
+                        {
+                            ODLayer? layer = LayerManager?.GetLayerByID(element.LayerId);
+                            if (layer != null) element.Draw(context, layer, Camera.Scale, vpWorldSize, worldMousePoint);
+                        }
+                }
+            };
+
+            var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
+            timer.Tick += (_, _) => DynamicCanvas?.InvalidateVisual();
+            timer.Start();
         }
 
         protected override Size ArrangeOverride(Size finalSize)
@@ -272,35 +427,33 @@ namespace OpenDraft
             if (!_isInitialized)
             {
                 _isInitialized = true;
-                Camera.Position = new Point(-finalSize.Width / 2 / Camera.Scale,
-                                            -finalSize.Height / 2 / Camera.Scale);
+                Camera.Position = new Point(-finalSize.Width / 2 / Camera.Scale, -finalSize.Height / 2 / Camera.Scale);
             }
             else
             {
-                // Keep view centered on resize
-                Camera.Position -= new Point(
+                Camera.Position -= new Vector(
                     (finalSize.Width - _lastSize.Width) / 2 / Camera.Scale,
-                    (finalSize.Height - _lastSize.Height) / 2 / Camera.Scale
-                );
+                    (finalSize.Height - _lastSize.Height) / 2 / Camera.Scale);
             }
 
             _lastSize = finalSize;
-
-            // Force redraw
-            InvalidateVisual();
-
+            StaticCanvas?.InvalidateVisual();
             return base.ArrangeOverride(finalSize);
         }
-
 
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
         {
             base.OnPropertyChanged(change);
+            if (!_isInitialized) return;
 
             if (change.Property == ElementsProperty)
-                SubscribeToElements();
-        }
+                SubscribeToCollection(Elements, OnElementsChanged);
+            else if (change.Property == DynamicElementsProperty)
+                SubscribeToCollection(DynamicElements, OnDynamicElementsChanged);
 
+            StaticCanvas?.InvalidateVisual();
+            DynamicCanvas?.InvalidateVisual();
+        }
 
         private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
         {
@@ -315,10 +468,7 @@ namespace OpenDraft
         {
             if (e.InitialPressMouseButton == MouseButton.Left)
             {
-                Point worldPos = GetWorldMousePosition();
-                var odPoint = new ODPoint(worldPos.X, worldPos.Y);
-                
-                // Use input service instead of direct editor call
+                var odPoint = new ODPoint(GetWorldMousePosition().X, GetWorldMousePosition().Y);
                 InputService?.RaisePointProvided(odPoint);
                 e.Handled = true;
             }
@@ -330,23 +480,33 @@ namespace OpenDraft
         private void OnPointerMoved(object? sender, PointerEventArgs e)
         {
             _mousePosition = e.GetPosition(this);
-            Point world = GetWorldMousePosition();
-            
+            DynamicCanvas?.InvalidateVisual();
 
             if (!isPanning) return;
 
-            Point current = e.GetPosition(this);
+            var current = e.GetPosition(this);
             Camera.MoveBy(new Vector(-(current.X - _lastPointerDragPosition.X) / Camera.Scale,
                                      (current.Y - _lastPointerDragPosition.Y) / Camera.Scale));
             _lastPointerDragPosition = current;
 
-            InvalidateVisual();
+            StaticCanvas?.InvalidateVisual();
+        }
+
+        private void OnPointerEntered(object? sender, PointerEventArgs e)
+        {
+            _isMouseInside = true;
+            Editor.ShowCrosshair();
+        }
+
+        private void OnPointerExited(object? sender, PointerEventArgs e)
+        {
+            _isMouseInside = false;
+            Editor.HideCrosshair();
         }
 
         private void OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
         {
-            Point mousePos = e.GetPosition(this);
-
+            var mousePos = e.GetPosition(this);
             float zoomFactor = 1.1f;
             float oldScale = Camera.Scale;
             float newScale = oldScale * (float)Math.Pow(zoomFactor, e.Delta.Y > 0 ? 1 : -1);
@@ -357,64 +517,19 @@ namespace OpenDraft
             var oldWorld = ScreenToWorld(mousePos, oldScale);
             var newWorld = ScreenToWorld(mousePos, newScale);
 
-            Camera.Position += oldWorld - newWorld;
+            Camera.Position += oldWorld - newWorld; // <--- fix here
             Camera.Scale = newScale;
 
-            InvalidateVisual();
+            StaticCanvas?.InvalidateVisual();
+            DynamicCanvas?.InvalidateVisual();
         }
 
-        public override void Render(DrawingContext context)
-        {
-            base.Render(context);
 
-            var bounds = new Rect(0, 0, Bounds.Width, Bounds.Height);
-            using (context.PushClip(bounds))
-            {
-                DrawScene(context);
-            }
-        }
+        public Point GetScreenMousePosition() => _mousePosition;
 
-        public Point GetScreenMousePosition()
-        {
-             return _mousePosition;
-        }
-
-        public Point GetWorldMousePosition()
-        {
-            return ScreenToWorld(_mousePosition);
-        }
-
-        private Point ScreenToWorld(Point screenPoint)
-        {
-            return new Point(
-                screenPoint.X / Camera.Scale + Camera.Position.X,
-                (Bounds.Height - screenPoint.Y) / Camera.Scale + Camera.Position.Y
-            );
-        }
-
-        private void DrawScene(DrawingContext context)
-        {
-            if (Elements == null || Elements.Count == 0)
-                return;
-
-            var matrix = new Matrix(
-                Camera.Scale, 0,
-                0, -Camera.Scale,
-                -Camera.Position.X * Camera.Scale,
-                Camera.Position.Y * Camera.Scale + Bounds.Height
-            );
-
-            using (context.PushTransform(matrix))
-            {
-                foreach (var element in Elements)
-                {
-                    var layer = LayerManager?.GetLayerByID(element.LayerId);
-
-                    if (layer != null)
-                        element.Draw(context, layer);
-                }
-            }
-        }
+        public Point GetWorldMousePosition() =>
+            new Point(_mousePosition.X / Camera.Scale + Camera.Position.X,
+                      (Bounds.Height - _mousePosition.Y) / Camera.Scale + Camera.Position.Y);
     }
 }
 
@@ -482,7 +597,8 @@ namespace OpenDraft.ODCore.ODData
         public float LineWeight { get; set; } = 0.6f;
         public bool IsVisible { get; set; } = true;
         public bool IsLocked { get; set; } = false;
-        
+        public bool IsSystemLayer { get; set; } = false;
+
         public ODLayer(ushort id, String name)
         {
             _id = id;
@@ -520,6 +636,15 @@ namespace OpenDraft.ODCore.ODData
         {
             // Add a default layer
             AddLayer("Default");
+
+            AddLayer("Crosshair X");
+            GetLayerByName("Crosshair X")!.IsSystemLayer = true;
+            AddLayer("Crosshair Y");
+            GetLayerByName("Crosshair Y")!.IsSystemLayer = true;
+            AddLayer("Crosshair Square");
+            GetLayerByName("Crosshair Square")!.IsSystemLayer = true;
+
+
         }
 
 
@@ -579,6 +704,11 @@ namespace OpenDraft.ODCore.ODData
 
             if (layerToRemove != null)
             {
+                if (layerToRemove.IsSystemLayer)
+                {
+                    throw new InvalidOperationException("Cannot remove a system layer.");
+                }
+
                 if (ActiveLayer == layerToRemove.getID())
                 {
                     SetActiveLayer("Default");
@@ -662,10 +792,13 @@ Path: .\ODCore\ODEditor\ODEditor.cs
 
 ﻿using Avalonia.Input;
 using Avalonia.Threading;
-using OpenDraft.ODCore.ODEditor.ODCommands;
 using OpenDraft.ODCore.ODData;
+using OpenDraft.ODCore.ODEditor.ODCommands;
+using OpenDraft.ODCore.ODEditor.ODDynamics;
 using OpenDraft.ODCore.ODGeometry;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -677,11 +810,17 @@ namespace OpenDraft.ODCore.ODEditor
         private readonly ODDataManager _dataManager;
         private readonly ODCommandRegistry _commandRegistry;
         private readonly IODEditorInputService _inputService;
+
+        public ObservableCollection<ODDynamicElement> DynamicElements { get; } = new();
+
         private ODEditorContext? _currentContext;
         private IODEditorCommand? _currentCommand;
 
         public event EventHandler<MessageEventArgs>? ShowMessageRequested;
         public event EventHandler<MessageEventArgs>? StatusMessageChanged;
+
+        ODCrosshairElement ch = new ODCrosshairElement();
+
 
         public ODEditor(ODDataManager dataManager, IODEditorInputService inputService)
         {
@@ -693,7 +832,41 @@ namespace OpenDraft.ODCore.ODEditor
             // Subscribe to input events
             _inputService.KeyPressed += OnKeyPressed;
             _inputService.CancelRequested += OnCancelRequested;
+
+            DynamicElements.Add(ch);
         }
+
+        /* DYNAMIC ELEMENTS MANAGEMENT */
+
+        public void restoreDefaultDynamicElements()
+        {
+            DynamicElements.Clear();
+            // Future: Add default dynamic elements if any <<<< TODO IMPLEMENT <<<<
+            DynamicElements.Add(ch);
+        }
+
+        public void ClearDynamicElements()
+        {
+            DynamicElements.Clear();
+            DynamicElements.Add(ch);
+        }
+
+        // ADD THIS: Method to add dynamic elements
+        public void AddDynamicElement(ODDynamicElement element)
+        {
+            Debug.WriteLine("AddDynamicElement: " + element.GetType().Name);
+            DynamicElements.Add(element);
+        }
+
+        // ADD THIS: Method to remove specific dynamic element
+        public void RemoveDynamicElement(ODDynamicElement element)
+        {
+            DynamicElements.Remove(element);
+        }
+
+
+
+        /* COMMAND EXECUTION AND INPUT HANDLING  */
 
         private void OnKeyPressed(Key key)
         {
@@ -712,9 +885,11 @@ namespace OpenDraft.ODCore.ODEditor
             CancelCurrentCommand();
         }
 
-        // ADD THIS MISSING METHOD
+        
         public void CancelCurrentCommand()
         {
+            restoreDefaultDynamicElements();
+
             _currentContext?.Cancel();
             _currentContext = null;
             _currentCommand = null;
@@ -760,7 +935,7 @@ namespace OpenDraft.ODCore.ODEditor
             _ = RunCommandAsync();
         }
 
-        // ADD THESE MISSING METHODS
+        
         public void SetStatus(string message)
         {
             Debug.WriteLine("SetStatus: " + message);
@@ -785,9 +960,19 @@ namespace OpenDraft.ODCore.ODEditor
             _inputService.CancelRequested -= OnCancelRequested;
             CancelCurrentCommand();
         }
+
+        public void HideCrosshair()
+        {
+            ch.IsVisible = false;
+        }
+
+        public void ShowCrosshair()
+        {
+            ch.IsVisible = true;
+        }
     }
 
-    // MOVE THIS CLASS INSIDE ODEditor.cs OR CREATE SEPARATE FILE
+    
     public class MessageEventArgs : EventArgs
     {
         public string Message { get; }
@@ -809,8 +994,11 @@ Path: .\ODCore\ODEditor\ODEditorContext.cs
 
 ﻿using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODEditor.ODCommands;
+using OpenDraft.ODCore.ODEditor.ODDynamics;
 using OpenDraft.ODCore.ODGeometry;
+using OpenDraft.ODCore.ODMath;
 using System;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -842,6 +1030,21 @@ namespace OpenDraft.ODCore.ODEditor
             _inputService.PointProvided += OnPointProvided;
             _inputService.NumberInput += OnNumberProvided;
             _inputService.TextInput += OnTextProvided;
+        }
+
+        public void AddDynamicElement(ODDynamicElement element)
+        {
+            _editor.AddDynamicElement(element);
+        }
+
+        public void RemoveDynamicElement(ODDynamicElement element)
+        {
+            _editor.RemoveDynamicElement(element);
+        }
+
+        public void ClearDynamicElements()
+        {
+            _editor.ClearDynamicElements();
         }
 
         private void OnPointProvided(ODPoint point)
@@ -881,6 +1084,17 @@ namespace OpenDraft.ODCore.ODEditor
             ClearAllWaiters();
             _textWaiter = new TaskCompletionSource<string>();
             return _textWaiter.Task;
+        }
+
+        public async Task<(ODPoint start, ODPoint end)> GetLineAsync(string promptStart, string promptEnd)
+        {
+            var start = await GetPointAsync(promptStart);
+            ODRubberBandLine rubberBandLine = new ODRubberBandLine(start);
+            rubberBandLine.LayerId = _dataManager.LayerManager.GetActiveLayer();
+            _editor.AddDynamicElement(rubberBandLine);
+            var end = await GetPointAsync(promptEnd);
+
+            return (start, end);
         }
 
         public Task<string> GetChoiceAsync(string prompt, params string[] options)
@@ -1011,6 +1225,31 @@ namespace OpenDraft.ODCore.ODEditor
 
 
 
+** ODViewportCamera.cs **
+Path: .\ODCore\ODEditor\ODViewportCamera.cs
+
+﻿using Avalonia;
+
+public class ViewportCamera
+{
+    public Point Position { get; set; } = new Point(0, 0);
+    public float Scale { get; set; } = 1.0f;
+
+    public ViewportCamera(Point? position = null, float scale = 1.0f)
+    {
+        Position = position ?? new Point(0, 0);
+        Scale = scale;
+    }
+
+    public void MoveBy(Vector delta) => Position += new Point(delta.X, delta.Y);
+
+    public Matrix GetMatrix(double viewportHeight) =>
+        new Matrix(Scale, 0, 0, -Scale, -Position.X * Scale, Position.Y * Scale + viewportHeight);
+}
+
+
+
+
 ** IODEditorCommand.cs **
 Path: .\ODCore\ODEditor\ODCommands\IODEditorCommand.cs
 
@@ -1033,6 +1272,7 @@ namespace OpenDraft.ODCore.ODEditor.ODCommands
 Path: .\ODCore\ODEditor\ODCommands\IODEditorGateway.cs
 
 ﻿using OpenDraft.ODCore.ODData;
+using OpenDraft.ODCore.ODEditor.ODDynamics;
 using OpenDraft.ODCore.ODGeometry;
 using System.Threading;
 using System.Threading.Tasks;
@@ -1047,11 +1287,15 @@ namespace OpenDraft.ODCore.ODEditor.ODCommands
         Task<double> GetNumberAsync(string prompt);
         Task<string> GetTextAsync(string prompt);
         Task<string> GetChoiceAsync(string prompt, params string[] options);
+        Task<(ODPoint start, ODPoint end)> GetLineAsync(string promptStart, string promptEnd);
 
         void SetStatus(string message);
         void ShowMessage(string message);
 
-        // Add cancellation token for long-running operations
+        void AddDynamicElement(ODDynamicElement element);
+        void RemoveDynamicElement(ODDynamicElement element);
+        void ClearDynamicElements();
+
         CancellationToken CancellationToken { get; }
     }
 }
@@ -1215,27 +1459,216 @@ namespace OpenDraft.ODCore.ODEditor.ODCommands
 ** ODLineCommand.cs **
 Path: .\ODCore\ODEditor\ODCommands\ODLineCommand.cs
 
-﻿using OpenDraft.ODCore.ODEditor.ODCommands;
+﻿// Example of using dynamic elements in a command
+using OpenDraft.ODCore.ODEditor.ODCommands;
+using OpenDraft.ODCore.ODEditor.ODDynamics;
 using OpenDraft.ODCore.ODGeometry;
 using System.Diagnostics;
 using System.Threading.Tasks;
 
-namespace OpenDraft.ODCore.ODEditor.ODCommands
+[ODCommand("LINE", "Creates a line", "L")]
+public class ODLineCommand : ODBaseEditorCommand
 {
-    [ODCommand("LINE", "Creates a line", "L")]
-    public class ODLineCommand : ODBaseEditorCommand
+    public override async Task ExecuteAsync(IODEditorGateway editor)
     {
-        public override async Task ExecuteAsync(IODEditorGateway editor)
+        var vec = await editor.GetLineAsync("Specify start point:", "Specify end point:");
+
+        var line = new ODLine(vec.start, vec.end);
+        editor.DataManager.AddElement(line);
+        editor.SetStatus("Line created successfully");
+    }
+}
+
+
+
+
+** ODCrosshair.cs **
+Path: .\ODCore\ODEditor\ODDynamics\ODCrosshair.cs
+
+﻿using Avalonia;
+using Avalonia.Media;
+using OpenDraft;
+using OpenDraft.ODCore.ODData;
+using OpenDraft.ODCore.ODGeometry;
+using System;
+
+namespace OpenDraft.ODCore.ODEditor.ODDynamics
+{
+    public class ODCrosshairElement : ODDynamicElement
+    {
+        // Visibility
+        public bool IsVisible { get; set; } = true;
+
+        // Style properties
+        private int _size = 10;
+        public int Size
         {
-            var startPoint = await editor.GetPointAsync("Specify first point:");
-            var endPoint = await editor.GetPointAsync("Specify second point:");
-            var line = new ODLine(startPoint, endPoint);
-            
-            editor.DataManager.AddElement(line);
-            editor.SetStatus("Line created successfully");
+            get => _size;
+            set => _size = value;
+        }
+
+        public ODCrosshairElement()
+        {
+
+        }
+
+        public override void Draw(DrawingContext context, ODLayer layer, float scale, ODPoint vpWorldSize, ODPoint worldMousePosition)
+        {
+            if (!IsVisible)
+                return;
+
+            // Get layer
+            Pen pen = new Pen(new SolidColorBrush(Avalonia.Media.Color.Parse(layer.Color)), layer.LineWeight / scale);
+            ODPoint Center = worldMousePosition;
+            float cSize = Size / scale; // Centre square size
+
+            // Get styles from registry
+            Color xColour = Avalonia.Media.Color.Parse(ODSystem.GetRegistrValueAsString("style/crosshair_x_colour") ?? "Red");
+            Color yColour = Avalonia.Media.Color.Parse(ODSystem.GetRegistrValueAsString("style/crosshair_y_colour") ?? "Lime");
+            Color sqColour = Avalonia.Media.Color.Parse(ODSystem.GetRegistrValueAsString("style/crosshair_sq_colour") ?? "White");
+            float xThickness = ODSystem.GetRegistrValueAsDecimal("style/crosshair_line_weight") ?? 1;
+
+            Pen xPen = new Pen(new SolidColorBrush(xColour), xThickness / scale);
+            Pen yPen = new Pen(new SolidColorBrush(yColour), xThickness / scale);
+            Pen sqPen = new Pen(new SolidColorBrush(sqColour), xThickness / scale);
+
+
+            // Centre square
+            context.DrawRectangle(null, pen,
+                new Rect(
+                    new Point(Center.X - cSize / 2, Center.Y - cSize / 2),
+                    new Size(cSize, cSize)
+                ));
+
+            var top = new Point(Center.X, Center.Y + vpWorldSize.Y);
+            var bottom = new Point(Center.X, Center.Y - vpWorldSize.Y);
+            var left = new Point(Center.X - vpWorldSize.X, Center.Y);
+            var right = new Point(Center.X + vpWorldSize.X, Center.Y);
+
+            context.DrawLine(yPen, top, new Point(Center.X, Center.Y + cSize / 2)); // Top
+            context.DrawLine(xPen, left, new Point(Center.X - cSize / 2, Center.Y)); // Left
+            context.DrawLine(yPen, new Point(Center.X, Center.Y - cSize / 2), bottom); // Bottom
+            context.DrawLine(xPen, new Point(Center.X + cSize / 2, Center.Y), right); // Right
+        }
+
+    }
+}
+
+
+
+
+
+** ODDynamicElement.cs **
+Path: .\ODCore\ODEditor\ODDynamics\ODDynamicElement.cs
+
+﻿using Avalonia;
+using Avalonia.Media;
+using OpenDraft.ODCore.ODData;
+using OpenDraft.ODCore.ODGeometry;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace OpenDraft.ODCore.ODEditor.ODDynamics
+{
+    public class ODDynamicElement
+    {
+        public Guid Id { get; set; }
+        public string Color { get; set; } = "#FF0000";
+        public float LineWeight { get; set; } = 2.0f;
+        public ushort LayerId { get; set; } = 0; // Default layer ID
+
+        public ODDynamicElement()
+        {
+            Id = Guid.NewGuid();
+        }
+
+        public virtual void Draw(DrawingContext context, ODLayer layer, float scale, ODPoint vpWorldSize, ODPoint mousePosition)
+        {
+            // Base draw method, to be overridden by derived classes
+        }
+
+    }
+}
+
+
+
+
+
+** ODRubberBandLine.cs **
+Path: .\ODCore\ODEditor\ODDynamics\ODRubberBandLine.cs
+
+﻿using Avalonia;
+using Avalonia.Media;
+using OpenDraft.ODCore.ODData;
+using OpenDraft.ODCore.ODGeometry;
+using System;
+using System.Diagnostics;
+
+namespace OpenDraft.ODCore.ODEditor.ODDynamics
+{
+    public class ODRubberBandLine : ODDynamicElement
+    {
+        public ODPoint Start { get; set; }
+        public float Weight { get; set; } = 1.0f;
+
+        public ODRubberBandLine(ODPoint start)
+        {
+            Start = start;
+        }
+
+        public override void Draw(DrawingContext context, ODLayer layer, float scale, ODPoint vpWorldSize, ODPoint mousePosition)
+        {
+            if (layer != null && !layer.IsVisible)
+                return;
+
+            Pen pen = new Pen(new SolidColorBrush(Avalonia.Media.Color.Parse(layer.Color)), layer.LineWeight);
+
+            context.DrawLine(pen, new Point(Start.X, Start.Y), new Point(mousePosition.X, mousePosition.Y));
+        }
+
+    }
+}
+
+
+
+
+
+** ODSnapIndicatorElement.cs **
+Path: .\ODCore\ODEditor\ODDynamics\ODSnapIndicatorElement.cs
+
+﻿using Avalonia;
+using Avalonia.Media;
+using OpenDraft.ODCore.ODData;
+using OpenDraft.ODCore.ODGeometry;
+using System;
+
+namespace OpenDraft.ODCore.ODEditor.ODDynamics
+{
+    public class SnapIndicatorElement : ODDynamicElement
+    {
+        public ODPoint Position { get; set; }
+        public double Radius { get; set; } = 5.0;
+
+        public SnapIndicatorElement(ODPoint position)
+        {
+            Position = position;
+        }
+
+        public override void Draw(DrawingContext context, ODLayer layer, float scale, ODPoint vpExtents, ODPoint worldMousePosition)
+        {
+            var brush = new SolidColorBrush(Colors.Yellow);
+            var pen = new Pen(brush, 1.5);
+
+            context.DrawEllipse(null, pen,
+                new Point(Position.X, Position.Y),
+                Radius, Radius);
         }
     }
 }
+
 
 
 
@@ -1410,35 +1843,35 @@ using System.Threading.Tasks;
 
 namespace OpenDraft.ODCore.ODMath
 {
-    public class Vector2
+    public class ODVec2
         {
         public float X { get; set; }
         public float Y { get; set; }
-        public Vector2(float x, float y)
+        public ODVec2(float x, float y)
         {
             X = x;
             Y = y;
         }
-        public static Vector2 operator +(Vector2 a, Vector2 b)
+        public static ODVec2 operator +(ODVec2 a, ODVec2 b)
         {
-            return new Vector2(a.X + b.X, a.Y + b.Y);
+            return new ODVec2(a.X + b.X, a.Y + b.Y);
         }
 
-        public static Vector2 operator -(Vector2 a, Vector2 b)
+        public static ODVec2 operator -(ODVec2 a, ODVec2 b)
         {
-            return new Vector2(a.X - b.X, a.Y - b.Y);
+            return new ODVec2(a.X - b.X, a.Y - b.Y);
         }
 
-        public static Vector2 operator *(Vector2 a, float scalar)
+        public static ODVec2 operator *(ODVec2 a, float scalar)
         {
-            return new Vector2(a.X * scalar, a.Y * scalar);
+            return new ODVec2(a.X * scalar, a.Y * scalar);
         }
         
-        public static Vector2 operator /(Vector2 a, float scalar)
+        public static ODVec2 operator /(ODVec2 a, float scalar)
         {
             if (scalar == 0)
                 throw new DivideByZeroException("Cannot divide by zero.");
-            return new Vector2(a.X / scalar, a.Y / scalar);
+            return new ODVec2(a.X / scalar, a.Y / scalar);
         }
         
         public float Magnitude()
@@ -1446,7 +1879,7 @@ namespace OpenDraft.ODCore.ODMath
             return (float)Math.Sqrt(X * X + Y * Y);
         }
         
-        public Vector2 Normalize()
+        public ODVec2 Normalize()
         {
             float magnitude = Magnitude();
             if (magnitude == 0)
@@ -1459,6 +1892,228 @@ namespace OpenDraft.ODCore.ODMath
             return $"({X}, {Y})";
         }
     }
+}
+
+
+
+
+
+** ODStyle.axaml **
+Path: .\Styles\ODStyle.axaml
+
+<Styles xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+	<Styles.Resources>
+		<Color x:Key="BackgroundDark">#141415</Color>
+		<Color x:Key="BackgroundLight">#1E2024</Color>
+        <Color x:Key="PrimaryColor">#333</Color>
+        <Color x:Key="AccentColor">#FF0000</Color>
+		<SolidColorBrush x:Key="BackgroundDarkBrush" Color="{DynamicResource BackgroundDark}"/>
+		<SolidColorBrush x:Key="BackgroundLightBrush" Color="{DynamicResource BackgroundLight}"/>
+        <SolidColorBrush x:Key="PrimaryBrush" Color="{DynamicResource PrimaryColor}"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="{DynamicResource AccentColor}"/>
+    </Styles.Resources>
+
+	<Style Selector="Window">
+		<Setter Property="FontSize" Value="12"/>
+		<Setter Property="Background" Value="{DynamicResource BackgroundDarkBrush}"/>
+	</Style>
+  
+	<Style Selector="Button">
+		<Setter Property="Margin" Value="2"/>
+		<Setter Property="Padding" Value="2"/>
+		<Setter Property="Background" Value="#333"/>
+		<Setter Property="CornerRadius" Value="1"/>
+		<Setter Property="Height" Value="36"/>
+	</Style>
+
+	<Style Selector="Menu">
+		<Setter Property="Background" Value="{DynamicResource BackgroundDarkBrush}"/>
+		<Setter Property="Height" Value="22"/>
+	</Style>
+
+	<Style Selector="MenuItem">
+		<Setter Property="Background" Value="Transparent"/>
+		<Setter Property="Foreground" Value="#CCC"/>
+		<Setter Property="CornerRadius" Value="4"/>
+	</Style>
+
+
+
+
+	
+
+	<Style Selector="MenuItem:pointerover /template/ Border#PART_LayoutRoot">
+		<Setter Property="Background" Value="#80FF0000"/>
+	</Style>
+	
+
+
+
+
+
+
+	<Style Selector="StackPanel.toolbar">
+		<Setter Property="Background" Value="{DynamicResource BackgroundLightBrush}"/>
+		<Setter Property="Height" Value="40"/>
+		<Setter Property="Orientation" Value="Horizontal"/>
+	</Style>
+
+	<Style Selector="StackPanel.statusbar">
+		<Setter Property="Background" Value="{DynamicResource BackgroundLightBrush}"/>
+		<Setter Property="Height" Value="32"/>
+		<Setter Property="Orientation" Value="Horizontal"/>
+	</Style>
+
+	<Style Selector="StackPanel.toolbar > Button">
+		<Setter Property="Background" Value="{DynamicResource BackgroundLightBrush}"/>
+		<Setter Property="Width" Value="28"/>
+		<Setter Property="Height" Value="28"/>
+	</Style>
+
+	<Style Selector="StackPanel.statusbar > Button">
+		<Setter Property="Background" Value="Red"/>
+		<Setter Property="Width" Value="28"/>
+		<Setter Property="Height" Value="28"/>
+	</Style>
+
+</Styles>
+
+
+
+
+** ODSystem.cs **
+Path: .\System\ODSystem.cs
+
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Text.Json;
+using System.Threading.Tasks;
+
+namespace OpenDraft
+{
+    public static class ODSystem
+    {
+        private static Dictionary<string, string> _dictionary = new Dictionary<string, string>();
+
+
+        public static void Initialise()
+        {
+            LoadRegistry();
+        }
+
+        private static void LoadRegistry()
+        {
+            _dictionary.Clear();
+            string registryPath = "config.json";
+
+            if (File.Exists(registryPath))
+            {
+                string json = File.ReadAllText(registryPath);
+                using var doc = JsonDocument.Parse(json);
+
+                var flat = new Dictionary<string, string>();
+                FlattenJson(doc.RootElement, "", flat);
+
+                foreach (var kvp in flat)
+                    _dictionary[kvp.Key] = kvp.Value;
+            }
+
+            Debug.WriteLine($"ODSystem registry loaded with {_dictionary.Count} entries.");
+        }
+
+        private static void FlattenJson(JsonElement element, string prefix, Dictionary<string, string> result)
+        {
+            switch (element.ValueKind)
+            {
+                case JsonValueKind.Object:
+                    foreach (var prop in element.EnumerateObject())
+                    {
+                        string newPrefix = string.IsNullOrEmpty(prefix) ? prop.Name : $"{prefix}/{prop.Name}";
+                        FlattenJson(prop.Value, newPrefix, result);
+                    }
+                    break;
+
+                case JsonValueKind.Array:
+                    foreach (var item in element.EnumerateArray())
+                    {
+                        // Don’t append an index — treat array items as part of the same scope
+                        FlattenJson(item, prefix, result);
+                    }
+                    break;
+
+                default:
+                    result[prefix] = element.ToString();
+                    break;
+            }
+        }
+
+        public static string? GetRegistrValueAsString(string key)
+        {
+            if (_dictionary.TryGetValue(key, out var value))
+            {
+                return value;
+            }
+            return null;
+        }
+
+        public static int? GetRegistrValueAsInt(string key)
+        {
+            if (_dictionary.TryGetValue(key, out var value))
+            {
+                if (int.TryParse(value, out var intValue))
+                {
+                    return intValue;
+                }
+            }
+            return null;
+        }
+
+        public static bool? GetRegistrValueAsBool(string key)
+        {
+            if (_dictionary.TryGetValue(key, out var value))
+            {
+                if (bool.TryParse(value, out var boolValue))
+                {
+                    return boolValue;
+                }
+            }
+            return null;
+        }
+
+        public static float ? GetRegistrValueAsDecimal(string key)
+        {
+            if (_dictionary.TryGetValue(key, out var value))
+            {
+                if (float.TryParse(value, out var floatValue))
+                {
+                    return floatValue;
+                }
+            }
+            return null;
+        }
+
+        public static void SetRegistryValue(string key, string value)
+        {
+            _dictionary[key] = value;
+            SaveRegistry();
+        }
+
+        private static void SaveRegistry()
+        {
+            // Save registry to file or other source
+            // For example, write to a JSON file
+            string registryPath = "config.json";
+            var json = JsonSerializer.Serialize(_dictionary, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(registryPath, json);
+            Debug.WriteLine("ODSystem registry saved with " + _dictionary.Count + " entries.");
+        }
+
+    }
+
 }
 
 
@@ -1488,6 +2143,8 @@ namespace OpenDraft.ViewModels
 
         public MainWindowViewModel()
         {
+            ODSystem.Initialise();
+
             // Initialize the DataManager and Editor
             DataManager = new ODDataManager();
             InputService = new ODEditorInputService();
@@ -1507,7 +2164,7 @@ namespace OpenDraft.ViewModels
 
             // This would create the same square using the LINE command
             // Note: This is still interactive and will wait for user input
-            Editor.ExecuteCommand("CIRCLE"); // Then user clicks two points
+            Editor.ExecuteCommand("LINE"); // Then user clicks two points
             
         }
 
@@ -1546,31 +2203,95 @@ Path: .\Views\MainWindow.axaml
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="OpenDraft.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/avalonia-logo.ico"
+        Icon="/Assets/od-icon2.ico"
         Title="OpenDraft"
-        Width="500"
-        Height="300">
+        Width="800"
+        Height="400"
+		MinWidth="800"
+		MinHeight="400"
+		>
   <!-- WindowState="Maximized"> -->
 
+  <!-- Top Menu -->
   <Design.DataContext>
     <vm:MainWindowViewModel/>
   </Design.DataContext>
 
   <Grid>
     <Grid.RowDefinitions>
-      <RowDefinition Height="Auto"/>
-      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto"/>      <!-- Menu strip -->
+      <RowDefinition Height="Auto"/>      <!-- Toolbar -->
+      <RowDefinition Height="*"/>         <!-- Viewport (fills space) -->
+      <RowDefinition Height="Auto"/>      <!-- Status bar -->
     </Grid.RowDefinitions>
 
+    <Menu Grid.Row="0" Height="22">
+      <MenuItem Header="_File">
+        <MenuItem Header="_New"/>
+        <MenuItem Header="_Open"/>
+        <MenuItem Header="_Save" />
+        <MenuItem Header="Save _As" />
+        <Separator/>
+        <MenuItem Header="E_xit" />
+      </MenuItem>
+      <MenuItem Header="_Edit">
+        <MenuItem Header="_Undo" />
+        <MenuItem Header="_Redo" />
+        <Separator/>
+        <MenuItem Header="Cu_t" />
+        <MenuItem Header="_Copy" />
+        <MenuItem Header="_Paste" />
+        <Separator/>
+        <MenuItem Header="_Delete" />
+        <Separator/>
+        <MenuItem Header="Select _All" />
+      </MenuItem>
+      <MenuItem Header="_View">
+        <MenuItem Header="Zoom _In" />
+        <MenuItem Header="Zoom _Out" />
+        <MenuItem Header="_Reset Zoom" />
+        <Separator/>
+        <MenuItem Header="_Grid Settings..." />
+      </MenuItem>
+      <MenuItem Header="_Help">
+        <MenuItem Header="_About" />
+      </MenuItem>
+    </Menu>
+
+
+    <!-- Toolbar -->
+    <StackPanel
+      Classes="toolbar"
+      Grid.Row="1"
+      HorizontalAlignment="Stretch"
+      Orientation="Horizontal">
+        <Button Content="Select" />
+        <Button Content="Line" />
+        <Button Content="Circle" />
+    </StackPanel>
+    
+    
     <!-- Use Grid.Row attached property -->
-    <local:Viewport Grid.Row="1"
+    <local:Viewport Grid.Row="2"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
                     Elements="{Binding GeometryElements}"
+                    DynamicElements="{Binding Editor.DynamicElements}"
                     LayerManager="{Binding LayerManager}"
                     Editor="{Binding Editor}"
                     InputService ="{Binding InputService}"/>
 
+    <!-- Status Bar -->
+    <StackPanel
+      Classes="statusbar"
+      Grid.Row="3"
+      HorizontalAlignment="Stretch"
+      Orientation="Horizontal">
+      <Button Content="Select" />
+      <Button Content="Line" />
+      <Button Content="Circle" />
+    </StackPanel>
+    
   </Grid>
 </Window>
 

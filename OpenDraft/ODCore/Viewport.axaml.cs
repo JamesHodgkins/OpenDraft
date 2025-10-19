@@ -140,7 +140,11 @@ namespace OpenDraft
                 using (context.PushTransform(matrix))
                 {
                     if (Editor?.DynamicElements != null)
-                        foreach (var element in Editor.DynamicElements) element.Draw(context, Camera.Scale, vpWorldSize, worldMousePoint);
+                        foreach (ODDynamicElement element in Editor.DynamicElements)
+                        {
+                            ODLayer? layer = LayerManager?.GetLayerByID(element.LayerId);
+                            if (layer != null) element.Draw(context, layer, Camera.Scale, vpWorldSize, worldMousePoint);
+                        }
                 }
             };
 

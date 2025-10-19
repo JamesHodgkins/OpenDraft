@@ -18,6 +18,8 @@ namespace OpenDraft.ViewModels
 
         public MainWindowViewModel()
         {
+            ODSystem.Initialise();
+
             // Initialize the DataManager and Editor
             DataManager = new ODDataManager();
             InputService = new ODEditorInputService();

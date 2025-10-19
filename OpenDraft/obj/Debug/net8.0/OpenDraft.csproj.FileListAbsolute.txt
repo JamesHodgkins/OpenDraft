@@ -142,3 +142,4 @@ D:\OpenDraft\OpenDraft\obj\Debug\net8.0\refint\OpenDraft.dll
 D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.pdb
 D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.genruntimeconfig.cache
 D:\OpenDraft\OpenDraft\obj\Debug\net8.0\ref\OpenDraft.dll
+D:\OpenDraft\OpenDraft\bin\Debug\net8.0\config.json
