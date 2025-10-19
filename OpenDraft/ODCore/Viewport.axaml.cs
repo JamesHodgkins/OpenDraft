@@ -66,7 +66,6 @@ namespace OpenDraft
         private Point _mousePosition;
         private Size _lastSize;
         private bool _isInitialized = false;
-        private bool _isMouseInside = false;
 
         public Viewport()
         {
@@ -225,13 +224,11 @@ namespace OpenDraft
 
         private void OnPointerEntered(object? sender, PointerEventArgs e)
         {
-            _isMouseInside = true;
             Editor.ShowCrosshair();
         }
 
         private void OnPointerExited(object? sender, PointerEventArgs e)
         {
-            _isMouseInside = false;
             Editor.HideCrosshair();
         }
 

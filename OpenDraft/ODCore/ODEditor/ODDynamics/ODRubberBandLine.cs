@@ -19,13 +19,12 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
 
         public override void Draw(DrawingContext context, ODLayer layer, float scale, ODPoint vpWorldSize, ODPoint mousePosition)
         {
-            if (layer != null && !layer.IsVisible)
+            if (layer == null || !layer.IsVisible || layer.Color == null)
                 return;
 
             Pen pen = new Pen(new SolidColorBrush(Avalonia.Media.Color.Parse(layer.Color)), layer.LineWeight);
 
             context.DrawLine(pen, new Point(Start.X, Start.Y), new Point(mousePosition.X, mousePosition.Y));
         }
-
     }
 }

@@ -63,7 +63,7 @@ namespace OpenDraft
             }
         }
 
-        public static string? GetRegistrValueAsString(string key)
+        public static string? GetRegistryValueAsString(string key)
         {
             if (_dictionary.TryGetValue(key, out var value))
             {
@@ -72,7 +72,7 @@ namespace OpenDraft
             return null;
         }
 
-        public static int? GetRegistrValueAsInt(string key)
+        public static int? GetRegistryValueAsInt(string key)
         {
             if (_dictionary.TryGetValue(key, out var value))
             {
@@ -84,7 +84,7 @@ namespace OpenDraft
             return null;
         }
 
-        public static bool? GetRegistrValueAsBool(string key)
+        public static bool? GetRegistryValueAsBool(string key)
         {
             if (_dictionary.TryGetValue(key, out var value))
             {
@@ -96,7 +96,7 @@ namespace OpenDraft
             return null;
         }
 
-        public static float ? GetRegistrValueAsDecimal(string key)
+        public static float ? GetRegistryValueAsDecimal(string key)
         {
             if (_dictionary.TryGetValue(key, out var value))
             {

@@ -36,10 +36,10 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
             float cSize = Size / scale; // Centre square size
 
             // Get styles from registry
-            Color xColour = Avalonia.Media.Color.Parse(ODSystem.GetRegistrValueAsString("style/crosshair_x_colour") ?? "Red");
-            Color yColour = Avalonia.Media.Color.Parse(ODSystem.GetRegistrValueAsString("style/crosshair_y_colour") ?? "Lime");
-            Color sqColour = Avalonia.Media.Color.Parse(ODSystem.GetRegistrValueAsString("style/crosshair_sq_colour") ?? "White");
-            float xThickness = ODSystem.GetRegistrValueAsDecimal("style/crosshair_line_weight") ?? 1;
+            Color xColour = Avalonia.Media.Color.Parse(ODSystem.GetRegistryValueAsString("style/crosshair_x_colour") ?? "Red");
+            Color yColour = Avalonia.Media.Color.Parse(ODSystem.GetRegistryValueAsString("style/crosshair_y_colour") ?? "Lime");
+            Color sqColour = Avalonia.Media.Color.Parse(ODSystem.GetRegistryValueAsString("style/crosshair_sq_colour") ?? "White");
+            float xThickness = ODSystem.GetRegistryValueAsDecimal("style/crosshair_line_weight") ?? 1;
 
             Pen xPen = new Pen(new SolidColorBrush(xColour), xThickness / scale);
             Pen yPen = new Pen(new SolidColorBrush(yColour), xThickness / scale);

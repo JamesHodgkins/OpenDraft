@@ -44,7 +44,12 @@ namespace OpenDraft.ODCore.ODEditor.ODCommands
         {
             if (_commands.TryGetValue(commandName, out var commandType))
             {
-                return (IODEditorCommand)Activator.CreateInstance(commandType);
+                var instance = Activator.CreateInstance(commandType);
+                if (instance is IODEditorCommand command)
+                {
+                    return command;
+                }
+                return null;
             }
             return null;
         }
