@@ -70,7 +70,7 @@
       HorizontalAlignment="Stretch"
       Orientation="Horizontal">
         <Button Content="Select" />
-        <Button Content="Line" />
+        <Button Content="Line" Command="{Binding ExecuteEditorCommand}" CommandParameter="LINE" />
         <Button Content="Circle" />
     </StackPanel>
     
@@ -83,6 +83,7 @@
                     DynamicElements="{Binding Editor.DynamicElements}"
                     LayerManager="{Binding LayerManager}"
                     Editor="{Binding Editor}"
+					LineStyleRegistry="{Binding LineStyleRegistry}"
                     InputService ="{Binding InputService}"/>
 
     <!-- Status Bar -->

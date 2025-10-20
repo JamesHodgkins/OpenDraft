@@ -13,13 +13,16 @@ namespace OpenDraft.ODCore.ODGeometry
     {
         public Guid Id { get; set; }
         public ushort LayerId { get; set; } = 0; // Default layer ID
+        public ODColour? Colour { get; set; } = null; // If null, use layer colour
+        public float? LineWeight { get; set; } = null; // If null, use layer lineweight
+        public string? LineType { get; set; } = null; // If null, use layer linetype
 
         public ODElement()
         {
             Id = Guid.NewGuid();
         }
 
-        public virtual void Draw(DrawingContext context, ODLayer layer)
+        public virtual void Draw(DrawingContext context, ODLayer layer, ODLineStyleRegistry lsRegistry)
         {
             // Base draw method, to be overridden by derived classes
         }

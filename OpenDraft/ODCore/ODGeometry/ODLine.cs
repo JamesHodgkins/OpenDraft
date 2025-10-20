@@ -1,12 +1,8 @@
 ﻿using Avalonia;
-using Avalonia.Controls.Shapes;
 using Avalonia.Media;
+using Microsoft.Win32;
 using OpenDraft.ODCore.ODData;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OpenDraft.ODCore.ODGeometry
 {
@@ -23,15 +19,25 @@ namespace OpenDraft.ODCore.ODGeometry
         }
 
 
-        public override void Draw(DrawingContext context, ODLayer layer)
+        public override void Draw(DrawingContext context, ODLayer layer, ODLineStyleRegistry lsRegistry)
         {
             if (layer != null && !layer.IsVisible)
                 return;
 
             if (layer == null)
                 return;
-            
-            Pen pen = new Pen(new SolidColorBrush(Color.Parse(layer.Color)), layer.LineWeight);
+
+            // Get dash style from registry
+            var dashStyle = lsRegistry.ToAvaloniaDashStyle(LineType ?? layer.LineType);
+            string effectiveColour = (Colour != null) ? Colour.ToHex() : layer.Color;
+            float effectiveLineWeight = LineWeight ?? layer.LineWeight;
+
+            // Create pen for the outline
+            var pen = new Pen(
+                new SolidColorBrush(Color.Parse(effectiveColour)), // Brush only
+                effectiveLineWeight,                               // Thickness
+                dashStyle                                          // Dash style
+            );
 
             context.DrawLine(pen,
                     new Point(StartPoint.X, StartPoint.Y),

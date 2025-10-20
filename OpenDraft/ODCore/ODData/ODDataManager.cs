@@ -13,6 +13,7 @@ namespace OpenDraft.ODCore.ODData
     {
         public ObservableCollection<ODGeometry.ODElement> Elements { get; } = new();
         public ODLayerManager LayerManager { get; } = new ODLayerManager();
+        public ODLineStyleRegistry LineStyleRegister { get; } = new ODLineStyleRegistry();
 
         public ODDataManager()
         {

@@ -1,4 +1,5 @@
-﻿using OpenDraft.ODCore.ODData;
+﻿using CommunityToolkit.Mvvm.Input;
+using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODEditor;
 using OpenDraft.ODCore.ODGeometry;
 using System.Collections.Generic;
@@ -6,7 +7,7 @@ using System.Collections.ObjectModel;
 
 namespace OpenDraft.ViewModels
 {
-    public class MainWindowViewModel : ViewModelBase
+    public partial class MainWindowViewModel : ViewModelBase
     {
         public ODDataManager DataManager { get; }
         public IODEditorInputService InputService { get; }
@@ -14,11 +15,17 @@ namespace OpenDraft.ViewModels
 
         public ObservableCollection<ODElement> GeometryElements => DataManager.Elements;
         public ODLayerManager LayerManager => DataManager.LayerManager;
+        public ODLineStyleRegistry LineStyleRegistry => DataManager.LineStyleRegister;
         public ODEditor Editor => EditorRoot;
 
         public MainWindowViewModel()
         {
             ODSystem.Initialise();
+
+            // Debug SVG Reader
+            OpenDraft.XSVG.SvgImporter svgReader = new OpenDraft.XSVG.SvgImporter();
+            svgReader.LoadSvgFile("XSVG/Example.svg");
+            ODPoint svgSize = svgReader.GetDimensions();
 
             // Initialize the DataManager and Editor
             DataManager = new ODDataManager();
@@ -34,15 +41,17 @@ namespace OpenDraft.ViewModels
             {
                 lay.Color = "#00FF00";
                 lay.LineWeight = 2.0f;
+                lay.LineType = "Dashed";
             }
 
-
-            // This would create the same square using the LINE command
-            // Note: This is still interactive and will wait for user input
-            Editor.ExecuteCommand("LINE"); // Then user clicks two points
-            
         }
 
+
+        [RelayCommand]
+        private void ExecuteEditor(string command)
+        {
+            EditorRoot.ExecuteCommand(command);
+        }
         
     }
 }

@@ -25,7 +25,8 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
 
         }
 
-        public override void Draw(DrawingContext context, ODLayer layer, float scale, ODPoint vpWorldSize, ODPoint worldMousePosition)
+        public override void Draw(DrawingContext context, ODLayer layer, ODLineStyleRegistry lsRegistry, 
+            float scale, ODPoint vpWorldSize, ODPoint worldMousePosition)
         {
             if (!IsVisible)
                 return;
