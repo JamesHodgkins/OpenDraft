@@ -1,21 +1,24 @@
-﻿using Avalonia;
-using Avalonia.Media;
-using Microsoft.Win32;
+﻿using Avalonia.Media;
 using OpenDraft.ODCore.ODData;
-using System;
+using OpenDraft.ODCore.ODGeometry;
+using System.Collections.Generic;
+using System.Net;
 
 namespace OpenDraft.ODCore.ODGeometry
 {
-    internal class ODLine : ODElement
+    public class ODSymbolDefinition : ODElement
     {
-        public ODPoint StartPoint { get; set; }
-        public ODPoint EndPoint { get; set; }
+        public string BlockName { get; set; }
+        public ODPoint InsertionPoint { get; set; }
+        public double Rotation { get; set; }
+        public double ScaleX { get; set; } = 1.0;
+        public double ScaleY { get; set; } = 1.0;
 
 
-        public ODLine(ODPoint startPoint, ODPoint endPoint)
+        public ODSymbolDefinition(string blockName, ODPoint insertionPoint)
         {
-            StartPoint = startPoint;
-            EndPoint = endPoint;
+            BlockName = blockName;
+            InsertionPoint = insertionPoint;
         }
 
 
@@ -42,10 +45,10 @@ namespace OpenDraft.ODCore.ODGeometry
                 dashStyle                                          // Dash style
             );
 
-            context.DrawLine(pen,
-                    new Point(StartPoint.X, StartPoint.Y),
-                    new Point(EndPoint.X, EndPoint.Y));
+            //foreach (ODElement element in GetBlockElements(BlockName))
+            //{
+                //element.Draw(context, lm);
+            //}
         }
-
     }
 }

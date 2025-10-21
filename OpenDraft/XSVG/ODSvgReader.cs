@@ -1,5 +1,4 @@
-﻿using Avalonia.Controls.Shapes;
-using OpenDraft.ODCore.ODData;
+﻿using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODGeometry;
 using System;
 using System.Collections.Generic;
@@ -12,8 +11,23 @@ namespace OpenDraft.XSVG
     internal struct ODSvgStyle
     {
         public ODColour StrokeColor;
+        public ODColour FillColor;
         public float StrokeWidth;
         public string LineType;
+        public string LayerName;
+        public bool IsVisible;
+        public bool IsLocked;
+    }
+
+    public class CADLayer
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public ODColour Color { get; set; }
+        public bool Visible { get; set; }
+        public bool Locked { get; set; }
+        public double LineWeight { get; set; }
+        public string LineType { get; set; }
     }
 
     public class ODSvgReader
@@ -21,6 +35,12 @@ namespace OpenDraft.XSVG
         private string? _filePath;
         private XDocument? _xDocument;
         private XNamespace _ns = "http://www.w3.org/2000/svg";
+        private XNamespace _cadNs = "http://your-cad-app.org/cad/1.0";
+        private XNamespace _dcNs = "http://purl.org/dc/elements/1.1/";
+
+        private Dictionary<string, CADLayer> _layers = new Dictionary<string, CADLayer>();
+        private Dictionary<string, XElement> _blockDefinitions = new Dictionary<string, XElement>();
+        private CADMetadata _metadata = new CADMetadata();
 
         public void LoadSvgFile(string filePath)
         {
@@ -28,93 +48,106 @@ namespace OpenDraft.XSVG
 
             if (!System.IO.File.Exists(filePath))
                 throw new System.IO.FileNotFoundException("SVG file not found", filePath);
-            
-            string fileContentsRaw = System.IO.File.ReadAllText(filePath);
 
+            string fileContentsRaw = System.IO.File.ReadAllText(filePath);
             _xDocument = XDocument.Parse(fileContentsRaw);
+
+            // Parse CAD-specific metadata and definitions
+            ParseCADMetadata();
+            ParseLayerDefinitions();
+            ParseBlockDefinitions();
         }
 
+        #region CAD Metadata Parsing
 
-        // Add dimension extraction methods
-        public ODPoint GetDimensions()
+        private void ParseCADMetadata()
         {
-            if (_xDocument == null)
-                throw new InvalidOperationException("No SVG file loaded. Call LoadSvgFile first.");
+            if (_xDocument?.Root == null) return;
 
-            var svgElement = _xDocument.Root;
-            var width = ParseDimension(svgElement.Attribute("width")?.Value);
-            var height = ParseDimension(svgElement.Attribute("height")?.Value);
+            // Parse root CAD attributes
+            _metadata.AppVersion = _xDocument.Root.Attribute(_cadNs + "app-version")?.Value;
+            _metadata.FileVersion = _xDocument.Root.Attribute(_cadNs + "file-version")?.Value;
+            _metadata.Units = _xDocument.Root.Attribute(_cadNs + "units")?.Value;
+            _metadata.Precision = ParseDouble(_xDocument.Root.Attribute(_cadNs + "precision")?.Value) ?? 0.001;
 
-            // Fallback to viewBox if dimensions aren't found
-            if (width == 0 || height == 0)
+            // Parse metadata section
+            var metadataElement = _xDocument.Root.Element("metadata");
+            if (metadataElement != null)
             {
-                var viewBox = ParseViewBox(svgElement.Attribute("viewBox")?.Value);
-                if (viewBox.HasValue)
+                _metadata.Application = metadataElement.Element(_cadNs + "application")?.Value;
+                _metadata.Version = metadataElement.Element(_cadNs + "version")?.Value;
+                _metadata.Created = ParseDateTime(metadataElement.Element(_cadNs + "created")?.Value);
+                _metadata.Modified = ParseDateTime(metadataElement.Element(_cadNs + "modified")?.Value);
+
+                // Parse Dublin Core metadata
+                _metadata.Title = metadataElement.Element(_dcNs + "title")?.Value;
+                _metadata.Creator = metadataElement.Element(_dcNs + "creator")?.Value;
+                _metadata.Description = metadataElement.Element(_dcNs + "description")?.Value;
+
+                // Parse custom properties
+                var propertiesElement = metadataElement.Element(_cadNs + "properties");
+                if (propertiesElement != null)
                 {
-                    width = width == 0 ? viewBox.Value.Width : width;
-                    height = height == 0 ? viewBox.Value.Height : height;
+                    _metadata.Properties = new Dictionary<string, string>();
+                    foreach (var propElement in propertiesElement.Elements(_cadNs + "property"))
+                    {
+                        var name = propElement.Attribute("name")?.Value;
+                        var value = propElement.Attribute("value")?.Value;
+                        if (name != null)
+                        {
+                            _metadata.Properties[name] = value ?? string.Empty;
+                        }
+                    }
                 }
             }
-
-            Debug.WriteLine($"SVG Dimensions: Width={width}, Height={height}");
-            return new ODPoint(width, height);
         }
 
-
-        // Utility methods
-        private double ParseDimension(string value)
+        private void ParseLayerDefinitions()
         {
-            if (string.IsNullOrEmpty(value)) return 0;
+            var layersElement = _xDocument?.Root?
+                .Element("defs")?
+                .Element(_cadNs + "layers");
 
-            // Remove units and parse
-            value = value.Trim().ToLower();
+            if (layersElement == null) return;
 
-            // Handle common units
-            if (value.EndsWith("px")) value = value[..^2];
-            else if (value.EndsWith("pt")) value = value[..^2];
-            else if (value.EndsWith("mm"))
+            foreach (var layerElement in layersElement.Elements(_cadNs + "layer"))
             {
-                value = value[..^2];
-                if (double.TryParse(value, System.Globalization.NumberStyles.Any,
-                    System.Globalization.CultureInfo.InvariantCulture, out double mm))
-                    return mm * 3.779527559; // Convert mm to pixels
-            }
-            else if (value.EndsWith("cm"))
-            {
-                value = value[..^2];
-                if (double.TryParse(value, System.Globalization.NumberStyles.Any,
-                    System.Globalization.CultureInfo.InvariantCulture, out double cm))
-                    return cm * 37.795275591; // Convert cm to pixels
-            }
-            else if (value.EndsWith("in"))
-            {
-                value = value[..^2];
-                if (double.TryParse(value, System.Globalization.NumberStyles.Any,
-                    System.Globalization.CultureInfo.InvariantCulture, out double inches))
-                    return inches * 96; // Convert inches to pixels
-            }
+                var layer = new CADLayer
+                {
+                    Id = layerElement.Attribute("id")?.Value,
+                    Name = layerElement.Attribute("name")?.Value,
+                    Color = ParseColor(layerElement.Attribute("color")?.Value),
+                    Visible = layerElement.Attribute("visible")?.Value == "true",
+                    Locked = layerElement.Attribute("locked")?.Value == "true",
+                    LineWeight = ParseDouble(layerElement.Attribute("lineweight")?.Value) ?? 0.25,
+                    LineType = layerElement.Attribute("linetype")?.Value ?? "continuous"
+                };
 
-            return double.TryParse(value, System.Globalization.NumberStyles.Any,
-                System.Globalization.CultureInfo.InvariantCulture, out double result) ? result : 0;
+                if (layer.Id != null)
+                {
+                    _layers[layer.Id] = layer;
+                }
+            }
         }
 
-        private (double Width, double Height)? ParseViewBox(string viewBoxValue)
+        private void ParseBlockDefinitions()
         {
-            if (string.IsNullOrEmpty(viewBoxValue)) return null;
+            var defsElement = _xDocument?.Root?.Element("defs");
+            if (defsElement == null) return;
 
-            var parts = viewBoxValue.Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
-
-            if (parts.Length >= 4 &&
-                double.TryParse(parts[2], System.Globalization.NumberStyles.Any,
-                    System.Globalization.CultureInfo.InvariantCulture, out double width) &&
-                double.TryParse(parts[3], System.Globalization.NumberStyles.Any,
-                    System.Globalization.CultureInfo.InvariantCulture, out double height))
+            foreach (var symbolElement in defsElement.Elements(_ns + "symbol"))
             {
-                return (width, height);
+                var id = symbolElement.Attribute("id")?.Value;
+                if (id != null)
+                {
+                    _blockDefinitions[id] = symbolElement;
+                }
             }
-
-            return null;
         }
+
+        #endregion
+
+        #region Geometry Import
 
         public List<ODElement> ImportGeometry()
         {
@@ -124,31 +157,147 @@ namespace OpenDraft.XSVG
             var geometries = new List<ODElement>();
             var svgElement = _xDocument.Root;
 
-            // Import paths (most common CAD element)
-            geometries.AddRange(ImportPaths(svgElement));
+            // Process groups (layers) first
+            geometries.AddRange(ProcessGroups(svgElement));
 
-            // Import basic shapes
+            // Import individual elements not in groups
+            geometries.AddRange(ImportPaths(svgElement));
             geometries.AddRange(ImportRectangles(svgElement));
             geometries.AddRange(ImportLines(svgElement));
             geometries.AddRange(ImportCircles(svgElement));
+            geometries.AddRange(ImportBlockReferences(svgElement));
 
-            Debug.WriteLine($"Imported {geometries.Count} geometry objects");
+            Debug.WriteLine($"Imported {geometries.Count} geometry objects from {_layers.Count} layers");
             return geometries;
         }
 
-        private List<ODElement> ImportPaths(XElement svgElement)
+        private List<ODElement> ProcessGroups(XElement parentElement)
         {
-            var paths = new List<ODElement>();
+            var elements = new List<ODElement>();
 
-            foreach (var pathElement in svgElement.Descendants(_ns + "path"))
+            foreach (var groupElement in parentElement.Elements(_ns + "g"))
+            {
+                var layerId = groupElement.Attribute(_cadNs + "layer-id")?.Value;
+                var style = ParseStyle(groupElement, layerId);
+
+                // Process elements within the group
+                elements.AddRange(ImportPaths(groupElement, style));
+                elements.AddRange(ImportRectangles(groupElement, style));
+                elements.AddRange(ImportLines(groupElement, style));
+                elements.AddRange(ImportCircles(groupElement, style));
+                elements.AddRange(ImportBlockReferences(groupElement, style));
+                elements.AddRange(ProcessGroups(groupElement)); // Recursive for nested groups
+            }
+
+            return elements;
+        }
+
+        private List<ODElement> ImportBlockReferences(XElement parentElement, ODSvgStyle? parentStyle = null)
+        {
+            var blocks = new List<ODElement>();
+
+            foreach (var useElement in parentElement.Descendants(_ns + "use"))
+            {
+                var href = useElement.Attribute(XNamespace.Get("http://www.w3.org/1999/xlink") + "href")?.Value;
+                if (!string.IsNullOrEmpty(href) && href.StartsWith("#"))
+                {
+                    var blockId = href.Substring(1);
+                    if (_blockDefinitions.TryGetValue(blockId, out var blockDefinition))
+                    {
+                        var style = ParseStyle(useElement, null, parentStyle);
+                        var x = ParseDouble(useElement.Attribute("x")?.Value) ?? 0;
+                        var y = ParseDouble(useElement.Attribute("y")?.Value) ?? 0;
+
+                        // Parse transformation
+                        var transform = useElement.Attribute("transform")?.Value;
+                        var rotation = ParseDouble(useElement.Attribute(_cadNs + "rotation")?.Value) ?? 0;
+
+                        var blockElements = ParseBlockDefinition(blockDefinition, x, y, rotation, style);
+                        foreach (var element in blockElements)
+                        {
+                            ApplyCADMetadata(element, useElement);
+                            blocks.Add(element);
+                        }
+                    }
+                }
+            }
+
+            return blocks;
+        }
+
+        private List<ODElement> ParseBlockDefinition(XElement blockDefinition, double x, double y, double rotation, ODSvgStyle style)
+        {
+            var elements = new List<ODElement>();
+
+            // Process paths in block definition
+            foreach (var pathElement in blockDefinition.Descendants(_ns + "path"))
             {
                 var pathData = pathElement.Attribute("d")?.Value;
                 if (!string.IsNullOrEmpty(pathData))
                 {
-                    var style = ParseStyle(pathElement);
                     var path = ParsePathData(pathData, style);
                     if (path != null)
                     {
+                        // Apply block transformation
+                        ApplyTransformation(path, x, y, rotation);
+                        elements.Add(path);
+                    }
+                }
+            }
+
+            // Process rectangles in block definition
+            foreach (var rectElement in blockDefinition.Descendants(_ns + "rect"))
+            {
+                var rectX = ParseDouble(rectElement.Attribute("x")?.Value) ?? 0;
+                var rectY = ParseDouble(rectElement.Attribute("y")?.Value) ?? 0;
+                var width = ParseDouble(rectElement.Attribute("width")?.Value) ?? 0;
+                var height = ParseDouble(rectElement.Attribute("height")?.Value) ?? 0;
+
+                var rectangle = new ODRectangle(
+                    new ODPoint(rectX + x, rectY + y),
+                    new ODPoint(rectX + x + width, rectY + y + height)
+                );
+                ApplyTransformation(rectangle, x, y, rotation);
+                elements.Add(rectangle);
+            }
+
+            return elements;
+        }
+
+        private void ApplyTransformation(ODElement element, double x, double y, double rotation)
+        {
+            // This is a simplified transformation - you'll need to implement
+            // proper transformation logic based on your ODElement hierarchy
+            if (element is ODPolyline polyline)
+            {
+                for (int i = 0; i < polyline.Points.Count; i++)
+                {
+                    var point = polyline.Points[i];
+                    // Apply translation and rotation here
+                    polyline.Points[i] = new ODPoint(point.X + x, point.Y + y);
+                }
+            }
+            // Add similar logic for other element types
+        }
+
+        #endregion
+
+        #region Original Geometry Import Methods (Preserved)
+
+        private List<ODElement> ImportPaths(XElement parentElement, ODSvgStyle? parentStyle = null)
+        {
+            var paths = new List<ODElement>();
+
+            foreach (var pathElement in parentElement.Descendants(_ns + "path"))
+            {
+                var pathData = pathElement.Attribute("d")?.Value;
+                if (!string.IsNullOrEmpty(pathData))
+                {
+                    var style = ParseStyle(pathElement, null, parentStyle);
+                    var path = ParsePathData(pathData, style);
+                    if (path != null)
+                    {
+                        ApplyCADMetadata(path, pathElement);
                         paths.Add(path);
                     }
                 }
@@ -157,11 +306,11 @@ namespace OpenDraft.XSVG
             return paths;
         }
 
-        private List<ODElement> ImportRectangles(XElement svgElement)
+        private List<ODElement> ImportRectangles(XElement parentElement, ODSvgStyle? parentStyle = null)
         {
             var rectangles = new List<ODElement>();
 
-            foreach (var rectElement in svgElement.Descendants(_ns + "rect"))
+            foreach (var rectElement in parentElement.Descendants(_ns + "rect"))
             {
                 var x = ParseDouble(rectElement.Attribute("x")?.Value) ?? 0;
                 var y = ParseDouble(rectElement.Attribute("y")?.Value) ?? 0;
@@ -170,11 +319,12 @@ namespace OpenDraft.XSVG
 
                 if (width > 0 && height > 0)
                 {
-                    var style = ParseStyle(rectElement);
+                    var style = ParseStyle(rectElement, null, parentStyle);
                     var rectangle = new ODRectangle(
                         new ODPoint(x, y),
                         new ODPoint(x + width, y + height)
                     );
+                    ApplyCADMetadata(rectangle, rectElement);
                     rectangles.Add(rectangle);
                 }
             }
@@ -182,34 +332,34 @@ namespace OpenDraft.XSVG
             return rectangles;
         }
 
-        private List<ODElement> ImportLines(XElement svgElement)
+        private List<ODElement> ImportLines(XElement parentElement, ODSvgStyle? parentStyle = null)
         {
             var lines = new List<ODElement>();
 
-            foreach (var lineElement in svgElement.Descendants(_ns + "line"))
+            foreach (var lineElement in parentElement.Descendants(_ns + "line"))
             {
                 var x1 = ParseDouble(lineElement.Attribute("x1")?.Value) ?? 0;
                 var y1 = ParseDouble(lineElement.Attribute("y1")?.Value) ?? 0;
                 var x2 = ParseDouble(lineElement.Attribute("x2")?.Value) ?? 0;
                 var y2 = ParseDouble(lineElement.Attribute("y2")?.Value) ?? 0;
 
-                var style = ParseStyle(lineElement);
+                var style = ParseStyle(lineElement, null, parentStyle);
                 var line = new ODLine(
                     new ODPoint(x1, y1),
                     new ODPoint(x2, y2)
-                    //style <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< todo?????
                 );
+                ApplyCADMetadata(line, lineElement);
                 lines.Add(line);
             }
 
             return lines;
         }
 
-        private List<ODElement> ImportCircles(XElement svgElement)
+        private List<ODElement> ImportCircles(XElement parentElement, ODSvgStyle? parentStyle = null)
         {
             var circles = new List<ODElement>();
 
-            foreach (var circleElement in svgElement.Descendants(_ns + "circle"))
+            foreach (var circleElement in parentElement.Descendants(_ns + "circle"))
             {
                 var cx = ParseDouble(circleElement.Attribute("cx")?.Value) ?? 0;
                 var cy = ParseDouble(circleElement.Attribute("cy")?.Value) ?? 0;
@@ -217,18 +367,22 @@ namespace OpenDraft.XSVG
 
                 if (r > 0)
                 {
-                    var style = ParseStyle(circleElement);
+                    var style = ParseStyle(circleElement, null, parentStyle);
                     var circle = new ODCircle(
                         new ODPoint(cx, cy),
                         r
-                        //style <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< todo?
                     );
+                    ApplyCADMetadata(circle, circleElement);
                     circles.Add(circle);
                 }
             }
 
             return circles;
         }
+
+        #endregion
+
+        #region Path Data Parsing (Original Methods)
 
         private ODElement ParsePathData(string pathData, ODSvgStyle style)
         {
@@ -362,7 +516,6 @@ namespace OpenDraft.XSVG
             return null;
         }
 
-
         private List<string> TokenizePathData(string pathData)
         {
             var tokens = new List<string>();
@@ -454,11 +607,27 @@ namespace OpenDraft.XSVG
                 _ => 0
             };
         }
-        private ODSvgStyle ParseStyle(XElement element)
-        {
-            var style = new ODSvgStyle();
 
-            // Parse style attribute
+        #endregion
+
+        #region Enhanced Style Parsing
+
+        private ODSvgStyle ParseStyle(XElement element, string? layerId = null, ODSvgStyle? parentStyle = null)
+        {
+            var style = parentStyle ?? new ODSvgStyle();
+
+            // Apply layer style if layer ID is provided
+            if (layerId != null && _layers.TryGetValue(layerId, out var layer))
+            {
+                style.StrokeColor = layer.Color;
+                style.StrokeWidth = (float)layer.LineWeight;
+                style.LineType = layer.LineType;
+                style.LayerName = layer.Name;
+                style.IsVisible = layer.Visible;
+                style.IsLocked = layer.Locked;
+            }
+
+            // Parse element-specific style attributes
             var styleAttr = element.Attribute("style")?.Value;
             if (!string.IsNullOrEmpty(styleAttr))
             {
@@ -483,6 +652,9 @@ namespace OpenDraft.XSVG
                             case "stroke-dasharray":
                                 style.LineType = ParseLineType(value);
                                 break;
+                            case "fill":
+                                style.FillColor = ParseColor(value);
+                                break;
                         }
                     }
                 }
@@ -497,7 +669,34 @@ namespace OpenDraft.XSVG
             if (!string.IsNullOrEmpty(strokeWidthAttr) && ParseDouble(strokeWidthAttr) is double sw)
                 style.StrokeWidth = (float)sw;
 
+            var fillAttr = element.Attribute("fill")?.Value;
+            if (!string.IsNullOrEmpty(fillAttr))
+                style.FillColor = ParseColor(fillAttr);
+
             return style;
+        }
+
+        private void ApplyCADMetadata(ODElement element, XElement xmlElement)
+        {
+            // Extract CAD-specific attributes
+            var cadType = xmlElement.Attribute(_cadNs + "type")?.Value;
+            var cadLayer = xmlElement.Attribute(_cadNs + "layer-id")?.Value;
+            var isBlockRef = xmlElement.Attribute(_cadNs + "blockref")?.Value == "true";
+
+            // Store CAD metadata in your element
+            // This depends on your ODElement implementation
+            // You might want to add CADMetadata property to ODElement
+        }
+
+        #endregion
+
+        #region Utility Methods (Original + Enhanced)
+
+        private DateTime? ParseDateTime(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return null;
+            return DateTime.TryParse(value, System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out DateTime result) ? result : null;
         }
 
         private ODColour ParseColor(string colorValue)
@@ -562,7 +761,6 @@ namespace OpenDraft.XSVG
             return "Continuous";
         }
 
-
         private double? ParseDouble(string value)
         {
             if (string.IsNullOrEmpty(value)) return null;
@@ -587,24 +785,117 @@ namespace OpenDraft.XSVG
             return null;
         }
 
+        private double ParseDimension(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return 0;
 
+            // Remove units and parse
+            value = value.Trim().ToLower();
 
+            // Handle common units
+            if (value.EndsWith("px")) value = value[..^2];
+            else if (value.EndsWith("pt")) value = value[..^2];
+            else if (value.EndsWith("mm"))
+            {
+                value = value[..^2];
+                if (double.TryParse(value, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture, out double mm))
+                    return mm * 3.779527559; // Convert mm to pixels
+            }
+            else if (value.EndsWith("cm"))
+            {
+                value = value[..^2];
+                if (double.TryParse(value, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture, out double cm))
+                    return cm * 37.795275591; // Convert cm to pixels
+            }
+            else if (value.EndsWith("in"))
+            {
+                value = value[..^2];
+                if (double.TryParse(value, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture, out double inches))
+                    return inches * 96; // Convert inches to pixels
+            }
 
+            return double.TryParse(value, System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out double result) ? result : 0;
+        }
 
+        private (double Width, double Height)? ParseViewBox(string viewBoxValue)
+        {
+            if (string.IsNullOrEmpty(viewBoxValue)) return null;
 
+            var parts = viewBoxValue.Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
 
+            if (parts.Length >= 4 &&
+                double.TryParse(parts[2], System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture, out double width) &&
+                double.TryParse(parts[3], System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture, out double height))
+            {
+                return (width, height);
+            }
 
+            return null;
+        }
 
-        // Cleanup method
+        #endregion
+
+        #region Properties and Public Methods
+
+        public CADMetadata Metadata => _metadata;
+        public IReadOnlyDictionary<string, CADLayer> Layers => _layers;
+        public bool IsLoaded => _xDocument != null;
+
+        public ODPoint GetDimensions()
+        {
+            if (_xDocument == null)
+                throw new InvalidOperationException("No SVG file loaded. Call LoadSvgFile first.");
+
+            var svgElement = _xDocument.Root;
+            var width = ParseDimension(svgElement.Attribute("width")?.Value);
+            var height = ParseDimension(svgElement.Attribute("height")?.Value);
+
+            // Fallback to viewBox if dimensions aren't found
+            if (width == 0 || height == 0)
+            {
+                var viewBox = ParseViewBox(svgElement.Attribute("viewBox")?.Value);
+                if (viewBox.HasValue)
+                {
+                    width = width == 0 ? viewBox.Value.Width : width;
+                    height = height == 0 ? viewBox.Value.Height : height;
+                }
+            }
+
+            Debug.WriteLine($"SVG Dimensions: Width={width}, Height={height}");
+            return new ODPoint(width, height);
+        }
+
         public void Unload()
         {
             _xDocument = null;
             _filePath = null;
+            _layers.Clear();
+            _blockDefinitions.Clear();
+            _metadata = new CADMetadata();
         }
 
-        // Property to check if file is loaded
-        public bool IsLoaded => _xDocument != null;
+        #endregion
     }
 
-    
+    public class CADMetadata
+    {
+        public string? AppVersion { get; set; }
+        public string? FileVersion { get; set; }
+        public string? Units { get; set; }
+        public double Precision { get; set; }
+        public string? Application { get; set; }
+        public string? Version { get; set; }
+        public DateTime? Created { get; set; }
+        public DateTime? Modified { get; set; }
+        public string? Title { get; set; }
+        public string? Creator { get; set; }
+        public string? Description { get; set; }
+        public Dictionary<string, string>? Properties { get; set; }
+    }
 }

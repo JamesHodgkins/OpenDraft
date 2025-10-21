@@ -17,11 +17,11 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
             Start = start;
         }
 
-        public override void Draw(DrawingContext context, ODLayerManager lm,
+        public override void Draw(DrawingContext context, ODDataManager dm,
             float scale, ODPoint vpWorldSize, ODPoint mousePosition)
         {
-            ODLayer? layer = lm.GetLayerByID(LayerId);
-            ODLineStyleRegistry lsRegistry = lm.LineStyleRegistry;
+            ODLayer? layer = dm.LayerManager.GetLayerByID(LayerId);
+            ODLineStyleRegistry lsRegistry = dm.LayerManager.LineStyleRegistry;
 
             if (layer == null || !layer.IsVisible || layer.Color == null)
                 return;

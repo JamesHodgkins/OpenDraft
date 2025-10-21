@@ -81,7 +81,7 @@
                     VerticalAlignment="Stretch"
                     Elements="{Binding GeometryElements}"
                     DynamicElements="{Binding Editor.DynamicElements}"
-                    LayerManager="{Binding LayerManager}"
+                    DataManager="{Binding DataManager}"
                     Editor="{Binding Editor}"
                     InputService ="{Binding InputService}"/>
 

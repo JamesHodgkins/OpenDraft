@@ -25,14 +25,14 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
 
         }
 
-        public override void Draw(DrawingContext context, ODLayerManager lm,
+        public override void Draw(DrawingContext context, ODDataManager dm,
             float scale, ODPoint vpWorldSize, ODPoint worldMousePosition)
         {
             if (!IsVisible)
                 return;
 
-            ODLayer? layer = lm.GetLayerByID(LayerId);
-            ODLineStyleRegistry lsRegistry = lm.LineStyleRegistry;
+            ODLayer? layer = dm.LayerManager.GetLayerByID(LayerId);
+            ODLineStyleRegistry lsRegistry = dm.LayerManager.LineStyleRegistry;
 
             // Get layer
             Pen pen = new Pen(new SolidColorBrush(Avalonia.Media.Color.Parse(layer.Color)), layer.LineWeight / scale);

@@ -18,8 +18,8 @@ namespace OpenDraft
         public static readonly StyledProperty<ObservableCollection<ODElement>> ElementsProperty =
             AvaloniaProperty.Register<Viewport, ObservableCollection<ODElement>>(nameof(Elements));
 
-        public static readonly StyledProperty<ODLayerManager> LayerManagerProperty =
-            AvaloniaProperty.Register<Viewport, ODLayerManager>(nameof(LayerManager));
+        public static readonly StyledProperty<ODDataManager> DataManagerProperty =
+            AvaloniaProperty.Register<Viewport, ODDataManager>(nameof(DataManager));
 
         public static readonly StyledProperty<ODEditor> EditorProperty =
             AvaloniaProperty.Register<Viewport, ODEditor>(nameof(Editor));
@@ -36,10 +36,10 @@ namespace OpenDraft
             set => SetValue(ElementsProperty, value);
         }
 
-        public ODLayerManager LayerManager
+        public ODDataManager DataManager
         {
-            get => GetValue(LayerManagerProperty);
-            set => SetValue(LayerManagerProperty, value);
+            get => GetValue(DataManagerProperty);
+            set => SetValue(DataManagerProperty, value);
         }
 
         public ODEditor Editor
@@ -117,9 +117,9 @@ namespace OpenDraft
                 {
                     foreach (var element in Elements)
                     {
-                        var layer = LayerManager?.GetLayerByID(element.LayerId);
+                        var layer = DataManager.LayerManager?.GetLayerByID(element.LayerId);
                         if (layer != null)
-                            element.Draw(context, LayerManager!);
+                            element.Draw(context, DataManager!);
                     }
                 }
             };
@@ -141,8 +141,8 @@ namespace OpenDraft
                     if (Editor?.DynamicElements != null)
                         foreach (ODDynamicElement element in Editor.DynamicElements)
                         {
-                            ODLayer? layer = LayerManager?.GetLayerByID(element.LayerId);
-                            if (layer != null) element.Draw(context, LayerManager!, Camera.Scale, vpWorldSize, worldMousePoint);
+                            ODLayer? layer = DataManager.LayerManager?.GetLayerByID(element.LayerId);
+                            if (layer != null) element.Draw(context, DataManager, Camera.Scale, vpWorldSize, worldMousePoint);
                         }
                 }
             };

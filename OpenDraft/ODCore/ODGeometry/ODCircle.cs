@@ -20,10 +20,10 @@ namespace OpenDraft.ODCore.ODGeometry
             Radius = radius;
         }
 
-        public override void Draw(DrawingContext context, ODLayerManager lm)
+        public override void Draw(DrawingContext context, ODDataManager dm)
         {
-            ODLayer? layer = lm.GetLayerByID(LayerId);
-            ODLineStyleRegistry lsRegistry = lm.LineStyleRegistry;
+            ODLayer? layer = dm.LayerManager.GetLayerByID(LayerId);
+            ODLineStyleRegistry lsRegistry = dm.LayerManager.LineStyleRegistry;
 
             if (layer != null && !layer.IsVisible)
                 return;
