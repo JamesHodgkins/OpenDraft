@@ -72,6 +72,10 @@ namespace OpenDraft.ODCore.ODEditor
             DynamicElements.Remove(element);
         }
 
+        public void AddStaticElement(ODElement element)
+        {
+            _dataManager.AddElement(element);
+        }
 
 
         /* COMMAND EXECUTION AND INPUT HANDLING  */

@@ -1,11 +1,14 @@
 {
   "style": [
-    {"1crosshair_x_colour": "#FF0000"},
-    {"1crosshair_y_colour": "#00FF00"},
-    {"crosshair_sq_colour": "#000000" },
-    {"crosshair_line_weight": "1" },
-    {"grid_colour": "#333333"},
-    {"text_colour": "#FFFFFF"},
-    {"highlight_colour": "#FFFF00" }
+    { "crosshair_x_colour": "#FFFF00" },
+    { "crosshair_y_colour": "#00FFFF" },
+    { "crosshair_sq_colour": "#000000" },
+    { "crosshair_line_weight": "1" },
+    { "grid_colour": "#333333" },
+    { "text_colour": "#FFFFFF" },
+    { "highlight_colour": "#FFFF00" }
+  ],
+  "system": [
+    { "placeholder": "value" }
   ]
 }

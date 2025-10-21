@@ -2,8 +2,10 @@
 using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODEditor;
 using OpenDraft.ODCore.ODGeometry;
+using OpenDraft.XSVG;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 
 namespace OpenDraft.ViewModels
 {
@@ -21,11 +23,14 @@ namespace OpenDraft.ViewModels
         {
             ODSystem.Initialise();
 
-            // Debug SVG Reader
-            OpenDraft.XSVG.SvgImporter svgReader = new OpenDraft.XSVG.SvgImporter();
-            svgReader.LoadSvgFile("XSVG/Example.svg");
-            ODPoint svgSize = svgReader.GetDimensions();
-            List<ODElement> svgElements = svgReader.ImportGeometry();
+            // Debug XSVG Reader
+            ODXsvgReader xsvgR = new ODXsvgReader("XSVG/Example XSVG/example.xsvg");
+            List<ODElement> xsvgElements = xsvgR.ExtractModelSpace();
+
+            foreach(ODElement elem in xsvgElements)
+            {
+                Editor.AddStaticElement(elem);
+            }
 
             // Initialize the DataManager and Editor
             DataManager = new ODDataManager();
@@ -43,9 +48,7 @@ namespace OpenDraft.ViewModels
                 lay.LineWeight = 2.0f;
                 lay.LineType = "Dashed";
             }
-
         }
-
 
         [RelayCommand]
         private void ExecuteEditor(string command)

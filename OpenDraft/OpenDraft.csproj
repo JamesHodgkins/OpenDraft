@@ -11,6 +11,14 @@
   <ItemGroup>
     <Folder Include="Models\" />
     <AvaloniaResource Include="Assets\**" />
+    <AvaloniaXaml Remove="XSVG\Example XSVG\lay\**" />
+    <AvaloniaXaml Remove="XSVG\Example XSVG\res\**" />
+    <Compile Remove="XSVG\Example XSVG\lay\**" />
+    <Compile Remove="XSVG\Example XSVG\res\**" />
+    <EmbeddedResource Remove="XSVG\Example XSVG\lay\**" />
+    <EmbeddedResource Remove="XSVG\Example XSVG\res\**" />
+    <None Remove="XSVG\Example XSVG\lay\**" />
+    <None Remove="XSVG\Example XSVG\res\**" />
     <AvaloniaXaml Remove="Styles\ODStyle.axaml" />
     <AvaloniaResource Include="Styles\ODStyle.axaml">
       <CopyToOutputDirectory></CopyToOutputDirectory>
@@ -32,6 +40,12 @@
 
   <ItemGroup>
     <None Update="config.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="XSVG\Example XSVG\example.xsvg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="XSVG\Example XSVG\example.xsvg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="XSVG\Example.svg">

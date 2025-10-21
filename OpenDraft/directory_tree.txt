@@ -1,0 +1,208 @@
+.
+├── App.axaml
+├── App.axaml.cs
+├── Assets
+│   ├── avalonia-logo.ico
+│   ├── od-icon.ico
+│   └── od-icon2.ico
+├── Models
+├── ODCore
+│   ├── DynamicCanvas.axaml
+│   ├── DynamicCanvas.axaml.cs
+│   ├── ODData
+│   │   ├── ODColour.cs
+│   │   ├── ODDataManager.cs
+│   │   ├── ODLayer.cs
+│   │   ├── ODLayerManager.cs
+│   │   └── ODLineStyleRegistry.cs
+│   ├── ODEditor
+│   │   ├── IODEditorInputService.cs
+│   │   ├── ODCommandAttribute.cs
+│   │   ├── ODCommands
+│   │   │   ├── IODEditorCommand.cs
+│   │   │   ├── IODEditorGateway.cs
+│   │   │   ├── ODBaseEditorCommand.cs
+│   │   │   ├── ODCircleCommand.cs
+│   │   │   ├── ODCommandRegistry.cs
+│   │   │   └── ODLineCommand.cs
+│   │   ├── ODDynamics
+│   │   │   ├── ODCrosshair.cs
+│   │   │   ├── ODDynamicElement.cs
+│   │   │   ├── ODRubberBandLine.cs
+│   │   │   └── ODSnapIndicatorElement.cs
+│   │   ├── ODEditor.cs
+│   │   ├── ODEditorContext.cs
+│   │   ├── ODEditorInputService.cs
+│   │   └── ODViewportCamera.cs
+│   ├── ODGeometry
+│   │   ├── ODCircle.cs
+│   │   ├── ODElement.cs
+│   │   ├── ODLine.cs
+│   │   ├── ODPoint.cs
+│   │   ├── ODPolyline.cs
+│   │   └── ODRectangle.cs
+│   ├── ODMath
+│   │   └── ODMath.cs
+│   ├── StaticCanvas.axaml
+│   ├── StaticCanvas.axaml.cs
+│   ├── Viewport.axaml
+│   ├── Viewport.axaml.cs
+│   └── printout.py
+├── OpenDraft.csproj
+├── Program.cs
+├── Styles
+│   └── ODStyle.axaml
+├── System
+│   └── ODSystem.cs
+├── ViewLocator.cs
+├── ViewModels
+│   ├── MainWindowViewModel.cs
+│   └── ViewModelBase.cs
+├── Views
+│   ├── MainWindow.axaml
+│   └── MainWindow.axaml.cs
+├── XSVG
+│   ├── Example XSVG
+│   │   ├── example.xsvg
+│   │   └── example.zip
+│   ├── Example.svg
+│   ├── ODSvgReader.cs
+│   └── ODXsvgReader.cs
+├── app.manifest
+├── bin
+│   └── Debug
+│       └── net8.0
+│           ├── Avalonia.Base.dll
+│           ├── Avalonia.Controls.ColorPicker.dll
+│           ├── Avalonia.Controls.dll
+│           ├── Avalonia.DesignerSupport.dll
+│           ├── Avalonia.Desktop.dll
+│           ├── Avalonia.Diagnostics.dll
+│           ├── Avalonia.Dialogs.dll
+│           ├── Avalonia.Fonts.Inter.dll
+│           ├── Avalonia.FreeDesktop.dll
+│           ├── Avalonia.Markup.Xaml.dll
+│           ├── Avalonia.Markup.dll
+│           ├── Avalonia.Metal.dll
+│           ├── Avalonia.MicroCom.dll
+│           ├── Avalonia.Native.dll
+│           ├── Avalonia.OpenGL.dll
+│           ├── Avalonia.Remote.Protocol.dll
+│           ├── Avalonia.Skia.dll
+│           ├── Avalonia.Themes.Fluent.dll
+│           ├── Avalonia.Themes.Simple.dll
+│           ├── Avalonia.Vulkan.dll
+│           ├── Avalonia.Win32.Automation.dll
+│           ├── Avalonia.Win32.dll
+│           ├── Avalonia.X11.dll
+│           ├── Avalonia.dll
+│           ├── CommunityToolkit.Mvvm.dll
+│           ├── HarfBuzzSharp.dll
+│           ├── MicroCom.Runtime.dll
+│           ├── OpenDraft.deps.json
+│           ├── OpenDraft.dll
+│           ├── OpenDraft.exe
+│           ├── OpenDraft.pdb
+│           ├── OpenDraft.runtimeconfig.json
+│           ├── SkiaSharp.dll
+│           ├── System.IO.Pipelines.dll
+│           ├── Tmds.DBus.Protocol.dll
+│           ├── XSVG
+│           │   ├── Example XSVG
+│           │   │   └── example.xsvg
+│           │   └── Example.svg
+│           ├── config.json
+│           └── runtimes
+│               ├── linux-arm
+│               │   └── native
+│               │       ├── libHarfBuzzSharp.so
+│               │       └── libSkiaSharp.so
+│               ├── linux-arm64
+│               │   └── native
+│               │       ├── libHarfBuzzSharp.so
+│               │       └── libSkiaSharp.so
+│               ├── linux-loongarch64
+│               │   └── native
+│               │       └── libHarfBuzzSharp.so
+│               ├── linux-musl-arm
+│               │   └── native
+│               │       └── libHarfBuzzSharp.so
+│               ├── linux-musl-arm64
+│               │   └── native
+│               │       └── libHarfBuzzSharp.so
+│               ├── linux-musl-loongarch64
+│               │   └── native
+│               │       └── libHarfBuzzSharp.so
+│               ├── linux-musl-riscv64
+│               │   └── native
+│               │       └── libHarfBuzzSharp.so
+│               ├── linux-musl-x64
+│               │   └── native
+│               │       ├── libHarfBuzzSharp.so
+│               │       └── libSkiaSharp.so
+│               ├── linux-riscv64
+│               │   └── native
+│               │       └── libHarfBuzzSharp.so
+│               ├── linux-x64
+│               │   └── native
+│               │       ├── libHarfBuzzSharp.so
+│               │       └── libSkiaSharp.so
+│               ├── linux-x86
+│               │   └── native
+│               │       └── libHarfBuzzSharp.so
+│               ├── osx
+│               │   └── native
+│               │       ├── libAvaloniaNative.dylib
+│               │       ├── libHarfBuzzSharp.dylib
+│               │       └── libSkiaSharp.dylib
+│               ├── win-arm64
+│               │   └── native
+│               │       ├── av_libglesv2.dll
+│               │       ├── libHarfBuzzSharp.dll
+│               │       └── libSkiaSharp.dll
+│               ├── win-x64
+│               │   └── native
+│               │       ├── av_libglesv2.dll
+│               │       ├── libHarfBuzzSharp.dll
+│               │       └── libSkiaSharp.dll
+│               └── win-x86
+│                   └── native
+│                       ├── av_libglesv2.dll
+│                       ├── libHarfBuzzSharp.dll
+│                       └── libSkiaSharp.dll
+├── combined_output.txt
+├── config.json
+├── directory_tree.txt
+├── obj
+│   ├── Debug
+│   │   └── net8.0
+│   │       ├── .NETCoreApp,Version=v8.0.AssemblyAttributes.cs
+│   │       ├── Avalonia
+│   │       │   ├── Resources.Inputs.cache
+│   │       │   ├── references
+│   │       │   └── resources
+│   │       ├── OpenDraft.AssemblyInfo.cs
+│   │       ├── OpenDraft.AssemblyInfoInputs.cache
+│   │       ├── OpenDraft.GeneratedMSBuildEditorConfig.editorconfig
+│   │       ├── OpenDraft.assets.cache
+│   │       ├── OpenDraft.csproj.AssemblyReference.cache
+│   │       ├── OpenDraft.csproj.BuildWithSkipAnalyzers
+│   │       ├── OpenDraft.csproj.CoreCompileInputs.cache
+│   │       ├── OpenDraft.csproj.FileListAbsolute.txt
+│   │       ├── OpenDraft.csproj.Up2Date
+│   │       ├── OpenDraft.dll
+│   │       ├── OpenDraft.genruntimeconfig.cache
+│   │       ├── OpenDraft.pdb
+│   │       ├── OpenDraft.sourcelink.json
+│   │       ├── apphost.exe
+│   │       ├── ref
+│   │       │   └── OpenDraft.dll
+│   │       └── refint
+│   │           └── OpenDraft.dll
+│   ├── OpenDraft.csproj.nuget.dgspec.json
+│   ├── OpenDraft.csproj.nuget.g.props
+│   ├── OpenDraft.csproj.nuget.g.targets
+│   ├── project.assets.json
+│   └── project.nuget.cache
+├── py_ printout.py
+└── py_dir_print.py

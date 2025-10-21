@@ -9,14 +9,14 @@ using System.Xml.Linq;
 
 namespace OpenDraft.XSVG
 {
-    internal struct SVGStyle
+    internal struct ODSvgStyle
     {
         public ODColour StrokeColor;
         public float StrokeWidth;
         public string LineType;
     }
 
-    public class SvgImporter
+    public class ODSvgReader
     {
         private string? _filePath;
         private XDocument? _xDocument;
@@ -230,7 +230,7 @@ namespace OpenDraft.XSVG
             return circles;
         }
 
-        private ODElement ParsePathData(string pathData, SVGStyle style)
+        private ODElement ParsePathData(string pathData, ODSvgStyle style)
         {
             try
             {
@@ -454,9 +454,9 @@ namespace OpenDraft.XSVG
                 _ => 0
             };
         }
-        private SVGStyle ParseStyle(XElement element)
+        private ODSvgStyle ParseStyle(XElement element)
         {
-            var style = new SVGStyle();
+            var style = new ODSvgStyle();
 
             // Parse style attribute
             var styleAttr = element.Attribute("style")?.Value;

@@ -6,6 +6,9 @@ using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
 using OpenDraft.ViewModels;
 using OpenDraft.Views;
+using Avalonia.Controls;
+using System;
+using OpenDraft.XSVG;
 
 namespace OpenDraft
 {
@@ -27,6 +30,9 @@ namespace OpenDraft
                 {
                     DataContext = new MainWindowViewModel(),
                 };
+
+                // Subscribe to Exit event for cleanup
+                desktop.Exit += (_, __) => ODXsvgReader.CleanupAllTempFiles();
             }
 
             base.OnFrameworkInitializationCompleted();
