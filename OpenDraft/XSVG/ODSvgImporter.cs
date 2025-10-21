@@ -4,6 +4,7 @@ using OpenDraft.ODCore.ODGeometry;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 using System.Xml.Linq;
 
 namespace OpenDraft.XSVG
@@ -231,67 +232,123 @@ namespace OpenDraft.XSVG
 
         private ODElement ParsePathData(string pathData, SVGStyle style)
         {
-            // Simple path parser - you can expand this later
             try
             {
-                // For now, create a polyline from move-to and line-to commands
                 var points = new List<ODPoint>();
-                var commands = pathData.Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
+                var tokens = TokenizePathData(pathData);
 
                 double currentX = 0, currentY = 0;
+                double startX = 0, startY = 0;
+                bool hasValidData = false;
 
-                for (int i = 0; i < commands.Length; i++)
+                for (int i = 0; i < tokens.Count; i++)
                 {
-                    var cmd = commands[i];
+                    var token = tokens[i];
+                    var upperToken = token.ToUpper();
 
-                    if (cmd == "M" || cmd == "m") // Move to
+                    switch (upperToken)
                     {
-                        if (i + 2 < commands.Length)
-                        {
-                            if (double.TryParse(commands[i + 1], out double x) &&
-                                double.TryParse(commands[i + 2], out double y))
+                        case "M": // Move To
+                            if (i + 2 < tokens.Count &&
+                                TryParseDouble(tokens[i + 1], out double mx) &&
+                                TryParseDouble(tokens[i + 2], out double my))
                             {
-                                if (cmd == "m") // relative
+                                if (token == "m") // relative
                                 {
-                                    currentX += x;
-                                    currentY += y;
+                                    currentX += mx;
+                                    currentY += my;
                                 }
                                 else // absolute
                                 {
-                                    currentX = x;
-                                    currentY = y;
+                                    currentX = mx;
+                                    currentY = my;
                                 }
+                                startX = currentX;
+                                startY = currentY;
                                 points.Add(new ODPoint(currentX, currentY));
                                 i += 2;
+                                hasValidData = true;
                             }
-                        }
-                    }
-                    else if (cmd == "L" || cmd == "l") // Line to
-                    {
-                        if (i + 2 < commands.Length)
-                        {
-                            if (double.TryParse(commands[i + 1], out double x) &&
-                                double.TryParse(commands[i + 2], out double y))
+                            break;
+
+                        case "L": // Line To
+                            if (i + 2 < tokens.Count &&
+                                TryParseDouble(tokens[i + 1], out double lx) &&
+                                TryParseDouble(tokens[i + 2], out double ly))
                             {
-                                if (cmd == "l") // relative
+                                if (token == "l") // relative
                                 {
-                                    currentX += x;
-                                    currentY += y;
+                                    currentX += lx;
+                                    currentY += ly;
                                 }
                                 else // absolute
                                 {
-                                    currentX = x;
-                                    currentY = y;
+                                    currentX = lx;
+                                    currentY = ly;
                                 }
                                 points.Add(new ODPoint(currentX, currentY));
                                 i += 2;
+                                hasValidData = true;
                             }
-                        }
+                            break;
+
+                        case "H": // Horizontal Line To
+                            if (i + 1 < tokens.Count &&
+                                TryParseDouble(tokens[i + 1], out double hx))
+                            {
+                                if (token == "h") // relative
+                                {
+                                    currentX += hx;
+                                }
+                                else // absolute
+                                {
+                                    currentX = hx;
+                                }
+                                points.Add(new ODPoint(currentX, currentY));
+                                i += 1;
+                                hasValidData = true;
+                            }
+                            break;
+
+                        case "V": // Vertical Line To
+                            if (i + 1 < tokens.Count &&
+                                TryParseDouble(tokens[i + 1], out double vy))
+                            {
+                                if (token == "v") // relative
+                                {
+                                    currentY += vy;
+                                }
+                                else // absolute
+                                {
+                                    currentY = vy;
+                                }
+                                points.Add(new ODPoint(currentX, currentY));
+                                i += 1;
+                                hasValidData = true;
+                            }
+                            break;
+
+                        case "Z": // Close Path
+                            if (points.Count > 0)
+                            {
+                                // Close the path by returning to start point
+                                points.Add(new ODPoint(startX, startY));
+                                hasValidData = true;
+                            }
+                            break;
+
+                        default:
+                            // Skip unknown commands and their parameters
+                            if (IsCommandToken(token))
+                            {
+                                // Skip the command and its parameters
+                                i += GetParameterCountForCommand(token);
+                            }
+                            break;
                     }
-                    // Add more command types as needed (H, V, C, Q, etc.)
                 }
 
-                if (points.Count > 1)
+                if (hasValidData && points.Count > 1)
                 {
                     return new ODPolyline(points);
                 }
@@ -299,11 +356,104 @@ namespace OpenDraft.XSVG
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error parsing path data: {ex.Message}");
+                Debug.WriteLine($"Path data: {pathData}");
             }
 
             return null;
         }
 
+
+        private List<string> TokenizePathData(string pathData)
+        {
+            var tokens = new List<string>();
+            if (string.IsNullOrEmpty(pathData)) return tokens;
+
+            var currentToken = new StringBuilder();
+            bool inNumber = false;
+
+            foreach (char c in pathData)
+            {
+                if (char.IsWhiteSpace(c) || c == ',')
+                {
+                    if (currentToken.Length > 0)
+                    {
+                        tokens.Add(currentToken.ToString());
+                        currentToken.Clear();
+                    }
+                    inNumber = false;
+                }
+                else if (char.IsLetter(c) && c != '.' && c != '-')
+                {
+                    if (currentToken.Length > 0)
+                    {
+                        tokens.Add(currentToken.ToString());
+                        currentToken.Clear();
+                    }
+                    currentToken.Append(c);
+                    tokens.Add(currentToken.ToString());
+                    currentToken.Clear();
+                    inNumber = false;
+                }
+                else if (c == '-' && inNumber)
+                {
+                    // Negative sign in the middle of tokens indicates a new number
+                    if (currentToken.Length > 0)
+                    {
+                        tokens.Add(currentToken.ToString());
+                        currentToken.Clear();
+                    }
+                    currentToken.Append(c);
+                    inNumber = true;
+                }
+                else
+                {
+                    // Number or decimal point or negative sign at start
+                    currentToken.Append(c);
+                    inNumber = true;
+                }
+            }
+
+            // Add the last token
+            if (currentToken.Length > 0)
+            {
+                tokens.Add(currentToken.ToString());
+            }
+
+            return tokens;
+        }
+
+        private bool TryParseDouble(string value, out double result)
+        {
+            // Handle culture-specific formatting
+            return double.TryParse(value,
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out result);
+        }
+
+        private bool IsCommandToken(string token)
+        {
+            if (string.IsNullOrEmpty(token)) return false;
+
+            char firstChar = token[0];
+            return "MLHVCSQTAZ".Contains(char.ToUpper(firstChar));
+        }
+
+        private int GetParameterCountForCommand(string command)
+        {
+            if (string.IsNullOrEmpty(command)) return 0;
+
+            return char.ToUpper(command[0]) switch
+            {
+                'M' or 'L' or 'T' => 2,  // Move, Line, Smooth Quadratic
+                'H' or 'V' => 1,         // Horizontal, Vertical
+                'S' or 'Q' => 4,         // Smooth Curve, Quadratic
+                'C' => 6,                // Curve
+                'A' => 7,                // Arc
+                'Z' => 0,                // Close path
+                _ => 0
+            };
+        }
         private SVGStyle ParseStyle(XElement element)
         {
             var style = new SVGStyle();

@@ -25,6 +25,7 @@ namespace OpenDraft.ViewModels
             OpenDraft.XSVG.SvgImporter svgReader = new OpenDraft.XSVG.SvgImporter();
             svgReader.LoadSvgFile("XSVG/Example.svg");
             ODPoint svgSize = svgReader.GetDimensions();
+            List<ODElement> svgElements = svgReader.ImportGeometry();
 
             // Initialize the DataManager and Editor
             DataManager = new ODDataManager();

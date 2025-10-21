@@ -25,11 +25,25 @@ namespace OpenDraft.ODCore.ODGeometry
             ODLayer? layer = lm.GetLayerByID(LayerId);
             ODLineStyleRegistry lsRegistry = lm.LineStyleRegistry;
 
-            context.DrawEllipse(
-                Brushes.Red, new Pen(Brushes.Red, 0.1),
-                new Point(50, 50),
-                0.4, 0.4
+            if (layer != null && !layer.IsVisible)
+                return;
+
+            if (layer == null)
+                return;
+
+            // Get dash style from registry
+            var dashStyle = lsRegistry.ToAvaloniaDashStyle(LineType ?? layer.LineType);
+            string effectiveColour = (Colour != null) ? Colour.ToHex() : layer.Color;
+            float effectiveLineWeight = LineWeight ?? layer.LineWeight;
+
+            // Create pen
+            var pen = new Pen(
+                new SolidColorBrush(Color.Parse(effectiveColour)), // Brush only
+                effectiveLineWeight,                               // Thickness
+                dashStyle                                          // Dash style
             );
+
+            context.DrawEllipse(null, pen, new Point(Center.X, Center.Y), Radius, Radius);
         }
     }
 }
