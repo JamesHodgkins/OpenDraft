@@ -10,6 +10,7 @@ namespace OpenDraft.ODCore.ODData
     {
         private List<ODLayer> Layers { get; set; } = new List<ODLayer>();
         private ushort ActiveLayer { get; set; }
+        public ODLineStyleRegistry LineStyleRegistry { get; } = new ODLineStyleRegistry();
 
         public ODLayerManager()
         {

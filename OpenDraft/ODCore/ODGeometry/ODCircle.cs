@@ -20,8 +20,11 @@ namespace OpenDraft.ODCore.ODGeometry
             Radius = radius;
         }
 
-        public override void Draw(DrawingContext context, ODLayer layer, ODLineStyleRegistry lsRegistry)
+        public override void Draw(DrawingContext context, ODLayerManager lm)
         {
+            ODLayer? layer = lm.GetLayerByID(LayerId);
+            ODLineStyleRegistry lsRegistry = lm.LineStyleRegistry;
+
             context.DrawEllipse(
                 Brushes.Red, new Pen(Brushes.Red, 0.1),
                 new Point(50, 50),

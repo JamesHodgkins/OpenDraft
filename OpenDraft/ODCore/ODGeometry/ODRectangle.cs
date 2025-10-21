@@ -43,8 +43,11 @@ namespace OpenDraft.ODCore.ODGeometry
             }
         }
 
-        public override void Draw(DrawingContext context, ODLayer layer, ODLineStyleRegistry lsRegistry)
+        public override void Draw(DrawingContext context, ODLayerManager lm)
         {
+            ODLayer? layer = lm.GetLayerByID(LayerId);
+            ODLineStyleRegistry lsRegistry = lm.LineStyleRegistry;
+
             if (layer != null && !layer.IsVisible)
                 return;
 

@@ -21,9 +21,6 @@ namespace OpenDraft
         public static readonly StyledProperty<ODLayerManager> LayerManagerProperty =
             AvaloniaProperty.Register<Viewport, ODLayerManager>(nameof(LayerManager));
 
-        public static readonly StyledProperty<ODLineStyleRegistry> LineStyleRegistryProperty =
-            AvaloniaProperty.Register<Viewport, ODLineStyleRegistry>(nameof(LineStyleRegistry));
-
         public static readonly StyledProperty<ODEditor> EditorProperty =
             AvaloniaProperty.Register<Viewport, ODEditor>(nameof(Editor));
 
@@ -43,12 +40,6 @@ namespace OpenDraft
         {
             get => GetValue(LayerManagerProperty);
             set => SetValue(LayerManagerProperty, value);
-        }
-
-        public ODLineStyleRegistry LineStyleRegistry
-        {
-            get => GetValue(LineStyleRegistryProperty);
-            set => SetValue(LineStyleRegistryProperty, value);
         }
 
         public ODEditor Editor
@@ -128,7 +119,7 @@ namespace OpenDraft
                     {
                         var layer = LayerManager?.GetLayerByID(element.LayerId);
                         if (layer != null)
-                            element.Draw(context, layer, LineStyleRegistry);
+                            element.Draw(context, LayerManager!);
                     }
                 }
             };
@@ -151,7 +142,7 @@ namespace OpenDraft
                         foreach (ODDynamicElement element in Editor.DynamicElements)
                         {
                             ODLayer? layer = LayerManager?.GetLayerByID(element.LayerId);
-                            if (layer != null) element.Draw(context, layer, LineStyleRegistry, Camera.Scale, vpWorldSize, worldMousePoint);
+                            if (layer != null) element.Draw(context, LayerManager!, Camera.Scale, vpWorldSize, worldMousePoint);
                         }
                 }
             };

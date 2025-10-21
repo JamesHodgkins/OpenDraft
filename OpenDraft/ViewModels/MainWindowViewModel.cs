@@ -15,7 +15,6 @@ namespace OpenDraft.ViewModels
 
         public ObservableCollection<ODElement> GeometryElements => DataManager.Elements;
         public ODLayerManager LayerManager => DataManager.LayerManager;
-        public ODLineStyleRegistry LineStyleRegistry => DataManager.LineStyleRegister;
         public ODEditor Editor => EditorRoot;
 
         public MainWindowViewModel()

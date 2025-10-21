@@ -22,7 +22,7 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
             Id = Guid.NewGuid();
         }
 
-        public virtual void Draw(DrawingContext context, ODLayer layer, ODLineStyleRegistry lsRegistry, 
+        public virtual void Draw(DrawingContext context, ODLayerManager lm, 
             float scale, ODPoint vpWorldSize, ODPoint mousePosition)
         {
             // Base draw method, to be overridden by derived classes

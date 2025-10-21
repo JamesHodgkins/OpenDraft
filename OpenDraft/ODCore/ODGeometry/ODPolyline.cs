@@ -17,8 +17,11 @@ namespace OpenDraft.ODCore.ODGeometry
             Points = points ?? new List<ODPoint>();
         }
 
-        public override void Draw(DrawingContext context, ODLayer layer, ODLineStyleRegistry lsRegistry)
+        public override void Draw(DrawingContext context, ODLayerManager lm)
         {
+            ODLayer? layer = lm.GetLayerByID(LayerId);
+            ODLineStyleRegistry lsRegistry = lm.LineStyleRegistry;
+
             if (layer != null && !layer.IsVisible)
                 return;
 

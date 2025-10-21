@@ -83,7 +83,6 @@
                     DynamicElements="{Binding Editor.DynamicElements}"
                     LayerManager="{Binding LayerManager}"
                     Editor="{Binding Editor}"
-					LineStyleRegistry="{Binding LineStyleRegistry}"
                     InputService ="{Binding InputService}"/>
 
     <!-- Status Bar -->
