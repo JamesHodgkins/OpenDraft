@@ -99,7 +99,7 @@ namespace OpenDraft.ODCore.ODData
         }
 
         // Convert to Avalonia DashStyle
-        public IDashStyle ToAvaloniaDashStyle(string linetypeName)
+        public IDashStyle? ToAvaloniaDashStyle(string linetypeName)
         {
             var pattern = GetStyleAsArray(linetypeName);
             if (pattern == null || pattern.Length == 0)

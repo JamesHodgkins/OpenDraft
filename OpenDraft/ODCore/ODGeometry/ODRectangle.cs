@@ -55,14 +55,14 @@ namespace OpenDraft.ODCore.ODGeometry
 
             // Get dash style from registry
             var dashStyle = connector.ToAvaloniaDashStyle(LineType ?? layer.LineType);
-            string effectiveColour = (Colour != null) ? Colour.ToHex() : layer.Color;
+            ODColour effectiveColour = (Colour != null) ? Colour : layer.Color;
             float effectiveLineWeight = LineWeight ?? layer.LineWeight;
 
-            // Create pen for the outline
-            Pen pen = new Pen(
-                new SolidColorBrush(Color.Parse(effectiveColour)), // Brush only
-                effectiveLineWeight,                               // Thickness
-                dashStyle                                          // Dash style
+            // Create pen
+            var pen = new Pen(
+                new SolidColorBrush(effectiveColour.ToAvaloniaColor()), // Brush only
+                effectiveLineWeight,                                    // Thickness
+                dashStyle                                               // Dash style
             );
 
             // Create rectangle geometry

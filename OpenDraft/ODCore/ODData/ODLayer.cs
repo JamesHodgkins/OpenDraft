@@ -10,7 +10,7 @@ namespace OpenDraft.ODCore.ODData
     {
         private ushort _id;
         public string Name { get; set; } = Guid.NewGuid().ToString();
-        public string Color { get; set; } = "#FFFFFF";
+        public ODColour Color { get; set; } = new ODColour("#FFFFFF");
         public string LineType { get; set; } = "Continuous";
         public float LineWeight { get; set; } = 0.6f;
         public bool IsVisible { get; set; } = true;

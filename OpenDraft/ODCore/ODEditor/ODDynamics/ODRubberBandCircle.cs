@@ -26,8 +26,17 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
             if (layer == null || !layer.IsVisible || layer.Color == null)
                 return;
 
-            Pen pen = new Pen(new SolidColorBrush(Avalonia.Media.Color.Parse(layer.Color)), 
-                layer.LineWeight, connector.ToAvaloniaDashStyle(layer.LineType));
+            // Get dash style from registry
+            IDashStyle dashStyle = connector.ToAvaloniaDashStyle(LineType ?? layer.LineType);
+            string effectiveColour = (Colour != null) ? Colour.ToHex() : layer.Color.ToHex();
+            float effectiveLineWeight = LineWeight ?? layer.LineWeight;
+
+            // Create pen
+            Pen pen = new Pen(
+                new SolidColorBrush(Color.Parse(effectiveColour)), // Brush only
+                effectiveLineWeight,                               // Thickness
+                dashStyle                                          // Dash style
+            );
 
             float radius = (float)Math.Sqrt(
                 Math.Pow(mousePosition.X - Start.X, 2) + Math.Pow(mousePosition.Y - Start.Y, 2)

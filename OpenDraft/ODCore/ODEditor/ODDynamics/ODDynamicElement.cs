@@ -13,8 +13,9 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
     public class ODDynamicElement
     {
         public Guid Id { get; set; }
-        public string Color { get; set; } = "#FF0000";
-        public float LineWeight { get; set; } = 2.0f;
+        public ODColour? Colour { get; set; } = null; // If null, use layer colour
+        public float? LineWeight { get; set; } = 2.0f; // If null, use layer line weight
+        public string? LineType { get; set; } = null; // If null, use layer line type
         public ushort LayerId { get; set; } = 0; // Default layer ID
 
         public ODDynamicElement()

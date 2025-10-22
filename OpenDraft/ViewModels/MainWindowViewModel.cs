@@ -42,6 +42,13 @@ namespace OpenDraft.ViewModels
                 Editor.AddStaticElement(elem);
             }
 
+            /* Create test layer */
+            DataManager.LayerManager.AddLayer("New Layer");
+            ODLayer? lay = DataManager.LayerManager.GetLayerByName("New Layer");
+            DataManager.LayerManager.SetActiveLayer("New Layer");
+            lay!.Color = new ODColour("#00FF00");
+            lay!.LineWeight = 2.0f;
+
             Debug.WriteLine("Setup complete");
         }
 

@@ -6,7 +6,10 @@
     { "crosshair_line_weight": "1" },
     { "grid_colour": "#333333" },
     { "text_colour": "#FFFFFF" },
-    { "highlight_colour": "#FFFF00" }
+    { "highlight_colour": "#FFFF00" },
+    { "draw_tool_colour": "#AAAAAA" },
+    { "draw_tool_line_weight": "1" },
+    { "draw_tool_line_type": "Dashed" }
   ],
   "system": [
     { "placeholder": "value" }

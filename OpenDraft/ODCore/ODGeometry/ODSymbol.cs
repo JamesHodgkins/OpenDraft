@@ -34,19 +34,19 @@ namespace OpenDraft.ODCore.ODGeometry
 
             // Get dash style from registry
             var dashStyle = connector.ToAvaloniaDashStyle(LineType ?? layer.LineType);
-            string effectiveColour = (Colour != null) ? Colour.ToHex() : layer.Color;
+            ODColour effectiveColour = (Colour != null) ? Colour : layer.Color;
             float effectiveLineWeight = LineWeight ?? layer.LineWeight;
 
             // Create pen
-            Pen pen = new Pen(
-                new SolidColorBrush(Color.Parse(effectiveColour)), // Brush only
-                effectiveLineWeight,                               // Thickness
-                dashStyle                                          // Dash style
+            var pen = new Pen(
+                new SolidColorBrush(effectiveColour.ToAvaloniaColor()), // Brush only
+                effectiveLineWeight,                                    // Thickness
+                dashStyle                                               // Dash style
             );
 
             //foreach (ODElement element in GetBlockElements(BlockName))
             //{
-                //element.Draw(context, lm);
+            //element.Draw(context, lm);
             //}
         }
     }

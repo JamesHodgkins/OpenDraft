@@ -3,14 +3,12 @@ using Avalonia.Media;
 using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODGeometry;
 using System;
-using System.Diagnostics;
 
 namespace OpenDraft.ODCore.ODEditor.ODDynamics
 {
     public class ODRubberBandLine : ODDynamicElement
     {
         public ODPoint Start { get; set; }
-        public float Weight { get; set; } = 1.0f;
 
         public ODRubberBandLine(ODPoint start)
         {
@@ -25,8 +23,17 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
             if (layer == null || !layer.IsVisible || layer.Color == null)
                 return;
 
-            Pen pen = new Pen(new SolidColorBrush(Avalonia.Media.Color.Parse(layer.Color)), 
-                layer.LineWeight, connector.ToAvaloniaDashStyle(layer.LineType));
+            // Get dash style from registry
+            IDashStyle dashStyle = connector.ToAvaloniaDashStyle(LineType ?? layer.LineType);
+            string effectiveColour = (Colour != null) ? Colour.ToHex() : layer.Color.ToHex();
+            float effectiveLineWeight = LineWeight ?? layer.LineWeight;
+
+            // Create pen
+            Pen pen = new Pen(
+                new SolidColorBrush(Color.Parse(effectiveColour)), // Brush only
+                effectiveLineWeight,                               // Thickness
+                dashStyle                                          // Dash style
+            );
 
             context.DrawLine(pen, new Point(Start.X, Start.Y), new Point(mousePosition.X, mousePosition.Y));
         }
