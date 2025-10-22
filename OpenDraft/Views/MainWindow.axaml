@@ -71,7 +71,7 @@
       Orientation="Horizontal">
         <Button Content="Select" />
         <Button Content="Line" Command="{Binding ExecuteEditorCommand}" CommandParameter="LINE" />
-        <Button Content="Circle" />
+        <Button Content="Circle" Command="{Binding ExecuteEditorCommand}" CommandParameter="CIRCLE" />
     </StackPanel>
     
     

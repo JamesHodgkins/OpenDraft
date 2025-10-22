@@ -177,7 +177,7 @@ namespace OpenDraft.ODCore.ODData
             SetFromHex(hex);
         }
 
-        public ODColour(System.Drawing.Color color)
+        public ODColour(ODColour color)
         {
             R = color.R;
             G = color.G;
@@ -315,11 +315,6 @@ namespace OpenDraft.ODCore.ODData
                 (byte)(255 - B),
                 A
             );
-        }
-
-        public System.Drawing.Color ToSystemDrawingColor()
-        {
-            return System.Drawing.Color.FromArgb(A, R, G, B);
         }
 
         public (float Hue, float Saturation, float Lightness) ToHSL()

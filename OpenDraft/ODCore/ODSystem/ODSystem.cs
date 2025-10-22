@@ -5,7 +5,7 @@ using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace OpenDraft
+namespace OpenDraft.ODCore.ODSystem
 {
     public static class ODSystem
     {
