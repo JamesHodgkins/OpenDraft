@@ -41,7 +41,22 @@ namespace OpenDraft.ODCore.ODEditor
             _inputService.KeyPressed += OnKeyPressed;
             _inputService.CancelRequested += OnCancelRequested;
 
+            // Subscribe to viewport focus events
+            _inputService.ViewportEntered += OnViewportEntered;
+            _inputService.ViewportExited += OnViewportExited;
+
             DynamicElements.Add(ch);
+        }
+
+        // Add event handlers
+        private void OnViewportEntered()
+        {
+            ShowCrosshair();
+        }
+
+        private void OnViewportExited()
+        {
+            HideCrosshair();
         }
 
         /* DYNAMIC ELEMENTS MANAGEMENT */

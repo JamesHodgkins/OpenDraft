@@ -16,7 +16,7 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
             Position = position;
         }
 
-        public override void Draw(DrawingContext context, ODDataManager dm, 
+        public override void Draw(DrawingContext context, ODDrawConnector connector, 
             float scale, ODPoint vpExtents, ODPoint worldMousePosition)
         {
             var brush = new SolidColorBrush(Colors.Yellow);

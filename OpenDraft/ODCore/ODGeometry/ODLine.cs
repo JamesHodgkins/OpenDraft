@@ -19,10 +19,9 @@ namespace OpenDraft.ODCore.ODGeometry
         }
 
 
-        public override void Draw(DrawingContext context, ODDataManager dm)
+        public override void Draw(DrawingContext context, ODDrawConnector connector)
         {
-            ODLayer? layer = dm.LayerManager.GetLayerByID(LayerId);
-            ODLineStyleRegistry lsRegistry = dm.LayerManager.LineStyleRegistry;
+            ODLayer? layer = connector.GetLayerByID(LayerId);
 
             if (layer != null && !layer.IsVisible)
                 return;
@@ -31,7 +30,7 @@ namespace OpenDraft.ODCore.ODGeometry
                 return;
 
             // Get dash style from registry
-            IDashStyle dashStyle = lsRegistry.ToAvaloniaDashStyle(LineType ?? layer.LineType);
+            var dashStyle = connector.ToAvaloniaDashStyle(LineType ?? layer.LineType);
             string effectiveColour = (Colour != null) ? Colour.ToHex() : layer.Color;
             float effectiveLineWeight = LineWeight ?? layer.LineWeight;
 

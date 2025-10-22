@@ -13,6 +13,11 @@ namespace OpenDraft.ODCore.ODEditor
         public event Action<double>? NumberInput;
         public event Action? CancelRequested;
 
+        public event Action? ViewportEntered;
+        public event Action? ViewportExited;
+
+
+
         public void RaiseKeyPressed(Key key)
         {
             KeyPressed?.Invoke(key);
@@ -36,6 +41,16 @@ namespace OpenDraft.ODCore.ODEditor
         public void RaiseCancelRequested()
         {
             CancelRequested?.Invoke();
+        }
+
+        public void RaiseViewportEntered()
+        {
+            ViewportEntered?.Invoke();
+        }
+
+        public void RaiseViewportExited()
+        {
+            ViewportExited?.Invoke();
         }
 
         // These can be expanded later for more sophisticated input handling

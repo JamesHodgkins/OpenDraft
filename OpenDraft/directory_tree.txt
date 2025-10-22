@@ -12,6 +12,7 @@
 │   ├── ODData
 │   │   ├── ODColour.cs
 │   │   ├── ODDataManager.cs
+│   │   ├── ODDrawConnector.cs
 │   │   ├── ODLayer.cs
 │   │   ├── ODLayerManager.cs
 │   │   └── ODLineStyleRegistry.cs
@@ -40,7 +41,9 @@
 │   │   ├── ODLine.cs
 │   │   ├── ODPoint.cs
 │   │   ├── ODPolyline.cs
-│   │   └── ODRectangle.cs
+│   │   ├── ODRectangle.cs
+│   │   ├── ODSymbol.cs
+│   │   └── ODSymbolDefinition.cs
 │   ├── ODMath
 │   │   └── ODMath.cs
 │   ├── StaticCanvas.axaml
@@ -204,5 +207,5 @@
 │   ├── OpenDraft.csproj.nuget.g.targets
 │   ├── project.assets.json
 │   └── project.nuget.cache
-├── py_ printout.py
-└── py_dir_print.py
+├── py_dir_print.py
+└── py_printout.py

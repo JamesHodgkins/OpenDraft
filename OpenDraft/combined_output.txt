@@ -1,232 +1,5 @@
 
 
-** App.axaml **
-Path: D:\OpenDraft\OpenDraft\App.axaml
-
-<Application xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="OpenDraft.App"
-             xmlns:local="using:OpenDraft"
-             RequestedThemeVariant="Default">
-  <Application.DataTemplates>
-    <local:ViewLocator/>
-  </Application.DataTemplates>
-  <Application.Styles>
-    <FluentTheme />
-    <StyleInclude Source="avares://OpenDraft/Styles/ODStyle.axaml"/>
-  </Application.Styles>
-</Application>
-
-
-
-** App.axaml.cs **
-Path: D:\OpenDraft\OpenDraft\App.axaml.cs
-
-using System.Linq;
-using Avalonia;
-using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Data.Core;
-using Avalonia.Data.Core.Plugins;
-using Avalonia.Markup.Xaml;
-using OpenDraft.ViewModels;
-using OpenDraft.Views;
-namespace OpenDraft
-{
-    public partial class App : Application
-    {
-        public override void Initialize()
-        {
-            AvaloniaXamlLoader.Load(this);
-        }
-        public override void OnFrameworkInitializationCompleted()
-        {
-            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
-                // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
-                DisableAvaloniaDataAnnotationValidation();
-                desktop.MainWindow = new MainWindow
-                {
-                    DataContext = new MainWindowViewModel(),
-                };
-            }
-            base.OnFrameworkInitializationCompleted();
-        }
-        private void DisableAvaloniaDataAnnotationValidation()
-        {
-            // Get an array of plugins to remove
-            var dataValidationPluginsToRemove =
-                BindingPlugins.DataValidators.OfType<DataAnnotationsValidationPlugin>().ToArray();
-            // remove each entry found
-            foreach (var plugin in dataValidationPluginsToRemove)
-            {
-                BindingPlugins.DataValidators.Remove(plugin);
-            }
-        }
-    }
-}
-
-
-
-** Program.cs **
-Path: D:\OpenDraft\OpenDraft\Program.cs
-
-﻿using System;
-using Avalonia;
-namespace OpenDraft
-{
-    internal sealed class Program
-    {
-        // Initialization code. Don't use any Avalonia, third-party APIs or any
-        // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
-        // yet and stuff might break.
-        [STAThread]
-        public static void Main(string[] args) => BuildAvaloniaApp()
-            .StartWithClassicDesktopLifetime(args);
-        // Avalonia configuration, don't remove; also used by visual designer.
-        public static AppBuilder BuildAvaloniaApp()
-            => AppBuilder.Configure<App>()
-                .UsePlatformDetect()
-                .WithInterFont()
-                .LogToTrace();
-    }
-}
-
-
-
-
-** ViewLocator.cs **
-Path: D:\OpenDraft\OpenDraft\ViewLocator.cs
-
-using System;
-using Avalonia.Controls;
-using Avalonia.Controls.Templates;
-using OpenDraft.ViewModels;
-namespace OpenDraft
-{
-    public class ViewLocator : IDataTemplate
-    {
-        public Control? Build(object? param)
-        {
-            if (param is null)
-                return null;
-            var name = param.GetType().FullName!.Replace("ViewModel", "View", StringComparison.Ordinal);
-            var type = Type.GetType(name);
-            if (type != null)
-            {
-                return (Control)Activator.CreateInstance(type)!;
-            }
-            return new TextBlock { Text = "Not Found: " + name };
-        }
-        public bool Match(object? data)
-        {
-            return data is ViewModelBase;
-        }
-    }
-}
-
-
-
-
-** DynamicCanvas.axaml **
-Path: D:\OpenDraft\OpenDraft\ODCore\DynamicCanvas.axaml
-
-<UserControl xmlns="https://github.com/avaloniaui"
-             x:Class="OpenDraft.DynamicCanvas"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-</UserControl>
-
-
-
-
-** DynamicCanvas.axaml.cs **
-Path: D:\OpenDraft\OpenDraft\ODCore\DynamicCanvas.axaml.cs
-
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
-using Avalonia.Media;
-using System;
-namespace OpenDraft;
-public partial class DynamicCanvas : Control
-{
-    public Action<DrawingContext, Rect>? OnRender { get; set; }
-    public override void Render(DrawingContext context)
-    {
-        base.Render(context);
-        OnRender?.Invoke(context, Bounds);
-    }
-}
-
-
-
-
-** StaticCanvas.axaml **
-Path: D:\OpenDraft\OpenDraft\ODCore\StaticCanvas.axaml
-
-<UserControl xmlns="https://github.com/avaloniaui"
-             x:Class="OpenDraft.StaticCanvas"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-</UserControl>
-
-
-
-** StaticCanvas.axaml.cs **
-Path: D:\OpenDraft\OpenDraft\ODCore\StaticCanvas.axaml.cs
-
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
-using Avalonia.Media;
-using System;
-namespace OpenDraft;
-public partial class StaticCanvas : Control
-{
-    public Action<DrawingContext, Rect>? OnRender { get; set; }
-    public override void Render(DrawingContext context)
-    {
-        base.Render(context);
-        OnRender?.Invoke(context, Bounds);
-    }
-}
-
-
-
-
-** Viewport.axaml **
-Path: D:\OpenDraft\OpenDraft\ODCore\Viewport.axaml
-
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:local="clr-namespace:OpenDraft"
-             mc:Ignorable="d"
-             x:Class="OpenDraft.Viewport"
-             d:DesignWidth="800" d:DesignHeight="450">
-    <UserControl.Styles>
-        <Style Selector="local|Viewport">
-            <Setter Property="Cursor" Value="Arrow"/>
-        </Style>
-        <Style Selector="local|Viewport:pointerover">
-            <Setter Property="Cursor" Value="None"/>
-        </Style>
-    </UserControl.Styles>
-	<Grid Background="Transparent">
-        <local:StaticCanvas x:Name="StaticCanvas"
-							IsHitTestVisible="False"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Stretch" />
-        <local:DynamicCanvas x:Name="DynamicCanvas"
-							 IsHitTestVisible="False"
-                             HorizontalAlignment="Stretch"
-                             VerticalAlignment="Stretch" />
-    </Grid>
-</UserControl>
-
-
-
-
 ** Viewport.axaml.cs **
 Path: D:\OpenDraft\OpenDraft\ODCore\Viewport.axaml.cs
 
@@ -248,10 +21,8 @@ namespace OpenDraft
     {
         public static readonly StyledProperty<ObservableCollection<ODElement>> ElementsProperty =
             AvaloniaProperty.Register<Viewport, ObservableCollection<ODElement>>(nameof(Elements));
-        public static readonly StyledProperty<ODLayerManager> LayerManagerProperty =
-            AvaloniaProperty.Register<Viewport, ODLayerManager>(nameof(LayerManager));
-        public static readonly StyledProperty<ODEditor> EditorProperty =
-            AvaloniaProperty.Register<Viewport, ODEditor>(nameof(Editor));
+        public static readonly StyledProperty<ODDrawConnector> DrawConnectorProperty =
+            AvaloniaProperty.Register<Viewport, ODDrawConnector>(nameof(DrawConnector));
         public static readonly StyledProperty<IODEditorInputService> InputServiceProperty =
             AvaloniaProperty.Register<Viewport, IODEditorInputService>(nameof(InputService));
         public static readonly StyledProperty<ObservableCollection<ODDynamicElement>> DynamicElementsProperty =
@@ -261,15 +32,10 @@ namespace OpenDraft
             get => GetValue(ElementsProperty);
             set => SetValue(ElementsProperty, value);
         }
-        public ODLayerManager LayerManager
+        public ODDrawConnector DrawConnector
         {
-            get => GetValue(LayerManagerProperty);
-            set => SetValue(LayerManagerProperty, value);
-        }
-        public ODEditor Editor
-        {
-            get => GetValue(EditorProperty);
-            set => SetValue(EditorProperty, value);
+            get => GetValue(DrawConnectorProperty);
+            set => SetValue(DrawConnectorProperty, value);
         }
         public IODEditorInputService InputService
         {
@@ -328,9 +94,9 @@ namespace OpenDraft
                 {
                     foreach (var element in Elements)
                     {
-                        var layer = LayerManager?.GetLayerByID(element.LayerId);
+                        var layer = DrawConnector.GetLayerByID(element.LayerId);
                         if (layer != null)
-                            element.Draw(context, LayerManager!);
+                            element.Draw(context, DrawConnector);
                     }
                 }
             };
@@ -346,11 +112,11 @@ namespace OpenDraft
                 var matrix = Camera.GetMatrix(bounds.Height);
                 using (context.PushTransform(matrix))
                 {
-                    if (Editor?.DynamicElements != null)
-                        foreach (ODDynamicElement element in Editor.DynamicElements)
+                    if (DynamicElements != null)
+                        foreach (ODDynamicElement element in DynamicElements)
                         {
-                            ODLayer? layer = LayerManager?.GetLayerByID(element.LayerId);
-                            if (layer != null) element.Draw(context, LayerManager!, Camera.Scale, vpWorldSize, worldMousePoint);
+                            ODLayer? layer = DrawConnector.GetLayerByID(element.LayerId);
+                            if (layer != null) element.Draw(context, DrawConnector, Camera.Scale, vpWorldSize, worldMousePoint);
                         }
                 }
             };
@@ -418,11 +184,11 @@ namespace OpenDraft
         }
         private void OnPointerEntered(object? sender, PointerEventArgs e)
         {
-            Editor.ShowCrosshair();
+            DrawConnector.ShowCrosshair(true);
         }
         private void OnPointerExited(object? sender, PointerEventArgs e)
         {
-            Editor.HideCrosshair();
+            DrawConnector.ShowCrosshair(false);
         }
         private void OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
         {
@@ -447,1264 +213,48 @@ namespace OpenDraft
 }
 
 
-
-
-** ODColour.cs **
-Path: D:\OpenDraft\OpenDraft\ODCore\ODData\ODColour.cs
-
-﻿using System;
-namespace OpenDraft.ODCore.ODData
-{
-    public class ODColour
-    {
-        // Basic colors
-        public static ODColour Red => new(255, 0, 0);
-        public static ODColour Green => new(0, 255, 0);
-        public static ODColour Blue => new(0, 0, 255);
-        public static ODColour White => new(255, 255, 255);
-        public static ODColour Black => new(0, 0, 0);
-        public static ODColour Transparent => new(0, 0, 0, 0);
-        // Secondary colors
-        public static ODColour Yellow => new(255, 255, 0);
-        public static ODColour Cyan => new(0, 255, 255);
-        public static ODColour Magenta => new(255, 0, 255);
-        // Grayscale variants
-        public static ODColour Gray => new(128, 128, 128);
-        public static ODColour LightGray => new(211, 211, 211);
-        public static ODColour DarkGray => new(169, 169, 169);
-        public static ODColour Silver => new(192, 192, 192);
-        public static ODColour DimGray => new(105, 105, 105);
-        public static ODColour SlateGray => new(112, 128, 144);
-        // Red family
-        public static ODColour DarkRed => new(139, 0, 0);
-        public static ODColour FireBrick => new(178, 34, 34);
-        public static ODColour Crimson => new(220, 20, 60);
-        public static ODColour IndianRed => new(205, 92, 92);
-        public static ODColour LightCoral => new(240, 128, 128);
-        public static ODColour Salmon => new(250, 128, 114);
-        public static ODColour DarkSalmon => new(233, 150, 122);
-        public static ODColour LightSalmon => new(255, 160, 122);
-        // Green family
-        public static ODColour DarkGreen => new(0, 100, 0);
-        public static ODColour ForestGreen => new(34, 139, 34);
-        public static ODColour SeaGreen => new(46, 139, 87);
-        public static ODColour MediumSeaGreen => new(60, 179, 113);
-        public static ODColour LimeGreen => new(50, 205, 50);
-        public static ODColour SpringGreen => new(0, 255, 127);
-        public static ODColour MediumSpringGreen => new(0, 250, 154);
-        public static ODColour PaleGreen => new(152, 251, 152);
-        public static ODColour LightGreen => new(144, 238, 144);
-        public static ODColour LawnGreen => new(124, 252, 0);
-        public static ODColour Chartreuse => new(127, 255, 0);
-        public static ODColour Olive => new(128, 128, 0);
-        public static ODColour OliveDrab => new(107, 142, 35);
-        public static ODColour DarkOliveGreen => new(85, 107, 47);
-        // Blue family
-        public static ODColour DarkBlue => new(0, 0, 139);
-        public static ODColour MediumBlue => new(0, 0, 205);
-        public static ODColour RoyalBlue => new(65, 105, 225);
-        public static ODColour SteelBlue => new(70, 130, 180);
-        public static ODColour DodgerBlue => new(30, 144, 255);
-        public static ODColour DeepSkyBlue => new(0, 191, 255);
-        public static ODColour CornflowerBlue => new(100, 149, 237);
-        public static ODColour SkyBlue => new(135, 206, 235);
-        public static ODColour LightSkyBlue => new(135, 206, 250);
-        public static ODColour LightSteelBlue => new(176, 196, 222);
-        public static ODColour LightBlue => new(173, 216, 230);
-        public static ODColour PowderBlue => new(176, 224, 230);
-        public static ODColour Navy => new(0, 0, 128);
-        public static ODColour MidnightBlue => new(25, 25, 112);
-        public static ODColour DarkSlateBlue => new(72, 61, 139);
-        // Purple/Magenta family
-        public static ODColour Purple => new(128, 0, 128);
-        public static ODColour DarkMagenta => new(139, 0, 139);
-        public static ODColour DarkViolet => new(148, 0, 211);
-        public static ODColour BlueViolet => new(138, 43, 226);
-        public static ODColour MediumPurple => new(147, 112, 219);
-        public static ODColour MediumOrchid => new(186, 85, 211);
-        public static ODColour Orchid => new(218, 112, 214);
-        public static ODColour Violet => new(238, 130, 238);
-        public static ODColour Plum => new(221, 160, 221);
-        public static ODColour Thistle => new(216, 191, 216);
-        public static ODColour Lavender => new(230, 230, 250);
-        // Orange/Brown family
-        public static ODColour Orange => new(255, 165, 0);
-        public static ODColour DarkOrange => new(255, 140, 0);
-        public static ODColour Coral => new(255, 127, 80);
-        public static ODColour Tomato => new(255, 99, 71);
-        public static ODColour OrangeRed => new(255, 69, 0);
-        public static ODColour Gold => new(255, 215, 0);
-        public static ODColour YellowGold => new(255, 223, 0);
-        public static ODColour Goldenrod => new(218, 165, 32);
-        public static ODColour DarkGoldenrod => new(184, 134, 11);
-        public static ODColour Chocolate => new(210, 105, 30);
-        public static ODColour SaddleBrown => new(139, 69, 19);
-        public static ODColour Sienna => new(160, 82, 45);
-        public static ODColour Brown => new(165, 42, 42);
-        public static ODColour Maroon => new(128, 0, 0);
-        public static ODColour Tan => new(210, 180, 140);
-        public static ODColour RosyBrown => new(188, 143, 143);
-        public static ODColour Peru => new(205, 133, 63);
-        public static ODColour BurlyWood => new(222, 184, 135);
-        public static ODColour Wheat => new(245, 222, 179);
-        public static ODColour SandyBrown => new(244, 164, 96);
-        // Pink family
-        public static ODColour Pink => new(255, 192, 203);
-        public static ODColour LightPink => new(255, 182, 193);
-        public static ODColour HotPink => new(255, 105, 180);
-        public static ODColour DeepPink => new(255, 20, 147);
-        public static ODColour PaleVioletRed => new(219, 112, 147);
-        public static ODColour MediumVioletRed => new(199, 21, 133);
-        // Yellow family
-        public static ODColour LightYellow => new(255, 255, 224);
-        public static ODColour LemonChiffon => new(255, 250, 205);
-        public static ODColour LightGoldenrodYellow => new(250, 250, 210);
-        public static ODColour PapayaWhip => new(255, 239, 213);
-        public static ODColour Moccasin => new(255, 228, 181);
-        public static ODColour PeachPuff => new(255, 218, 185);
-        public static ODColour PaleGoldenrod => new(238, 232, 170);
-        public static ODColour Khaki => new(240, 230, 140);
-        public static ODColour DarkKhaki => new(189, 183, 107);
-        // Special/System colors
-        public static ODColour AliceBlue => new(240, 248, 255);
-        public static ODColour GhostWhite => new(248, 248, 255);
-        public static ODColour Azure => new(240, 255, 255);
-        public static ODColour MintCream => new(245, 255, 250);
-        public static ODColour Honeydew => new(240, 255, 240);
-        public static ODColour Ivory => new(255, 255, 240);
-        public static ODColour Beige => new(245, 245, 220);
-        public static ODColour OldLace => new(253, 245, 230);
-        public static ODColour FloralWhite => new(255, 250, 240);
-        public static ODColour Seashell => new(255, 245, 238);
-        public static ODColour Snow => new(255, 250, 250);
-        public static ODColour Linen => new(250, 240, 230);
-        public static ODColour AntiqueWhite => new(250, 235, 215);
-        public static ODColour NavajoWhite => new(255, 222, 173);
-        public static ODColour Cornsilk => new(255, 248, 220);
-        public static ODColour BlanchedAlmond => new(255, 235, 205);
-        public static ODColour Bisque => new(255, 228, 196);
-        public byte R { get; set; }
-        public byte G { get; set; }
-        public byte B { get; set; }
-        public byte A { get; set; }
-        public ODColour()
-        {
-            R = 0;
-            G = 0;
-            B = 0;
-            A = 255;
-        }
-        public ODColour(byte r, byte g, byte b)
-        {
-            R = r;
-            G = g;
-            B = b;
-            A = 255;
-        }
-        public ODColour(byte r, byte g, byte b, byte a)
-        {
-            R = r;
-            G = g;
-            B = b;
-            A = a;
-        }
-        public ODColour(string hex)
-        {
-            SetFromHex(hex);
-        }
-        public ODColour(System.Drawing.Color color)
-        {
-            R = color.R;
-            G = color.G;
-            B = color.B;
-            A = color.A;
-        }
-        public ODColour(Avalonia.Media.Color color)
-        {
-            R = color.R;
-            G = color.G;
-            B = color.B;
-            A = color.A;
-        }
-        public override string ToString()
-        {
-            return $"ODColour(R: {R}, G: {G}, B: {B}, A: {A})";
-        }
-        public void SetRGB(byte r, byte g, byte b)
-        {
-            R = r;
-            G = g;
-            B = b;
-        }
-        public void SetAlpha(byte a)
-        {
-            A = a;
-        }
-        public void SetRGBA(byte r, byte g, byte b, byte a)
-        {
-            R = r;
-            G = g;
-            B = b;
-            A = a;
-        }
-        public void SetFromHex(string hex)
-        {
-            if (hex.StartsWith("#"))
-            {
-                hex = hex.Substring(1);
-            }
-            if (hex.Length == 6)
-            {
-                R = Convert.ToByte(hex.Substring(0, 2), 16);
-                G = Convert.ToByte(hex.Substring(2, 2), 16);
-                B = Convert.ToByte(hex.Substring(4, 2), 16);
-                A = 255; // Default alpha
-            }
-            else if (hex.Length == 8)
-            {
-                R = Convert.ToByte(hex.Substring(0, 2), 16);
-                G = Convert.ToByte(hex.Substring(2, 2), 16);
-                B = Convert.ToByte(hex.Substring(4, 2), 16);
-                A = Convert.ToByte(hex.Substring(6, 2), 16);
-            }
-            else
-            {
-                throw new ArgumentException("Hex string must be in the format RRGGBB or RRGGBBAA");
-            }
-        }
-        public void SetFromHSL(float h, float s, float l, byte a = 255)
-        {
-            // Normalize inputs
-            h = (h % 360 + 360) % 360; // Wrap hue to 0-360
-            s = Math.Clamp(s, 0, 100);
-            l = Math.Clamp(l, 0, 100);
-            s /= 100f;
-            l /= 100f;
-            float c = (1 - Math.Abs(2 * l - 1)) * s;
-            float x = c * (1 - Math.Abs((h / 60) % 2 - 1));
-            float m = l - c / 2;
-            float r, g, b;
-            if (h >= 0 && h < 60) { r = c; g = x; b = 0; }
-            else if (h >= 60 && h < 120) { r = x; g = c; b = 0; }
-            else if (h >= 120 && h < 180) { r = 0; g = c; b = x; }
-            else if (h >= 180 && h < 240) { r = 0; g = x; b = c; }
-            else if (h >= 240 && h < 300) { r = x; g = 0; b = c; }
-            else { r = c; g = 0; b = x; }
-            R = (byte)((r + m) * 255);
-            G = (byte)((g + m) * 255);
-            B = (byte)((b + m) * 255);
-            A = a;
-        }
-        public string ToHex()
-        {
-            return A == 255
-                ? $"#{R:X2}{G:X2}{B:X2}"
-                : $"#{R:X2}{G:X2}{B:X2}{A:X2}";
-        }
-        public Avalonia.Media.Color ToAvaloniaColor()
-        {
-            return Avalonia.Media.Color.FromArgb(A, R, G, B);
-        }
-        public ODColour Lighten(float factor)
-        {
-            factor = Math.Clamp(factor, 0, 1);
-            return new ODColour(
-                (byte)Math.Min(255, R + (255 - R) * factor),
-                (byte)Math.Min(255, G + (255 - G) * factor),
-                (byte)Math.Min(255, B + (255 - B) * factor),
-                A
-            );
-        }
-        public ODColour Darken(float factor)
-        {
-            factor = Math.Clamp(factor, 0, 1);
-            return new ODColour(
-                (byte)Math.Max(0, R * (1 - factor)),
-                (byte)Math.Max(0, G * (1 - factor)),
-                (byte)Math.Max(0, B * (1 - factor)),
-                A
-            );
-        }
-        public ODColour Invert()
-        {
-            return new ODColour(
-                (byte)(255 - R),
-                (byte)(255 - G),
-                (byte)(255 - B),
-                A
-            );
-        }
-        public System.Drawing.Color ToSystemDrawingColor()
-        {
-            return System.Drawing.Color.FromArgb(A, R, G, B);
-        }
-        public (float Hue, float Saturation, float Lightness) ToHSL()
-        {
-            float r = R / 255f;
-            float g = G / 255f;
-            float b = B / 255f;
-            float max = Math.Max(r, Math.Max(g, b));
-            float min = Math.Min(r, Math.Min(g, b));
-            float delta = max - min;
-            float hue = 0;
-            float saturation = 0;
-            float lightness = (max + min) / 2;
-            if (delta != 0)
-            {
-                saturation = lightness < 0.5 ? delta / (max + min) : delta / (2 - max - min);
-                if (max == r)
-                    hue = (g - b) / delta + (g < b ? 6 : 0);
-                else if (max == g)
-                    hue = (b - r) / delta + 2;
-                else
-                    hue = (r - g) / delta + 4;
-                hue *= 60;
-            }
-            return (hue, saturation * 100, lightness * 100);
-        }
-    }
-}
-
-
-
-
-** ODDataManager.cs **
-Path: D:\OpenDraft\OpenDraft\ODCore\ODData\ODDataManager.cs
-
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using OpenDraft.ODCore.ODGeometry;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-namespace OpenDraft.ODCore.ODData
-{
-    public class ODDataManager
-    {
-        public ObservableCollection<ODGeometry.ODElement> Elements { get; } = new();
-        public ODLayerManager LayerManager { get; } = new ODLayerManager();
-        public ODLineStyleRegistry LineStyleRegister { get; } = new ODLineStyleRegistry();
-        public ODDataManager()
-        {
-        }
-        public void AddElement(ODElement element)
-        {
-            if (element == null)
-                throw new ArgumentNullException(nameof(element));
-            element.LayerId = LayerManager.GetActiveLayer();
-            Elements.Add(element);
-        }
-    }
-}
-
-
-
-
-** ODLayer.cs **
-Path: D:\OpenDraft\OpenDraft\ODCore\ODData\ODLayer.cs
+** ODDrawConnector.cs **
+Path: D:\OpenDraft\OpenDraft\ODCore\ODData\ODDrawConnector.cs
 
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Avalonia.Media;
+using OpenDraft.ODCore.ODEditor;
 namespace OpenDraft.ODCore.ODData
 {
-    public class ODLayer
+    public class ODDrawConnector
     {
-        private ushort _id;
-        public string Name { get; set; } = Guid.NewGuid().ToString();
-        public string Color { get; set; } = "#FFFFFF";
-        public string LineType { get; set; } = "Continuous";
-        public float LineWeight { get; set; } = 0.6f;
-        public bool IsVisible { get; set; } = true;
-        public bool IsLocked { get; set; } = false;
-        public bool IsSystemLayer { get; set; } = false;
-        public ODLayer(ushort id, string name)
+        private ODDataManager DataManager;
+        private ODEditor.ODEditor? Editor;
+        public ODDrawConnector(ODDataManager dm, ODEditor.ODEditor ed)
         {
-            _id = id;
-            Name = name;
+            DataManager = dm;
+            Editor = ed;
         }
-        public ushort getID()
-        {
-            return _id;
+        public ODLayer? GetLayerByName(string name) {
+            return this.DataManager.LayerManager.GetLayerByName(name);
         }
-    }
-}
-
-
-
-
-** ODLayerManager.cs **
-Path: D:\OpenDraft\OpenDraft\ODCore\ODData\ODLayerManager.cs
-
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-namespace OpenDraft.ODCore.ODData
-{
-    public class ODLayerManager
-    {
-        private List<ODLayer> Layers { get; set; } = new List<ODLayer>();
-        private ushort ActiveLayer { get; set; }
-        public ODLineStyleRegistry LineStyleRegistry { get; } = new ODLineStyleRegistry();
-        public ODLayerManager()
-        {
-            // Add a default layer
-            AddLayer("Default");
-            AddLayer("Crosshair X");
-            GetLayerByName("Crosshair X")!.IsSystemLayer = true;
-            AddLayer("Crosshair Y");
-            GetLayerByName("Crosshair Y")!.IsSystemLayer = true;
-            AddLayer("Crosshair Square");
-            GetLayerByName("Crosshair Square")!.IsSystemLayer = true;
+        public ODLayer? GetLayerByID(ushort id) {
+            return this.DataManager.LayerManager.GetLayerByID(id);
         }
-        private ushort GetNextAvailableID()
+        public IDashStyle ToAvaloniaDashStyle(string dashStyle)
         {
-            HashSet<ushort> usedIDs = new HashSet<ushort>(Layers.Select(layer => layer.getID()));
-            for (ushort id = 0; id < ushort.MaxValue; id++)
-            {
-                if (!usedIDs.Contains(id))
-                    return id;
-            }
-            throw new InvalidOperationException("No available layer IDs.");
+            return DataManager.LineStyleRegister.ToAvaloniaDashStyle(dashStyle);
         }
-        public ushort GetActiveLayer()
+        public void ShowCrosshair(bool state)
         {
-            return ActiveLayer;
-        }
-        public ushort AddLayer(string name)
-        {
-            ushort newID = GetNextAvailableID();
-            ODLayer newLayer = new ODLayer(newID, name);
-            Layers.Add(newLayer);
-            return newID;
-        }
-        public ODLayer? GetLayerByName(string name)
-        {
-            return Layers.FirstOrDefault(layer => layer.Name == name);
-        }
-        public ODLayer? GetLayerByID(ushort id)
-        {
-            return Layers.FirstOrDefault(layer => layer.getID() == id);
-        }
-        public void SetActiveLayer(string name)
-        {
-            ODLayer? layer = GetLayerByName(name);
-            if (layer != null)
-            {
-                ActiveLayer = layer.getID();
-            }
-            else
-            {
-                throw new ArgumentException($"Layer with name '{name}' does not exist.");
-            }
-        }
-        public void RemoveLayer(string name)
-        {
-            ODLayer? layerToRemove = GetLayerByName(name);
-            if (layerToRemove != null)
-            {
-                if (layerToRemove.IsSystemLayer)
-                {
-                    throw new InvalidOperationException("Cannot remove a system layer.");
-                }
-                if (ActiveLayer == layerToRemove.getID())
-                {
-                    SetActiveLayer("Default");
-                }
-                Layers.Remove(layerToRemove);
-            }
-        }
-    }
-}
-
-
-
-
-** ODLineStyleRegistry.cs **
-Path: D:\OpenDraft\OpenDraft\ODCore\ODData\ODLineStyleRegistry.cs
-
-﻿using Avalonia.Media;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-namespace OpenDraft.ODCore.ODData
-{
-    public class ODLineStyleRegistry
-    {
-        private Dictionary<string, string> lineStyles = new Dictionary<string, string>();
-        private Dictionary<string, float[]> lineStyleArrays = new Dictionary<string, float[]>();
-        public ODLineStyleRegistry()
-        {
-            InitialiseDefaultLineStyles();
-        }
-        private void InitialiseDefaultLineStyles()
-        {
-            // Store both string and array representations
-            RegisterLineStyle("Continuous", "");
-            RegisterLineStyle("Dashed", "10,5");
-            RegisterLineStyle("Dotted", "2,5");
-            RegisterLineStyle("DashDot", "10,5,2,5");
-            RegisterLineStyle("DashDotDot", "10,5,2,5,2,5");
-            RegisterLineStyle("Center", "20,5,2,5,2,5");
-            RegisterLineStyle("Phantom", "25,5,2,5,2,5,2,5");
-            RegisterLineStyle("Border", "15,3");
-            RegisterLineStyle("Hidden", "5,3");
-        }
-        public string? GetStyleAsString(string name)
-        {
-            if (lineStyles.ContainsKey(name))
-            {
-                return lineStyles[name];
-            }
-            return null;
-        }
-        public float[]? GetStyleAsArray(string name)
-        {
-            if (lineStyleArrays.ContainsKey(name))
-            {
-                return lineStyleArrays[name];
-            }
-            return null;
-        }
-        public void RegisterLineStyle(string name, string dashArray)
-        {
-            lineStyles[name] = dashArray;
-            // Pre-compute the array version for performance
-            if (!string.IsNullOrEmpty(dashArray))
-            {
-                var parts = dashArray.Split(',');
-                var array = new float[parts.Length];
-                for (int i = 0; i < parts.Length; i++)
-                {
-                    if (float.TryParse(parts[i], out float value))
-                    {
-                        array[i] = value;
-                    }
-                    else
-                    {
-                        array[i] = 0;
-                    }
-                }
-                lineStyleArrays[name] = array;
-            }
-            else
-            {
-                lineStyleArrays[name] = Array.Empty<float>();
-            }
-        }
-        public void RegisterLineStyle(string name, float[] dashArray)
-        {
-            lineStyleArrays[name] = dashArray;
-            lineStyles[name] = dashArray.Length > 0 ? string.Join(",", dashArray) : "";
-        }
-        public bool UnregisterLineStyle(string name)
-        {
-            bool removed1 = lineStyles.Remove(name);
-            bool removed2 = lineStyleArrays.Remove(name);
-            return removed1 || removed2;
-        }
-        public IEnumerable<string> GetAvailableStyleNames()
-        {
-            return lineStyles.Keys.OrderBy(name => name);
-        }
-        public bool StyleExists(string name)
-        {
-            return lineStyles.ContainsKey(name);
-        }
-        // Convert to Avalonia DashStyle
-        public IDashStyle ToAvaloniaDashStyle(string linetypeName)
-        {
-            var pattern = GetStyleAsArray(linetypeName);
-            if (pattern == null || pattern.Length == 0)
-                return null; // Continuous line
-            return new DashStyle(pattern.Select(p => (double)p).ToArray(), 0);
-        }
-        // Parse from SVG dash array
-        public string? FromSvgDashArray(string dashArray)
-        {
-            if (string.IsNullOrEmpty(dashArray) || dashArray == "none")
-                return "Continuous";
-            // Try to find exact match first
-            var exactMatch = lineStyles.FirstOrDefault(x => x.Value == dashArray).Key;
-            if (exactMatch != null)
-                return exactMatch;
-            // Try to parse and find similar
-            try
-            {
-                var parts = dashArray.Split(',');
-                var pattern = parts.Select(p => float.Parse(p.Trim())).ToArray();
-                // Look for matching pattern
-                foreach (var style in lineStyleArrays)
-                {
-                    if (style.Value.SequenceEqual(pattern))
-                        return style.Key;
-                }
-                // No match found, create a custom style
-                string customName = $"Custom_{dashArray.Replace(",", "_")}";
-                RegisterLineStyle(customName, pattern);
-                return customName;
-            }
-            catch
-            {
-                return "Continuous"; // Fallback
-            }
-        }
-    }
-}
-
-
-
-** IODEditorInputService.cs **
-Path: D:\OpenDraft\OpenDraft\ODCore\ODEditor\IODEditorInputService.cs
-
-﻿// IEditorInputService.cs
-using Avalonia.Input;
-using OpenDraft.ODCore.ODGeometry;
-using System;
-namespace OpenDraft.ODCore.ODEditor
-{
-    public interface IODEditorInputService
-    {
-        // Events for different input types
-        event Action<Key> KeyPressed;
-        event Action<ODPoint> PointProvided;
-        event Action<string> TextInput;
-        event Action<double> NumberInput;
-        event Action CancelRequested;
-        // ADD THESE METHODS to the interface
-        void RaiseKeyPressed(Key key);
-        void RaisePointProvided(ODPoint point);
-        void RaiseTextInput(string text);
-        void RaiseNumberInput(double number);
-        void RaiseCancelRequested();
-        // Methods to request specific input modes
-        void RequestPointInput();
-        void RequestTextInput();
-        void CancelInputRequest();
-    }
-}
-
-
-
-** ODCommandAttribute.cs **
-Path: D:\OpenDraft\OpenDraft\ODCore\ODEditor\ODCommandAttribute.cs
-
-﻿// ODCommandAttribute.cs
-using System;
-namespace OpenDraft.ODCore.ODEditor.ODCommands
-{
-    [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
-    public class ODCommandAttribute : Attribute
-    {
-        public string Name { get; }
-        public string Description { get; }
-        public string[] Aliases { get; }
-        public ODCommandAttribute(string name, string description = "", params string[] aliases)
-        {
-            Name = name;
-            Description = description;
-            Aliases = aliases;
-        }
-    }
-}
-
-
-
-** ODEditor.cs **
-Path: D:\OpenDraft\OpenDraft\ODCore\ODEditor\ODEditor.cs
-
-﻿using Avalonia.Input;
-using Avalonia.Threading;
-using OpenDraft.ODCore.ODData;
-using OpenDraft.ODCore.ODEditor.ODCommands;
-using OpenDraft.ODCore.ODEditor.ODDynamics;
-using OpenDraft.ODCore.ODGeometry;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
-namespace OpenDraft.ODCore.ODEditor
-{
-    public class ODEditor : IDisposable
-    {
-        private readonly ODDataManager _dataManager;
-        private readonly ODCommandRegistry _commandRegistry;
-        private readonly IODEditorInputService _inputService;
-        public ObservableCollection<ODDynamicElement> DynamicElements { get; } = new();
-        private ODEditorContext? _currentContext;
-        private IODEditorCommand? _currentCommand;
-        public event EventHandler<MessageEventArgs>? ShowMessageRequested;
-        public event EventHandler<MessageEventArgs>? StatusMessageChanged;
-        ODCrosshairElement ch = new ODCrosshairElement();
-        public ODEditor(ODDataManager dataManager, IODEditorInputService inputService)
-        {
-            _dataManager = dataManager;
-            _inputService = inputService;
-            _commandRegistry = new ODCommandRegistry();
-            _commandRegistry.RegisterAssembly(typeof(ODEditor).Assembly);
-            // Subscribe to input events
-            _inputService.KeyPressed += OnKeyPressed;
-            _inputService.CancelRequested += OnCancelRequested;
-            DynamicElements.Add(ch);
-        }
-        /* DYNAMIC ELEMENTS MANAGEMENT */
-        public void restoreDefaultDynamicElements()
-        {
-            DynamicElements.Clear();
-            // Future: Add default dynamic elements if any <<<< TODO IMPLEMENT <<<<
-            DynamicElements.Add(ch);
-        }
-        public void ClearDynamicElements()
-        {
-            DynamicElements.Clear();
-            DynamicElements.Add(ch);
-        }
-        // ADD THIS: Method to add dynamic elements
-        public void AddDynamicElement(ODDynamicElement element)
-        {
-            Debug.WriteLine("AddDynamicElement: " + element.GetType().Name);
-            DynamicElements.Add(element);
-        }
-        // ADD THIS: Method to remove specific dynamic element
-        public void RemoveDynamicElement(ODDynamicElement element)
-        {
-            DynamicElements.Remove(element);
-        }
-        /* COMMAND EXECUTION AND INPUT HANDLING  */
-        private void OnKeyPressed(Key key)
-        {
-            // Handle specific keys we care about
-            switch (key)
-            {
-                case Key.Escape:
-                    CancelCurrentCommand();
-                    break;
-                    // Future: handle Enter, Space, etc.
-            }
-        }
-        private void OnCancelRequested()
-        {
-            CancelCurrentCommand();
-        }
-        public void CancelCurrentCommand()
-        {
-            restoreDefaultDynamicElements();
-            _currentContext?.Cancel();
-            _currentContext = null;
-            _currentCommand = null;
-            SetStatus("Command cancelled");
-        }
-        public void ExecuteCommand(string commandName)
-        {
-            Debug.WriteLine($"ExecuteCommand: {commandName}");
-            CancelCurrentCommand();
-            var command = _commandRegistry.CreateCommand(commandName);
-            if (command == null)
-            {
-                SetStatus($"Unknown command: {commandName}");
+            if (Editor == null)
                 return;
-            }
-            _currentCommand = command;
-            _currentContext = new ODEditorContext(this, _dataManager, _inputService);
-            async Task RunCommandAsync()
-            {
-                try
-                {
-                    await command.ExecuteAsync(_currentContext);
-                }
-                catch (Exception ex)
-                {
-                    SetStatus($"Error in {commandName}: {ex.Message}");
-                    Debug.WriteLine($"Command error: {ex.Message}");
-                }
-                finally
-                {
-                    if (_currentCommand == command)
-                    {
-                        CancelCurrentCommand();
-                    }
-                }
-            }
-            _ = RunCommandAsync();
-        }
-        public void SetStatus(string message)
-        {
-            Debug.WriteLine("SetStatus: " + message);
-            Dispatcher.UIThread.Post(() =>
-            {
-                StatusMessageChanged?.Invoke(this, new MessageEventArgs(message));
-            });
-        }
-        public void ShowMessage(string message)
-        {
-            Debug.WriteLine("ShowMessage: " + message);
-            Dispatcher.UIThread.Post(() =>
-            {
-                ShowMessageRequested?.Invoke(this, new MessageEventArgs(message));
-            });
-        }
-        public void Dispose()
-        {
-            _inputService.KeyPressed -= OnKeyPressed;
-            _inputService.CancelRequested -= OnCancelRequested;
-            CancelCurrentCommand();
-        }
-        public void HideCrosshair()
-        {
-            ch.IsVisible = false;
-        }
-        public void ShowCrosshair()
-        {
-            ch.IsVisible = true;
-        }
-    }
-    public class MessageEventArgs : EventArgs
-    {
-        public string Message { get; }
-        public MessageEventArgs(string message) => Message = message;
-    }
-    public class BoolEventArgs : EventArgs
-    {
-        public bool Value { get; }
-        public BoolEventArgs(bool value) => Value = value;
-    }
-}
-
-
-
-** ODEditorContext.cs **
-Path: D:\OpenDraft\OpenDraft\ODCore\ODEditor\ODEditorContext.cs
-
-﻿using OpenDraft.ODCore.ODData;
-using OpenDraft.ODCore.ODEditor.ODCommands;
-using OpenDraft.ODCore.ODEditor.ODDynamics;
-using OpenDraft.ODCore.ODGeometry;
-using OpenDraft.ODCore.ODMath;
-using System;
-using System.Numerics;
-using System.Threading;
-using System.Threading.Tasks;
-namespace OpenDraft.ODCore.ODEditor
-{
-    public class ODEditorContext : IODEditorGateway
-    {
-        private readonly ODEditor _editor;
-        private readonly ODDataManager _dataManager;
-        private readonly IODEditorInputService _inputService;
-        private readonly CancellationTokenSource _cancellationTokenSource;
-        private TaskCompletionSource<ODPoint>? _pointWaiter;
-        private TaskCompletionSource<double>? _numberWaiter;
-        private TaskCompletionSource<string>? _textWaiter;
-        private TaskCompletionSource<string>? _choiceWaiter;
-        public ODDataManager DataManager => _dataManager;
-        public CancellationToken CancellationToken => _cancellationTokenSource.Token;
-        public ODEditorContext(ODEditor editor, ODDataManager dataManager, IODEditorInputService inputService)
-        {
-            _editor = editor;
-            _dataManager = dataManager;
-            _inputService = inputService;
-            _cancellationTokenSource = new CancellationTokenSource();
-            // Subscribe to input service events
-            _inputService.PointProvided += OnPointProvided;
-            _inputService.NumberInput += OnNumberProvided;
-            _inputService.TextInput += OnTextProvided;
-        }
-        public void AddDynamicElement(ODDynamicElement element)
-        {
-            _editor.AddDynamicElement(element);
-        }
-        public void RemoveDynamicElement(ODDynamicElement element)
-        {
-            _editor.RemoveDynamicElement(element);
-        }
-        public void ClearDynamicElements()
-        {
-            _editor.ClearDynamicElements();
-        }
-        private void OnPointProvided(ODPoint point)
-        {
-            ProvidePoint(point);
-        }
-        private void OnNumberProvided(double number)
-        {
-            ProvideNumber(number);
-        }
-        private void OnTextProvided(string text)
-        {
-            ProvideText(text);
-        }
-        public Task<ODPoint> GetPointAsync(string prompt)
-        {
-            _editor.SetStatus(prompt); // FIXED: Now calls editor method
-            ClearAllWaiters();
-            _pointWaiter = new TaskCompletionSource<ODPoint>();
-            return _pointWaiter.Task;
-        }
-        public Task<double> GetNumberAsync(string prompt)
-        {
-            _editor.SetStatus(prompt); // FIXED
-            ClearAllWaiters();
-            _numberWaiter = new TaskCompletionSource<double>();
-            return _numberWaiter.Task;
-        }
-        public Task<string> GetTextAsync(string prompt)
-        {
-            _editor.SetStatus(prompt); // FIXED
-            ClearAllWaiters();
-            _textWaiter = new TaskCompletionSource<string>();
-            return _textWaiter.Task;
-        }
-        public async Task<(ODPoint start, ODPoint end)> GetLineAsync(string promptStart, string promptEnd)
-        {
-            var start = await GetPointAsync(promptStart);
-            ODRubberBandLine rubberBandLine = new ODRubberBandLine(start);
-            rubberBandLine.LayerId = _dataManager.LayerManager.GetActiveLayer();
-            _editor.AddDynamicElement(rubberBandLine);
-            var end = await GetPointAsync(promptEnd);
-            return (start, end);
-        }
-        public Task<string> GetChoiceAsync(string prompt, params string[] options)
-        {
-            _editor.SetStatus(prompt); // FIXED
-            ClearAllWaiters();
-            _choiceWaiter = new TaskCompletionSource<string>();
-            return _choiceWaiter.Task;
-        }
-        public void ProvidePoint(ODPoint point)
-        {
-            if (point == null)
-                throw new ArgumentNullException(nameof(point));
-            if (_pointWaiter != null && !_pointWaiter.Task.IsCompleted)
-            {
-                _pointWaiter.TrySetResult(point);
-            }
-        }
-        public void ProvideNumber(double number)
-        {
-            if (_numberWaiter != null && !_numberWaiter.Task.IsCompleted)
-            {
-                _numberWaiter.TrySetResult(number);
-            }
-        }
-        public void ProvideText(string text)
-        {
-            if (_textWaiter != null && !_textWaiter.Task.IsCompleted)
-            {
-                _textWaiter.TrySetResult(text);
-            }
-        }
-        public void ProvideChoice(string choice)
-        {
-            if (_choiceWaiter != null && !_choiceWaiter.Task.IsCompleted)
-            {
-                _choiceWaiter.TrySetResult(choice);
-            }
-        }
-        public void Cancel()
-        {
-            _cancellationTokenSource.Cancel();
-            _inputService.PointProvided -= OnPointProvided;
-            _inputService.NumberInput -= OnNumberProvided;
-            _inputService.TextInput -= OnTextProvided;
-            ClearAllWaiters();
-        }
-        private void ClearAllWaiters()
-        {
-            _pointWaiter = null;
-            _numberWaiter = null;
-            _textWaiter = null;
-            _choiceWaiter = null;
-        }
-        public void SetStatus(string message)
-        {
-            _editor.SetStatus(message);
-        }
-        public void ShowMessage(string message)
-        {
-            _editor.ShowMessage(message);
+            if (state)
+                Editor.ShowCrosshair();
+            else
+                Editor.HideCrosshair();
         }
     }
 }
-
-
-
-** ODEditorInputService.cs **
-Path: D:\OpenDraft\OpenDraft\ODCore\ODEditor\ODEditorInputService.cs
-
-﻿// EditorInputService.cs
-using Avalonia.Input;
-using OpenDraft.ODCore.ODGeometry;
-using System;
-namespace OpenDraft.ODCore.ODEditor
-{
-    public class ODEditorInputService : IODEditorInputService
-    {
-        public event Action<Key>? KeyPressed;
-        public event Action<ODPoint>? PointProvided;
-        public event Action<string>? TextInput;
-        public event Action<double>? NumberInput;
-        public event Action? CancelRequested;
-        public void RaiseKeyPressed(Key key)
-        {
-            KeyPressed?.Invoke(key);
-        }
-        public void RaisePointProvided(ODPoint point)
-        {
-            PointProvided?.Invoke(point);
-        }
-        public void RaiseTextInput(string text)
-        {
-            TextInput?.Invoke(text);
-        }
-        public void RaiseNumberInput(double number)
-        {
-            NumberInput?.Invoke(number);
-        }
-        public void RaiseCancelRequested()
-        {
-            CancelRequested?.Invoke();
-        }
-        // These can be expanded later for more sophisticated input handling
-        public void RequestPointInput() { /* Future: change cursor, show hints */ }
-        public void RequestTextInput() { /* Future: focus text box */ }
-        public void CancelInputRequest() { /* Future: reset cursor */ }
-    }
-}
-
-
-
-** ODViewportCamera.cs **
-Path: D:\OpenDraft\OpenDraft\ODCore\ODEditor\ODViewportCamera.cs
-
-﻿using Avalonia;
-public class ViewportCamera
-{
-    public Point Position { get; set; } = new Point(0, 0);
-    public float Scale { get; set; } = 1.0f;
-    public ViewportCamera(Point? position = null, float scale = 1.0f)
-    {
-        Position = position ?? new Point(0, 0);
-        Scale = scale;
-    }
-    public void MoveBy(Vector delta) => Position += new Point(delta.X, delta.Y);
-    public Matrix GetMatrix(double viewportHeight) =>
-        new Matrix(Scale, 0, 0, -Scale, -Position.X * Scale, Position.Y * Scale + viewportHeight);
-}
-
-
-
-** IODEditorCommand.cs **
-Path: D:\OpenDraft\OpenDraft\ODCore\ODEditor\ODCommands\IODEditorCommand.cs
-
-﻿using System.Threading.Tasks;
-namespace OpenDraft.ODCore.ODEditor.ODCommands
-{
-    public interface IODEditorCommand
-    {
-        string Name { get; }
-        string Description { get; }
-        Task ExecuteAsync(IODEditorGateway editor);
-    }
-}
-
-
-
-** IODEditorGateway.cs **
-Path: D:\OpenDraft\OpenDraft\ODCore\ODEditor\ODCommands\IODEditorGateway.cs
-
-﻿using OpenDraft.ODCore.ODData;
-using OpenDraft.ODCore.ODEditor.ODDynamics;
-using OpenDraft.ODCore.ODGeometry;
-using System.Threading;
-using System.Threading.Tasks;
-namespace OpenDraft.ODCore.ODEditor.ODCommands
-{
-    public interface IODEditorGateway
-    {
-        ODDataManager DataManager { get; }
-        Task<ODPoint> GetPointAsync(string prompt);
-        Task<double> GetNumberAsync(string prompt);
-        Task<string> GetTextAsync(string prompt);
-        Task<string> GetChoiceAsync(string prompt, params string[] options);
-        Task<(ODPoint start, ODPoint end)> GetLineAsync(string promptStart, string promptEnd);
-        void SetStatus(string message);
-        void ShowMessage(string message);
-        void AddDynamicElement(ODDynamicElement element);
-        void RemoveDynamicElement(ODDynamicElement element);
-        void ClearDynamicElements();
-        CancellationToken CancellationToken { get; }
-    }
-}
-
-
-
-** ODBaseEditorCommand.cs **
-Path: D:\OpenDraft\OpenDraft\ODCore\ODEditor\ODCommands\ODBaseEditorCommand.cs
-
-﻿// ODBaseEditorCommand.cs
-using OpenDraft.ODCore.ODGeometry;
-using System;
-using System.Reflection;
-using System.Threading.Tasks;
-namespace OpenDraft.ODCore.ODEditor.ODCommands
-{
-    public abstract class ODBaseEditorCommand : IODEditorCommand
-    {
-        private readonly Lazy<ODCommandAttribute> _attribute;
-        public string Name => _attribute.Value.Name;
-        public string Description => _attribute.Value.Description;
-        protected ODBaseEditorCommand()
-        {
-            _attribute = new Lazy<ODCommandAttribute>(() =>
-            {
-                var attribute = GetType().GetCustomAttribute<ODCommandAttribute>();
-                if (attribute == null)
-                {
-                    throw new InvalidOperationException(
-                        $"Command {GetType().Name} must be decorated with [ODCommand] attribute");
-                }
-                return attribute;
-            });
-        }
-        public abstract Task ExecuteAsync(IODEditorGateway editor);
-        // Helper method for common validation
-        protected void ValidatePoint(ODPoint point, string paramName)
-        {
-            if (point == null)
-                throw new ArgumentNullException(paramName);
-            if (double.IsNaN(point.X) || double.IsNaN(point.Y) ||
-                double.IsInfinity(point.X) || double.IsInfinity(point.Y))
-                throw new ArgumentException($"Invalid point coordinates: ({point.X}, {point.Y})", paramName);
-        }
-    }
-}
-
-
-
-** ODCircleCommand.cs **
-Path: D:\OpenDraft\OpenDraft\ODCore\ODEditor\ODCommands\ODCircleCommand.cs
-
-﻿// ODCircleCommand.cs
-using OpenDraft.ODCore.ODEditor.ODCommands;
-using OpenDraft.ODCore.ODGeometry;
-using System.Threading.Tasks;
-namespace OpenDraft.ODCore.ODEditor.ODCommands
-{
-    [ODCommand("CIRCLE", "Creates a circle", "C")]
-    public class ODCircleCommand : ODBaseEditorCommand
-    {
-        public override async Task ExecuteAsync(IODEditorGateway editor)
-        {
-            var center = await editor.GetPointAsync("Specify center point:");
-            var radius = await editor.GetNumberAsync("Specify radius:");
-            var circle = new ODCircle(center, radius);
-            editor.DataManager.AddElement(circle); // Use DataManager directly
-            editor.SetStatus("Circle created successfully");
-        }
-    }
-}
-
-
-
-** ODCommandRegistry.cs **
-Path: D:\OpenDraft\OpenDraft\ODCore\ODEditor\ODCommands\ODCommandRegistry.cs
-
-﻿// ODCommandRegistry.cs
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-namespace OpenDraft.ODCore.ODEditor.ODCommands
-{
-    public class ODCommandRegistry
-    {
-        private readonly Dictionary<string, Type> _commands = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
-        public void RegisterAssembly(Assembly assembly)
-        {
-            var commandTypes = assembly.GetTypes()
-                .Where(t => typeof(IODEditorCommand).IsAssignableFrom(t) && !t.IsAbstract)
-                .Where(t => t.GetCustomAttribute<ODCommandAttribute>() != null);
-            foreach (var type in commandTypes)
-            {
-                var attribute = type.GetCustomAttribute<ODCommandAttribute>();
-                if (attribute != null)
-                {
-                    _commands[attribute.Name] = type;
-                    foreach (var alias in attribute.Aliases)
-                    {
-                        _commands[alias] = type;
-                    }
-                }
-            }
-        }
-        public void RegisterCommand<T>(string name, params string[] aliases) where T : IODEditorCommand
-        {
-            _commands[name] = typeof(T);
-            foreach (var alias in aliases)
-            {
-                _commands[alias] = typeof(T);
-            }
-        }
-        public IODEditorCommand? CreateCommand(string commandName)
-        {
-            if (_commands.TryGetValue(commandName, out var commandType))
-            {
-                var instance = Activator.CreateInstance(commandType);
-                if (instance is IODEditorCommand command)
-                {
-                    return command;
-                }
-                return null;
-            }
-            return null;
-        }
-        public IEnumerable<string> GetRegisteredCommandNames()
-        {
-            return _commands.Keys.Distinct();
-        }
-        public string GetCommandDescription(string commandName)
-        {
-            if (_commands.TryGetValue(commandName, out var type))
-            {
-                var attribute = type.GetCustomAttribute<ODCommandAttribute>();
-                return attribute?.Description ?? string.Empty;
-            }
-            return string.Empty;
-        }
-    }
-}
-
-
-
-** ODLineCommand.cs **
-Path: D:\OpenDraft\OpenDraft\ODCore\ODEditor\ODCommands\ODLineCommand.cs
-
-﻿// Example of using dynamic elements in a command
-using OpenDraft.ODCore.ODEditor.ODCommands;
-using OpenDraft.ODCore.ODEditor.ODDynamics;
-using OpenDraft.ODCore.ODGeometry;
-using System.Diagnostics;
-using System.Threading.Tasks;
-[ODCommand("LINE", "Creates a line", "L")]
-public class ODLineCommand : ODBaseEditorCommand
-{
-    public override async Task ExecuteAsync(IODEditorGateway editor)
-    {
-        var vec = await editor.GetLineAsync("Specify start point:", "Specify end point:");
-        var line = new ODLine(vec.start, vec.end);
-        editor.DataManager.AddElement(line);
-        editor.SetStatus("Line created successfully");
-    }
-}
-
 
 
 ** ODCrosshair.cs **
@@ -1732,15 +282,13 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
         public ODCrosshairElement()
         {
         }
-        public override void Draw(DrawingContext context, ODLayerManager lm,
+        public override void Draw(DrawingContext context, ODDrawConnector connector,
             float scale, ODPoint vpWorldSize, ODPoint worldMousePosition)
         {
             if (!IsVisible)
                 return;
-            ODLayer? layer = lm.GetLayerByID(LayerId);
-            ODLineStyleRegistry lsRegistry = lm.LineStyleRegistry;
+            ODLayer? layer = connector.GetLayerByID(LayerId);
             // Get layer
-            Pen pen = new Pen(new SolidColorBrush(Avalonia.Media.Color.Parse(layer.Color)), layer.LineWeight / scale);
             ODPoint Center = worldMousePosition;
             float cSize = Size / scale; // Centre square size
             // Get styles from registry
@@ -1752,7 +300,7 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
             Pen yPen = new Pen(new SolidColorBrush(yColour), xThickness / scale);
             Pen sqPen = new Pen(new SolidColorBrush(sqColour), xThickness / scale);
             // Centre square
-            context.DrawRectangle(null, pen,
+            context.DrawRectangle(null, sqPen,
                 new Rect(
                     new Point(Center.X - cSize / 2, Center.Y - cSize / 2),
                     new Size(cSize, cSize)
@@ -1768,8 +316,6 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
         }
     }
 }
-
-
 
 
 ** ODDynamicElement.cs **
@@ -1796,15 +342,13 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
         {
             Id = Guid.NewGuid();
         }
-        public virtual void Draw(DrawingContext context, ODLayerManager lm, 
+        public virtual void Draw(DrawingContext context, ODDrawConnector connector, 
             float scale, ODPoint vpWorldSize, ODPoint mousePosition)
         {
             // Base draw method, to be overridden by derived classes
         }
     }
 }
-
-
 
 
 ** ODRubberBandLine.cs **
@@ -1826,21 +370,18 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
         {
             Start = start;
         }
-        public override void Draw(DrawingContext context, ODLayerManager lm,
+        public override void Draw(DrawingContext context, ODDrawConnector connector,
             float scale, ODPoint vpWorldSize, ODPoint mousePosition)
         {
-            ODLayer? layer = lm.GetLayerByID(LayerId);
-            ODLineStyleRegistry lsRegistry = lm.LineStyleRegistry;
+            ODLayer? layer = connector.GetLayerByID(LayerId);
             if (layer == null || !layer.IsVisible || layer.Color == null)
                 return;
             Pen pen = new Pen(new SolidColorBrush(Avalonia.Media.Color.Parse(layer.Color)), 
-                layer.LineWeight, lsRegistry.ToAvaloniaDashStyle(layer.LineType));
+                layer.LineWeight, connector.ToAvaloniaDashStyle(layer.LineType));
             context.DrawLine(pen, new Point(Start.X, Start.Y), new Point(mousePosition.X, mousePosition.Y));
         }
     }
 }
-
-
 
 
 ** ODSnapIndicatorElement.cs **
@@ -1861,7 +402,7 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
         {
             Position = position;
         }
-        public override void Draw(DrawingContext context, ODLayerManager lm, 
+        public override void Draw(DrawingContext context, ODDrawConnector connector, 
             float scale, ODPoint vpExtents, ODPoint worldMousePosition)
         {
             var brush = new SolidColorBrush(Colors.Yellow);
@@ -1872,8 +413,6 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
         }
     }
 }
-
-
 
 
 ** ODCircle.cs **
@@ -1898,16 +437,15 @@ namespace OpenDraft.ODCore.ODGeometry
             Center = center;
             Radius = radius;
         }
-        public override void Draw(DrawingContext context, ODLayerManager lm)
+        public override void Draw(DrawingContext context, ODDrawConnector connector)
         {
-            ODLayer? layer = lm.GetLayerByID(LayerId);
-            ODLineStyleRegistry lsRegistry = lm.LineStyleRegistry;
+            ODLayer? layer = connector.GetLayerByID(LayerId);
             if (layer != null && !layer.IsVisible)
                 return;
             if (layer == null)
                 return;
             // Get dash style from registry
-            var dashStyle = lsRegistry.ToAvaloniaDashStyle(LineType ?? layer.LineType);
+            var dashStyle = connector.ToAvaloniaDashStyle(LineType ?? layer.LineType);
             string effectiveColour = (Colour != null) ? Colour.ToHex() : layer.Color;
             float effectiveLineWeight = LineWeight ?? layer.LineWeight;
             // Create pen
@@ -1920,8 +458,6 @@ namespace OpenDraft.ODCore.ODGeometry
         }
     }
 }
-
-
 
 
 ** ODElement.cs **
@@ -1948,14 +484,12 @@ namespace OpenDraft.ODCore.ODGeometry
         {
             Id = Guid.NewGuid();
         }
-        public virtual void Draw(DrawingContext context, ODLayerManager lm)
+        public virtual void Draw(DrawingContext context, ODDrawConnector connector)
         {
             // Base draw method, to be overridden by derived classes
         }
     }
 }
-
-
 
 
 ** ODLine.cs **
@@ -1977,16 +511,15 @@ namespace OpenDraft.ODCore.ODGeometry
             StartPoint = startPoint;
             EndPoint = endPoint;
         }
-        public override void Draw(DrawingContext context, ODLayerManager lm)
+        public override void Draw(DrawingContext context, ODDrawConnector connector)
         {
-            ODLayer? layer = lm.GetLayerByID(LayerId);
-            ODLineStyleRegistry lsRegistry = lm.LineStyleRegistry;
+            ODLayer? layer = connector.GetLayerByID(LayerId);
             if (layer != null && !layer.IsVisible)
                 return;
             if (layer == null)
                 return;
             // Get dash style from registry
-            IDashStyle dashStyle = lsRegistry.ToAvaloniaDashStyle(LineType ?? layer.LineType);
+            var dashStyle = connector.ToAvaloniaDashStyle(LineType ?? layer.LineType);
             string effectiveColour = (Colour != null) ? Colour.ToHex() : layer.Color;
             float effectiveLineWeight = LineWeight ?? layer.LineWeight;
             // Create pen
@@ -2001,38 +534,6 @@ namespace OpenDraft.ODCore.ODGeometry
         }
     }
 }
-
-
-
-
-** ODPoint.cs **
-Path: D:\OpenDraft\OpenDraft\ODCore\ODGeometry\ODPoint.cs
-
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-namespace OpenDraft.ODCore.ODGeometry
-{
-    public class ODPoint : ODElement
-    {
-        public float X { get; set; }
-        public float Y { get; set; }
-        public ODPoint(double x, double y)
-        {
-            X = (float)x;
-            Y = (float)y;
-        }
-        public ODPoint(float x, float y)
-        {
-            X = x;
-            Y = y;
-        }
-    }
-}
-
-
 
 
 ** ODPolyline.cs **
@@ -2054,10 +555,9 @@ namespace OpenDraft.ODCore.ODGeometry
         {
             Points = points ?? new List<ODPoint>();
         }
-        public override void Draw(DrawingContext context, ODLayerManager lm)
+        public override void Draw(DrawingContext context, ODDrawConnector connector)
         {
-            ODLayer? layer = lm.GetLayerByID(LayerId);
-            ODLineStyleRegistry lsRegistry = lm.LineStyleRegistry;
+            ODLayer? layer = connector.GetLayerByID(LayerId);
             if (layer != null && !layer.IsVisible)
                 return;
             if (layer == null)
@@ -2065,7 +565,7 @@ namespace OpenDraft.ODCore.ODGeometry
             if (Points == null || Points.Count < 2)
                 return;
             // Get dash style from registry
-            IDashStyle dashStyle = lsRegistry.ToAvaloniaDashStyle(LineType ?? layer.LineType);
+            var dashStyle = connector.ToAvaloniaDashStyle(LineType ?? layer.LineType);
             string effectiveColour = (Colour != null) ? Colour.ToHex() : layer.Color;
             float effectiveLineWeight = LineWeight ?? layer.LineWeight;
             // Create pen for the outline
@@ -2128,8 +628,6 @@ namespace OpenDraft.ODCore.ODGeometry
     }
 }
 
-
-
 ** ODRectangle.cs **
 Path: D:\OpenDraft\OpenDraft\ODCore\ODGeometry\ODRectangle.cs
 
@@ -2173,16 +671,15 @@ namespace OpenDraft.ODCore.ODGeometry
                 TopLeft = new ODPoint(corner.X - width, corner.Y - height);
             }
         }
-        public override void Draw(DrawingContext context, ODLayerManager lm)
+        public override void Draw(DrawingContext context, ODDrawConnector connector)
         {
-            ODLayer? layer = lm.GetLayerByID(LayerId);
-            ODLineStyleRegistry lsRegistry = lm.LineStyleRegistry;
+            ODLayer? layer = connector.GetLayerByID(LayerId);
             if (layer != null && !layer.IsVisible)
                 return;
             if (layer == null)
                 return;
             // Get dash style from registry
-            IDashStyle dashStyle = lsRegistry.ToAvaloniaDashStyle(LineType ?? layer.LineType);
+            var dashStyle = connector.ToAvaloniaDashStyle(LineType ?? layer.LineType);
             string effectiveColour = (Colour != null) ? Colour.ToHex() : layer.Color;
             float effectiveLineWeight = LineWeight ?? layer.LineWeight;
             // Create pen for the outline
@@ -2259,244 +756,52 @@ namespace OpenDraft.ODCore.ODGeometry
     }
 }
 
+** ODSymbol.cs **
+Path: D:\OpenDraft\OpenDraft\ODCore\ODGeometry\ODSymbol.cs
 
-
-** ODMath.cs **
-Path: D:\OpenDraft\OpenDraft\ODCore\ODMath\ODMath.cs
-
-﻿using System;
+﻿using Avalonia.Media;
+using OpenDraft.ODCore.ODData;
+using OpenDraft.ODCore.ODGeometry;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-namespace OpenDraft.ODCore.ODMath
+using System.Net;
+namespace OpenDraft.ODCore.ODGeometry
 {
-    public class ODVec2
-        {
-        public float X { get; set; }
-        public float Y { get; set; }
-        public ODVec2(float x, float y)
-        {
-            X = x;
-            Y = y;
-        }
-        public static ODVec2 operator +(ODVec2 a, ODVec2 b)
-        {
-            return new ODVec2(a.X + b.X, a.Y + b.Y);
-        }
-        public static ODVec2 operator -(ODVec2 a, ODVec2 b)
-        {
-            return new ODVec2(a.X - b.X, a.Y - b.Y);
-        }
-        public static ODVec2 operator *(ODVec2 a, float scalar)
-        {
-            return new ODVec2(a.X * scalar, a.Y * scalar);
-        }
-        public static ODVec2 operator /(ODVec2 a, float scalar)
-        {
-            if (scalar == 0)
-                throw new DivideByZeroException("Cannot divide by zero.");
-            return new ODVec2(a.X / scalar, a.Y / scalar);
-        }
-        public float Magnitude()
-        {
-            return (float)Math.Sqrt(X * X + Y * Y);
-        }
-        public ODVec2 Normalize()
-        {
-            float magnitude = Magnitude();
-            if (magnitude == 0)
-                throw new InvalidOperationException("Cannot normalize a zero vector.");
-            return this / magnitude;
-        }
-        public override string ToString()
-        {
-            return $"({X}, {Y})";
-        }
-    }
-}
-
-
-
-
-** ODStyle.axaml **
-Path: D:\OpenDraft\OpenDraft\Styles\ODStyle.axaml
-
-<Styles xmlns="https://github.com/avaloniaui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-	<Styles.Resources>
-		<Color x:Key="BackgroundDark">#141415</Color>
-		<Color x:Key="BackgroundLight">#1E2024</Color>
-        <Color x:Key="PrimaryColor">#333</Color>
-        <Color x:Key="AccentColor">#FF0000</Color>
-		<SolidColorBrush x:Key="BackgroundDarkBrush" Color="{DynamicResource BackgroundDark}"/>
-		<SolidColorBrush x:Key="BackgroundLightBrush" Color="{DynamicResource BackgroundLight}"/>
-        <SolidColorBrush x:Key="PrimaryBrush" Color="{DynamicResource PrimaryColor}"/>
-        <SolidColorBrush x:Key="AccentBrush" Color="{DynamicResource AccentColor}"/>
-    </Styles.Resources>
-	<Style Selector="Window">
-		<Setter Property="FontSize" Value="12"/>
-		<Setter Property="Background" Value="{DynamicResource BackgroundDarkBrush}"/>
-	</Style>
-	<Style Selector="Button">
-		<Setter Property="Margin" Value="2"/>
-		<Setter Property="Padding" Value="2"/>
-		<Setter Property="Background" Value="#333"/>
-		<Setter Property="CornerRadius" Value="1"/>
-		<Setter Property="Height" Value="36"/>
-	</Style>
-	<Style Selector="Menu">
-		<Setter Property="Background" Value="{DynamicResource BackgroundDarkBrush}"/>
-		<Setter Property="Height" Value="22"/>
-	</Style>
-	<Style Selector="MenuItem">
-		<Setter Property="Background" Value="Transparent"/>
-		<Setter Property="Foreground" Value="#CCC"/>
-		<Setter Property="CornerRadius" Value="4"/>
-	</Style>
-	<Style Selector="MenuItem:pointerover /template/ Border#PART_LayoutRoot">
-		<Setter Property="Background" Value="#80FF0000"/>
-	</Style>
-	<Style Selector="StackPanel.toolbar">
-		<Setter Property="Background" Value="{DynamicResource BackgroundLightBrush}"/>
-		<Setter Property="Height" Value="40"/>
-		<Setter Property="Orientation" Value="Horizontal"/>
-	</Style>
-	<Style Selector="StackPanel.statusbar">
-		<Setter Property="Background" Value="{DynamicResource BackgroundLightBrush}"/>
-		<Setter Property="Height" Value="32"/>
-		<Setter Property="Orientation" Value="Horizontal"/>
-	</Style>
-	<Style Selector="StackPanel.toolbar > Button">
-		<Setter Property="Background" Value="{DynamicResource BackgroundLightBrush}"/>
-		<Setter Property="Width" Value="28"/>
-		<Setter Property="Height" Value="28"/>
-	</Style>
-	<Style Selector="StackPanel.statusbar > Button">
-		<Setter Property="Background" Value="Red"/>
-		<Setter Property="Width" Value="28"/>
-		<Setter Property="Height" Value="28"/>
-	</Style>
-</Styles>
-
-
-
-** ODSystem.cs **
-Path: D:\OpenDraft\OpenDraft\System\ODSystem.cs
-
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Text.Json;
-using System.Threading.Tasks;
-namespace OpenDraft
-{
-    public static class ODSystem
+    public class ODSymbolDefinition : ODElement
     {
-        private static Dictionary<string, string> _dictionary = new Dictionary<string, string>();
-        public static void Initialise()
+        public string BlockName { get; set; }
+        public ODPoint InsertionPoint { get; set; }
+        public double Rotation { get; set; }
+        public double ScaleX { get; set; } = 1.0;
+        public double ScaleY { get; set; } = 1.0;
+        public ODSymbolDefinition(string blockName, ODPoint insertionPoint)
         {
-            LoadRegistry();
+            BlockName = blockName;
+            InsertionPoint = insertionPoint;
         }
-        private static void LoadRegistry()
+        public override void Draw(DrawingContext context, ODDrawConnector connector)
         {
-            _dictionary.Clear();
-            string registryPath = "config.json";
-            if (File.Exists(registryPath))
-            {
-                string json = File.ReadAllText(registryPath);
-                using var doc = JsonDocument.Parse(json);
-                var flat = new Dictionary<string, string>();
-                FlattenJson(doc.RootElement, "", flat);
-                foreach (var kvp in flat)
-                    _dictionary[kvp.Key] = kvp.Value;
-            }
-            Debug.WriteLine($"ODSystem registry loaded with {_dictionary.Count} entries.");
-        }
-        private static void FlattenJson(JsonElement element, string prefix, Dictionary<string, string> result)
-        {
-            switch (element.ValueKind)
-            {
-                case JsonValueKind.Object:
-                    foreach (var prop in element.EnumerateObject())
-                    {
-                        string newPrefix = string.IsNullOrEmpty(prefix) ? prop.Name : $"{prefix}/{prop.Name}";
-                        FlattenJson(prop.Value, newPrefix, result);
-                    }
-                    break;
-                case JsonValueKind.Array:
-                    foreach (var item in element.EnumerateArray())
-                    {
-                        // Don’t append an index — treat array items as part of the same scope
-                        FlattenJson(item, prefix, result);
-                    }
-                    break;
-                default:
-                    result[prefix] = element.ToString();
-                    break;
-            }
-        }
-        public static string? GetRegistryValueAsString(string key)
-        {
-            if (_dictionary.TryGetValue(key, out var value))
-            {
-                return value;
-            }
-            return null;
-        }
-        public static int? GetRegistryValueAsInt(string key)
-        {
-            if (_dictionary.TryGetValue(key, out var value))
-            {
-                if (int.TryParse(value, out var intValue))
-                {
-                    return intValue;
-                }
-            }
-            return null;
-        }
-        public static bool? GetRegistryValueAsBool(string key)
-        {
-            if (_dictionary.TryGetValue(key, out var value))
-            {
-                if (bool.TryParse(value, out var boolValue))
-                {
-                    return boolValue;
-                }
-            }
-            return null;
-        }
-        public static float ? GetRegistryValueAsDecimal(string key)
-        {
-            if (_dictionary.TryGetValue(key, out var value))
-            {
-                if (float.TryParse(value, out var floatValue))
-                {
-                    return floatValue;
-                }
-            }
-            return null;
-        }
-        public static void SetRegistryValue(string key, string value)
-        {
-            _dictionary[key] = value;
-            SaveRegistry();
-        }
-        private static void SaveRegistry()
-        {
-            // Save registry to file or other source
-            // For example, write to a JSON file
-            string registryPath = "config.json";
-            var json = JsonSerializer.Serialize(_dictionary, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(registryPath, json);
-            Debug.WriteLine("ODSystem registry saved with " + _dictionary.Count + " entries.");
+            ODLayer? layer = connector.GetLayerByID(LayerId);
+            if (layer != null && !layer.IsVisible)
+                return;
+            if (layer == null)
+                return;
+            // Get dash style from registry
+            var dashStyle = connector.ToAvaloniaDashStyle(LineType ?? layer.LineType);
+            string effectiveColour = (Colour != null) ? Colour.ToHex() : layer.Color;
+            float effectiveLineWeight = LineWeight ?? layer.LineWeight;
+            // Create pen
+            Pen pen = new Pen(
+                new SolidColorBrush(Color.Parse(effectiveColour)), // Brush only
+                effectiveLineWeight,                               // Thickness
+                dashStyle                                          // Dash style
+            );
+            //foreach (ODElement element in GetBlockElements(BlockName))
+            //{
+                //element.Draw(context, lm);
+            //}
         }
     }
 }
-
-
-
 
 ** MainWindowViewModel.cs **
 Path: D:\OpenDraft\OpenDraft\ViewModels\MainWindowViewModel.cs
@@ -2505,40 +810,38 @@ Path: D:\OpenDraft\OpenDraft\ViewModels\MainWindowViewModel.cs
 using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODEditor;
 using OpenDraft.ODCore.ODGeometry;
+using OpenDraft.XSVG;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 namespace OpenDraft.ViewModels
 {
     public partial class MainWindowViewModel : ViewModelBase
     {
-        public ODDataManager DataManager { get; }
+        public ODDataManager DataManagerRoot { get; }
         public IODEditorInputService InputService { get; }
         public ODEditor EditorRoot { get; private set; }
+        public ODDrawConnector DrawConnectorRoot { get; }
         public ObservableCollection<ODElement> GeometryElements => DataManager.Elements;
-        public ODLayerManager LayerManager => DataManager.LayerManager;
+        public ODDataManager DataManager => DataManagerRoot;
         public ODEditor Editor => EditorRoot;
+        public ODDrawConnector DrawConnector => DrawConnectorRoot;
         public MainWindowViewModel()
         {
             ODSystem.Initialise();
-            // Debug SVG Reader
-            OpenDraft.XSVG.SvgImporter svgReader = new OpenDraft.XSVG.SvgImporter();
-            svgReader.LoadSvgFile("XSVG/Example.svg");
-            ODPoint svgSize = svgReader.GetDimensions();
-            List<ODElement> svgElements = svgReader.ImportGeometry();
             // Initialize the DataManager and Editor
-            DataManager = new ODDataManager();
+            DataManagerRoot = new ODDataManager();
             InputService = new ODEditorInputService();
             EditorRoot = new ODEditor(DataManager, InputService);
-            // Set up layers (this can stay as-is)
-            DataManager.LayerManager.AddLayer("New Layer");
-            DataManager.LayerManager.SetActiveLayer("New Layer");
-            ODLayer? lay = DataManager.LayerManager.GetLayerByName("New Layer");
-            if (lay != null)
+            DrawConnectorRoot = new ODDrawConnector(DataManager, Editor);
+            // Debug XSVG Reader
+            ODXsvgReader xsvgR = new ODXsvgReader("XSVG/Example XSVG/example.xsvg");
+            List<ODElement> xsvgElements = xsvgR.ExtractModelSpace();
+            foreach (ODElement elem in xsvgElements)
             {
-                lay.Color = "#00FF00";
-                lay.LineWeight = 2.0f;
-                lay.LineType = "Dashed";
+                Editor.AddStaticElement(elem);
             }
+            Debug.WriteLine("Setup complete");
         }
         [RelayCommand]
         private void ExecuteEditor(string command)
@@ -2547,677 +850,3 @@ namespace OpenDraft.ViewModels
         }
     }
 }
-
-
-
-** ViewModelBase.cs **
-Path: D:\OpenDraft\OpenDraft\ViewModels\ViewModelBase.cs
-
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-namespace OpenDraft.ViewModels
-{
-    public class ViewModelBase : ObservableObject
-    {
-    }
-}
-
-
-
-
-** MainWindow.axaml **
-Path: D:\OpenDraft\OpenDraft\Views\MainWindow.axaml
-
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:OpenDraft.ViewModels"
-        xmlns:local="using:OpenDraft"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        x:Class="OpenDraft.Views.MainWindow"
-        x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/od-icon2.ico"
-        Title="OpenDraft"
-        Width="800"
-        Height="400"
-		MinWidth="800"
-		MinHeight="400"
-		>
-  <!-- WindowState="Maximized"> -->
-  <!-- Top Menu -->
-  <Design.DataContext>
-    <vm:MainWindowViewModel/>
-  </Design.DataContext>
-  <Grid>
-    <Grid.RowDefinitions>
-      <RowDefinition Height="Auto"/>      <!-- Menu strip -->
-      <RowDefinition Height="Auto"/>      <!-- Toolbar -->
-      <RowDefinition Height="*"/>         <!-- Viewport (fills space) -->
-      <RowDefinition Height="Auto"/>      <!-- Status bar -->
-    </Grid.RowDefinitions>
-    <Menu Grid.Row="0" Height="22">
-      <MenuItem Header="_File">
-        <MenuItem Header="_New"/>
-        <MenuItem Header="_Open"/>
-        <MenuItem Header="_Save" />
-        <MenuItem Header="Save _As" />
-        <Separator/>
-        <MenuItem Header="E_xit" />
-      </MenuItem>
-      <MenuItem Header="_Edit">
-        <MenuItem Header="_Undo" />
-        <MenuItem Header="_Redo" />
-        <Separator/>
-        <MenuItem Header="Cu_t" />
-        <MenuItem Header="_Copy" />
-        <MenuItem Header="_Paste" />
-        <Separator/>
-        <MenuItem Header="_Delete" />
-        <Separator/>
-        <MenuItem Header="Select _All" />
-      </MenuItem>
-      <MenuItem Header="_View">
-        <MenuItem Header="Zoom _In" />
-        <MenuItem Header="Zoom _Out" />
-        <MenuItem Header="_Reset Zoom" />
-        <Separator/>
-        <MenuItem Header="_Grid Settings..." />
-      </MenuItem>
-      <MenuItem Header="_Help">
-        <MenuItem Header="_About" />
-      </MenuItem>
-    </Menu>
-    <!-- Toolbar -->
-    <StackPanel
-      Classes="toolbar"
-      Grid.Row="1"
-      HorizontalAlignment="Stretch"
-      Orientation="Horizontal">
-        <Button Content="Select" />
-        <Button Content="Line" Command="{Binding ExecuteEditorCommand}" CommandParameter="LINE" />
-        <Button Content="Circle" />
-    </StackPanel>
-    <!-- Use Grid.Row attached property -->
-    <local:Viewport Grid.Row="2"
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="Stretch"
-                    Elements="{Binding GeometryElements}"
-                    DynamicElements="{Binding Editor.DynamicElements}"
-                    LayerManager="{Binding LayerManager}"
-                    Editor="{Binding Editor}"
-                    InputService ="{Binding InputService}"/>
-    <!-- Status Bar -->
-    <StackPanel
-      Classes="statusbar"
-      Grid.Row="3"
-      HorizontalAlignment="Stretch"
-      Orientation="Horizontal">
-      <Button Content="Select" />
-      <Button Content="Line" />
-      <Button Content="Circle" />
-    </StackPanel>
-  </Grid>
-</Window>
-
-
-
-
-** MainWindow.axaml.cs **
-Path: D:\OpenDraft\OpenDraft\Views\MainWindow.axaml.cs
-
-using Avalonia.Controls;
-using Avalonia.Input;
-using OpenDraft.ViewModels;
-namespace OpenDraft.Views
-{
-    public partial class MainWindow : Window
-    {
-        public MainWindow()
-        {
-            InitializeComponent();
-            // Subscribe to key events at window level
-            AddHandler(KeyDownEvent, OnKeyDown, handledEventsToo: true);
-        }
-        private void OnKeyDown(object? sender, KeyEventArgs e)
-        {
-            if (DataContext is MainWindowViewModel vm)
-            {
-                // Route all keys to input service
-                vm.InputService.RaiseKeyPressed(e.Key);
-                // Special case: ESC also triggers cancel specifically
-                if (e.Key == Key.Escape)
-                {
-                    vm.InputService.RaiseCancelRequested();
-                    e.Handled = true;
-                }
-            }
-        }
-    }
-}
-
-
-
-** ODSvgImporter.cs **
-Path: D:\OpenDraft\OpenDraft\XSVG\ODSvgImporter.cs
-
-﻿using Avalonia.Controls.Shapes;
-using OpenDraft.ODCore.ODData;
-using OpenDraft.ODCore.ODGeometry;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Text;
-using System.Xml.Linq;
-namespace OpenDraft.XSVG
-{
-    internal struct SVGStyle
-    {
-        public ODColour StrokeColor;
-        public float StrokeWidth;
-        public string LineType;
-    }
-    public class SvgImporter
-    {
-        private string? _filePath;
-        private XDocument? _xDocument;
-        private XNamespace _ns = "http://www.w3.org/2000/svg";
-        public void LoadSvgFile(string filePath)
-        {
-            _filePath = filePath;
-            if (!System.IO.File.Exists(filePath))
-                throw new System.IO.FileNotFoundException("SVG file not found", filePath);
-            string fileContentsRaw = System.IO.File.ReadAllText(filePath);
-            _xDocument = XDocument.Parse(fileContentsRaw);
-        }
-        // Add dimension extraction methods
-        public ODPoint GetDimensions()
-        {
-            if (_xDocument == null)
-                throw new InvalidOperationException("No SVG file loaded. Call LoadSvgFile first.");
-            var svgElement = _xDocument.Root;
-            var width = ParseDimension(svgElement.Attribute("width")?.Value);
-            var height = ParseDimension(svgElement.Attribute("height")?.Value);
-            // Fallback to viewBox if dimensions aren't found
-            if (width == 0 || height == 0)
-            {
-                var viewBox = ParseViewBox(svgElement.Attribute("viewBox")?.Value);
-                if (viewBox.HasValue)
-                {
-                    width = width == 0 ? viewBox.Value.Width : width;
-                    height = height == 0 ? viewBox.Value.Height : height;
-                }
-            }
-            Debug.WriteLine($"SVG Dimensions: Width={width}, Height={height}");
-            return new ODPoint(width, height);
-        }
-        // Utility methods
-        private double ParseDimension(string value)
-        {
-            if (string.IsNullOrEmpty(value)) return 0;
-            // Remove units and parse
-            value = value.Trim().ToLower();
-            // Handle common units
-            if (value.EndsWith("px")) value = value[..^2];
-            else if (value.EndsWith("pt")) value = value[..^2];
-            else if (value.EndsWith("mm"))
-            {
-                value = value[..^2];
-                if (double.TryParse(value, System.Globalization.NumberStyles.Any,
-                    System.Globalization.CultureInfo.InvariantCulture, out double mm))
-                    return mm * 3.779527559; // Convert mm to pixels
-            }
-            else if (value.EndsWith("cm"))
-            {
-                value = value[..^2];
-                if (double.TryParse(value, System.Globalization.NumberStyles.Any,
-                    System.Globalization.CultureInfo.InvariantCulture, out double cm))
-                    return cm * 37.795275591; // Convert cm to pixels
-            }
-            else if (value.EndsWith("in"))
-            {
-                value = value[..^2];
-                if (double.TryParse(value, System.Globalization.NumberStyles.Any,
-                    System.Globalization.CultureInfo.InvariantCulture, out double inches))
-                    return inches * 96; // Convert inches to pixels
-            }
-            return double.TryParse(value, System.Globalization.NumberStyles.Any,
-                System.Globalization.CultureInfo.InvariantCulture, out double result) ? result : 0;
-        }
-        private (double Width, double Height)? ParseViewBox(string viewBoxValue)
-        {
-            if (string.IsNullOrEmpty(viewBoxValue)) return null;
-            var parts = viewBoxValue.Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length >= 4 &&
-                double.TryParse(parts[2], System.Globalization.NumberStyles.Any,
-                    System.Globalization.CultureInfo.InvariantCulture, out double width) &&
-                double.TryParse(parts[3], System.Globalization.NumberStyles.Any,
-                    System.Globalization.CultureInfo.InvariantCulture, out double height))
-            {
-                return (width, height);
-            }
-            return null;
-        }
-        public List<ODElement> ImportGeometry()
-        {
-            if (_xDocument == null)
-                throw new InvalidOperationException("No SVG file loaded. Call LoadSvgFile first.");
-            var geometries = new List<ODElement>();
-            var svgElement = _xDocument.Root;
-            // Import paths (most common CAD element)
-            geometries.AddRange(ImportPaths(svgElement));
-            // Import basic shapes
-            geometries.AddRange(ImportRectangles(svgElement));
-            geometries.AddRange(ImportLines(svgElement));
-            geometries.AddRange(ImportCircles(svgElement));
-            Debug.WriteLine($"Imported {geometries.Count} geometry objects");
-            return geometries;
-        }
-        private List<ODElement> ImportPaths(XElement svgElement)
-        {
-            var paths = new List<ODElement>();
-            foreach (var pathElement in svgElement.Descendants(_ns + "path"))
-            {
-                var pathData = pathElement.Attribute("d")?.Value;
-                if (!string.IsNullOrEmpty(pathData))
-                {
-                    var style = ParseStyle(pathElement);
-                    var path = ParsePathData(pathData, style);
-                    if (path != null)
-                    {
-                        paths.Add(path);
-                    }
-                }
-            }
-            return paths;
-        }
-        private List<ODElement> ImportRectangles(XElement svgElement)
-        {
-            var rectangles = new List<ODElement>();
-            foreach (var rectElement in svgElement.Descendants(_ns + "rect"))
-            {
-                var x = ParseDouble(rectElement.Attribute("x")?.Value) ?? 0;
-                var y = ParseDouble(rectElement.Attribute("y")?.Value) ?? 0;
-                var width = ParseDouble(rectElement.Attribute("width")?.Value) ?? 0;
-                var height = ParseDouble(rectElement.Attribute("height")?.Value) ?? 0;
-                if (width > 0 && height > 0)
-                {
-                    var style = ParseStyle(rectElement);
-                    var rectangle = new ODRectangle(
-                        new ODPoint(x, y),
-                        new ODPoint(x + width, y + height)
-                    );
-                    rectangles.Add(rectangle);
-                }
-            }
-            return rectangles;
-        }
-        private List<ODElement> ImportLines(XElement svgElement)
-        {
-            var lines = new List<ODElement>();
-            foreach (var lineElement in svgElement.Descendants(_ns + "line"))
-            {
-                var x1 = ParseDouble(lineElement.Attribute("x1")?.Value) ?? 0;
-                var y1 = ParseDouble(lineElement.Attribute("y1")?.Value) ?? 0;
-                var x2 = ParseDouble(lineElement.Attribute("x2")?.Value) ?? 0;
-                var y2 = ParseDouble(lineElement.Attribute("y2")?.Value) ?? 0;
-                var style = ParseStyle(lineElement);
-                var line = new ODLine(
-                    new ODPoint(x1, y1),
-                    new ODPoint(x2, y2)
-                    //style <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< todo?????
-                );
-                lines.Add(line);
-            }
-            return lines;
-        }
-        private List<ODElement> ImportCircles(XElement svgElement)
-        {
-            var circles = new List<ODElement>();
-            foreach (var circleElement in svgElement.Descendants(_ns + "circle"))
-            {
-                var cx = ParseDouble(circleElement.Attribute("cx")?.Value) ?? 0;
-                var cy = ParseDouble(circleElement.Attribute("cy")?.Value) ?? 0;
-                var r = ParseDouble(circleElement.Attribute("r")?.Value) ?? 0;
-                if (r > 0)
-                {
-                    var style = ParseStyle(circleElement);
-                    var circle = new ODCircle(
-                        new ODPoint(cx, cy),
-                        r
-                        //style <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< todo?
-                    );
-                    circles.Add(circle);
-                }
-            }
-            return circles;
-        }
-        private ODElement ParsePathData(string pathData, SVGStyle style)
-        {
-            try
-            {
-                var points = new List<ODPoint>();
-                var tokens = TokenizePathData(pathData);
-                double currentX = 0, currentY = 0;
-                double startX = 0, startY = 0;
-                bool hasValidData = false;
-                for (int i = 0; i < tokens.Count; i++)
-                {
-                    var token = tokens[i];
-                    var upperToken = token.ToUpper();
-                    switch (upperToken)
-                    {
-                        case "M": // Move To
-                            if (i + 2 < tokens.Count &&
-                                TryParseDouble(tokens[i + 1], out double mx) &&
-                                TryParseDouble(tokens[i + 2], out double my))
-                            {
-                                if (token == "m") // relative
-                                {
-                                    currentX += mx;
-                                    currentY += my;
-                                }
-                                else // absolute
-                                {
-                                    currentX = mx;
-                                    currentY = my;
-                                }
-                                startX = currentX;
-                                startY = currentY;
-                                points.Add(new ODPoint(currentX, currentY));
-                                i += 2;
-                                hasValidData = true;
-                            }
-                            break;
-                        case "L": // Line To
-                            if (i + 2 < tokens.Count &&
-                                TryParseDouble(tokens[i + 1], out double lx) &&
-                                TryParseDouble(tokens[i + 2], out double ly))
-                            {
-                                if (token == "l") // relative
-                                {
-                                    currentX += lx;
-                                    currentY += ly;
-                                }
-                                else // absolute
-                                {
-                                    currentX = lx;
-                                    currentY = ly;
-                                }
-                                points.Add(new ODPoint(currentX, currentY));
-                                i += 2;
-                                hasValidData = true;
-                            }
-                            break;
-                        case "H": // Horizontal Line To
-                            if (i + 1 < tokens.Count &&
-                                TryParseDouble(tokens[i + 1], out double hx))
-                            {
-                                if (token == "h") // relative
-                                {
-                                    currentX += hx;
-                                }
-                                else // absolute
-                                {
-                                    currentX = hx;
-                                }
-                                points.Add(new ODPoint(currentX, currentY));
-                                i += 1;
-                                hasValidData = true;
-                            }
-                            break;
-                        case "V": // Vertical Line To
-                            if (i + 1 < tokens.Count &&
-                                TryParseDouble(tokens[i + 1], out double vy))
-                            {
-                                if (token == "v") // relative
-                                {
-                                    currentY += vy;
-                                }
-                                else // absolute
-                                {
-                                    currentY = vy;
-                                }
-                                points.Add(new ODPoint(currentX, currentY));
-                                i += 1;
-                                hasValidData = true;
-                            }
-                            break;
-                        case "Z": // Close Path
-                            if (points.Count > 0)
-                            {
-                                // Close the path by returning to start point
-                                points.Add(new ODPoint(startX, startY));
-                                hasValidData = true;
-                            }
-                            break;
-                        default:
-                            // Skip unknown commands and their parameters
-                            if (IsCommandToken(token))
-                            {
-                                // Skip the command and its parameters
-                                i += GetParameterCountForCommand(token);
-                            }
-                            break;
-                    }
-                }
-                if (hasValidData && points.Count > 1)
-                {
-                    return new ODPolyline(points);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error parsing path data: {ex.Message}");
-                Debug.WriteLine($"Path data: {pathData}");
-            }
-            return null;
-        }
-        private List<string> TokenizePathData(string pathData)
-        {
-            var tokens = new List<string>();
-            if (string.IsNullOrEmpty(pathData)) return tokens;
-            var currentToken = new StringBuilder();
-            bool inNumber = false;
-            foreach (char c in pathData)
-            {
-                if (char.IsWhiteSpace(c) || c == ',')
-                {
-                    if (currentToken.Length > 0)
-                    {
-                        tokens.Add(currentToken.ToString());
-                        currentToken.Clear();
-                    }
-                    inNumber = false;
-                }
-                else if (char.IsLetter(c) && c != '.' && c != '-')
-                {
-                    if (currentToken.Length > 0)
-                    {
-                        tokens.Add(currentToken.ToString());
-                        currentToken.Clear();
-                    }
-                    currentToken.Append(c);
-                    tokens.Add(currentToken.ToString());
-                    currentToken.Clear();
-                    inNumber = false;
-                }
-                else if (c == '-' && inNumber)
-                {
-                    // Negative sign in the middle of tokens indicates a new number
-                    if (currentToken.Length > 0)
-                    {
-                        tokens.Add(currentToken.ToString());
-                        currentToken.Clear();
-                    }
-                    currentToken.Append(c);
-                    inNumber = true;
-                }
-                else
-                {
-                    // Number or decimal point or negative sign at start
-                    currentToken.Append(c);
-                    inNumber = true;
-                }
-            }
-            // Add the last token
-            if (currentToken.Length > 0)
-            {
-                tokens.Add(currentToken.ToString());
-            }
-            return tokens;
-        }
-        private bool TryParseDouble(string value, out double result)
-        {
-            // Handle culture-specific formatting
-            return double.TryParse(value,
-                System.Globalization.NumberStyles.Float,
-                System.Globalization.CultureInfo.InvariantCulture,
-                out result);
-        }
-        private bool IsCommandToken(string token)
-        {
-            if (string.IsNullOrEmpty(token)) return false;
-            char firstChar = token[0];
-            return "MLHVCSQTAZ".Contains(char.ToUpper(firstChar));
-        }
-        private int GetParameterCountForCommand(string command)
-        {
-            if (string.IsNullOrEmpty(command)) return 0;
-            return char.ToUpper(command[0]) switch
-            {
-                'M' or 'L' or 'T' => 2,  // Move, Line, Smooth Quadratic
-                'H' or 'V' => 1,         // Horizontal, Vertical
-                'S' or 'Q' => 4,         // Smooth Curve, Quadratic
-                'C' => 6,                // Curve
-                'A' => 7,                // Arc
-                'Z' => 0,                // Close path
-                _ => 0
-            };
-        }
-        private SVGStyle ParseStyle(XElement element)
-        {
-            var style = new SVGStyle();
-            // Parse style attribute
-            var styleAttr = element.Attribute("style")?.Value;
-            if (!string.IsNullOrEmpty(styleAttr))
-            {
-                var styleParts = styleAttr.Split(';');
-                foreach (var part in styleParts)
-                {
-                    var keyValue = part.Split(':');
-                    if (keyValue.Length == 2)
-                    {
-                        var key = keyValue[0].Trim();
-                        var value = keyValue[1].Trim();
-                        switch (key)
-                        {
-                            case "stroke":
-                                style.StrokeColor = ParseColor(value);
-                                break;
-                            case "stroke-width":
-                                if (ParseDouble(value) is double strokeWidth)
-                                    style.StrokeWidth = (float)strokeWidth;
-                                break;
-                            case "stroke-dasharray":
-                                style.LineType = ParseLineType(value);
-                                break;
-                        }
-                    }
-                }
-            }
-            // Parse individual attributes (override style attribute)
-            var strokeAttr = element.Attribute("stroke")?.Value;
-            if (!string.IsNullOrEmpty(strokeAttr))
-                style.StrokeColor = ParseColor(strokeAttr);
-            var strokeWidthAttr = element.Attribute("stroke-width")?.Value;
-            if (!string.IsNullOrEmpty(strokeWidthAttr) && ParseDouble(strokeWidthAttr) is double sw)
-                style.StrokeWidth = (float)sw;
-            return style;
-        }
-        private ODColour ParseColor(string colorValue)
-        {
-            if (string.IsNullOrEmpty(colorValue) || colorValue == "none")
-                return ODColour.Transparent;
-            // Handle rgb() format
-            if (colorValue.StartsWith("rgb("))
-            {
-                var parts = colorValue.Substring(4, colorValue.Length - 5).Split(',');
-                if (parts.Length == 3 &&
-                    byte.TryParse(parts[0], out byte r) &&
-                    byte.TryParse(parts[1], out byte g) &&
-                    byte.TryParse(parts[2], out byte b))
-                {
-                    return new ODColour(r, g, b);
-                }
-            }
-            // Handle hex colors
-            if (colorValue.StartsWith("#"))
-            {
-                try
-                {
-                    return new ODColour(colorValue);
-                }
-                catch
-                {
-                    // Fall through to named colors
-                }
-            }
-            // Handle named colors
-            return colorValue.ToLower() switch
-            {
-                "black" => ODColour.Black,
-                "red" => ODColour.Red,
-                "green" => ODColour.Green,
-                "blue" => ODColour.Blue,
-                "white" => ODColour.White,
-                _ => ODColour.Black // Default
-            };
-        }
-        private string ParseLineType(string dashArray)
-        {
-            if (string.IsNullOrEmpty(dashArray) || dashArray == "none")
-                return "Continuous";
-            // Simple dash array parsing
-            var parts = dashArray.Split(',');
-            if (parts.Length >= 2 &&
-                ParseDouble(parts[0]) is double dash &&
-                ParseDouble(parts[1]) is double gap)
-            {
-                if (dash == 10 && gap == 5) return "Dashed";
-                if (dash == 2 && gap == 5) return "Dotted";
-                // Add more patterns as needed
-            }
-            return "Continuous";
-        }
-        private double? ParseDouble(string value)
-        {
-            if (string.IsNullOrEmpty(value)) return null;
-            // Remove units if present
-            value = value.Trim().ToLower();
-            if (value.EndsWith("px")) value = value[..^2];
-            else if (value.EndsWith("mm"))
-            {
-                value = value[..^2];
-                if (double.TryParse(value, System.Globalization.NumberStyles.Any,
-                    System.Globalization.CultureInfo.InvariantCulture, out double mm))
-                    return mm * 3.779527559;
-                return null;
-            }
-            // Add other unit conversions as needed
-            if (double.TryParse(value, System.Globalization.NumberStyles.Any,
-                System.Globalization.CultureInfo.InvariantCulture, out double result))
-                return result;
-            return null;
-        }
-        // Cleanup method
-        public void Unload()
-        {
-            _xDocument = null;
-            _filePath = null;
-        }
-        // Property to check if file is loaded
-        public bool IsLoaded => _xDocument != null;
-    }
-}
-
-

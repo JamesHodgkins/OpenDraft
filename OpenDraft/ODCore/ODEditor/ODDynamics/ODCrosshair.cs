@@ -25,17 +25,15 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
 
         }
 
-        public override void Draw(DrawingContext context, ODDataManager dm,
+        public override void Draw(DrawingContext context, ODDrawConnector connector,
             float scale, ODPoint vpWorldSize, ODPoint worldMousePosition)
         {
             if (!IsVisible)
                 return;
 
-            ODLayer? layer = dm.LayerManager.GetLayerByID(LayerId);
-            ODLineStyleRegistry lsRegistry = dm.LayerManager.LineStyleRegistry;
+            ODLayer? layer = connector.GetLayerByID(LayerId);
 
             // Get layer
-            Pen pen = new Pen(new SolidColorBrush(Avalonia.Media.Color.Parse(layer.Color)), layer.LineWeight / scale);
             ODPoint Center = worldMousePosition;
             float cSize = Size / scale; // Centre square size
 
@@ -51,7 +49,7 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
 
 
             // Centre square
-            context.DrawRectangle(null, pen,
+            context.DrawRectangle(null, sqPen,
                 new Rect(
                     new Point(Center.X - cSize / 2, Center.Y - cSize / 2),
                     new Size(cSize, cSize)

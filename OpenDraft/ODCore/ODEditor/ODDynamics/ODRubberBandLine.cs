@@ -17,17 +17,16 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
             Start = start;
         }
 
-        public override void Draw(DrawingContext context, ODDataManager dm,
+        public override void Draw(DrawingContext context, ODDrawConnector connector,
             float scale, ODPoint vpWorldSize, ODPoint mousePosition)
         {
-            ODLayer? layer = dm.LayerManager.GetLayerByID(LayerId);
-            ODLineStyleRegistry lsRegistry = dm.LayerManager.LineStyleRegistry;
+            ODLayer? layer = connector.GetLayerByID(LayerId);
 
             if (layer == null || !layer.IsVisible || layer.Color == null)
                 return;
 
             Pen pen = new Pen(new SolidColorBrush(Avalonia.Media.Color.Parse(layer.Color)), 
-                layer.LineWeight, lsRegistry.ToAvaloniaDashStyle(layer.LineType));
+                layer.LineWeight, connector.ToAvaloniaDashStyle(layer.LineType));
 
             context.DrawLine(pen, new Point(Start.X, Start.Y), new Point(mousePosition.X, mousePosition.Y));
         }

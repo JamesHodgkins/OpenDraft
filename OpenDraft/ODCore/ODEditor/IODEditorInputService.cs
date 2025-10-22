@@ -13,6 +13,8 @@ namespace OpenDraft.ODCore.ODEditor
         event Action<string> TextInput;
         event Action<double> NumberInput;
         event Action CancelRequested;
+        event Action ViewportEntered;
+        event Action ViewportExited;
 
         // ADD THESE METHODS to the interface
         void RaiseKeyPressed(Key key);
@@ -20,6 +22,9 @@ namespace OpenDraft.ODCore.ODEditor
         void RaiseTextInput(string text);
         void RaiseNumberInput(double number);
         void RaiseCancelRequested();
+
+        void RaiseViewportEntered();
+        void RaiseViewportExited();
 
         // Methods to request specific input modes
         void RequestPointInput();

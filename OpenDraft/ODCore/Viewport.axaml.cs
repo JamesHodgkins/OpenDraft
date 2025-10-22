@@ -18,11 +18,8 @@ namespace OpenDraft
         public static readonly StyledProperty<ObservableCollection<ODElement>> ElementsProperty =
             AvaloniaProperty.Register<Viewport, ObservableCollection<ODElement>>(nameof(Elements));
 
-        public static readonly StyledProperty<ODDataManager> DataManagerProperty =
-            AvaloniaProperty.Register<Viewport, ODDataManager>(nameof(DataManager));
-
-        public static readonly StyledProperty<ODEditor> EditorProperty =
-            AvaloniaProperty.Register<Viewport, ODEditor>(nameof(Editor));
+        public static readonly StyledProperty<ODDrawConnector> DrawConnectorProperty =
+            AvaloniaProperty.Register<Viewport, ODDrawConnector>(nameof(DrawConnector));
 
         public static readonly StyledProperty<IODEditorInputService> InputServiceProperty =
             AvaloniaProperty.Register<Viewport, IODEditorInputService>(nameof(InputService));
@@ -36,16 +33,10 @@ namespace OpenDraft
             set => SetValue(ElementsProperty, value);
         }
 
-        public ODDataManager DataManager
+        public ODDrawConnector DrawConnector
         {
-            get => GetValue(DataManagerProperty);
-            set => SetValue(DataManagerProperty, value);
-        }
-
-        public ODEditor Editor
-        {
-            get => GetValue(EditorProperty);
-            set => SetValue(EditorProperty, value);
+            get => GetValue(DrawConnectorProperty);
+            set => SetValue(DrawConnectorProperty, value);
         }
 
         public IODEditorInputService InputService
@@ -59,7 +50,7 @@ namespace OpenDraft
             get => GetValue(DynamicElementsProperty);
             set => SetValue(DynamicElementsProperty, value);
         }
-
+        
         private readonly ViewportCamera Camera = new();
         private bool isPanning = false;
         private Point _lastPointerDragPosition;
@@ -117,9 +108,9 @@ namespace OpenDraft
                 {
                     foreach (var element in Elements)
                     {
-                        var layer = DataManager.LayerManager?.GetLayerByID(element.LayerId);
+                        var layer = DrawConnector.GetLayerByID(element.LayerId);
                         if (layer != null)
-                            element.Draw(context, DataManager!);
+                            element.Draw(context, DrawConnector);
                     }
                 }
             };
@@ -138,11 +129,11 @@ namespace OpenDraft
                 var matrix = Camera.GetMatrix(bounds.Height);
                 using (context.PushTransform(matrix))
                 {
-                    if (Editor?.DynamicElements != null)
-                        foreach (ODDynamicElement element in Editor.DynamicElements)
+                    if (DynamicElements != null)
+                        foreach (ODDynamicElement element in DynamicElements)
                         {
-                            ODLayer? layer = DataManager.LayerManager?.GetLayerByID(element.LayerId);
-                            if (layer != null) element.Draw(context, DataManager, Camera.Scale, vpWorldSize, worldMousePoint);
+                            ODLayer? layer = DrawConnector.GetLayerByID(element.LayerId);
+                            if (layer != null) element.Draw(context, DrawConnector, Camera.Scale, vpWorldSize, worldMousePoint);
                         }
                 }
             };
@@ -224,12 +215,12 @@ namespace OpenDraft
 
         private void OnPointerEntered(object? sender, PointerEventArgs e)
         {
-            Editor.ShowCrosshair();
+            InputService?.RaiseViewportEntered();
         }
 
         private void OnPointerExited(object? sender, PointerEventArgs e)
         {
-            Editor.HideCrosshair();
+            InputService?.RaiseViewportExited();
         }
 
         private void OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)

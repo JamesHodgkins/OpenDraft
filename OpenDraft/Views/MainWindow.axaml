@@ -81,8 +81,7 @@
                     VerticalAlignment="Stretch"
                     Elements="{Binding GeometryElements}"
                     DynamicElements="{Binding Editor.DynamicElements}"
-                    DataManager="{Binding DataManager}"
-                    Editor="{Binding Editor}"
+					DrawConnector="{Binding DrawConnectorRoot}"
                     InputService ="{Binding InputService}"/>
 
     <!-- Status Bar -->

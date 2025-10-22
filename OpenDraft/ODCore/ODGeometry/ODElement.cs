@@ -22,7 +22,7 @@ namespace OpenDraft.ODCore.ODGeometry
             Id = Guid.NewGuid();
         }
 
-        public virtual void Draw(DrawingContext context, ODDataManager dm)
+        public virtual void Draw(DrawingContext context, ODDrawConnector connector)
         {
             // Base draw method, to be overridden by derived classes
         }
