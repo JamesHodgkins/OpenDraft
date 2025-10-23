@@ -2,6 +2,7 @@
 using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODEditor;
 using OpenDraft.ODCore.ODGeometry;
+using OpenDraft.ODCore.ODMath;
 using OpenDraft.ODCore.ODSystem;
 using OpenDraft.XSVG;
 using System.Collections.Generic;
@@ -20,6 +21,7 @@ namespace OpenDraft.ViewModels
         public ObservableCollection<ODElement> GeometryElements => DataManager.Elements;
         public ODDataManager DataManager => DataManagerRoot;
         public ODEditor Editor => EditorRoot;
+        public ODSymbolTable SymbolTable { get; private set; }
         public ODDrawConnector DrawConnector => DrawConnectorRoot;
 
         public MainWindowViewModel()
@@ -30,17 +32,18 @@ namespace OpenDraft.ViewModels
             DataManagerRoot = new ODDataManager();
             InputService = new ODEditorInputService();
             EditorRoot = new ODEditor(DataManager, InputService);
-            DrawConnectorRoot = new ODDrawConnector(DataManager, Editor);
+            SymbolTable = new ODSymbolTable();
+            DrawConnectorRoot = new ODDrawConnector(DataManager, Editor, SymbolTable);
 
 
             // Debug XSVG Reader
-            ODXsvgReader xsvgR = new ODXsvgReader("XSVG/Example XSVG/example.xsvg");
+            /*ODXsvgReader xsvgR = new ODXsvgReader("XSVG/Example XSVG/example.xsvg");
             List<ODElement> xsvgElements = xsvgR.ExtractModelSpace();
 
             foreach (ODElement elem in xsvgElements)
             {
                 Editor.AddStaticElement(elem);
-            }
+            }*/
 
             /* Create test layer */
             DataManager.LayerManager.AddLayer("New Layer");
@@ -50,6 +53,22 @@ namespace OpenDraft.ViewModels
             lay!.LineWeight = 2.0f;
 
             Debug.WriteLine("Setup complete");
+
+
+            // Test Symbols
+            ODSymbolDefinition symDef = new ODSymbolDefinition("MySymbol");
+            ODLine L1 = new ODLine(new ODVec2(0, 0), new ODVec2(1, 1));
+            ODLine L2 = new ODLine(new ODVec2(0, 1), new ODVec2(1, 0));
+
+            symDef.Elements.Add(L1);
+            symDef.Elements.Add(L2);
+            SymbolTable.AddSymbol(symDef);
+
+            ODSymbol S1 = new ODSymbol("MySymbol", new ODVec2(10, -10));
+            ODSymbol S2 = new ODSymbol("MySymbol", new ODVec2(25, -10));
+
+            DataManager.AddElement(S1);
+            DataManager.AddElement(S2);
         }
 
         [RelayCommand]

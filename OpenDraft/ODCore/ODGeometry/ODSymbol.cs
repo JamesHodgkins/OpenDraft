@@ -1,25 +1,48 @@
-﻿using Avalonia.Media;
+﻿using Avalonia;
+using Avalonia.Media;
 using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODMath;
-using OpenDraft.ODCore.ODGeometry;
-using System.Collections.Generic;
-using System.Net;
+using System;
 
 namespace OpenDraft.ODCore.ODGeometry
 {
-    public class ODSymbolDefinition : ODElement
+    public class ODSymbol : ODElement
     {
-        public string BlockName { get; set; }
+        public string SymbolName { get; set; }
         public ODVec2 InsertionPoint { get; set; }
         public double Rotation { get; set; }
-        public double ScaleX { get; set; } = 1.0;
-        public double ScaleY { get; set; } = 1.0;
+        public double Scale { get; set; } = 1.0;
 
 
-        public ODSymbolDefinition(string blockName, ODVec2 insertionPoint)
+        public ODSymbol(string symbolName, ODVec2 insertionPoint)
         {
-            BlockName = blockName;
+            SymbolName = symbolName;
             InsertionPoint = insertionPoint;
+        }
+
+
+        private Matrix CreateSymbolMatrix()
+        {
+            // Start with identity matrix
+            var matrix = Matrix.Identity;
+
+            // Apply scaling
+            if (Scale != 1.0)
+            {
+                matrix = matrix * Matrix.CreateScale(Scale, Scale);
+            }
+
+            // Apply rotation (convert degrees to radians)
+            if (Rotation != 0.0)
+            {
+                double radians = Rotation * Math.PI / 180.0;
+                matrix = matrix * Matrix.CreateRotation(radians);
+            }
+
+            // Apply translation
+            matrix = matrix * Matrix.CreateTranslation(new Vector(InsertionPoint.X, InsertionPoint.Y));
+
+            return matrix;
         }
 
 
@@ -45,10 +68,20 @@ namespace OpenDraft.ODCore.ODGeometry
                 dashStyle                                               // Dash style
             );
 
-            //foreach (ODElement element in GetBlockElements(BlockName))
-            //{
-            //element.Draw(context, lm);
-            //}
+
+            ODSymbolDefinition? symbolDefition = connector.GetSymbolDefinition(SymbolName);
+            
+            if(symbolDefition == null )
+                return;
+
+            using (context.PushTransform(CreateSymbolMatrix()))
+            {
+                foreach (ODElement element in symbolDefition.Elements)
+                {
+                    element.Draw(context, connector);
+                }
+            }
+
         }
     }
 }

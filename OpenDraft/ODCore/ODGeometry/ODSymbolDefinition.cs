@@ -1,19 +1,18 @@
-﻿using OpenDraft.ODCore.ODGeometry;
-using System.Collections.Generic;
+﻿using Avalonia.Media;
+using OpenDraft.ODCore.ODGeometry;
 using OpenDraft.ODCore.ODMath;
+using System.Collections.Generic;
 
 namespace OpenDraft.ODCore.ODGeometry
 {
-    public class ODSymbol : ODElement
+    public class ODSymbolDefinition : ODElement
     {
         public string Name { get; set; }
         public List<ODElement> Elements { get; set; } = new List<ODElement>();
 
-        public ODSymbol(string name, ODVec2 basePoint)
+        public ODSymbolDefinition(string name)
         {
             Name = name;
         }
-
     }
-
 }

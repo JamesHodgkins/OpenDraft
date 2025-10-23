@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Avalonia.Media;
 using OpenDraft.ODCore.ODEditor;
+using OpenDraft.ODCore.ODGeometry;
 
 namespace OpenDraft.ODCore.ODData
 {
@@ -12,11 +13,13 @@ namespace OpenDraft.ODCore.ODData
     {
         private ODDataManager DataManager;
         private ODEditor.ODEditor? Editor;
+        private ODSymbolTable SymbolTable;
         
-        public ODDrawConnector(ODDataManager dm, ODEditor.ODEditor ed)
+        public ODDrawConnector(ODDataManager dm, ODEditor.ODEditor ed, ODSymbolTable st)
         {
             DataManager = dm;
             Editor = ed;
+            SymbolTable = st;
         }
 
         public ODLayer? GetLayerByName(string name) {
@@ -29,7 +32,13 @@ namespace OpenDraft.ODCore.ODData
 
         public IDashStyle ToAvaloniaDashStyle(string dashStyle)
         {
-            return DataManager.LineStyleRegister.ToAvaloniaDashStyle(dashStyle);
+            ODLineStyleRegistry lsr = DataManager.LineStyleRegister;
+            return lsr.ToAvaloniaDashStyle(dashStyle) ?? lsr.ToAvaloniaDashStyle("Continous")!;
+        }
+
+        public ODSymbolDefinition? GetSymbolDefinition(string symbolName)
+        {
+            return SymbolTable.GetSymbolDefinition(symbolName);
         }
     }
 }
