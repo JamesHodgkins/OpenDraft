@@ -2,17 +2,18 @@
 using Avalonia.Media;
 using Microsoft.Win32;
 using OpenDraft.ODCore.ODData;
+using OpenDraft.ODCore.ODMath;
 using System;
 
 namespace OpenDraft.ODCore.ODGeometry
 {
     internal class ODLine : ODElement
     {
-        public ODPoint StartPoint { get; set; }
-        public ODPoint EndPoint { get; set; }
+        public ODVec2 StartPoint { get; set; }
+        public ODVec2 EndPoint { get; set; }
 
 
-        public ODLine(ODPoint startPoint, ODPoint endPoint)
+        public ODLine(ODVec2 startPoint, ODVec2 endPoint)
         {
             StartPoint = startPoint;
             EndPoint = endPoint;
@@ -32,7 +33,7 @@ namespace OpenDraft.ODCore.ODGeometry
             // Get dash style from registry
             IDashStyle dashStyle = connector.ToAvaloniaDashStyle(LineType ?? layer.LineType);
             ODColour effectiveColour = (Colour != null) ? Colour : layer.Color;
-            float effectiveLineWeight = LineWeight ?? layer.LineWeight;
+            double effectiveLineWeight = LineWeight ?? layer.LineWeight;
 
             // Create pen
             var pen = new Pen(

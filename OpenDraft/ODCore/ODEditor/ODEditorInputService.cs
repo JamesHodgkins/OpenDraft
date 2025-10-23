@@ -1,6 +1,7 @@
 ﻿// EditorInputService.cs
 using Avalonia.Input;
 using OpenDraft.ODCore.ODGeometry;
+using OpenDraft.ODCore.ODMath;
 using System;
 
 namespace OpenDraft.ODCore.ODEditor
@@ -8,7 +9,7 @@ namespace OpenDraft.ODCore.ODEditor
     public class ODEditorInputService : IODEditorInputService
     {
         public event Action<Key>? KeyPressed;
-        public event Action<ODPoint>? PointProvided;
+        public event Action<ODVec2>? PointProvided;
         public event Action<string>? TextInput;
         public event Action<double>? NumberInput;
         public event Action? CancelRequested;
@@ -23,7 +24,7 @@ namespace OpenDraft.ODCore.ODEditor
             KeyPressed?.Invoke(key);
         }
 
-        public void RaisePointProvided(ODPoint point)
+        public void RaisePointProvided(ODVec2 point)
         {
             PointProvided?.Invoke(point);
         }

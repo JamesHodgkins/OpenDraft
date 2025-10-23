@@ -17,7 +17,7 @@ namespace OpenDraft.ODCore.ODEditor
         private readonly IODEditorInputService _inputService;
         private readonly CancellationTokenSource _cancellationTokenSource;
 
-        private TaskCompletionSource<ODPoint>? _pointWaiter;
+        private TaskCompletionSource<ODVec2>? _pointWaiter;
         private TaskCompletionSource<double>? _numberWaiter;
         private TaskCompletionSource<string>? _textWaiter;
         private TaskCompletionSource<string>? _choiceWaiter;
@@ -53,7 +53,7 @@ namespace OpenDraft.ODCore.ODEditor
             _editor.ClearDynamicElements();
         }
 
-        private void OnPointProvided(ODPoint point)
+        private void OnPointProvided(ODVec2 point)
         {
             ProvidePoint(point);
         }
@@ -68,11 +68,11 @@ namespace OpenDraft.ODCore.ODEditor
             ProvideText(text);
         }
 
-        public Task<ODPoint> GetPointAsync(string prompt)
+        public Task<ODVec2> GetPointAsync(string prompt)
         {
             _editor.SetStatus(prompt); // FIXED: Now calls editor method
             ClearAllWaiters();
-            _pointWaiter = new TaskCompletionSource<ODPoint>();
+            _pointWaiter = new TaskCompletionSource<ODVec2>();
             return _pointWaiter.Task;
         }
 
@@ -92,7 +92,7 @@ namespace OpenDraft.ODCore.ODEditor
             return _textWaiter.Task;
         }
 
-        public async Task<(ODPoint start, ODPoint end)> GetLineAsync(string promptStart, string promptEnd)
+        public async Task<(ODVec2 start, ODVec2 end)> GetLineAsync(string promptStart, string promptEnd)
         {
             var start = await GetPointAsync(promptStart);
             var end = await GetPointAsync(promptEnd);
@@ -107,7 +107,7 @@ namespace OpenDraft.ODCore.ODEditor
             return _choiceWaiter.Task;
         }
 
-        public void ProvidePoint(ODPoint point)
+        public void ProvidePoint(ODVec2 point)
         {
             if (point == null)
                 throw new ArgumentNullException(nameof(point));

@@ -3,6 +3,7 @@ using Avalonia.Media;
 using OpenDraft.ODCore.ODData;
 using System;
 using System.Collections.Generic;
+using OpenDraft.ODCore.ODMath;
 using System.Linq;
 using System.Xml.Linq;
 
@@ -10,36 +11,36 @@ namespace OpenDraft.ODCore.ODGeometry
 {
     public class ODRectangle : ODElement
     {
-        public ODPoint TopLeft { get; set; }
-        public ODPoint BottomRight { get; set; }
+        public ODVec2 TopLeft { get; set; }
+        public ODVec2 BottomRight { get; set; }
 
-        public ODRectangle(ODPoint topLeft, ODPoint bottomRight)
+        public ODRectangle(ODVec2 topLeft, ODVec2 bottomRight)
         {
             TopLeft = topLeft;
             BottomRight = bottomRight;
         }
 
         // Alternative constructor from center point and dimensions
-        public ODRectangle(ODPoint center, double width, double height)
+        public ODRectangle(ODVec2 center, double width, double height)
         {
-            var halfWidth = width / 2;
-            var halfHeight = height / 2;
-            TopLeft = new ODPoint(center.X - halfWidth, center.Y - halfHeight);
-            BottomRight = new ODPoint(center.X + halfWidth, center.Y + halfHeight);
+            double halfWidth = width / 2;
+            double halfHeight = height / 2;
+            TopLeft = new ODVec2(center.X - halfWidth, center.Y - halfHeight);
+            BottomRight = new ODVec2(center.X + halfWidth, center.Y + halfHeight);
         }
 
         // Alternative constructor from corner point and dimensions
-        public ODRectangle(ODPoint corner, double width, double height, bool isTopLeft = true)
+        public ODRectangle(ODVec2 corner, double width, double height, bool isTopLeft = true)
         {
             if (isTopLeft)
             {
                 TopLeft = corner;
-                BottomRight = new ODPoint(corner.X + width, corner.Y + height);
+                BottomRight = new ODVec2(corner.X + width, corner.Y + height);
             }
             else
             {
                 BottomRight = corner;
-                TopLeft = new ODPoint(corner.X - width, corner.Y - height);
+                TopLeft = new ODVec2(corner.X - width, corner.Y - height);
             }
         }
 
@@ -56,7 +57,7 @@ namespace OpenDraft.ODCore.ODGeometry
             // Get dash style from registry
             var dashStyle = connector.ToAvaloniaDashStyle(LineType ?? layer.LineType);
             ODColour effectiveColour = (Colour != null) ? Colour : layer.Color;
-            float effectiveLineWeight = LineWeight ?? layer.LineWeight;
+            double effectiveLineWeight = LineWeight ?? layer.LineWeight;
 
             // Create pen
             var pen = new Pen(
@@ -81,9 +82,9 @@ namespace OpenDraft.ODCore.ODGeometry
         public double Width => Math.Abs(BottomRight.X - TopLeft.X);
         public double Height => Math.Abs(BottomRight.Y - TopLeft.Y);
 
-        public ODPoint TopRight => new ODPoint(BottomRight.X, TopLeft.Y);
-        public ODPoint BottomLeft => new ODPoint(TopLeft.X, BottomRight.Y);
-        public ODPoint Center => new ODPoint(
+        public ODVec2 TopRight => new ODVec2(BottomRight.X, TopLeft.Y);
+        public ODVec2 BottomLeft => new ODVec2(TopLeft.X, BottomRight.Y);
+        public ODVec2 Center => new ODVec2(
             (TopLeft.X + BottomRight.X) / 2,
             (TopLeft.Y + BottomRight.Y) / 2
         );
@@ -92,7 +93,7 @@ namespace OpenDraft.ODCore.ODGeometry
         public double Perimeter => 2 * (Width + Height);
 
         // Method to check if a point is inside the rectangle
-        public bool ContainsPoint(ODPoint point)
+        public bool ContainsPoint(ODVec2 point)
         {
             var minX = Math.Min(TopLeft.X, BottomRight.X);
             var maxX = Math.Max(TopLeft.X, BottomRight.X);
@@ -107,7 +108,7 @@ namespace OpenDraft.ODCore.ODGeometry
         // Convert to polyline (useful for some operations)
         public ODPolyline ToPolyline()
         {
-            var points = new List<ODPoint>
+            var points = new List<ODVec2>
             {
                 TopLeft,
                 TopRight,

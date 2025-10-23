@@ -1,5 +1,6 @@
 ﻿using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODGeometry;
+using OpenDraft.ODCore.ODMath;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,7 +13,7 @@ namespace OpenDraft.XSVG
     {
         public ODColour StrokeColor;
         public ODColour FillColor;
-        public float StrokeWidth;
+        public double StrokeWidth;
         public string LineType;
         public string LayerName;
         public bool IsVisible;
@@ -254,8 +255,8 @@ namespace OpenDraft.XSVG
                 var height = ParseDouble(rectElement.Attribute("height")?.Value) ?? 0;
 
                 var rectangle = new ODRectangle(
-                    new ODPoint(rectX + x, rectY + y),
-                    new ODPoint(rectX + x + width, rectY + y + height)
+                    new ODVec2(rectX + x, rectY + y),
+                    new ODVec2(rectX + x + width, rectY + y + height)
                 );
                 ApplyTransformation(rectangle, x, y, rotation);
                 elements.Add(rectangle);
@@ -274,7 +275,7 @@ namespace OpenDraft.XSVG
                 {
                     var point = polyline.Points[i];
                     // Apply translation and rotation here
-                    polyline.Points[i] = new ODPoint(point.X + x, point.Y + y);
+                    polyline.Points[i] = new ODVec2(point.X + x, point.Y + y);
                 }
             }
             // Add similar logic for other element types
@@ -321,8 +322,8 @@ namespace OpenDraft.XSVG
                 {
                     var style = ParseStyle(rectElement, null, parentStyle);
                     var rectangle = new ODRectangle(
-                        new ODPoint(x, y),
-                        new ODPoint(x + width, y + height)
+                        new ODVec2(x, y),
+                        new ODVec2(x + width, y + height)
                     );
                     ApplyCADMetadata(rectangle, rectElement);
                     rectangles.Add(rectangle);
@@ -345,8 +346,8 @@ namespace OpenDraft.XSVG
 
                 var style = ParseStyle(lineElement, null, parentStyle);
                 var line = new ODLine(
-                    new ODPoint(x1, y1),
-                    new ODPoint(x2, y2)
+                    new ODVec2(x1, y1),
+                    new ODVec2(x2, y2)
                 );
                 ApplyCADMetadata(line, lineElement);
                 lines.Add(line);
@@ -369,7 +370,7 @@ namespace OpenDraft.XSVG
                 {
                     var style = ParseStyle(circleElement, null, parentStyle);
                     var circle = new ODCircle(
-                        new ODPoint(cx, cy),
+                        new ODVec2(cx, cy),
                         r
                     );
                     ApplyCADMetadata(circle, circleElement);
@@ -388,7 +389,7 @@ namespace OpenDraft.XSVG
         {
             try
             {
-                var points = new List<ODPoint>();
+                var points = new List<ODVec2>();
                 var tokens = TokenizePathData(pathData);
 
                 double currentX = 0, currentY = 0;
@@ -419,7 +420,7 @@ namespace OpenDraft.XSVG
                                 }
                                 startX = currentX;
                                 startY = currentY;
-                                points.Add(new ODPoint(currentX, currentY));
+                                points.Add(new ODVec2(currentX, currentY));
                                 i += 2;
                                 hasValidData = true;
                             }
@@ -440,7 +441,7 @@ namespace OpenDraft.XSVG
                                     currentX = lx;
                                     currentY = ly;
                                 }
-                                points.Add(new ODPoint(currentX, currentY));
+                                points.Add(new ODVec2(currentX, currentY));
                                 i += 2;
                                 hasValidData = true;
                             }
@@ -458,7 +459,7 @@ namespace OpenDraft.XSVG
                                 {
                                     currentX = hx;
                                 }
-                                points.Add(new ODPoint(currentX, currentY));
+                                points.Add(new ODVec2(currentX, currentY));
                                 i += 1;
                                 hasValidData = true;
                             }
@@ -476,7 +477,7 @@ namespace OpenDraft.XSVG
                                 {
                                     currentY = vy;
                                 }
-                                points.Add(new ODPoint(currentX, currentY));
+                                points.Add(new ODVec2(currentX, currentY));
                                 i += 1;
                                 hasValidData = true;
                             }
@@ -486,7 +487,7 @@ namespace OpenDraft.XSVG
                             if (points.Count > 0)
                             {
                                 // Close the path by returning to start point
-                                points.Add(new ODPoint(startX, startY));
+                                points.Add(new ODVec2(startX, startY));
                                 hasValidData = true;
                             }
                             break;
@@ -620,7 +621,7 @@ namespace OpenDraft.XSVG
             if (layerId != null && _layers.TryGetValue(layerId, out var layer))
             {
                 style.StrokeColor = layer.Color;
-                style.StrokeWidth = (float)layer.LineWeight;
+                style.StrokeWidth = layer.LineWeight;
                 style.LineType = layer.LineType;
                 style.LayerName = layer.Name;
                 style.IsVisible = layer.Visible;
@@ -647,7 +648,7 @@ namespace OpenDraft.XSVG
                                 break;
                             case "stroke-width":
                                 if (ParseDouble(value) is double strokeWidth)
-                                    style.StrokeWidth = (float)strokeWidth;
+                                    style.StrokeWidth = strokeWidth;
                                 break;
                             case "stroke-dasharray":
                                 style.LineType = ParseLineType(value);
@@ -667,7 +668,7 @@ namespace OpenDraft.XSVG
 
             var strokeWidthAttr = element.Attribute("stroke-width")?.Value;
             if (!string.IsNullOrEmpty(strokeWidthAttr) && ParseDouble(strokeWidthAttr) is double sw)
-                style.StrokeWidth = (float)sw;
+                style.StrokeWidth = sw;
 
             var fillAttr = element.Attribute("fill")?.Value;
             if (!string.IsNullOrEmpty(fillAttr))
@@ -847,7 +848,7 @@ namespace OpenDraft.XSVG
         public IReadOnlyDictionary<string, CADLayer> Layers => _layers;
         public bool IsLoaded => _xDocument != null;
 
-        public ODPoint GetDimensions()
+        public ODVec2 GetDimensions()
         {
             if (_xDocument == null)
                 throw new InvalidOperationException("No SVG file loaded. Call LoadSvgFile first.");
@@ -868,7 +869,7 @@ namespace OpenDraft.XSVG
             }
 
             Debug.WriteLine($"SVG Dimensions: Width={width}, Height={height}");
-            return new ODPoint(width, height);
+            return new ODVec2(width, height);
         }
 
         public void Unload()

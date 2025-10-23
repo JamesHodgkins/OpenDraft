@@ -3,7 +3,7 @@
 public class ViewportCamera
 {
     public Point Position { get; set; } = new Point(0, 0);
-    public float Scale { get; set; } = 1.0f;
+    public double Scale { get; set; } = 1.0f;
 
     public ViewportCamera(Point? position = null, float scale = 1.0f)
     {

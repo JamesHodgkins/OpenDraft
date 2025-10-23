@@ -2,22 +2,23 @@
 using Avalonia.Media;
 using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODGeometry;
+using OpenDraft.ODCore.ODMath;
 using System;
 
 namespace OpenDraft.ODCore.ODEditor.ODDynamics
 {
     public class SnapIndicatorElement : ODDynamicElement
     {
-        public ODPoint Position { get; set; }
+        public ODVec2 Position { get; set; }
         public double Radius { get; set; } = 5.0;
 
-        public SnapIndicatorElement(ODPoint position)
+        public SnapIndicatorElement(ODVec2 position)
         {
             Position = position;
         }
 
         public override void Draw(DrawingContext context, ODDrawConnector connector, 
-            float scale, ODPoint vpExtents, ODPoint worldMousePosition)
+            double scale, ODVec2 vpExtents, ODVec2 worldMousePosition)
         {
             var brush = new SolidColorBrush(Colors.Yellow);
             var pen = new Pen(brush, 1.5);

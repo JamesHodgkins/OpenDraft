@@ -2,11 +2,8 @@
 using Avalonia.Media;
 using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODGeometry;
+using OpenDraft.ODCore.ODMath;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OpenDraft.ODCore.ODEditor.ODDynamics
 {
@@ -14,7 +11,7 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
     {
         public Guid Id { get; set; }
         public ODColour? Colour { get; set; } = null; // If null, use layer colour
-        public float? LineWeight { get; set; } = 2.0f; // If null, use layer line weight
+        public double? LineWeight { get; set; } = 2.0f; // If null, use layer line weight
         public string? LineType { get; set; } = null; // If null, use layer line type
         public ushort LayerId { get; set; } = 0; // Default layer ID
 
@@ -24,7 +21,7 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
         }
 
         public virtual void Draw(DrawingContext context, ODDrawConnector connector, 
-            float scale, ODPoint vpWorldSize, ODPoint mousePosition)
+            double scale, ODVec2 vpWorldSize, ODVec2 mousePosition)
         {
             // Base draw method, to be overridden by derived classes
         }

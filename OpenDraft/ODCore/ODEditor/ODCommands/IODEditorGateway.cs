@@ -1,6 +1,7 @@
 ﻿using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODEditor.ODDynamics;
 using OpenDraft.ODCore.ODGeometry;
+using OpenDraft.ODCore.ODMath;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -10,11 +11,11 @@ namespace OpenDraft.ODCore.ODEditor.ODCommands
     {
         ODDataManager DataManager { get; }
 
-        Task<ODPoint> GetPointAsync(string prompt);
+        Task<ODVec2> GetPointAsync(string prompt);
         Task<double> GetNumberAsync(string prompt);
         Task<string> GetTextAsync(string prompt);
         Task<string> GetChoiceAsync(string prompt, params string[] options);
-        Task<(ODPoint start, ODPoint end)> GetLineAsync(string promptStart, string promptEnd);
+        Task<(ODVec2 start, ODVec2 end)> GetLineAsync(string promptStart, string promptEnd);
 
         void SetStatus(string message);
         void ShowMessage(string message);

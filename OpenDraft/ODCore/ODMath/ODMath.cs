@@ -8,9 +8,9 @@ namespace OpenDraft.ODCore.ODMath
 {
     public class ODVec2
         {
-        public float X { get; set; }
-        public float Y { get; set; }
-        public ODVec2(float x, float y)
+        public double X { get; set; }
+        public double Y { get; set; }
+        public ODVec2(double x, double y)
         {
             X = x;
             Y = y;
@@ -25,26 +25,26 @@ namespace OpenDraft.ODCore.ODMath
             return new ODVec2(a.X - b.X, a.Y - b.Y);
         }
 
-        public static ODVec2 operator *(ODVec2 a, float scalar)
+        public static ODVec2 operator *(ODVec2 a, double scalar)
         {
             return new ODVec2(a.X * scalar, a.Y * scalar);
         }
         
-        public static ODVec2 operator /(ODVec2 a, float scalar)
+        public static ODVec2 operator /(ODVec2 a, double scalar)
         {
             if (scalar == 0)
                 throw new DivideByZeroException("Cannot divide by zero.");
             return new ODVec2(a.X / scalar, a.Y / scalar);
         }
         
-        public float Magnitude()
+        public double Magnitude()
         {
-            return (float)Math.Sqrt(X * X + Y * Y);
+            return (double)Math.Sqrt(X * X + Y * Y);
         }
         
         public ODVec2 Normalize()
         {
-            float magnitude = Magnitude();
+            double magnitude = Magnitude();
             if (magnitude == 0)
                 throw new InvalidOperationException("Cannot normalize a zero vector.");
             return this / magnitude;

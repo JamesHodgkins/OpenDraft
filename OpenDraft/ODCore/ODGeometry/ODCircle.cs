@@ -1,20 +1,16 @@
 ﻿using Avalonia;
 using Avalonia.Media;
 using OpenDraft.ODCore.ODData;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using OpenDraft.ODCore.ODMath;
 
 namespace OpenDraft.ODCore.ODGeometry
 {
     internal class ODCircle : ODElement
     {
-        public ODPoint Center { get; set; }
+        public ODVec2 Center { get; set; }
         public double Radius { get; set; }
 
-        public ODCircle(ODPoint center, double radius)
+        public ODCircle(ODVec2 center, double radius)
         {
             Center = center;
             Radius = radius;
@@ -33,7 +29,7 @@ namespace OpenDraft.ODCore.ODGeometry
             // Get dash style from registry
             var dashStyle = connector.ToAvaloniaDashStyle(LineType ?? layer.LineType);
             ODColour effectiveColour = (Colour != null) ? Colour : layer.Color;
-            float effectiveLineWeight = LineWeight ?? layer.LineWeight;
+            double effectiveLineWeight = LineWeight ?? layer.LineWeight;
 
             // Create pen
             var pen = new Pen(

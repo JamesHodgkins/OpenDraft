@@ -2,6 +2,7 @@
 using Avalonia.Media;
 using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODGeometry;
+using OpenDraft.ODCore.ODMath;
 using System;
 using System.Diagnostics;
 using System.Net;
@@ -10,16 +11,16 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
 {
     public class ODRubberBandCircle : ODDynamicElement
     {
-        public ODPoint Start { get; set; }
+        public ODVec2 Start { get; set; }
         public float Weight { get; set; } = 1.0f;
 
-        public ODRubberBandCircle(ODPoint start)
+        public ODRubberBandCircle(ODVec2 start)
         {
             Start = start;
         }
 
         public override void Draw(DrawingContext context, ODDrawConnector connector,
-            float scale, ODPoint vpWorldSize, ODPoint mousePosition)
+            double scale, ODVec2 vpWorldSize, ODVec2 mousePosition)
         {
             ODLayer? layer = connector.GetLayerByID(LayerId);
 
@@ -29,7 +30,7 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
             // Get dash style from registry
             IDashStyle dashStyle = connector.ToAvaloniaDashStyle(LineType ?? layer.LineType);
             string effectiveColour = (Colour != null) ? Colour.ToHex() : layer.Color.ToHex();
-            float effectiveLineWeight = LineWeight ?? layer.LineWeight;
+            double effectiveLineWeight = LineWeight ?? layer.LineWeight;
 
             // Create pen
             Pen pen = new Pen(
@@ -38,7 +39,7 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
                 dashStyle                                          // Dash style
             );
 
-            float radius = (float)Math.Sqrt(
+            double radius = Math.Sqrt(
                 Math.Pow(mousePosition.X - Start.X, 2) + Math.Pow(mousePosition.Y - Start.Y, 2)
                 );
 

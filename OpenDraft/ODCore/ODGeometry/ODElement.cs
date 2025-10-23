@@ -14,7 +14,7 @@ namespace OpenDraft.ODCore.ODGeometry
         public Guid Id { get; set; }
         public ushort LayerId { get; set; } = 0; // Default layer ID
         public ODColour? Colour { get; set; } = null; // If null, use layer colour
-        public float? LineWeight { get; set; } = null; // If null, use layer lineweight
+        public double? LineWeight { get; set; } = null; // If null, use layer lineweight
         public string? LineType { get; set; } = null; // If null, use layer linetype
 
         public ODElement()

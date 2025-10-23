@@ -4,17 +4,18 @@ using Microsoft.Win32;
 using OpenDraft.ODCore.ODData;
 using System;
 using System.Collections.Generic;
+using OpenDraft.ODCore.ODMath;
 using System.Linq;
 
 namespace OpenDraft.ODCore.ODGeometry
 {
     public class ODPolyline : ODElement
     {
-        public List<ODPoint> Points { get; set; }
+        public List<ODVec2> Points { get; set; }
 
-        public ODPolyline(List<ODPoint> points)
+        public ODPolyline(List<ODVec2> points)
         {
-            Points = points ?? new List<ODPoint>();
+            Points = points ?? new List<ODVec2>();
         }
 
         public override void Draw(DrawingContext context, ODDrawConnector connector)
@@ -33,7 +34,7 @@ namespace OpenDraft.ODCore.ODGeometry
             // Get dash style from registry
             var dashStyle = connector.ToAvaloniaDashStyle(LineType ?? layer.LineType);
             ODColour effectiveColour = (Colour != null) ? Colour : layer.Color;
-            float effectiveLineWeight = LineWeight ?? layer.LineWeight;
+            double effectiveLineWeight = LineWeight ?? layer.LineWeight;
 
             // Create pen
             var pen = new Pen(
@@ -71,15 +72,15 @@ namespace OpenDraft.ODCore.ODGeometry
             }
         }
 
-        public ODPoint StartPoint => Points?.FirstOrDefault() ?? new ODPoint(0, 0);
-        public ODPoint EndPoint => Points?.LastOrDefault() ?? new ODPoint(0, 0);
+        public ODVec2 StartPoint => Points?.FirstOrDefault() ?? new ODVec2(0, 0);
+        public ODVec2 EndPoint => Points?.LastOrDefault() ?? new ODVec2(0, 0);
 
-        public void AddPoint(ODPoint point)
+        public void AddPoint(ODVec2 point)
         {
             Points.Add(point);
         }
 
-        public void InsertPoint(int index, ODPoint point)
+        public void InsertPoint(int index, ODVec2 point)
         {
             if (index >= 0 && index <= Points.Count)
                 Points.Insert(index, point);
@@ -94,14 +95,14 @@ namespace OpenDraft.ODCore.ODGeometry
         public ODRectangle GetBoundingBox()
         {
             if (Points == null || Points.Count == 0)
-                return new ODRectangle(new ODPoint(0, 0), new ODPoint(0, 0));
+                return new ODRectangle(new ODVec2(0, 0), new ODVec2(0, 0));
 
             double minX = Points.Min(p => p.X);
             double maxX = Points.Max(p => p.X);
             double minY = Points.Min(p => p.Y);
             double maxY = Points.Max(p => p.Y);
 
-            return new ODRectangle(new ODPoint(minX, minY), new ODPoint(maxX, maxY));
+            return new ODRectangle(new ODVec2(minX, minY), new ODVec2(maxX, maxY));
         }
     }
 }

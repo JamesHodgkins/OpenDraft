@@ -8,12 +8,12 @@ namespace OpenDraft.ODCore.ODGeometry
 {
     public class ODPoint : ODElement
     {
-        public float X { get; set; }
-        public float Y { get; set; }
+        public double X { get; set; }
+        public double Y { get; set; }
         public ODPoint(double x, double y)
         {
-            X = (float)x;
-            Y = (float)y;
+            X = x;
+            Y = y;
         }
 
         public ODPoint(float x, float y)

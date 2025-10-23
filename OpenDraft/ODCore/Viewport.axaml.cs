@@ -7,6 +7,7 @@ using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODEditor;
 using OpenDraft.ODCore.ODEditor.ODDynamics;
 using OpenDraft.ODCore.ODGeometry;
+using OpenDraft.ODCore.ODMath;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -50,7 +51,7 @@ namespace OpenDraft
             get => GetValue(DynamicElementsProperty);
             set => SetValue(DynamicElementsProperty, value);
         }
-        
+
         private readonly ViewportCamera Camera = new();
         private bool isPanning = false;
         private Point _lastPointerDragPosition;
@@ -123,8 +124,8 @@ namespace OpenDraft
             {
                 if (DynamicElements == null) return;
 
-                ODPoint vpWorldSize = new ODPoint(bounds.Width / Camera.Scale, bounds.Height / Camera.Scale);
-                ODPoint worldMousePoint = new ODPoint(GetWorldMousePosition().X, GetWorldMousePosition().Y);
+                ODVec2 vpWorldSize = new ODVec2(bounds.Width / Camera.Scale, bounds.Height / Camera.Scale);
+                ODVec2 worldMousePoint = new ODVec2(GetWorldMousePosition().X, GetWorldMousePosition().Y);
 
                 var matrix = Camera.GetMatrix(bounds.Height);
                 using (context.PushTransform(matrix))
@@ -189,8 +190,8 @@ namespace OpenDraft
         {
             if (e.InitialPressMouseButton == MouseButton.Left)
             {
-                var odPoint = new ODPoint(GetWorldMousePosition().X, GetWorldMousePosition().Y);
-                InputService?.RaisePointProvided(odPoint);
+                var ODVec2 = new ODVec2(GetWorldMousePosition().X, GetWorldMousePosition().Y);
+                InputService?.RaisePointProvided(ODVec2);
                 e.Handled = true;
             }
 
@@ -226,11 +227,11 @@ namespace OpenDraft
         private void OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
         {
             var mousePos = e.GetPosition(this);
-            float zoomFactor = 1.1f;
-            float oldScale = Camera.Scale;
-            float newScale = oldScale * (float)Math.Pow(zoomFactor, e.Delta.Y > 0 ? 1 : -1);
+            double zoomFactor = 1.1f;
+            double oldScale = Camera.Scale;
+            double newScale = oldScale * Math.Pow(zoomFactor, e.Delta.Y > 0 ? 1 : -1);
 
-            Point ScreenToWorld(Point screen, float scale) =>
+            Point ScreenToWorld(Point screen, double scale) =>
                 new(screen.X / scale - Camera.Position.X, (Bounds.Height - screen.Y) / scale - Camera.Position.Y);
 
             var oldWorld = ScreenToWorld(mousePos, oldScale);
@@ -246,8 +247,11 @@ namespace OpenDraft
 
         public Point GetScreenMousePosition() => _mousePosition;
 
-        public Point GetWorldMousePosition() =>
-            new Point(_mousePosition.X / Camera.Scale + Camera.Position.X,
-                      (Bounds.Height - _mousePosition.Y) / Camera.Scale + Camera.Position.Y);
+        public ODVec2 GetWorldMousePosition()
+        {
+            double x = (_mousePosition.X / Camera.Scale + Camera.Position.X);
+            double y = ((Bounds.Height - _mousePosition.Y) / Camera.Scale) + Camera.Position.Y;
+            return new ODVec2(x,y);
+        }
     }
 }

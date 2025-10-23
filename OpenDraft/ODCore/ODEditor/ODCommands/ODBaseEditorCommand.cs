@@ -1,5 +1,6 @@
 ﻿// ODBaseEditorCommand.cs
 using OpenDraft.ODCore.ODGeometry;
+using OpenDraft.ODCore.ODMath;
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -30,7 +31,7 @@ namespace OpenDraft.ODCore.ODEditor.ODCommands
         public abstract Task ExecuteAsync(IODEditorGateway editor);
 
         // Helper method for common validation
-        protected void ValidatePoint(ODPoint point, string paramName)
+        protected void ValidatePoint(ODVec2 point, string paramName)
         {
             if (point == null)
                 throw new ArgumentNullException(paramName);

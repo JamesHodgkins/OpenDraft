@@ -1,5 +1,6 @@
 ﻿using OpenDraft.ODCore.ODGeometry;
 using System.Collections.Generic;
+using OpenDraft.ODCore.ODMath;
 
 namespace OpenDraft.ODCore.ODGeometry
 {
@@ -8,7 +9,7 @@ namespace OpenDraft.ODCore.ODGeometry
         public string Name { get; set; }
         public List<ODElement> Elements { get; set; } = new List<ODElement>();
 
-        public ODSymbol(string name, ODPoint basePoint)
+        public ODSymbol(string name, ODVec2 basePoint)
         {
             Name = name;
         }

@@ -3,6 +3,7 @@ using Avalonia.Media;
 using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODGeometry;
 using OpenDraft.ODCore.ODSystem;
+using OpenDraft.ODCore.ODMath;
 using System;
 
 namespace OpenDraft.ODCore.ODEditor.ODDynamics
@@ -26,7 +27,7 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
         }
 
         public override void Draw(DrawingContext context, ODDrawConnector connector,
-            float scale, ODPoint vpWorldSize, ODPoint worldMousePosition)
+            double scale, ODVec2 vpWorldSize, ODVec2 worldMousePosition)
         {
             if (!IsVisible)
                 return;
@@ -34,8 +35,8 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
             ODLayer? layer = connector.GetLayerByID(LayerId);
 
             // Get layer
-            ODPoint Center = worldMousePosition;
-            float cSize = Size / scale; // Centre square size
+            ODVec2 Center = worldMousePosition;
+            double cSize = Size / scale; // Centre square size
 
             // Get styles from registry
             Color xColour = Avalonia.Media.Color.Parse(ODSystem.ODSystem.GetRegistryValueAsString("style/crosshair_x_colour") ?? "Red");
