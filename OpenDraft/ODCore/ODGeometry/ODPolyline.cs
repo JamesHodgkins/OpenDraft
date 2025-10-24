@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using OpenDraft.ODCore.ODMath;
 using System.Linq;
+using OpenDraft.ODCore.ODEditor;
 
 namespace OpenDraft.ODCore.ODGeometry
 {
@@ -92,17 +93,22 @@ namespace OpenDraft.ODCore.ODGeometry
                 Points.RemoveAt(index);
         }
 
-        public ODRectangle GetBoundingBox()
+        public override ODBoundingBox GetBoundingBox()
         {
             if (Points == null || Points.Count == 0)
-                return new ODRectangle(new ODVec2(0, 0), new ODVec2(0, 0));
+                return new ODBoundingBox(new ODVec2(0, 0), new ODVec2(0, 0));
 
             double minX = Points.Min(p => p.X);
             double maxX = Points.Max(p => p.X);
             double minY = Points.Min(p => p.Y);
             double maxY = Points.Max(p => p.Y);
 
-            return new ODRectangle(new ODVec2(minX, minY), new ODVec2(maxX, maxY));
+            return new ODBoundingBox(new ODVec2(minX, minY), new ODVec2(maxX, maxY));
+        }
+
+        public override bool HitTest(ODVec2 point)
+        {
+            return false;
         }
     }
 }

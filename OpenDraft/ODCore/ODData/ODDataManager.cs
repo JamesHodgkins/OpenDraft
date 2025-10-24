@@ -1,11 +1,6 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using OpenDraft.ODCore.ODGeometry;
+﻿using OpenDraft.ODCore.ODGeometry;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OpenDraft.ODCore.ODData
 {
@@ -25,6 +20,9 @@ namespace OpenDraft.ODCore.ODData
         {
             if (element == null)
                 throw new ArgumentNullException(nameof(element));
+
+            if (Elements.Contains(element))
+                return;
 
             element.LayerId = LayerManager.GetActiveLayer();
             Elements.Add(element);

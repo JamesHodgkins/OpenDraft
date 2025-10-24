@@ -57,15 +57,15 @@ namespace OpenDraft.ViewModels
 
             // Test Symbols
             ODSymbolDefinition symDef = new ODSymbolDefinition("MySymbol");
-            ODLine L1 = new ODLine(new ODVec2(0, 0), new ODVec2(1, 1));
-            ODLine L2 = new ODLine(new ODVec2(0, 1), new ODVec2(1, 0));
+            ODLine L1 = new ODLine(new ODVec2(0, 0), new ODVec2(50, 50));
+            ODLine L2 = new ODLine(new ODVec2(0, 50), new ODVec2(50, 0));
 
             symDef.Elements.Add(L1);
             symDef.Elements.Add(L2);
             SymbolTable.AddSymbol(symDef);
 
-            ODSymbol S1 = new ODSymbol("MySymbol", new ODVec2(10, -10));
-            ODSymbol S2 = new ODSymbol("MySymbol", new ODVec2(25, -10));
+            ODSymbol S1 = new ODSymbol("MySymbol", new ODVec2(100, -10));
+            ODSymbol S2 = new ODSymbol("MySymbol", new ODVec2(20, -10));
 
             DataManager.AddElement(S1);
             DataManager.AddElement(S2);

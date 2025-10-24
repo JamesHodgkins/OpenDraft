@@ -2,6 +2,7 @@
 using Avalonia.Media;
 using Microsoft.Win32;
 using OpenDraft.ODCore.ODData;
+using OpenDraft.ODCore.ODEditor;
 using OpenDraft.ODCore.ODMath;
 using System;
 
@@ -35,6 +36,7 @@ namespace OpenDraft.ODCore.ODGeometry
             ODColour effectiveColour = (Colour != null) ? Colour : layer.Color;
             double effectiveLineWeight = LineWeight ?? layer.LineWeight;
 
+
             // Create pen
             var pen = new Pen(
                 new SolidColorBrush(effectiveColour.ToAvaloniaColor()), // Brush only
@@ -45,6 +47,33 @@ namespace OpenDraft.ODCore.ODGeometry
             context.DrawLine(pen,
                     new Point(StartPoint.X, StartPoint.Y),
                     new Point(EndPoint.X, EndPoint.Y));
+
+
+            var bbpen = new Pen(new SolidColorBrush(Colors.Yellow, 1));
+            ODBoundingBox bb = GetBoundingBox();
+            var rect = new Rect(bb.GetOrigin.X,
+                                bb.GetOrigin.Y,
+                                bb.Width,
+                                bb.Height);
+
+            context.DrawRectangle(bbpen, rect);
+        }
+
+
+        public override ODBoundingBox GetBoundingBox()
+        {
+            double minX = Math.Min(StartPoint.X, EndPoint.X);
+            double minY = Math.Min(StartPoint.Y, EndPoint.Y);
+            double maxX = Math.Max(StartPoint.X, EndPoint.X);
+            double maxY = Math.Max(StartPoint.Y, EndPoint.Y);
+
+            return ODBoundingBox.CreateFromMinMax(new ODVec2(minX, minY), new ODVec2(maxX, maxY));
+        }
+
+
+        public override bool HitTest(ODVec2 point)
+        {
+            return false;
         }
 
     }

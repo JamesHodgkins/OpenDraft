@@ -18,6 +18,8 @@ namespace OpenDraft.ODCore.ODEditor
         private readonly ODDataManager _dataManager;
         private readonly ODCommandRegistry _commandRegistry;
         private readonly IODEditorInputService _inputService;
+        private readonly ODSelectionManager _selectionManager;
+
 
         public ObservableCollection<ODDynamicElement> DynamicElements { get; } = new();
 

@@ -1,7 +1,10 @@
 ﻿using Avalonia;
 using Avalonia.Media;
 using OpenDraft.ODCore.ODData;
+using OpenDraft.ODCore.ODEditor;
 using OpenDraft.ODCore.ODMath;
+using System;
+using System.Net;
 
 namespace OpenDraft.ODCore.ODGeometry
 {
@@ -39,6 +42,33 @@ namespace OpenDraft.ODCore.ODGeometry
             );
 
             context.DrawEllipse(null, pen, new Point(Center.X, Center.Y), Radius, Radius);
+
+
+
+            var bbpen = new Pen(new SolidColorBrush(Colors.Yellow, 1));
+            ODBoundingBox bb = GetBoundingBox();
+            var rect = new Rect(bb.GetOrigin.X,
+                                bb.GetOrigin.Y,
+                                bb.Width,
+                                bb.Height);
+
+            context.DrawRectangle(bbpen, rect);
+        }
+
+
+        public override ODBoundingBox GetBoundingBox()
+        {
+            double minX = Center.X - Radius;
+            double minY = Center.Y - Radius;
+            double maxX = Center.X + Radius;
+            double maxY = Center.Y + Radius;
+
+            return ODBoundingBox.CreateFromMinMax(new ODVec2(minX, minY), new ODVec2(maxX, maxY));
+        }
+
+        public override bool HitTest(ODVec2 point)
+        {
+            return false;
         }
     }
 }

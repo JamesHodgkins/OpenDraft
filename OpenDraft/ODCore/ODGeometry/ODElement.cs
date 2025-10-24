@@ -1,6 +1,8 @@
 ﻿using Avalonia;
 using Avalonia.Media;
 using OpenDraft.ODCore.ODData;
+using OpenDraft.ODCore.ODEditor;
+using OpenDraft.ODCore.ODMath;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace OpenDraft.ODCore.ODGeometry
 {
-    public class ODElement
+    public abstract class ODElement
     {
         public Guid Id { get; set; }
         public ushort LayerId { get; set; } = 0; // Default layer ID
@@ -22,10 +24,9 @@ namespace OpenDraft.ODCore.ODGeometry
             Id = Guid.NewGuid();
         }
 
-        public virtual void Draw(DrawingContext context, ODDrawConnector connector)
-        {
-            // Base draw method, to be overridden by derived classes
-        }
+        public abstract void Draw(DrawingContext context, ODDrawConnector connector);
+        public abstract ODBoundingBox GetBoundingBox();
+        public abstract bool HitTest(ODVec2 point);
 
     }
 }

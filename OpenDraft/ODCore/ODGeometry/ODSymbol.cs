@@ -1,6 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.Media;
 using OpenDraft.ODCore.ODData;
+using OpenDraft.ODCore.ODEditor;
 using OpenDraft.ODCore.ODMath;
 using System;
 
@@ -70,8 +71,8 @@ namespace OpenDraft.ODCore.ODGeometry
 
 
             ODSymbolDefinition? symbolDefition = connector.GetSymbolDefinition(SymbolName);
-            
-            if(symbolDefition == null )
+
+            if (symbolDefition == null)
                 return;
 
             using (context.PushTransform(CreateSymbolMatrix()))
@@ -81,7 +82,18 @@ namespace OpenDraft.ODCore.ODGeometry
                     element.Draw(context, connector);
                 }
             }
-
         }
+
+
+        public override ODBoundingBox GetBoundingBox()
+        {
+            return new ODBoundingBox(new ODVec2(0, 0), new ODVec2(0, 0));
+        }
+
+        public override bool HitTest(ODVec2 point)
+        {
+            return false;
+        }
+
     }
 }

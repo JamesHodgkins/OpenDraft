@@ -1,4 +1,8 @@
-﻿using System;
+﻿using Avalonia.Media;
+using OpenDraft.ODCore.ODData;
+using OpenDraft.ODCore.ODEditor;
+using OpenDraft.ODCore.ODMath;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,6 +24,21 @@ namespace OpenDraft.ODCore.ODGeometry
         {
             X = x;
             Y = y;
+        }
+
+        public override void Draw(DrawingContext context, ODDrawConnector connector)
+        {
+            // To Do
+        }
+
+        public override ODBoundingBox GetBoundingBox()
+        {
+            return new ODBoundingBox(new ODVec2(0, 0), new ODVec2(0, 0));
+        }
+
+        public override bool HitTest(ODVec2 point)
+        {
+            return false;
         }
     }
 }

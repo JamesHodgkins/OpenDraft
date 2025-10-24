@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using OpenDraft.ODCore.ODMath;
 using System.Linq;
 using System.Xml.Linq;
+using OpenDraft.ODCore.ODEditor;
 
 namespace OpenDraft.ODCore.ODGeometry
 {
@@ -120,9 +121,20 @@ namespace OpenDraft.ODCore.ODGeometry
         }
 
         // Get bounding box (for compatibility with other geometry)
-        public ODRectangle GetBoundingBox()
+        public override ODBoundingBox GetBoundingBox()
         {
-            return this; // A rectangle is its own bounding box
+            // Calculate the actual min/max points
+            double minX = Math.Min(TopLeft.X, BottomRight.X);
+            double minY = Math.Min(TopLeft.Y, BottomRight.Y);
+            double maxX = Math.Max(TopLeft.X, BottomRight.X);
+            double maxY = Math.Max(TopLeft.Y, BottomRight.Y);
+
+            return ODBoundingBox.CreateFromMinMax(new ODVec2(minX, minY), new ODVec2(maxX, maxY));
+        }
+
+        public override bool HitTest(ODVec2 point)
+        {
+            return false;
         }
 
         // SVG export support
