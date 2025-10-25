@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace OpenDraft.ODCore.ODGeometry
 {
-    internal class GeometryTools
+    internal class ODGeometryTools
     {
         public static bool IsPointOnLine(ODVec2 point, ODVec2 lineStart, ODVec2 lineEnd, double tolerance)
         {

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("OpenDraft")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1c8882f7a4efc2216830cc27fce998540d8d10e4")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+416c705f3d27bb4fffa6e8e4816c4c024284ba34")]
 [assembly: System.Reflection.AssemblyProductAttribute("OpenDraft")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OpenDraft")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

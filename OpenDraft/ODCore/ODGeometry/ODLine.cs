@@ -86,7 +86,7 @@ namespace OpenDraft.ODCore.ODGeometry
             if (!isPointInsideBoundingBox(point))
                 return false;
 
-            if (GeometryTools.IsPointOnLine(point, StartPoint, EndPoint, tolerance))
+            if (ODGeometryTools.IsPointOnLine(point, StartPoint, EndPoint, tolerance))
                 return true;
 
             return false;

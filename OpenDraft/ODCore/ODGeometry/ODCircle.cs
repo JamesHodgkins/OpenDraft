@@ -77,7 +77,7 @@ namespace OpenDraft.ODCore.ODGeometry
             if (!isPointInsideBoundingBox(point))
                 return false;
 
-            if (GeometryTools.IsPointOnCircle(point, Center, Radius, tolerance))
+            if (ODGeometryTools.IsPointOnCircle(point, Center, Radius, tolerance))
                 return true;
 
             return false;
