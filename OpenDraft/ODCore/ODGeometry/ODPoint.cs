@@ -31,12 +31,17 @@ namespace OpenDraft.ODCore.ODGeometry
             // To Do
         }
 
+        public override void DrawHighlight(DrawingContext context, ODDrawConnector connector, ODColour hColour, int hIntensity)
+        {
+
+        }
+
         public override ODBoundingBox GetBoundingBox()
         {
             return new ODBoundingBox(new ODVec2(0, 0), new ODVec2(0, 0));
         }
 
-        public override bool HitTest(ODVec2 point)
+        public override bool HitTest(ODVec2 point, double tolerance)
         {
             return false;
         }

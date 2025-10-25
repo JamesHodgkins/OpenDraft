@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace OpenDraft.ODCore.ODMath
 {
+
     public class ODVec2
-        {
+    {
         public double X { get; set; }
         public double Y { get; set; }
         public ODVec2(double x, double y)

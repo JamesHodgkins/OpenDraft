@@ -77,6 +77,11 @@ namespace OpenDraft.ODCore.ODGeometry
             context.DrawRectangle(pen, rect);
         }
 
+        public override void DrawHighlight(DrawingContext context, ODDrawConnector connector, ODColour hColour, int hIntensity)
+        {
+
+        }
+
         // Properties for convenience
         public double X => TopLeft.X;
         public double Y => TopLeft.Y;
@@ -132,7 +137,7 @@ namespace OpenDraft.ODCore.ODGeometry
             return ODBoundingBox.CreateFromMinMax(new ODVec2(minX, minY), new ODVec2(maxX, maxY));
         }
 
-        public override bool HitTest(ODVec2 point)
+        public override bool HitTest(ODVec2 point, double tolerance)
         {
             return false;
         }

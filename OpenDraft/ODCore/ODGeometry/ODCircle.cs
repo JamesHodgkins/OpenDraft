@@ -43,16 +43,22 @@ namespace OpenDraft.ODCore.ODGeometry
 
             context.DrawEllipse(null, pen, new Point(Center.X, Center.Y), Radius, Radius);
 
+        }
 
 
-            var bbpen = new Pen(new SolidColorBrush(Colors.Yellow, 1));
-            ODBoundingBox bb = GetBoundingBox();
-            var rect = new Rect(bb.GetOrigin.X,
-                                bb.GetOrigin.Y,
-                                bb.Width,
-                                bb.Height);
+        public override void DrawHighlight(DrawingContext context, ODDrawConnector connector, ODColour hColour, int hIntensity)
+        {
+            ODLayer? layer = connector.GetLayerByID(LayerId);
 
-            context.DrawRectangle(bbpen, rect);
+            if (layer != null && !layer.IsVisible)
+                return;
+
+            // Create pen
+            double effectiveLineWeight = LineWeight ?? layer!.LineWeight;
+
+            var pen = new Pen(new SolidColorBrush(Color.FromArgb((byte)hIntensity, hColour.R, hColour.G, hColour.B)), effectiveLineWeight + 1);
+
+            context.DrawEllipse(null, pen, new Point(Center.X, Center.Y), Radius, Radius);
         }
 
 
@@ -66,8 +72,14 @@ namespace OpenDraft.ODCore.ODGeometry
             return ODBoundingBox.CreateFromMinMax(new ODVec2(minX, minY), new ODVec2(maxX, maxY));
         }
 
-        public override bool HitTest(ODVec2 point)
+        public override bool HitTest(ODVec2 point, double tolerance)
         {
+            if (!isPointInsideBoundingBox(point))
+                return false;
+
+            if (GeometryTools.IsPointOnCircle(point, Center, Radius, tolerance))
+                return true;
+
             return false;
         }
     }

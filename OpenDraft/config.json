@@ -9,9 +9,11 @@
     { "highlight_colour": "#FFFF00" },
     { "draw_tool_colour": "#AAAAAA" },
     { "draw_tool_line_weight": "1" },
-    { "draw_tool_line_type": "Dashed" }
+    { "draw_tool_line_type": "Dashed" },
+    { "highlight_colour": "#00FFFF" },
+    { "highlight_intensity": "120"}
   ],
   "system": [
-    { "placeholder": "value" }
+    { "select_tolerance": "10" }
   ]
 }

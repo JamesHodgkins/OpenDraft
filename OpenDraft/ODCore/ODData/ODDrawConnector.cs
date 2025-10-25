@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Avalonia.Media;
 using OpenDraft.ODCore.ODEditor;
 using OpenDraft.ODCore.ODGeometry;
+using OpenDraft.ODCore.ODMath;
 
 namespace OpenDraft.ODCore.ODData
 {
@@ -39,6 +40,16 @@ namespace OpenDraft.ODCore.ODData
         public ODSymbolDefinition? GetSymbolDefinition(string symbolName)
         {
             return SymbolTable.GetSymbolDefinition(symbolName);
+        }
+
+        public void UpdateMousePosition(ODVec2 point, double tolerance)
+        {
+            Editor!.UpdateMousePosition(point, tolerance);
+        }
+
+        public List<ODElement> GetHighlighted()
+        {
+            return Editor!.GetHighlightList();
         }
     }
 }

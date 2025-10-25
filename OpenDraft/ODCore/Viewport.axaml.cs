@@ -8,7 +8,10 @@ using OpenDraft.ODCore.ODEditor;
 using OpenDraft.ODCore.ODEditor.ODDynamics;
 using OpenDraft.ODCore.ODGeometry;
 using OpenDraft.ODCore.ODMath;
+using OpenDraft.ODCore.ODSystem;
+using OpenDraft.ViewModels;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 
@@ -136,6 +139,18 @@ namespace OpenDraft
                             ODLayer? layer = DrawConnector.GetLayerByID(element.LayerId);
                             if (layer != null) element.Draw(context, DrawConnector, Camera.Scale, vpWorldSize, worldMousePoint);
                         }
+
+                    List<ODElement> highlightList = DrawConnector.GetHighlighted();
+
+                    if (highlightList != null)
+                    {
+                        string highlightColourHex = ODSystem.GetRegistryValueAsString("style/highlight_colour") ?? "#FFFFFF";
+                        ODColour hColour = new ODColour(highlightColourHex);
+                        int hIntensity = ODSystem.GetRegistryValueAsInt("style/highlight_intensity") ?? 0;
+                        
+                        foreach (ODElement element in highlightList)
+                            element.DrawHighlight(context, DrawConnector, hColour, hIntensity);
+                    }
                 }
             };
 
@@ -203,6 +218,8 @@ namespace OpenDraft
         {
             _mousePosition = e.GetPosition(this);
             DynamicCanvas?.InvalidateVisual();
+            DrawConnector.UpdateMousePosition(GetWorldMousePosition(), Camera.Scale);
+            
 
             if (!isPanning) return;
 
@@ -212,6 +229,7 @@ namespace OpenDraft
             _lastPointerDragPosition = current;
 
             StaticCanvas?.InvalidateVisual();
+
         }
 
         private void OnPointerEntered(object? sender, PointerEventArgs e)

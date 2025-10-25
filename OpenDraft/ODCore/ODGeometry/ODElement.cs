@@ -25,8 +25,17 @@ namespace OpenDraft.ODCore.ODGeometry
         }
 
         public abstract void Draw(DrawingContext context, ODDrawConnector connector);
+        public abstract void DrawHighlight(DrawingContext context, ODDrawConnector connector, ODColour hColour, int hIntensity);
         public abstract ODBoundingBox GetBoundingBox();
-        public abstract bool HitTest(ODVec2 point);
+        public abstract bool HitTest(ODVec2 point, double tolerance);
+
+        public bool isPointInsideBoundingBox(ODVec2 point)
+        {
+            ODBoundingBox bb = GetBoundingBox();
+            if (point.X >= bb.Left && point.X <= bb.Right && point.Y >= bb.Bottom && point.Y <= bb.Top)
+                return true;
+            return false;
+        }
 
     }
 }

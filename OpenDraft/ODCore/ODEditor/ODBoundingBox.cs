@@ -22,6 +22,11 @@ public class ODBoundingBox
     public ODVec2 TopLeft => new ODVec2(_origin.X, _origin.Y + _size.Y);
     public ODVec2 TopRight => new ODVec2(_origin.X + _size.X, _origin.Y + _size.Y);
 
+    public double Left => _origin.X;
+    public double Right => _origin.X + _size.X;
+    public double Bottom => _origin.Y;
+    public double Top => _origin.Y + _size.Y;
+
     // Helper method to create from min/max points
     public static ODBoundingBox CreateFromMinMax(ODVec2 min, ODVec2 max)
     {

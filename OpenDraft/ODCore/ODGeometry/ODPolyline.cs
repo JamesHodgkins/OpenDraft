@@ -53,7 +53,27 @@ namespace OpenDraft.ODCore.ODGeometry
             }
         }
 
-        // Optional: Add convenience properties and methods
+        public override void DrawHighlight(DrawingContext context, ODDrawConnector connector, ODColour hColour, int hIntensity)
+        {
+            ODLayer? layer = connector.GetLayerByID(LayerId);
+
+            if (layer != null && !layer.IsVisible)
+                return;
+
+            // Create pen
+            double effectiveLineWeight = LineWeight ?? layer!.LineWeight;
+
+            var pen = new Pen(new SolidColorBrush(Color.FromArgb((byte)hIntensity, hColour.R, hColour.G, hColour.B)), effectiveLineWeight + 1);
+
+            // Draw each segment individually
+            for (int i = 1; i < Points.Count; i++)
+            {
+                context.DrawLine(pen,
+                    new Point(Points[i - 1].X, Points[i - 1].Y),
+                    new Point(Points[i].X, Points[i].Y));
+            }
+        }
+
         public bool IsClosed => Points.Count > 2 && Points[0].Equals(Points[Points.Count - 1]);
 
         public double Length
@@ -106,7 +126,7 @@ namespace OpenDraft.ODCore.ODGeometry
             return new ODBoundingBox(new ODVec2(minX, minY), new ODVec2(maxX, maxY));
         }
 
-        public override bool HitTest(ODVec2 point)
+        public override bool HitTest(ODVec2 point, double tolerance)
         {
             return false;
         }

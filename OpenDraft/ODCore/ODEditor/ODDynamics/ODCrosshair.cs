@@ -13,14 +13,6 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
         // Visibility
         public bool IsVisible { get; set; } = true;
 
-        // Style properties
-        private int _size = 10;
-        public int Size
-        {
-            get => _size;
-            set => _size = value;
-        }
-
         public ODCrosshairElement()
         {
 
@@ -36,7 +28,7 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
 
             // Get layer
             ODVec2 Center = worldMousePosition;
-            double cSize = Size / scale; // Centre square size
+            double cSize = (ODSystem.ODSystem.GetRegistryValueAsDecimal("system/select_tolerance") ?? 1) / scale; // Centre square size
 
             // Get styles from registry
             Color xColour = Avalonia.Media.Color.Parse(ODSystem.ODSystem.GetRegistryValueAsString("style/crosshair_x_colour") ?? "Red");

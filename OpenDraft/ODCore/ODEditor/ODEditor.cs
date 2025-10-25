@@ -4,11 +4,11 @@ using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODEditor.ODCommands;
 using OpenDraft.ODCore.ODEditor.ODDynamics;
 using OpenDraft.ODCore.ODGeometry;
+using OpenDraft.ODCore.ODMath;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace OpenDraft.ODCore.ODEditor
@@ -19,6 +19,9 @@ namespace OpenDraft.ODCore.ODEditor
         private readonly ODCommandRegistry _commandRegistry;
         private readonly IODEditorInputService _inputService;
         private readonly ODSelectionManager _selectionManager;
+        private List<ODElement> _highlightList = new();
+
+        private ODVec2 mousePosition = new ODVec2(0,0);
 
 
         public ObservableCollection<ODDynamicElement> DynamicElements { get; } = new();
@@ -59,6 +62,37 @@ namespace OpenDraft.ODCore.ODEditor
         private void OnViewportExited()
         {
             HideCrosshair();
+        }
+
+        public void UpdateMousePosition(ODVec2 point, double viewportScale)
+        {
+            mousePosition = point;
+
+            double tolerance = (ODSystem.ODSystem.GetRegistryValueAsInt("system/select_tolerance") ?? 10.0) / viewportScale;
+            
+            foreach (ODElement element in _dataManager.Elements)
+            {
+                if (element.HitTest(point, tolerance))
+                {
+                    Debug.WriteLine("Mouse inside element: " + element.Id.ToString());
+                    if (!_highlightList.Contains(element))
+                        _highlightList.Add(element);
+                }
+                else if(_highlightList.Contains(element))
+                {
+                    _highlightList.Remove(element);
+                }
+            }
+        }
+
+        public ODVec2 GetMousePosition()
+        {
+            return mousePosition;
+        }
+
+        public List<ODElement> GetHighlightList()
+        {
+            return _highlightList;
         }
 
         /* DYNAMIC ELEMENTS MANAGEMENT */

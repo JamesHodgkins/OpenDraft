@@ -5,6 +5,7 @@ using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODEditor;
 using OpenDraft.ODCore.ODMath;
 using System;
+using System.Diagnostics;
 
 namespace OpenDraft.ODCore.ODGeometry
 {
@@ -48,15 +49,24 @@ namespace OpenDraft.ODCore.ODGeometry
                     new Point(StartPoint.X, StartPoint.Y),
                     new Point(EndPoint.X, EndPoint.Y));
 
+        }
 
-            var bbpen = new Pen(new SolidColorBrush(Colors.Yellow, 1));
-            ODBoundingBox bb = GetBoundingBox();
-            var rect = new Rect(bb.GetOrigin.X,
-                                bb.GetOrigin.Y,
-                                bb.Width,
-                                bb.Height);
 
-            context.DrawRectangle(bbpen, rect);
+        public override void DrawHighlight(DrawingContext context, ODDrawConnector connector, ODColour hColour, int hIntensity)
+        {
+            ODLayer? layer = connector.GetLayerByID(LayerId);
+
+            if (layer != null && !layer.IsVisible)
+                return;
+
+            // Create pen
+            double effectiveLineWeight = LineWeight ?? layer!.LineWeight;
+
+            var pen = new Pen(new SolidColorBrush(Color.FromArgb((byte)hIntensity, hColour.R, hColour.G, hColour.B)), effectiveLineWeight+1);            
+
+            context.DrawLine(pen,
+                    new Point(StartPoint.X, StartPoint.Y),
+                    new Point(EndPoint.X, EndPoint.Y));
         }
 
 
@@ -71,8 +81,14 @@ namespace OpenDraft.ODCore.ODGeometry
         }
 
 
-        public override bool HitTest(ODVec2 point)
+        public override bool HitTest(ODVec2 point, double tolerance)
         {
+            if (!isPointInsideBoundingBox(point))
+                return false;
+
+            if (GeometryTools.IsPointOnLine(point, StartPoint, EndPoint, tolerance))
+                return true;
+
             return false;
         }
 
