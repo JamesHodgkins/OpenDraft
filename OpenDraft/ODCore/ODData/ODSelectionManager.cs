@@ -10,57 +10,38 @@ namespace OpenDraft.ODCore.ODData
 {
     public class ODSelectionSet
     {
-        public IReadOnlyCollection<ODElement> SelectedElements { get; }
+        public List<ODElement> SelectedElements { get; }
 
         public ODSelectionSet()
         {
-            SelectedElements = new List<ODElement>().AsReadOnly();
+            SelectedElements = new List<ODElement>();
         }
 
-        public ODSelectionSet(IEnumerable<ODElement> elements)
+        public ODSelectionSet(List<ODElement> elements)
         {
-            SelectedElements = elements?.ToList().AsReadOnly() ?? new List<ODElement>().AsReadOnly();
+            SelectedElements = elements;
         }
 
         public bool IsEmpty => SelectedElements.Count == 0;
         public int Count => SelectedElements.Count;
 
-        // Helper methods for common operations
-        public ODSelectionSet AddElement(ODElement element)
+        
+        public void AddElement(ODElement element)
         {
-            if (element == null) return this;
-
-            var newElements = SelectedElements.ToList();
-            if (!newElements.Contains(element))
-            {
-                newElements.Add(element);
-            }
-            return new ODSelectionSet(newElements);
+            if (SelectedElements.Contains(element)) return;
+            SelectedElements.Add(element);
         }
 
-        public ODSelectionSet AddElements(IEnumerable<ODElement> elements)
+        public void AddElements(List<ODElement> elements)
         {
-            var elementList = elements?.ToList() ?? new List<ODElement>();
-            if (elementList.Count == 0) return this;
-
-            var newElements = SelectedElements.ToList();
-            foreach (var element in elementList)
-            {
-                if (element != null && !newElements.Contains(element))
-                {
-                    newElements.Add(element);
-                }
-            }
-            return new ODSelectionSet(newElements);
+            foreach (var element in elements)
+                AddElement(element);
         }
 
-        public ODSelectionSet RemoveElement(ODElement element)
+        public void RemoveElement(ODElement element)
         {
-            if (element == null) return this;
-
-            var newElements = SelectedElements.ToList();
-            newElements.Remove(element);
-            return new ODSelectionSet(newElements);
+            if (!SelectedElements.Contains(element)) return;
+            SelectedElements.Remove(element);
         }
 
         public ODSelectionSet Clear()
@@ -78,18 +59,19 @@ namespace OpenDraft.ODCore.ODData
 
 
     public class ODSelectionManager
-    {
-        private readonly ODDataManager _dataManager;        
+    {    
         private ODSelectionSet _activeSelection;
         
-        public ODSelectionManager(ODDataManager dataManager)
+        public ODSelectionManager()
         {
-            _dataManager = dataManager;
             _activeSelection = new ODSelectionSet();
         }
 
         public ODSelectionSet GetActiveSelectionSet()
         {
+            if (_activeSelection == null)
+                _activeSelection = new();
+
             return _activeSelection;
         }
 

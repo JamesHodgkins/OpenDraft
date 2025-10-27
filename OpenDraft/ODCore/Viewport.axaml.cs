@@ -140,16 +140,25 @@ namespace OpenDraft
                             if (layer != null) element.Draw(context, DrawConnector, Camera.Scale, vpWorldSize, worldMousePoint);
                         }
 
-                    List<ODElement> highlightList = DrawConnector.GetHighlighted();
+                    ODElement? highlightedElement = DrawConnector.GetHighlighted();
+                    string highlightColourHex = ODSystem.GetRegistryValueAsString("style/highlight_colour") ?? "#FFFFFF";
+                    int hIntensity = ODSystem.GetRegistryValueAsInt("style/highlight_intensity") ?? 0;
+                    ODColour hColour = new ODColour(highlightColourHex);
 
-                    if (highlightList != null)
+                    if (highlightedElement != null)
+                        highlightedElement.DrawHighlight(context, DrawConnector, hColour, hIntensity);
+                    
+                    ODSelectionSet? selectedElements = DrawConnector.GetActiveSelection();
+                    if (selectedElements == null)
+                        return;
+
+                    
+                    int num = selectedElements.Count;
+                    Debug.WriteLine("No. of selected elements: " + num);
+
+                    foreach (ODElement element in selectedElements.SelectedElements)
                     {
-                        string highlightColourHex = ODSystem.GetRegistryValueAsString("style/highlight_colour") ?? "#FFFFFF";
-                        ODColour hColour = new ODColour(highlightColourHex);
-                        int hIntensity = ODSystem.GetRegistryValueAsInt("style/highlight_intensity") ?? 0;
-                        
-                        foreach (ODElement element in highlightList)
-                            element.DrawHighlight(context, DrawConnector, hColour, hIntensity);
+                        element.DrawHighlight(context, DrawConnector, hColour, 200);
                     }
                 }
             };
@@ -205,6 +214,11 @@ namespace OpenDraft
         {
             if (e.InitialPressMouseButton == MouseButton.Left)
             {
+                // Update Editor
+                bool shiftDown = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+                DrawConnector.LeftMouseClicked(shiftDown);
+
+                // Trigger input
                 var ODVec2 = new ODVec2(GetWorldMousePosition().X, GetWorldMousePosition().Y);
                 InputService?.RaisePointProvided(ODVec2);
                 e.Handled = true;

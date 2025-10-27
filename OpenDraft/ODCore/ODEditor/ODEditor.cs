@@ -19,7 +19,7 @@ namespace OpenDraft.ODCore.ODEditor
         private readonly ODCommandRegistry _commandRegistry;
         private readonly IODEditorInputService _inputService;
         private readonly ODSelectionManager _selectionManager;
-        private List<ODElement> _highlightList = new();
+        private ODElement? _highlightedElement = null;
 
         private ODVec2 mousePosition = new ODVec2(0,0);
 
@@ -41,6 +41,7 @@ namespace OpenDraft.ODCore.ODEditor
             _inputService = inputService;
             _commandRegistry = new ODCommandRegistry();
             _commandRegistry.RegisterAssembly(typeof(ODEditor).Assembly);
+            _selectionManager = new ODSelectionManager();
 
             // Subscribe to input events
             _inputService.KeyPressed += OnKeyPressed;
@@ -68,20 +69,31 @@ namespace OpenDraft.ODCore.ODEditor
         {
             mousePosition = point;
 
+            _highlightedElement = null;
             double tolerance = (ODSystem.ODSystem.GetRegistryValueAsInt("system/select_tolerance") ?? 10.0) / viewportScale;
             
             foreach (ODElement element in _dataManager.Elements)
             {
                 if (element.HitTest(point, tolerance))
+                    _highlightedElement = element;       
+            }
+        }
+
+        public void LeftMouseClicked(bool shiftDown)
+        {
+            if (_highlightedElement != null)
+            {
+                ODSelectionSet? sSet = _selectionManager.GetActiveSelectionSet();
+
+                if (!shiftDown)
                 {
-                    Debug.WriteLine("Mouse inside element: " + element.Id.ToString());
-                    if (!_highlightList.Contains(element))
-                        _highlightList.Add(element);
+                    sSet.AddElement(_highlightedElement);
                 }
-                else if(_highlightList.Contains(element))
+                else
                 {
-                    _highlightList.Remove(element);
+                    sSet.RemoveElement(_highlightedElement);
                 }
+                _selectionManager.UpdateSelectionSet(sSet);
             }
         }
 
@@ -90,9 +102,14 @@ namespace OpenDraft.ODCore.ODEditor
             return mousePosition;
         }
 
-        public List<ODElement> GetHighlightList()
+        public ODElement? GetHighlighted()
         {
-            return _highlightList;
+            return _highlightedElement;
+        }
+
+        public ODSelectionSet? GetActiveSelection()
+        {
+            return _selectionManager.GetActiveSelectionSet();
         }
 
         /* DYNAMIC ELEMENTS MANAGEMENT */

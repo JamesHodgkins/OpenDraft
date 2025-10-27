@@ -47,9 +47,19 @@ namespace OpenDraft.ODCore.ODData
             Editor!.UpdateMousePosition(point, tolerance);
         }
 
-        public List<ODElement> GetHighlighted()
+        public void LeftMouseClicked(bool shiftDown)
         {
-            return Editor!.GetHighlightList();
+            Editor?.LeftMouseClicked(shiftDown);
+        }
+
+        public ODElement? GetHighlighted()
+        {
+            return Editor?.GetHighlighted();
+        }
+
+        public ODSelectionSet? GetActiveSelection()
+        {
+            return Editor?.GetActiveSelection();
         }
     }
 }
