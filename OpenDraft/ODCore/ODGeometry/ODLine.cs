@@ -22,7 +22,7 @@ namespace OpenDraft.ODCore.ODGeometry
         }
 
 
-        public override void Draw(DrawingContext context, ODDrawConnector connector)
+        public override void Draw(DrawingContext context, ODDataService connector)
         {
             ODLayer? layer = connector.GetLayerByID(LayerId);
 
@@ -52,7 +52,7 @@ namespace OpenDraft.ODCore.ODGeometry
         }
 
 
-        public override void DrawHighlight(DrawingContext context, ODDrawConnector connector, ODColour hColour, int hIntensity)
+        public override void DrawHighlight(DrawingContext context, ODDataService connector, ODColour hColour, int hIntensity)
         {
             ODLayer? layer = connector.GetLayerByID(LayerId);
 

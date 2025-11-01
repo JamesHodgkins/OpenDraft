@@ -16,13 +16,15 @@ namespace OpenDraft.ViewModels
         public ODDataManager DataManagerRoot { get; }
         public IODEditorInputService InputService { get; }
         public ODEditor EditorRoot { get; private set; }
-        public ODDrawConnector DrawConnectorRoot { get; }
+        public ODDataService DataServiceRoot { get; }
+        public ODEditorHandler EditorHandlerRoot { get; }
 
         public ObservableCollection<ODElement> GeometryElements => DataManager.Elements;
         public ODDataManager DataManager => DataManagerRoot;
         public ODEditor Editor => EditorRoot;
         public ODSymbolTable SymbolTable { get; private set; }
-        public ODDrawConnector DrawConnector => DrawConnectorRoot;
+        public ODDataService DataService => DataServiceRoot;
+        public ODEditorHandler EditorHandler => EditorHandlerRoot;
 
         public MainWindowViewModel()
         {
@@ -33,7 +35,8 @@ namespace OpenDraft.ViewModels
             InputService = new ODEditorInputService();
             EditorRoot = new ODEditor(DataManager, InputService);
             SymbolTable = new ODSymbolTable();
-            DrawConnectorRoot = new ODDrawConnector(DataManager, Editor, SymbolTable);
+            DataServiceRoot = new ODDataService(DataManager, Editor, SymbolTable);
+            EditorHandlerRoot = new ODEditorHandler(EditorRoot);
 
 
             // Debug XSVG Reader

@@ -227,7 +227,10 @@ using OpenDraft.ODCore.ODEditor;
 using OpenDraft.ODCore.ODEditor.ODDynamics;
 using OpenDraft.ODCore.ODGeometry;
 using OpenDraft.ODCore.ODMath;
+using OpenDraft.ODCore.ODSystem;
+using OpenDraft.ViewModels;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 namespace OpenDraft
@@ -333,6 +336,21 @@ namespace OpenDraft
                             ODLayer? layer = DrawConnector.GetLayerByID(element.LayerId);
                             if (layer != null) element.Draw(context, DrawConnector, Camera.Scale, vpWorldSize, worldMousePoint);
                         }
+                    ODElement? highlightedElement = DrawConnector.GetHighlighted();
+                    string highlightColourHex = ODSystem.GetRegistryValueAsString("style/highlight_colour") ?? "#FFFFFF";
+                    int hIntensity = ODSystem.GetRegistryValueAsInt("style/highlight_intensity") ?? 0;
+                    ODColour hColour = new ODColour(highlightColourHex);
+                    if (highlightedElement != null)
+                        highlightedElement.DrawHighlight(context, DrawConnector, hColour, hIntensity);
+                    ODSelectionSet? selectedElements = DrawConnector.GetActiveSelection();
+                    if (selectedElements == null)
+                        return;
+                    int num = selectedElements.Count;
+                    Debug.WriteLine("No. of selected elements: " + num);
+                    foreach (ODElement element in selectedElements.SelectedElements)
+                    {
+                        element.DrawHighlight(context, DrawConnector, hColour, 200);
+                    }
                 }
             };
             var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
@@ -379,6 +397,10 @@ namespace OpenDraft
         {
             if (e.InitialPressMouseButton == MouseButton.Left)
             {
+                // Update Editor
+                bool shiftDown = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+                DrawConnector.LeftMouseClicked(shiftDown);
+                // Trigger input
                 var ODVec2 = new ODVec2(GetWorldMousePosition().X, GetWorldMousePosition().Y);
                 InputService?.RaisePointProvided(ODVec2);
                 e.Handled = true;
@@ -390,6 +412,7 @@ namespace OpenDraft
         {
             _mousePosition = e.GetPosition(this);
             DynamicCanvas?.InvalidateVisual();
+            DrawConnector.UpdateMousePosition(GetWorldMousePosition(), Camera.Scale);
             if (!isPanning) return;
             var current = e.GetPosition(this);
             Camera.MoveBy(new Vector(-(current.X - _lastPointerDragPosition.X) / Camera.Scale,
@@ -777,14 +800,9 @@ namespace OpenDraft.ODCore.ODData
 ** ODDrawConnector.cs **
 Path: D:\OpenDraft\OpenDraft\ODCore\ODData\ODDrawConnector.cs
 
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Avalonia.Media;
-using OpenDraft.ODCore.ODEditor;
+﻿using Avalonia.Media;
 using OpenDraft.ODCore.ODGeometry;
+using OpenDraft.ODCore.ODMath;
 namespace OpenDraft.ODCore.ODData
 {
     public class ODDrawConnector
@@ -812,6 +830,22 @@ namespace OpenDraft.ODCore.ODData
         public ODSymbolDefinition? GetSymbolDefinition(string symbolName)
         {
             return SymbolTable.GetSymbolDefinition(symbolName);
+        }
+        public void UpdateMousePosition(ODVec2 point, double tolerance)
+        {
+            Editor!.UpdateMousePosition(point, tolerance);
+        }
+        public void LeftMouseClicked(bool shiftDown)
+        {
+            Editor?.LeftMouseClicked(shiftDown);
+        }
+        public ODElement? GetHighlighted()
+        {
+            return Editor?.GetHighlighted();
+        }
+        public ODSelectionSet? GetActiveSelection()
+        {
+            return Editor?.GetActiveSelection();
         }
     }
 }
@@ -1083,48 +1117,31 @@ namespace OpenDraft.ODCore.ODData
 {
     public class ODSelectionSet
     {
-        public IReadOnlyCollection<ODElement> SelectedElements { get; }
+        public List<ODElement> SelectedElements { get; }
         public ODSelectionSet()
         {
-            SelectedElements = new List<ODElement>().AsReadOnly();
+            SelectedElements = new List<ODElement>();
         }
-        public ODSelectionSet(IEnumerable<ODElement> elements)
+        public ODSelectionSet(List<ODElement> elements)
         {
-            SelectedElements = elements?.ToList().AsReadOnly() ?? new List<ODElement>().AsReadOnly();
+            SelectedElements = elements;
         }
         public bool IsEmpty => SelectedElements.Count == 0;
         public int Count => SelectedElements.Count;
-        // Helper methods for common operations
-        public ODSelectionSet AddElement(ODElement element)
+        public void AddElement(ODElement element)
         {
-            if (element == null) return this;
-            var newElements = SelectedElements.ToList();
-            if (!newElements.Contains(element))
-            {
-                newElements.Add(element);
-            }
-            return new ODSelectionSet(newElements);
+            if (SelectedElements.Contains(element)) return;
+            SelectedElements.Add(element);
         }
-        public ODSelectionSet AddElements(IEnumerable<ODElement> elements)
+        public void AddElements(List<ODElement> elements)
         {
-            var elementList = elements?.ToList() ?? new List<ODElement>();
-            if (elementList.Count == 0) return this;
-            var newElements = SelectedElements.ToList();
-            foreach (var element in elementList)
-            {
-                if (element != null && !newElements.Contains(element))
-                {
-                    newElements.Add(element);
-                }
-            }
-            return new ODSelectionSet(newElements);
+            foreach (var element in elements)
+                AddElement(element);
         }
-        public ODSelectionSet RemoveElement(ODElement element)
+        public void RemoveElement(ODElement element)
         {
-            if (element == null) return this;
-            var newElements = SelectedElements.ToList();
-            newElements.Remove(element);
-            return new ODSelectionSet(newElements);
+            if (!SelectedElements.Contains(element)) return;
+            SelectedElements.Remove(element);
         }
         public ODSelectionSet Clear()
         {
@@ -1136,16 +1153,16 @@ namespace OpenDraft.ODCore.ODData
         }
     }
     public class ODSelectionManager
-    {
-        private readonly ODDataManager _dataManager;        
+    {    
         private ODSelectionSet _activeSelection;
-        public ODSelectionManager(ODDataManager dataManager)
+        public ODSelectionManager()
         {
-            _dataManager = dataManager;
             _activeSelection = new ODSelectionSet();
         }
         public ODSelectionSet GetActiveSelectionSet()
         {
+            if (_activeSelection == null)
+                _activeSelection = new();
             return _activeSelection;
         }
         public void UpdateSelectionSet(ODSelectionSet selectionSet)
@@ -1281,11 +1298,11 @@ using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODEditor.ODCommands;
 using OpenDraft.ODCore.ODEditor.ODDynamics;
 using OpenDraft.ODCore.ODGeometry;
+using OpenDraft.ODCore.ODMath;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Threading;
 using System.Threading.Tasks;
 namespace OpenDraft.ODCore.ODEditor
 {
@@ -1295,6 +1312,8 @@ namespace OpenDraft.ODCore.ODEditor
         private readonly ODCommandRegistry _commandRegistry;
         private readonly IODEditorInputService _inputService;
         private readonly ODSelectionManager _selectionManager;
+        private ODElement? _highlightedElement = null;
+        private ODVec2 mousePosition = new ODVec2(0,0);
         public ObservableCollection<ODDynamicElement> DynamicElements { get; } = new();
         private ODEditorContext? _currentContext;
         private IODEditorCommand? _currentCommand;
@@ -1307,6 +1326,7 @@ namespace OpenDraft.ODCore.ODEditor
             _inputService = inputService;
             _commandRegistry = new ODCommandRegistry();
             _commandRegistry.RegisterAssembly(typeof(ODEditor).Assembly);
+            _selectionManager = new ODSelectionManager();
             // Subscribe to input events
             _inputService.KeyPressed += OnKeyPressed;
             _inputService.CancelRequested += OnCancelRequested;
@@ -1323,6 +1343,45 @@ namespace OpenDraft.ODCore.ODEditor
         private void OnViewportExited()
         {
             HideCrosshair();
+        }
+        public void UpdateMousePosition(ODVec2 point, double viewportScale)
+        {
+            mousePosition = point;
+            _highlightedElement = null;
+            double tolerance = (ODSystem.ODSystem.GetRegistryValueAsInt("system/select_tolerance") ?? 10.0) / viewportScale;
+            foreach (ODElement element in _dataManager.Elements)
+            {
+                if (element.HitTest(point, tolerance))
+                    _highlightedElement = element;       
+            }
+        }
+        public void LeftMouseClicked(bool shiftDown)
+        {
+            if (_highlightedElement != null)
+            {
+                ODSelectionSet? sSet = _selectionManager.GetActiveSelectionSet();
+                if (!shiftDown)
+                {
+                    sSet.AddElement(_highlightedElement);
+                }
+                else
+                {
+                    sSet.RemoveElement(_highlightedElement);
+                }
+                _selectionManager.UpdateSelectionSet(sSet);
+            }
+        }
+        public ODVec2 GetMousePosition()
+        {
+            return mousePosition;
+        }
+        public ODElement? GetHighlighted()
+        {
+            return _highlightedElement;
+        }
+        public ODSelectionSet? GetActiveSelection()
+        {
+            return _selectionManager.GetActiveSelectionSet();
         }
         /* DYNAMIC ELEMENTS MANAGEMENT */
         public void restoreDefaultDynamicElements()
@@ -1897,6 +1956,38 @@ public class ODLineCommand : ODBaseEditorCommand
     }
 }
 
+** ODSelectCommand.cs **
+Path: D:\OpenDraft\OpenDraft\ODCore\ODEditor\ODCommands\ODSelectCommand.cs
+
+﻿using OpenDraft.ODCore.ODEditor.ODCommands;
+using OpenDraft.ODCore.ODMath;
+using System.Threading.Tasks;
+[ODCommand("SELECT", "Selects elements", "SEL")]
+public class ODSelectCommand : ODBaseEditorCommand
+{
+    public override async Task ExecuteAsync(IODEditorGateway editor)
+    {
+        editor.SetStatus("Select elements - Click to select, Shift+Click to multi-select");
+        // This command runs until cancelled
+        while (!editor.CancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                // Wait for a point (mouse click)
+                ODVec2 point = await editor.GetPointAsync("Select elements or press ESC to exit");
+                // The actual selection logic is handled by the ODEditor.LeftMouseClicked method
+                // We just wait for the next click
+                editor.SetStatus("Select elements - Click to select, Shift+Click to multi-select");
+            }
+            catch (TaskCanceledException)
+            {
+                break;
+            }
+        }
+        editor.SetStatus("Selection mode exited");
+    }
+}
+
 ** ODCrosshair.cs **
 Path: D:\OpenDraft\OpenDraft\ODCore\ODEditor\ODDynamics\ODCrosshair.cs
 
@@ -1913,13 +2004,6 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
     {
         // Visibility
         public bool IsVisible { get; set; } = true;
-        // Style properties
-        private int _size = 10;
-        public int Size
-        {
-            get => _size;
-            set => _size = value;
-        }
         public ODCrosshairElement()
         {
         }
@@ -1931,7 +2015,7 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
             ODLayer? layer = connector.GetLayerByID(LayerId);
             // Get layer
             ODVec2 Center = worldMousePosition;
-            double cSize = Size / scale; // Centre square size
+            double cSize = (ODSystem.ODSystem.GetRegistryValueAsDecimal("system/select_tolerance") ?? 1) / scale; // Centre square size
             // Get styles from registry
             Color xColour = Avalonia.Media.Color.Parse(ODSystem.ODSystem.GetRegistryValueAsString("style/crosshair_x_colour") ?? "Red");
             Color yColour = Avalonia.Media.Color.Parse(ODSystem.ODSystem.GetRegistryValueAsString("style/crosshair_y_colour") ?? "Lime");
@@ -2150,16 +2234,16 @@ namespace OpenDraft.ODCore.ODGeometry
                 dashStyle                                               // Dash style
             );
             context.DrawEllipse(null, pen, new Point(Center.X, Center.Y), Radius, Radius);
-            var bbpen = new Pen(new SolidColorBrush(Colors.Yellow, 1));
-            ODBoundingBox bb = GetBoundingBox();
-            var rect = new Rect(bb.GetOrigin.X,
-                                bb.GetOrigin.Y,
-                                bb.Width,
-                                bb.Height);
-            context.DrawRectangle(bbpen, rect);
         }
-        public override void DrawHighlight(DrawingContext context, ODDrawConnector connector, int intensity)
+        public override void DrawHighlight(DrawingContext context, ODDrawConnector connector, ODColour hColour, int hIntensity)
         {
+            ODLayer? layer = connector.GetLayerByID(LayerId);
+            if (layer != null && !layer.IsVisible)
+                return;
+            // Create pen
+            double effectiveLineWeight = LineWeight ?? layer!.LineWeight;
+            var pen = new Pen(new SolidColorBrush(Color.FromArgb((byte)hIntensity, hColour.R, hColour.G, hColour.B)), effectiveLineWeight + 1);
+            context.DrawEllipse(null, pen, new Point(Center.X, Center.Y), Radius, Radius);
         }
         public override ODBoundingBox GetBoundingBox()
         {
@@ -2169,8 +2253,12 @@ namespace OpenDraft.ODCore.ODGeometry
             double maxY = Center.Y + Radius;
             return ODBoundingBox.CreateFromMinMax(new ODVec2(minX, minY), new ODVec2(maxX, maxY));
         }
-        public override bool HitTest(ODVec2 point)
+        public override bool HitTest(ODVec2 point, double tolerance)
         {
+            if (!isPointInsideBoundingBox(point))
+                return false;
+            if (ODGeometryTools.IsPointOnCircle(point, Center, Radius, tolerance))
+                return true;
             return false;
         }
     }
@@ -2204,15 +2292,120 @@ namespace OpenDraft.ODCore.ODGeometry
             Id = Guid.NewGuid();
         }
         public abstract void Draw(DrawingContext context, ODDrawConnector connector);
-        public abstract void DrawHighlight(DrawingContext context, ODDrawConnector connector, int Intensity);
+        public abstract void DrawHighlight(DrawingContext context, ODDrawConnector connector, ODColour hColour, int hIntensity);
         public abstract ODBoundingBox GetBoundingBox();
-        public abstract bool HitTest(ODVec2 point);
+        public abstract bool HitTest(ODVec2 point, double tolerance);
         public bool isPointInsideBoundingBox(ODVec2 point)
         {
             ODBoundingBox bb = GetBoundingBox();
-            if (point.X >= bb.Left.X && point.X <= bb.Right && point.Y >= bb.Bottom && point.Y <= bb.Top)
+            if (point.X >= bb.Left && point.X <= bb.Right && point.Y >= bb.Bottom && point.Y <= bb.Top)
                 return true;
             return false;
+        }
+    }
+}
+
+
+** ODGeometryTools.cs **
+Path: D:\OpenDraft\OpenDraft\ODCore\ODGeometry\ODGeometryTools.cs
+
+﻿using OpenDraft.ODCore.ODGeometry;
+using OpenDraft.ODCore.ODMath;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+namespace OpenDraft.ODCore.ODGeometry
+{
+    internal class ODGeometryTools
+    {
+        public static bool IsPointOnLine(ODVec2 point, ODVec2 lineStart, ODVec2 lineEnd, double tolerance)
+        {
+            double distance = DistanceToLineSegment(point, lineStart, lineEnd);
+            return distance <= tolerance;
+        }
+        public static bool IsPointOnCircle(ODVec2 point, ODVec2 circleCenter, double radius, double tolerance)
+        {
+            double distance = Distance(point, circleCenter);
+            // Check if point is within tolerance of the circle's circumference
+            return Math.Abs(distance - radius) <= tolerance;
+        }
+        public static bool IsPointInsideCircle(ODVec2 point, ODVec2 circleCenter, double radius)
+        {
+            double distance = Distance(point, circleCenter);
+            return distance <= radius;
+        }
+        public static bool IsPointOnRectangle(ODVec2 point, ODRectangle rect, double tolerance)
+        {
+            // Check if point is near any of the rectangle edges
+            ODVec2 topLeft = rect.TopLeft;
+            ODVec2 bottomRight = rect.BottomRight;
+            ODVec2 topRight = new ODVec2(bottomRight.X, topLeft.Y);
+            ODVec2 bottomLeft = new ODVec2(topLeft.X, bottomRight.Y);
+            return IsPointOnLine(point, topLeft, topRight, tolerance) ||
+                   IsPointOnLine(point, topRight, bottomRight, tolerance) ||
+                   IsPointOnLine(point, bottomRight, bottomLeft, tolerance) ||
+                   IsPointOnLine(point, bottomLeft, topLeft, tolerance);
+        }
+        public static bool IsPointOnPolyline(ODVec2 point, List<ODVec2> vertices, double tolerance, bool isClosed = false)
+        {
+            for (int i = 0; i < vertices.Count - 1; i++)
+            {
+                if (IsPointOnLine(point, vertices[i], vertices[i + 1], tolerance))
+                    return true;
+            }
+            // Check closing segment for closed polylines
+            if (isClosed && vertices.Count > 2)
+            {
+                if (IsPointOnLine(point, vertices[vertices.Count - 1], vertices[0], tolerance))
+                    return true;
+            }
+            return false;
+        }
+        public static double DistanceToLineSegment(ODVec2 point, ODVec2 lineStart, ODVec2 lineEnd)
+        {
+            double lineLengthSquared = (lineEnd.X - lineStart.X) * (lineEnd.X - lineStart.X) +
+                                      (lineEnd.Y - lineStart.Y) * (lineEnd.Y - lineStart.Y);
+            if (lineLengthSquared == 0)
+                return Distance(point, lineStart);
+            double t = Math.Max(0, Math.Min(1, ((point.X - lineStart.X) * (lineEnd.X - lineStart.X) +
+                                               (point.Y - lineStart.Y) * (lineEnd.Y - lineStart.Y)) / lineLengthSquared));
+            ODVec2 projection = new ODVec2(
+                lineStart.X + t * (lineEnd.X - lineStart.X),
+                lineStart.Y + t * (lineEnd.Y - lineStart.Y)
+            );
+            return Distance(point, projection);
+        }
+        public static double Distance(ODVec2 a, ODVec2 b)
+        {
+            double dx = a.X - b.X;
+            double dy = a.Y - b.Y;
+            return Math.Sqrt(dx * dx + dy * dy);
+        }
+        public static ODRectangle CreateBoundingBox(ODVec2 point1, ODVec2 point2)
+        {
+            return new ODRectangle(
+                new ODVec2(Math.Min(point1.X, point2.X), Math.Min(point1.Y, point2.Y)),
+                new ODVec2(Math.Max(point1.X, point2.X), Math.Max(point1.Y, point2.Y))
+            );
+        }
+        public static ODRectangle CreateBoundingBox(IEnumerable<ODVec2> points)
+        {
+            if (!points.Any())
+                return new ODRectangle(new ODVec2(0, 0), new ODVec2(0, 0));
+            double minX = points.Min(p => p.X);
+            double minY = points.Min(p => p.Y);
+            double maxX = points.Max(p => p.X);
+            double maxY = points.Max(p => p.Y);
+            return new ODRectangle(new ODVec2(minX, minY), new ODVec2(maxX, maxY));
+        }
+        public static ODRectangle InflateBoundingBox(ODRectangle rect, double inflation)
+        {
+            return new ODRectangle(
+                new ODVec2(rect.TopLeft.X - inflation, rect.TopLeft.Y - inflation),
+                new ODVec2(rect.BottomRight.X + inflation, rect.BottomRight.Y + inflation)
+            );
         }
     }
 }
@@ -2228,6 +2421,7 @@ using OpenDraft.ODCore.ODData;
 using OpenDraft.ODCore.ODEditor;
 using OpenDraft.ODCore.ODMath;
 using System;
+using System.Diagnostics;
 namespace OpenDraft.ODCore.ODGeometry
 {
     internal class ODLine : ODElement
@@ -2259,19 +2453,15 @@ namespace OpenDraft.ODCore.ODGeometry
             context.DrawLine(pen,
                     new Point(StartPoint.X, StartPoint.Y),
                     new Point(EndPoint.X, EndPoint.Y));
-            var bbpen = new Pen(new SolidColorBrush(Colors.Yellow, 1));
-            ODBoundingBox bb = GetBoundingBox();
-            var rect = new Rect(bb.GetOrigin.X,
-                                bb.GetOrigin.Y,
-                                bb.Width,
-                                bb.Height);
-            context.DrawRectangle(bbpen, rect);
         }
-        public override void DrawHighlight(DrawingContext context, ODDrawConnector connector, int intensity)
+        public override void DrawHighlight(DrawingContext context, ODDrawConnector connector, ODColour hColour, int hIntensity)
         {
+            ODLayer? layer = connector.GetLayerByID(LayerId);
+            if (layer != null && !layer.IsVisible)
+                return;
             // Create pen
-            var brsh = new SolidColorBrush(Color.FromArgb(0, 0, 255, 255)); // 128 = 50% alpha
-            var pen = new Pen(new SolidColorBrush(Colors.Yellow, 1));            
+            double effectiveLineWeight = LineWeight ?? layer!.LineWeight;
+            var pen = new Pen(new SolidColorBrush(Color.FromArgb((byte)hIntensity, hColour.R, hColour.G, hColour.B)), effectiveLineWeight+1);            
             context.DrawLine(pen,
                     new Point(StartPoint.X, StartPoint.Y),
                     new Point(EndPoint.X, EndPoint.Y));
@@ -2284,9 +2474,13 @@ namespace OpenDraft.ODCore.ODGeometry
             double maxY = Math.Max(StartPoint.Y, EndPoint.Y);
             return ODBoundingBox.CreateFromMinMax(new ODVec2(minX, minY), new ODVec2(maxX, maxY));
         }
-        public override bool HitTest(ODVec2 point)
+        public override bool HitTest(ODVec2 point, double tolerance)
         {
-            return isPointInsideBoundingBox(point);
+            if (!isPointInsideBoundingBox(point))
+                return false;
+            if (ODGeometryTools.IsPointOnLine(point, StartPoint, EndPoint, tolerance))
+                return true;
+            return false;
         }
     }
 }
@@ -2324,14 +2518,14 @@ namespace OpenDraft.ODCore.ODGeometry
         {
             // To Do
         }
-        public override void DrawHighlight(DrawingContext context, ODDrawConnector connector, int intensity)
+        public override void DrawHighlight(DrawingContext context, ODDrawConnector connector, ODColour hColour, int hIntensity)
         {
         }
         public override ODBoundingBox GetBoundingBox()
         {
             return new ODBoundingBox(new ODVec2(0, 0), new ODVec2(0, 0));
         }
-        public override bool HitTest(ODVec2 point)
+        public override bool HitTest(ODVec2 point, double tolerance)
         {
             return false;
         }
@@ -2387,8 +2581,21 @@ namespace OpenDraft.ODCore.ODGeometry
                     new Point(Points[i].X, Points[i].Y));
             }
         }
-        public override void DrawHighlight(DrawingContext context, ODDrawConnector connector, int intensity)
+        public override void DrawHighlight(DrawingContext context, ODDrawConnector connector, ODColour hColour, int hIntensity)
         {
+            ODLayer? layer = connector.GetLayerByID(LayerId);
+            if (layer != null && !layer.IsVisible)
+                return;
+            // Create pen
+            double effectiveLineWeight = LineWeight ?? layer!.LineWeight;
+            var pen = new Pen(new SolidColorBrush(Color.FromArgb((byte)hIntensity, hColour.R, hColour.G, hColour.B)), effectiveLineWeight + 1);
+            // Draw each segment individually
+            for (int i = 1; i < Points.Count; i++)
+            {
+                context.DrawLine(pen,
+                    new Point(Points[i - 1].X, Points[i - 1].Y),
+                    new Point(Points[i].X, Points[i].Y));
+            }
         }
         public bool IsClosed => Points.Count > 2 && Points[0].Equals(Points[Points.Count - 1]);
         public double Length
@@ -2432,7 +2639,7 @@ namespace OpenDraft.ODCore.ODGeometry
             double maxY = Points.Max(p => p.Y);
             return new ODBoundingBox(new ODVec2(minX, minY), new ODVec2(maxX, maxY));
         }
-        public override bool HitTest(ODVec2 point)
+        public override bool HitTest(ODVec2 point, double tolerance)
         {
             return false;
         }
@@ -2509,7 +2716,7 @@ namespace OpenDraft.ODCore.ODGeometry
             // Draw the rectangle
             context.DrawRectangle(pen, rect);
         }
-        public override void DrawHighlight(DrawingContext context, ODDrawConnector connector, int intensity)
+        public override void DrawHighlight(DrawingContext context, ODDrawConnector connector, ODColour hColour, int hIntensity)
         {
         }
         // Properties for convenience
@@ -2558,7 +2765,7 @@ namespace OpenDraft.ODCore.ODGeometry
             double maxY = Math.Max(TopLeft.Y, BottomRight.Y);
             return ODBoundingBox.CreateFromMinMax(new ODVec2(minX, minY), new ODVec2(maxX, maxY));
         }
-        public override bool HitTest(ODVec2 point)
+        public override bool HitTest(ODVec2 point, double tolerance)
         {
             return false;
         }
@@ -2650,14 +2857,14 @@ namespace OpenDraft.ODCore.ODGeometry
                 }
             }
         }
-        public override void DrawHighlight(DrawingContext context, ODDrawConnector connector, int intensity)
+        public override void DrawHighlight(DrawingContext context, ODDrawConnector connector, ODColour hColour, int hIntensity)
         {
         }
         public override ODBoundingBox GetBoundingBox()
         {
             return new ODBoundingBox(new ODVec2(0, 0), new ODVec2(0, 0));
         }
-        public override bool HitTest(ODVec2 point)
+        public override bool HitTest(ODVec2 point, double tolerance)
         {
             return false;
         }
@@ -2696,7 +2903,7 @@ using System.Threading.Tasks;
 namespace OpenDraft.ODCore.ODMath
 {
     public class ODVec2
-        {
+    {
         public double X { get; set; }
         public double Y { get; set; }
         public ODVec2(double x, double y)
@@ -2963,7 +3170,7 @@ namespace OpenDraft.ViewModels
             ODLayer? lay = DataManager.LayerManager.GetLayerByName("New Layer");
             DataManager.LayerManager.SetActiveLayer("New Layer");
             lay!.Color = new ODColour("#00FF00");
-            lay!.LineWeight = 2.0f;
+            lay!.LineWeight = .5f;
             Debug.WriteLine("Setup complete");
             // Test Symbols
             ODSymbolDefinition symDef = new ODSymbolDefinition("MySymbol");
@@ -2972,10 +3179,19 @@ namespace OpenDraft.ViewModels
             symDef.Elements.Add(L1);
             symDef.Elements.Add(L2);
             SymbolTable.AddSymbol(symDef);
-            ODSymbol S1 = new ODSymbol("MySymbol", new ODVec2(100, -10));
-            ODSymbol S2 = new ODSymbol("MySymbol", new ODVec2(20, -10));
+            ODSymbol S1 = new ODSymbol("MySymbol", new ODVec2(-200, -10));
+            ODSymbol S2 = new ODSymbol("MySymbol", new ODVec2(-150, -10));
             DataManager.AddElement(S1);
             DataManager.AddElement(S2);
+            // Stress Test (Draw 1000x Circles)
+            for (int i = 0; i < 10; i++)
+            {
+                for (int j = 0; j < 10; j++)
+                {
+                    ODCircle tempCirc = new(new ODVec2(i*30, j*30), 20);
+                    DataManager.AddElement(tempCirc);
+                }
+            }
         }
         [RelayCommand]
         private void ExecuteEditor(string command)

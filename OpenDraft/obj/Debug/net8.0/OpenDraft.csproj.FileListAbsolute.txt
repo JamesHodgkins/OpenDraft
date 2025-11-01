@@ -68,12 +68,6 @@ D:\CS\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.genruntimeconfig.cache
 D:\CS\OpenDraft\OpenDraft\obj\Debug\net8.0\ref\OpenDraft.dll
 D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.csproj.AssemblyReference.cache
 D:\OpenDraft\OpenDraft\obj\Debug\net8.0\Avalonia\Resources.Inputs.cache
-D:\OpenDraft\OpenDraft\obj\Debug\net8.0\Avalonia\resources
-D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.GeneratedMSBuildEditorConfig.editorconfig
-D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.AssemblyInfoInputs.cache
-D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.AssemblyInfo.cs
-D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.csproj.CoreCompileInputs.cache
-D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.sourcelink.json
 D:\OpenDraft\OpenDraft\bin\Debug\net8.0\OpenDraft.exe
 D:\OpenDraft\OpenDraft\bin\Debug\net8.0\config.json
 D:\OpenDraft\OpenDraft\bin\Debug\net8.0\XSVG\Example XSVG\example.xsvg
@@ -139,6 +133,12 @@ D:\OpenDraft\OpenDraft\bin\Debug\net8.0\runtimes\osx\native\libSkiaSharp.dylib
 D:\OpenDraft\OpenDraft\bin\Debug\net8.0\runtimes\win-arm64\native\libSkiaSharp.dll
 D:\OpenDraft\OpenDraft\bin\Debug\net8.0\runtimes\win-x64\native\libSkiaSharp.dll
 D:\OpenDraft\OpenDraft\bin\Debug\net8.0\runtimes\win-x86\native\libSkiaSharp.dll
+D:\OpenDraft\OpenDraft\obj\Debug\net8.0\Avalonia\resources
+D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.GeneratedMSBuildEditorConfig.editorconfig
+D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.AssemblyInfoInputs.cache
+D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.AssemblyInfo.cs
+D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.csproj.CoreCompileInputs.cache
+D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.sourcelink.json
 D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.csproj.Up2Date
 D:\OpenDraft\OpenDraft\obj\Debug\net8.0\OpenDraft.dll
 D:\OpenDraft\OpenDraft\obj\Debug\net8.0\refint\OpenDraft.dll

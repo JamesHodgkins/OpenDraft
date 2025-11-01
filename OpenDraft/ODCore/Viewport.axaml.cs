@@ -22,8 +22,11 @@ namespace OpenDraft
         public static readonly StyledProperty<ObservableCollection<ODElement>> ElementsProperty =
             AvaloniaProperty.Register<Viewport, ObservableCollection<ODElement>>(nameof(Elements));
 
-        public static readonly StyledProperty<ODDrawConnector> DrawConnectorProperty =
-            AvaloniaProperty.Register<Viewport, ODDrawConnector>(nameof(DrawConnector));
+        public static readonly StyledProperty<ODDataService> DataServiceProperty =
+            AvaloniaProperty.Register<Viewport, ODDataService>(nameof(DataService));
+
+        public static readonly StyledProperty<ODEditorHandler> EditorHandlerProperty =
+            AvaloniaProperty.Register<Viewport, ODEditorHandler>(nameof(EditorHandler));
 
         public static readonly StyledProperty<IODEditorInputService> InputServiceProperty =
             AvaloniaProperty.Register<Viewport, IODEditorInputService>(nameof(InputService));
@@ -37,10 +40,16 @@ namespace OpenDraft
             set => SetValue(ElementsProperty, value);
         }
 
-        public ODDrawConnector DrawConnector
+        public ODDataService DataService
         {
-            get => GetValue(DrawConnectorProperty);
-            set => SetValue(DrawConnectorProperty, value);
+            get => GetValue(DataServiceProperty);
+            set => SetValue(DataServiceProperty, value);
+        }
+
+        public ODEditorHandler EditorHandler
+        {
+            get => GetValue(EditorHandlerProperty);
+            set => SetValue(EditorHandlerProperty, value);
         }
 
         public IODEditorInputService InputService
@@ -112,9 +121,9 @@ namespace OpenDraft
                 {
                     foreach (var element in Elements)
                     {
-                        var layer = DrawConnector.GetLayerByID(element.LayerId);
+                        var layer = DataService.GetLayerByID(element.LayerId);
                         if (layer != null)
-                            element.Draw(context, DrawConnector);
+                            element.Draw(context, DataService);
                     }
                 }
             };
@@ -136,19 +145,19 @@ namespace OpenDraft
                     if (DynamicElements != null)
                         foreach (ODDynamicElement element in DynamicElements)
                         {
-                            ODLayer? layer = DrawConnector.GetLayerByID(element.LayerId);
-                            if (layer != null) element.Draw(context, DrawConnector, Camera.Scale, vpWorldSize, worldMousePoint);
+                            ODLayer? layer = DataService.GetLayerByID(element.LayerId);
+                            if (layer != null) element.Draw(context, DataService, Camera.Scale, vpWorldSize, worldMousePoint);
                         }
 
-                    ODElement? highlightedElement = DrawConnector.GetHighlighted();
+                    ODElement? highlightedElement = EditorHandler.GetHighlighted();
                     string highlightColourHex = ODSystem.GetRegistryValueAsString("style/highlight_colour") ?? "#FFFFFF";
                     int hIntensity = ODSystem.GetRegistryValueAsInt("style/highlight_intensity") ?? 0;
                     ODColour hColour = new ODColour(highlightColourHex);
 
                     if (highlightedElement != null)
-                        highlightedElement.DrawHighlight(context, DrawConnector, hColour, hIntensity);
+                        highlightedElement.DrawHighlight(context, DataService, hColour, hIntensity);
                     
-                    ODSelectionSet? selectedElements = DrawConnector.GetActiveSelection();
+                    ODSelectionSet? selectedElements = EditorHandler.GetActiveSelection();
                     if (selectedElements == null)
                         return;
 
@@ -158,7 +167,7 @@ namespace OpenDraft
 
                     foreach (ODElement element in selectedElements.SelectedElements)
                     {
-                        element.DrawHighlight(context, DrawConnector, hColour, 200);
+                        element.DrawHighlight(context, DataService, hColour, 200);
                     }
                 }
             };
@@ -216,7 +225,7 @@ namespace OpenDraft
             {
                 // Update Editor
                 bool shiftDown = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
-                DrawConnector.LeftMouseClicked(shiftDown);
+                EditorHandler.LeftMouseClicked(shiftDown);
 
                 // Trigger input
                 var ODVec2 = new ODVec2(GetWorldMousePosition().X, GetWorldMousePosition().Y);
@@ -232,7 +241,7 @@ namespace OpenDraft
         {
             _mousePosition = e.GetPosition(this);
             DynamicCanvas?.InvalidateVisual();
-            DrawConnector.UpdateMousePosition(GetWorldMousePosition(), Camera.Scale);
+            EditorHandler.UpdateMousePosition(GetWorldMousePosition(), Camera.Scale);
             
 
             if (!isPanning) return;

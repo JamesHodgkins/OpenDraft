@@ -18,7 +18,7 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
 
         }
 
-        public override void Draw(DrawingContext context, ODDrawConnector connector,
+        public override void Draw(DrawingContext context, ODDataService connector,
             double scale, ODVec2 vpWorldSize, ODVec2 worldMousePosition)
         {
             if (!IsVisible)

@@ -24,8 +24,8 @@ namespace OpenDraft.ODCore.ODGeometry
             Id = Guid.NewGuid();
         }
 
-        public abstract void Draw(DrawingContext context, ODDrawConnector connector);
-        public abstract void DrawHighlight(DrawingContext context, ODDrawConnector connector, ODColour hColour, int hIntensity);
+        public abstract void Draw(DrawingContext context, ODDataService connector);
+        public abstract void DrawHighlight(DrawingContext context, ODDataService connector, ODColour hColour, int hIntensity);
         public abstract ODBoundingBox GetBoundingBox();
         public abstract bool HitTest(ODVec2 point, double tolerance);
 

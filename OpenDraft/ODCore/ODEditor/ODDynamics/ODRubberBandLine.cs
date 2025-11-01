@@ -16,7 +16,7 @@ namespace OpenDraft.ODCore.ODEditor.ODDynamics
             Start = start;
         }
 
-        public override void Draw(DrawingContext context, ODDrawConnector connector,
+        public override void Draw(DrawingContext context, ODDataService connector,
             double scale, ODVec2 vpWorldSize, ODVec2 mousePosition)
         {
             ODLayer? layer = connector.GetLayerByID(LayerId);
