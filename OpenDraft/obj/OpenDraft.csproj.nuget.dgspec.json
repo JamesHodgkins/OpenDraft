@@ -52,27 +52,35 @@
           "dependencies": {
             "Avalonia": {
               "target": "Package",
-              "version": "[11.3.7, )"
+              "version": "[11.3.8, )"
             },
             "Avalonia.Desktop": {
               "target": "Package",
-              "version": "[11.3.7, )"
+              "version": "[11.3.8, )"
             },
             "Avalonia.Diagnostics": {
               "target": "Package",
-              "version": "[11.3.7, )"
+              "version": "[11.3.8, )"
             },
             "Avalonia.Fonts.Inter": {
               "target": "Package",
-              "version": "[11.3.7, )"
+              "version": "[11.3.8, )"
+            },
+            "Avalonia.Skia": {
+              "target": "Package",
+              "version": "[11.3.8, )"
             },
             "Avalonia.Themes.Fluent": {
               "target": "Package",
-              "version": "[11.3.7, )"
+              "version": "[11.3.8, )"
             },
             "CommunityToolkit.Mvvm": {
               "target": "Package",
               "version": "[8.4.0, )"
+            },
+            "Svg.Controls.Skia.Avalonia": {
+              "target": "Package",
+              "version": "[11.3.6.2, )"
             }
           },
           "imports": [

@@ -10,7 +10,7 @@
 		<SolidColorBrush x:Key="BackgroundLightBrush" Color="{DynamicResource BackgroundLight}"/>
         <SolidColorBrush x:Key="PrimaryBrush" Color="{DynamicResource PrimaryColor}"/>
         <SolidColorBrush x:Key="AccentBrush" Color="{DynamicResource AccentColor}"/>
-    </Styles.Resources>
+	</Styles.Resources>
 
 	<Style Selector="Window">
 		<Setter Property="FontSize" Value="12"/>

@@ -1,6 +1,10 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using OpenDraft.ViewModels;
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 
 namespace OpenDraft.Views
 {

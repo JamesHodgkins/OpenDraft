@@ -22,6 +22,9 @@ namespace OpenDraft
         public static readonly StyledProperty<ObservableCollection<ODElement>> ElementsProperty =
             AvaloniaProperty.Register<Viewport, ObservableCollection<ODElement>>(nameof(Elements));
 
+        public static readonly StyledProperty<ObservableCollection<ODDynamicElement>> DynamicElementsProperty =
+            AvaloniaProperty.Register<Viewport, ObservableCollection<ODDynamicElement>>(nameof(DynamicElements));
+        
         public static readonly StyledProperty<ODDataService> DataServiceProperty =
             AvaloniaProperty.Register<Viewport, ODDataService>(nameof(DataService));
 
@@ -31,13 +34,17 @@ namespace OpenDraft
         public static readonly StyledProperty<IODEditorInputService> InputServiceProperty =
             AvaloniaProperty.Register<Viewport, IODEditorInputService>(nameof(InputService));
 
-        public static readonly StyledProperty<ObservableCollection<ODDynamicElement>> DynamicElementsProperty =
-            AvaloniaProperty.Register<Viewport, ObservableCollection<ODDynamicElement>>(nameof(DynamicElements));
 
         public ObservableCollection<ODElement> Elements
         {
             get => GetValue(ElementsProperty);
             set => SetValue(ElementsProperty, value);
+        }
+
+        public ObservableCollection<ODDynamicElement> DynamicElements
+        {
+            get => GetValue(DynamicElementsProperty);
+            set => SetValue(DynamicElementsProperty, value);
         }
 
         public ODDataService DataService
@@ -58,12 +65,6 @@ namespace OpenDraft
             set => SetValue(InputServiceProperty, value);
         }
 
-        public ObservableCollection<ODDynamicElement> DynamicElements
-        {
-            get => GetValue(DynamicElementsProperty);
-            set => SetValue(DynamicElementsProperty, value);
-        }
-
         private readonly ViewportCamera Camera = new();
         private bool isPanning = false;
         private Point _lastPointerDragPosition;
@@ -76,11 +77,8 @@ namespace OpenDraft
             InitializeComponent();
             Background = Brushes.Transparent;
 
-            Elements ??= new ObservableCollection<ODElement>();
-            DynamicElements ??= new ObservableCollection<ODDynamicElement>();
-
-            SubscribeToCollection(Elements, OnElementsChanged);
-            SubscribeToCollection(DynamicElements, OnDynamicElementsChanged);
+            SetupStaticCanvas();
+            SetupDynamicCanvas();
 
             PointerPressed += OnPointerPressed;
             PointerReleased += OnPointerReleased;
@@ -88,26 +86,6 @@ namespace OpenDraft
             PointerWheelChanged += OnPointerWheelChanged;
             PointerEntered += OnPointerEntered;
             PointerExited += OnPointerExited;
-
-            SetupStaticCanvas();
-            SetupDynamicCanvas();
-        }
-
-        private void SubscribeToCollection<T>(ObservableCollection<T> collection, System.Collections.Specialized.NotifyCollectionChangedEventHandler handler)
-        {
-            if (collection == null) return;
-            collection.CollectionChanged -= handler;
-            collection.CollectionChanged += handler;
-        }
-
-        private void OnElementsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-        {
-            StaticCanvas?.InvalidateVisual();
-        }
-
-        private void OnDynamicElementsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-        {
-            DynamicCanvas?.InvalidateVisual();
         }
 
         private void SetupStaticCanvas()
@@ -163,8 +141,7 @@ namespace OpenDraft
 
                     
                     int num = selectedElements.Count;
-                    Debug.WriteLine("No. of selected elements: " + num);
-
+                    
                     foreach (ODElement element in selectedElements.SelectedElements)
                     {
                         element.DrawHighlight(context, DataService, hColour, 200);
@@ -199,16 +176,38 @@ namespace OpenDraft
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
         {
             base.OnPropertyChanged(change);
-            if (!_isInitialized) return;
 
+            // Elements subscription
             if (change.Property == ElementsProperty)
-                SubscribeToCollection(Elements, OnElementsChanged);
-            else if (change.Property == DynamicElementsProperty)
-                SubscribeToCollection(DynamicElements, OnDynamicElementsChanged);
+            {
+                if (change.OldValue is ObservableCollection<ODElement> oldCollection)
+                    oldCollection.CollectionChanged -= OnElementsChanged;
 
-            StaticCanvas?.InvalidateVisual();
-            DynamicCanvas?.InvalidateVisual();
+                if (change.NewValue is ObservableCollection<ODElement> newCollection)
+                    newCollection.CollectionChanged += OnElementsChanged;
+
+                StaticCanvas?.InvalidateVisual();
+            }
+
+            // DynamicElements subscription
+            else if (change.Property == DynamicElementsProperty)
+            {
+                if (change.OldValue is ObservableCollection<ODDynamicElement> oldCollection)
+                    oldCollection.CollectionChanged -= OnDynamicElementsChanged;
+
+                if (change.NewValue is ObservableCollection<ODDynamicElement> newCollection)
+                    newCollection.CollectionChanged += OnDynamicElementsChanged;
+
+                DynamicCanvas?.InvalidateVisual();
+            }
         }
+
+        private void OnElementsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        => StaticCanvas?.InvalidateVisual();
+
+        private void OnDynamicElementsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+            => DynamicCanvas?.InvalidateVisual();
+
 
         private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
         {

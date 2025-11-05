@@ -4,10 +4,12 @@
         xmlns:local="using:OpenDraft"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:svg="clr-namespace:Svg.Controls;assembly=Svg.Controls.Skia.Avalonia"
+
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="OpenDraft.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/od-icon2.ico"
+        Icon="/Assets/od_logomark_dark.ico"
         Title="OpenDraft"
         Width="800"
         Height="400"
@@ -70,8 +72,12 @@
       HorizontalAlignment="Stretch"
       Orientation="Horizontal">
         <Button Content="Select" />
-        <Button Content="Line" Command="{Binding ExecuteEditorCommand}" CommandParameter="LINE" />
-        <Button Content="Circle" Command="{Binding ExecuteEditorCommand}" CommandParameter="CIRCLE" />
+        
+		<Button Command="{Binding ExecuteEditorCommand}" CommandParameter="LINE">
+		  <Svg Path="avares://OpenDraft/Assets/icons/od_command_line.svg" />
+		</Button>
+        
+		<Button Content="Circle" Command="{Binding ExecuteEditorCommand}" CommandParameter="CIRCLE" />
     </StackPanel>
     
     
