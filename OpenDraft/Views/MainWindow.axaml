@@ -66,19 +66,27 @@
 
 
     <!-- Toolbar -->
-    <StackPanel
-      Classes="toolbar"
-      Grid.Row="1"
-      HorizontalAlignment="Stretch"
-      Orientation="Horizontal">
-        <Button Content="Select" />
-        
-		<Button Command="{Binding ExecuteEditorCommand}" CommandParameter="LINE">
-		  <Svg Path="avares://OpenDraft/Assets/icons/od_command_line.svg" />
-		</Button>
-        
-		<Button Content="Circle" Command="{Binding ExecuteEditorCommand}" CommandParameter="CIRCLE" />
-    </StackPanel>
+    <Border Background="{DynamicResource BackgroundLightBrush}"
+			Padding="8,0,0,0"
+			Height="40">
+		<StackPanel Classes="toolbar"
+					Grid.Row="1"
+					Orientation="Horizontal"
+					HorizontalAlignment="Stretch">
+
+			<Button>
+				<Svg Path="avares://OpenDraft/Assets/icons/od_ui_select.svg" />
+			</Button>
+
+			<Button Command="{Binding ExecuteEditorCommand}" CommandParameter="LINE">
+				<Svg Path="avares://OpenDraft/Assets/icons/od_command_line.svg" />
+			</Button>
+
+			<Button Command="{Binding ExecuteEditorCommand}" CommandParameter="CIRCLE">
+				<Svg Path="avares://OpenDraft/Assets/icons/od_command_circle.svg" />
+			</Button>
+		</StackPanel>
+	</Border>
     
     
     <!-- Use Grid.Row attached property -->

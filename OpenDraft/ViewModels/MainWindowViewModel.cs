@@ -55,34 +55,6 @@ namespace OpenDraft.ViewModels
             lay!.Color = new ODColour("#00FF00");
             lay!.LineWeight = .5f;
 
-            Debug.WriteLine("Setup complete");
-
-
-            // Test Symbols
-            ODSymbolDefinition symDef = new ODSymbolDefinition("MySymbol");
-            ODLine L1 = new ODLine(new ODVec2(0, 0), new ODVec2(50, 50));
-            ODLine L2 = new ODLine(new ODVec2(0, 50), new ODVec2(50, 0));
-
-            symDef.Elements.Add(L1);
-            symDef.Elements.Add(L2);
-            SymbolTable.AddSymbol(symDef);
-
-            ODSymbol S1 = new ODSymbol("MySymbol", new ODVec2(-200, -10));
-            ODSymbol S2 = new ODSymbol("MySymbol", new ODVec2(-150, -10));
-
-            DataManager.AddElement(S1);
-            DataManager.AddElement(S2);
-
-
-            // Stress Test (Draw 1000x Circles)
-            for (int i = 0; i < 10; i++)
-            {
-                for (int j = 0; j < 10; j++)
-                {
-                    ODCircle tempCirc = new(new ODVec2(i*30, j*30), 20);
-                    DataManager.AddElement(tempCirc);
-                }
-            }
         }
 
         [RelayCommand]

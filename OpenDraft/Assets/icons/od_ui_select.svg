@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <g transform="matrix(1,0,0,1,-111,0)">
+        <g id="Palette">
+        </g>
+        <g id="Guides">
+        </g>
+        <g id="Polyline">
+        </g>
+        <g id="Circle">
+        </g>
+        <g id="Rectangle">
+        </g>
+        <rect id="Circle6" x="111" y="0" width="32" height="32" style="fill:none;"/>
+        <g id="Circle61" serif:id="Circle6">
+            <g transform="matrix(0.048975,0,0,0.048975,99.110524,-10.141013)">
+                <path d="M685.813,814.406L583.063,860.466L492.8,650.667L362.667,776.568L362.667,207.067L776.269,594.819L593.067,612.267L685.813,814.406Z" style="fill:rgb(224,224,224);fill-rule:nonzero;"/>
+            </g>
+        </g>
+    </g>
+</svg>
