@@ -4,7 +4,7 @@
         xmlns:local="using:OpenDraft"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-		xmlns:svg="clr-namespace:Svg.Controls;assembly=Svg.Controls.Skia.Avalonia"
+		xmlns:svg="clr-namespace:Avalonia.Svg.Skia;assembly=Svg.Controls.Skia.Avalonia"
 
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="OpenDraft.Views.MainWindow"
@@ -75,15 +75,15 @@
 					HorizontalAlignment="Stretch">
 
 			<Button>
-				<Svg Path="avares://OpenDraft/Assets/icons/od_ui_select.svg" />
+				<svg:Svg Path="avares://OpenDraft/Assets/icons/od_ui_select.svg" />
 			</Button>
 
 			<Button Command="{Binding ExecuteEditorCommand}" CommandParameter="LINE">
-				<Svg Path="avares://OpenDraft/Assets/icons/od_command_line.svg" />
+				<svg:Svg Path="avares://OpenDraft/Assets/icons/od_command_line.svg" />
 			</Button>
 
 			<Button Command="{Binding ExecuteEditorCommand}" CommandParameter="CIRCLE">
-				<Svg Path="avares://OpenDraft/Assets/icons/od_command_circle.svg" />
+				<svg:Svg Path="avares://OpenDraft/Assets/icons/od_command_circle.svg" />
 			</Button>
 		</StackPanel>
 	</Border>
