@@ -1,3 +1,5 @@
+## THIS PROJECT HAS MOVED TO OPENDRAFTAPP TO USE PYSIDE6 ##
+
 # OpenDraft
 
 ![ODLogo](./Docs/Branding/od_logo.png#gh-light-mode-only)  
