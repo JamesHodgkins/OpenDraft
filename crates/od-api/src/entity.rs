@@ -294,6 +294,7 @@ fn dimension_geometry(d: &od_core::Dimension) -> GeometryDto {
             start,
             end,
             arc_point,
+            ..
         } => (
             "arc_length",
             named_points(&[

@@ -75,6 +75,7 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
         start,
         end,
         arc_point,
+        leader,
     } = &dim.kind
     else {
         return None;
@@ -210,7 +211,18 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
             s.text_style,
         );
     }
-    let _ = arc_point;
+    // The leader runs radially, a quarter of the way along, so it clears
+    // the text at the middle.
+    if *leader && sweep > FRAC_PI_2 && (ra - measured).abs() > size {
+        let at = a1 + sweep / 4.0;
+        let sign = if ra >= measured { 1.0 } else { -1.0 };
+        let (tip, far) = (
+            along(c, direction(at), measured),
+            along(c, direction(at), ra),
+        );
+        out.line(tip, far);
+        out.arrow(s.arrow, tip, (sign * at.cos(), sign * at.sin()), size);
+    }
     Some(Built {
         pieces: out.pieces,
         text_centre: centre,
@@ -268,6 +280,38 @@ mod tests {
             &DimStyle::default(),
         );
         assert!((d.measurement().unwrap() - 10.0 * PI * 1.5).abs() < 1e-9);
+    }
+
+    #[test]
+    fn a_leader_is_drawn_only_for_a_long_arc_and_runs_radially() {
+        let half = |leader: bool| {
+            let mut d = Dimension::arc_length(
+                p(0.0, 0.0),
+                p(10.0, 0.0),
+                p(-10.0, 0.0),
+                p(14.0, 0.0),
+                &DimStyle::default(),
+            );
+            if let DimKind::ArcLength { leader: l, .. } = &mut d.kind {
+                *l = leader;
+            }
+            d
+        };
+        let lines = |d: &Dimension| {
+            d.picture()
+                .into_iter()
+                .filter(|e| matches!(e, crate::Entity::Line { .. }))
+                .count()
+        };
+        assert_eq!(lines(&half(true)), lines(&half(false)) + 1);
+        let with_leader = {
+            let mut d = quarter(&DimStyle::default());
+            if let DimKind::ArcLength { leader, .. } = &mut d.kind {
+                *leader = true;
+            }
+            d
+        };
+        assert_eq!(lines(&with_leader), lines(&quarter(&DimStyle::default())));
     }
 
     #[test]

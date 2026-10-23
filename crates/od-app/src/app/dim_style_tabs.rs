@@ -24,7 +24,13 @@ pub(super) const TABS: [&str; 7] = [
 ];
 
 const VERTICAL: [&str; 5] = ["Centered", "Above", "Outside", "JIS", "Below"];
-const HORIZONTAL: [&str; 3] = ["Centered", "At Ext Line 1", "At Ext Line 2"];
+const HORIZONTAL: [&str; 5] = [
+    "Centered",
+    "At Ext Line 1",
+    "At Ext Line 2",
+    "Over Ext Line 1",
+    "Over Ext Line 2",
+];
 const SEPARATORS: [(char, &str); 3] = [
     ('.', "'.' (Period)"),
     (',', "',' (Comma)"),
@@ -191,7 +197,7 @@ pub(super) fn text(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft, document
             choice(ui, theme, "dim_text_vertical", &VERTICAL, &mut vertical)
         });
         s.text_above = vertical as u8;
-        let mut horizontal = usize::from(s.text_just.min(2));
+        let mut horizontal = usize::from(s.text_just.min(4));
         row(ui, theme, "Horizontal:", |ui| {
             choice(
                 ui,

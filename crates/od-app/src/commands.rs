@@ -12,6 +12,7 @@ use crate::array_path::array_path;
 use crate::block_cmd::{define_block, purge_blocks};
 use crate::break_cmd::break_object;
 use crate::corners::{chamfer_objects, fillet_objects};
+use crate::dim_override_cmd::{dim_override, dim_update};
 use crate::dimension_cmd::{dim_aligned, dim_arc, dim_auto, dim_diameter, dim_linear, dim_radius};
 use crate::dimension_edit_cmd::{dim_edit, dim_text_edit};
 use crate::draw::draw_line;
@@ -172,6 +173,13 @@ fn all() -> Vec<Command<AppState>> {
         editor_command!("dim.arc", "Arc Length", "DIMARC", dim_arc),
         editor_command!("dim.radius", "Radius", "DIMRADIUS", dim_radius),
         editor_command!("dim.diameter", "Diameter", "DIMDIAMETER", dim_diameter),
+        editor_command!(
+            "dim.override",
+            "Dimension Override",
+            "DIMOVERRIDE",
+            dim_override
+        ),
+        editor_command!("dim.update", "Update Dimension", "-DIMSTYLE", dim_update),
         editor_command!("dim.edit", "Dimension Edit", "DIMEDIT", dim_edit),
         editor_command!(
             "dim.textedit",

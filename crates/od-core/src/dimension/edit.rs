@@ -22,6 +22,7 @@ impl Dimension {
                 start,
                 end,
                 arc_point,
+                ..
             } => vec![*center, *start, *end, *arc_point],
         }
     }
@@ -51,6 +52,7 @@ impl Dimension {
                 start,
                 end,
                 arc_point,
+                ..
             } => {
                 *center = f(*center);
                 *start = f(*start);
@@ -156,6 +158,7 @@ impl Dimension {
                 start,
                 end,
                 arc_point,
+                ..
             } => {
                 *center = shift(*center);
                 *start = shift(*start);
