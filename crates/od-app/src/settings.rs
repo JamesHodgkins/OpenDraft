@@ -1,7 +1,7 @@
 //! User settings, persisted between runs through eframe's storage as one
 //! JSON value. A new setting is a field here (with its default and, if it has
 //! a range, a line in `sanitized`) and a control in `settings_ui.rs`; nothing
-//! to add for saving. Fields missing from older saves take their default.
+//! to add for saving. Fields missing from a save take their default.
 
 use od_canvas::{Ortho, SnapModes, Tracking};
 use od_ui::Palette;
@@ -59,6 +59,10 @@ pub struct Settings {
     /// Folders automation may open and write files in. Nothing outside
     /// them is reachable, and there are none until the user adds one.
     pub automation_roots: Vec<std::path::PathBuf>,
+    /// Folders chosen on the Files page; none means the default (see
+    /// `locations.rs`).
+    pub templates_dir: Option<std::path::PathBuf>,
+    pub recovery_dir: Option<std::path::PathBuf>,
 }
 
 impl Default for Settings {
@@ -81,6 +85,8 @@ impl Default for Settings {
             autosave_minutes: 2,
             automation_enabled: false,
             automation_roots: Vec::new(),
+            templates_dir: None,
+            recovery_dir: None,
         }
     }
 }
@@ -113,9 +119,20 @@ impl Settings {
         }
     }
 
+    /// Ask for a folder for `location` and use it. Nothing changes if the
+    /// user cancels.
+    pub fn choose_folder(
+        &mut self,
+        location: crate::locations::Location,
+        picker: &mut dyn crate::picker::FilePicker,
+    ) {
+        if let Some(folder) = picker.folder(location.label()) {
+            location.set(self, Some(folder));
+        }
+    }
+
     /// Load saved settings; anything missing or unrecognized falls back to
-    /// the default. Storage with no `settings` value yet holds the older
-    /// form, one key per setting.
+    /// the default.
     pub fn load(storage: Option<&dyn eframe::Storage>) -> Self {
         let Some(storage) = storage else {
             return Self::default();
@@ -123,7 +140,7 @@ impl Settings {
         crate::pedit_memory::load(Some(storage));
         let settings = match storage.get_string(KEY) {
             Some(text) => Self::from_json(&text),
-            None => crate::settings_legacy::load(storage),
+            None => Self::default(),
         };
         settings.sanitized()
     }
@@ -158,6 +175,11 @@ impl Settings {
         crate::pedit_memory::save(storage);
         let mut saved = self.clone();
         saved.automation_roots.retain(|p| p.to_str().is_some());
+        for folder in [&mut saved.templates_dir, &mut saved.recovery_dir] {
+            if folder.as_ref().is_some_and(|p| p.to_str().is_none()) {
+                *folder = None;
+            }
+        }
         if let Ok(text) = serde_json::to_string(&saved) {
             storage.set_string(KEY, text);
         }
@@ -194,6 +216,11 @@ impl Settings {
         t.path_display = t.path_display.min(3);
         if !AUTOSAVE_CHOICES.contains(&self.autosave_minutes) {
             self.autosave_minutes = Self::default().autosave_minutes;
+        }
+        for folder in [&mut self.templates_dir, &mut self.recovery_dir] {
+            if folder.as_ref().is_some_and(|p| p.as_os_str().is_empty()) {
+                *folder = None;
+            }
         }
         if !UI_SCALES.contains(&self.ui_scale_percent) {
             self.ui_scale_percent = Self::default().ui_scale_percent;
@@ -306,6 +333,8 @@ mod tests {
             autosave_minutes: 10,
             automation_enabled: true,
             automation_roots: vec!["/tmp/a".into(), "C:\\Plans".into()],
+            templates_dir: Some("D:\\Templates".into()),
+            recovery_dir: Some("D:\\Recovery".into()),
         };
         settings.save(&mut storage);
         assert_eq!(Settings::load(Some(&storage)), settings);
@@ -343,20 +372,18 @@ mod tests {
     }
 
     #[test]
-    fn the_older_per_key_form_is_read_until_the_first_save() {
-        let mut storage = MemoryStorage::default();
-        storage.set_string("palette", "slate".to_owned());
-        storage.set_string("grid_spacing", "2.5".to_owned());
-        let loaded = Settings::load(Some(&storage));
-        assert_eq!(loaded.palette, Palette::Slate);
-        assert_eq!(loaded.grid_spacing, 2.5);
-        loaded.save(&mut storage);
-        storage.set_string("palette", "neutral".to_owned());
-        assert_eq!(
-            Settings::load(Some(&storage)).palette,
-            Palette::Slate,
-            "the new form wins once it exists"
-        );
+    fn choosing_a_folder_sets_it_and_a_cancel_changes_nothing() {
+        use crate::locations::Location;
+        use crate::picker::{Script, ScriptedPicker};
+        let script = Script::default();
+        let mut picker = ScriptedPicker(script.clone());
+        let mut settings = Settings::default();
+        script.will_pick_folder(Some("plans".into()));
+        script.will_pick_folder(None);
+        for _ in 0..2 {
+            settings.choose_folder(Location::Templates, &mut picker);
+        }
+        assert_eq!(settings.templates_dir, Some("plans".into()));
     }
 
     #[test]
@@ -375,6 +402,12 @@ mod tests {
             settings.automation_roots,
             [std::path::PathBuf::from("plans")]
         );
+    }
+
+    #[test]
+    fn an_empty_folder_is_the_default() {
+        let loaded = Settings::from_json(r#"{"templates_dir":""}"#).sanitized();
+        assert_eq!(loaded.templates_dir, None);
     }
 
     #[test]
