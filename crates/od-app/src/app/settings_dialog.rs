@@ -21,6 +21,7 @@ impl OpenDraftApp {
     pub(super) fn tool_windows(&mut self, ctx: &egui::Context) {
         self.settings_window(ctx);
         self.units_window(ctx);
+        self.point_style_window(ctx);
         self.power_select_window(ctx);
         self.linetype_window(ctx);
         self.text_style_window(ctx);

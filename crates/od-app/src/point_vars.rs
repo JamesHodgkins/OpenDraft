@@ -23,6 +23,48 @@ impl AppState {
     }
 }
 
+/// The Point Style dialog's working copy: the mode, and the size as a number
+/// that is a percentage of the screen or an absolute length.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Draft {
+    pub mode: i32,
+    pub relative: bool,
+    pub value: f64,
+}
+
+impl Draft {
+    /// What a style shows as: `PDSIZE` of 0 is 5% of the screen, below 0 that
+    /// percentage, above 0 a length.
+    pub fn of(style: PointStyle) -> Self {
+        let (relative, value) = if style.size > 0.0 {
+            (false, style.size)
+        } else if style.size == 0.0 {
+            (true, 5.0)
+        } else {
+            (true, -style.size)
+        };
+        Self {
+            mode: style.mode,
+            relative,
+            value,
+        }
+    }
+
+    /// The style it makes; a size that is not a number leaves the default.
+    pub fn style(self) -> PointStyle {
+        let value = if self.value.is_finite() {
+            self.value.max(0.0)
+        } else {
+            5.0
+        };
+        let size = if self.relative { -value } else { value };
+        PointStyle {
+            mode: self.mode,
+            size,
+        }
+    }
+}
+
 pub fn variables() -> Vec<SysVar<AppState>> {
     vec![
         SysVar::int(
@@ -74,6 +116,33 @@ mod tests {
         assert_eq!(state.point_style().mode, 35);
         state.undo();
         assert_eq!(state.point_style(), PointStyle::default());
+    }
+
+    #[test]
+    fn the_dialogs_draft_reads_and_writes_the_size_both_ways() {
+        let relative = Draft::of(PointStyle {
+            mode: 3,
+            size: -10.0,
+        });
+        assert_eq!((relative.relative, relative.value), (true, 10.0));
+        assert_eq!(
+            relative.style(),
+            PointStyle {
+                mode: 3,
+                size: -10.0
+            }
+        );
+        let absolute = Draft::of(PointStyle { mode: 3, size: 2.5 });
+        assert_eq!((absolute.relative, absolute.value), (false, 2.5));
+        assert_eq!(absolute.style().size, 2.5);
+        let default = Draft::of(PointStyle::default());
+        assert_eq!((default.relative, default.value), (true, 5.0));
+        assert_eq!(default.style().size, -5.0);
+        let bad = Draft {
+            value: f64::NAN,
+            ..default
+        };
+        assert_eq!(bad.style().size, -5.0);
     }
 
     #[test]

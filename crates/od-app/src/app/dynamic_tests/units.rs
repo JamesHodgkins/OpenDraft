@@ -112,3 +112,31 @@ fn direction_control_restores_the_angle_on_cancel() {
     assert!(app.state.show_units, "the main dialog stays open");
     assert_eq!(app.units_draft.as_ref().unwrap().base_angle, 0.25);
 }
+
+#[test]
+fn the_point_style_dialog_works_on_a_draft_and_escape_changes_nothing() {
+    let (mut app, ctx) = (app(), egui::Context::default());
+    app.theme.apply(&ctx);
+    let before = app.state.point_style();
+    app.state.show_point_style = true;
+    let run = |app: &mut OpenDraftApp, events, time| {
+        let raw = RawInput {
+            screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(1280.0, 800.0))),
+            events,
+            time: Some(time),
+            ..Default::default()
+        };
+        let _ = ctx.run(raw, |ctx| app.point_style_window(ctx));
+    };
+    run(&mut app, Vec::new(), 0.0);
+    let draft = app
+        .state
+        .point_style_draft
+        .as_mut()
+        .expect("a draft while open");
+    draft.mode = 35;
+    run(&mut app, key(Key::Escape), 0.1);
+    assert!(!app.state.show_point_style);
+    assert!(app.state.point_style_draft.is_none());
+    assert_eq!(app.state.point_style(), before, "Cancel changes nothing");
+}
