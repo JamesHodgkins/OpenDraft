@@ -138,9 +138,9 @@ impl Colors {
             divider: base,
             pressed,
 
-            accent: hex(0x00c79a),
-            accent_hover: hex(0x1fd9ae),
-            accent_pressed: hex(0x00a07c),
+            accent: hex(0x00866b),
+            accent_hover: hex(0x009277),
+            accent_pressed: hex(0x006b55),
             accent_text: hex(0x4de3c0),
 
             // Slightly softer than the reference's pure white: light-on-dark
