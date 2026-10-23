@@ -32,7 +32,7 @@ Gate commits on the real exit codes (don't pipe cargo into grep and then commit)
 
 ## Working with the user (James)
 - Commit as James <133605871+JamesHodgkins@users.noreply.github.com> with NO Co-Authored-By trailer and never list Claude as a contributor.
-- Push only when asked; the user usually says yes after each finished feature. Stage with `git add -u` plus explicitly named new files, never `git add -A`; check `git status` first.
+- `main` is protected by a ruleset (pull request required, no force-push, no deletion) and Claude is not a bypass actor: work on a feature branch, push it when asked, and open a PR; the `check` jobs must pass before it merges. Push only when asked; the user usually says yes after each finished feature. Stage with `git add -u` plus explicitly named new files, never `git add -A`; check `git status` first.
 - Keep `ARCHITECTURE.md` and `ui_plan.md` updated in the same change as a feature.
 - Follow AutoCAD behaviour and wording for commands unless told otherwise. If a selection exists when a command starts, skip its first selection stage.
 - Finish with a short report: what changed, what is not done, and what to take next. Do not start new feature work without confirmation.
