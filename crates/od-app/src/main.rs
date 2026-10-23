@@ -51,6 +51,7 @@ mod hatch_cmd;
 mod hatch_edit;
 mod hatch_memory;
 mod home;
+mod home_scan;
 mod icon_library;
 mod insert_cmd;
 mod interact;

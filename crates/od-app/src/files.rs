@@ -114,7 +114,7 @@ impl AppState {
 
     /// Open the `index`th recent file.
     pub fn open_recent(&mut self, index: usize) {
-        if let Some(path) = self.recent.paths().get(index).cloned() {
+        if let Some(path) = self.recent.items().get(index).map(|i| i.path.clone()) {
             self.open_path(&path);
         }
     }
@@ -130,6 +130,7 @@ impl AppState {
         {
             self.active = i;
             self.home = false;
+            self.commit_recent(path);
             self.message = format!("{} is already open", self.docs[i].title);
             return true;
         }
@@ -564,7 +565,7 @@ mod tests {
     }
 
     #[test]
-    fn a_damaged_dwg_installs_nothing_and_is_forgotten() {
+    fn a_damaged_dwg_installs_nothing_and_stays_listed() {
         let dir = Scratch::new("dwgbad");
         // A DWG header that stops short: the version tag, then nothing usable.
         let mut bytes = b"AC1032".to_vec();
@@ -578,7 +579,11 @@ mod tests {
             "{}",
             state.message
         );
-        assert!(state.recent.paths().is_empty());
+        assert_eq!(
+            state.recent.paths(),
+            [dir.path("half.dwg")],
+            "a failed open keeps the entry"
+        );
         assert_eq!(state.docs.len(), 1);
         assert!(!state.docs[0].is_modified(), "still the blank drawing");
     }
@@ -679,19 +684,47 @@ mod tests {
     }
 
     #[test]
-    fn a_bad_file_is_reported_and_forgotten() {
+    fn a_bad_file_is_reported_and_stays_listed() {
         let dir = Scratch::new("badfile");
         std::fs::write(dir.path("junk.odx"), "not a drawing").unwrap();
         let (mut state, _) = state();
         state.recent.add(&dir.path("junk.odx"));
         state.open_path(&dir.path("junk.odx"));
         assert!(state.message.starts_with("Could not open"));
-        assert!(state.recent.paths().is_empty());
+        assert_eq!(state.recent.paths(), [dir.path("junk.odx")]);
         assert_eq!(state.docs.len(), 1);
         state.open_path(&dir.path("gone.odx"));
         assert!(state.message.starts_with("Could not open"));
         state.open_path(&dir.path("plan.txt"));
         assert!(state.message.starts_with("Could not open"));
+    }
+
+    #[test]
+    fn locating_a_missing_recent_drawing_replaces_it_once_the_file_opens() {
+        let dir = Scratch::new("locate");
+        od_files::save(&dir.path("moved.odx"), &od_core::Document::default()).unwrap();
+        let (mut state, script) = state();
+        state.recent.add(&dir.path("gone.odx"));
+        let gone = state.recent.items()[0].id;
+        state.recent.pin(gone).unwrap();
+        script.will_open(Some(dir.path("moved.odx")));
+        state.locate_recent(gone);
+        assert_eq!(state.recent.paths(), [dir.path("moved.odx")]);
+        assert!(state.recent.items()[0].pinned, "the pin moved with it");
+        assert!(state.locate.is_empty());
+    }
+
+    #[test]
+    fn locating_a_file_that_will_not_open_changes_nothing() {
+        let dir = Scratch::new("locatebad");
+        std::fs::write(dir.path("junk.odx"), "not a drawing").unwrap();
+        let (mut state, script) = state();
+        state.recent.add(&dir.path("gone.odx"));
+        let gone = state.recent.items()[0].id;
+        script.will_open(Some(dir.path("junk.odx")));
+        state.locate_recent(gone);
+        assert_eq!(state.recent.paths(), [dir.path("gone.odx")]);
+        assert!(state.locate.is_empty());
     }
 
     #[test]

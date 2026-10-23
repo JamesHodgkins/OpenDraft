@@ -43,7 +43,7 @@ fn app() -> OpenDraftApp {
         dynamic_keys: Vec::new(),
         automation: None,
         automation_forced: false,
-        home_recent: None,
+        home_scan: Default::default(),
     }
 }
 fn frame(app: &mut OpenDraftApp, ctx: &egui::Context, events: Vec<Event>, time: f64) {
