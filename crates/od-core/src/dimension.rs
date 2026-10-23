@@ -15,6 +15,7 @@ mod edit;
 mod fit;
 pub mod font;
 mod linear;
+mod ordinate;
 mod pick;
 mod radial;
 mod sketch;
@@ -24,6 +25,7 @@ mod text;
 use crate::{Bounds, Entity, Point};
 
 pub use centre::centre_segments;
+pub use ordinate::suggested_x_datum;
 pub use pick::{auto_rotation, lines_angle_points, object_ends};
 pub use style::{Arrow, DimStyle};
 pub use text::{angle_text, expand_codes, measurement_text, DimText};
@@ -92,6 +94,13 @@ pub enum DimKind {
         p2: Point,
         arc_point: Point,
         lines: bool,
+    },
+    /// The X (`x_datum`) or Y coordinate of `feature`, on a leader to
+    /// `leader_end`.
+    Ordinate {
+        feature: Point,
+        leader_end: Point,
+        x_datum: bool,
     },
 }
 
@@ -202,6 +211,23 @@ impl Dimension {
         )
     }
 
+    /// The X or Y coordinate of `feature`, led to `leader_end`.
+    pub fn ordinate(
+        feature: Point,
+        leader_end: Point,
+        x_datum: bool,
+        style: &DimStyle,
+    ) -> Dimension {
+        Self::with(
+            DimKind::Ordinate {
+                feature,
+                leader_end,
+                x_datum,
+            },
+            style,
+        )
+    }
+
     pub fn arc_length(
         center: Point,
         start: Point,
@@ -238,6 +264,7 @@ impl Dimension {
             }
             DimKind::ArcLength { .. } => finite(arc_length::measurement(&self.kind)?),
             DimKind::Angular { .. } => finite(angular::measurement(&self.kind)?),
+            DimKind::Ordinate { .. } => finite(ordinate::measurement(&self.kind)?),
         }
     }
 
@@ -268,6 +295,7 @@ impl Dimension {
             DimKind::Radial { .. } => radial::build(self),
             DimKind::ArcLength { .. } => arc_length::build(self),
             DimKind::Angular { .. } => angular::build(self),
+            DimKind::Ordinate { .. } => ordinate::build(self),
         }
     }
 

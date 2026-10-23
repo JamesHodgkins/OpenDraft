@@ -36,6 +36,14 @@ pub(crate) fn geometry(d: &od_core::Dimension) -> GeometryDto {
             if *diameter { "diameter" } else { "radius" },
             named_points(&[("center", *center), ("chord_point", *chord_point)]),
         ),
+        DimKind::Ordinate {
+            feature,
+            leader_end,
+            x_datum,
+        } => (
+            if *x_datum { "ordinate_x" } else { "ordinate_y" },
+            named_points(&[("feature", *feature), ("leader_end", *leader_end)]),
+        ),
         DimKind::Angular {
             vertex,
             p1,

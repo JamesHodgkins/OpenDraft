@@ -20,6 +20,8 @@ pub(crate) struct Tweaks {
     /// DIMARC: the leader option, and the two points of a partial arc.
     leader: bool,
     partial: Option<(Point, Point)>,
+    /// DIMORDINATE: `Some(true)` for the X datum, `Some(false)` for Y.
+    pub datum: Option<bool>,
 }
 
 pub(crate) type Make = Arc<dyn Fn(Point, &Tweaks) -> Option<Dimension> + Send + Sync>;
@@ -73,6 +75,8 @@ pub(crate) fn place(
                 "Horizontal" => tweaks.rotation = Some(0.0),
                 "Vertical" => tweaks.rotation = Some(FRAC_PI_2),
                 "Leader" => tweaks.leader = true,
+                "Xdatum" => tweaks.datum = Some(true),
+                "Ydatum" => tweaks.datum = Some(false),
                 "Partial" => {
                     let first = ed.get_point(PointOptions::new(
                         "Specify first point for arc length dimension",

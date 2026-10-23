@@ -83,6 +83,7 @@ pub const TABLE: &[(&str, AutomationPolicy, CommandEffect)] = &[
     ("dim.override", InteractiveInApp, Mutation),
     ("dim.update", InteractiveInApp, Mutation),
     ("dim.angular", InteractiveInApp, Mutation),
+    ("dim.ordinate", InteractiveInApp, Mutation),
     ("dim.centre", InteractiveInApp, Mutation),
     ("dim.baseline", InteractiveInApp, Mutation),
     ("dim.continue", InteractiveInApp, Mutation),

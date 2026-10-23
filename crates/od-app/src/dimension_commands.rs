@@ -8,6 +8,7 @@ use crate::dimension_centre_cmd::dim_centre;
 use crate::dimension_chain_cmd::{dim_baseline, dim_continue};
 use crate::dimension_cmd::{dim_aligned, dim_arc, dim_auto, dim_diameter, dim_linear, dim_radius};
 use crate::dimension_edit_cmd::{dim_edit, dim_text_edit};
+use crate::dimension_ordinate_cmd::dim_ordinate;
 use crate::state::AppState;
 
 /// As `editor_command!` in `commands.rs`.
@@ -29,6 +30,7 @@ pub fn commands() -> Vec<Command<AppState>> {
         editor_command!("dim.baseline", "Baseline", "DIMBASELINE", dim_baseline),
         editor_command!("dim.continue", "Continue", "DIMCONTINUE", dim_continue),
         editor_command!("dim.centre", "Center Mark", "DIMCENTER", dim_centre),
+        editor_command!("dim.ordinate", "Ordinate", "DIMORDINATE", dim_ordinate),
         editor_command!("dim.arc", "Arc Length", "DIMARC", dim_arc),
         editor_command!("dim.radius", "Radius", "DIMRADIUS", dim_radius),
         editor_command!("dim.diameter", "Diameter", "DIMDIAMETER", dim_diameter),

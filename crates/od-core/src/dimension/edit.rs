@@ -31,6 +31,11 @@ impl Dimension {
                 arc_point,
                 ..
             } => vec![*vertex, *p1, *p2, *arc_point],
+            DimKind::Ordinate {
+                feature,
+                leader_end,
+                ..
+            } => vec![*feature, *leader_end],
         }
     }
 
@@ -77,6 +82,14 @@ impl Dimension {
                 *p1 = f(*p1);
                 *p2 = f(*p2);
                 *arc_point = f(*arc_point);
+            }
+            DimKind::Ordinate {
+                feature,
+                leader_end,
+                ..
+            } => {
+                *feature = f(*feature);
+                *leader_end = f(*leader_end);
             }
         }
         out.text_pos = out.text_pos.map(f);
@@ -196,6 +209,14 @@ impl Dimension {
                 *p2 = shift(*p2);
                 *arc_point = shift(*arc_point);
             }
+            DimKind::Ordinate {
+                feature,
+                leader_end,
+                ..
+            } => {
+                *feature = shift(*feature);
+                *leader_end = shift(*leader_end);
+            }
         }
         out.text_pos = out.text_pos.map(shift);
         Some(out)
@@ -253,6 +274,8 @@ impl Dimension {
             (DimKind::Angular { p1, .. }, 1) => *p1 = to,
             (DimKind::Angular { p2, .. }, 2) => *p2 = to,
             (DimKind::Angular { arc_point, .. }, 3) => *arc_point = to,
+            (DimKind::Ordinate { feature, .. }, 0) => *feature = to,
+            (DimKind::Ordinate { leader_end, .. }, 1) => *leader_end = to,
             _ => return None,
         }
         // A dimension left with nothing to measure is refused.
