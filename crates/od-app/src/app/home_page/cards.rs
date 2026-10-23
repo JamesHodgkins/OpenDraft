@@ -148,7 +148,7 @@ fn picture_or_placeholder(
     match s.pictures.get(&entry.id) {
         Some(texture) => {
             // Behind the picture, so rounded corners show the card's own colour.
-            painter.rect_filled(picture, radius, egui::Color32::WHITE);
+            painter.rect_filled(picture, radius, egui::Color32::BLACK);
             let tint = if missing {
                 egui::Color32::from_gray(90)
             } else {

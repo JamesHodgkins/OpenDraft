@@ -3,8 +3,10 @@
 //! fixed picture and rasterised with one-pixel anti-aliased lines. The Home
 //! page keeps these as its recent-drawing previews.
 //!
-//! The picture is black-on-white paper like a plot (so a drawing's white lines
-//! show), every line one pixel wide whatever its lineweight.
+//! The picture is on black, like the drawing area: the plot's black (which is
+//! what it makes of white and of the foreground colour) is drawn white, and
+//! other colours as they are. Every line is one pixel wide whatever its
+//! lineweight.
 
 use od_core::plot::{PlotError, PlotSheet};
 use od_core::plot_model::plot_region;
@@ -18,7 +20,7 @@ const MARGIN: f64 = 0.06;
 /// The plot works in millimetres, where its tolerance is 0.02: a sheet this
 /// wide is 20 pixels to the millimetre, so curves stay within half a pixel.
 const SHEET_WIDTH: f64 = 25.6;
-const PAPER: [u8; 3] = [255, 255, 255];
+const PAPER: [u8; 3] = [0, 0, 0];
 /// Subsamples per pixel row when filling.
 const SUBROWS: usize = 4;
 
@@ -156,7 +158,7 @@ pub fn render(document: &Document) -> Result<Preview, PreviewError> {
     Ok(render_sheet(&sheet))
 }
 
-/// The picture for an empty drawing: faint grid on paper.
+/// The picture for an empty drawing: faint grid on black.
 pub fn blank() -> Preview {
     let mut canvas = Canvas::new();
     for y in 0..HEIGHT {
@@ -164,14 +166,24 @@ pub fn blank() -> Preview {
             let major = x % 128 == 0 || y % 128 == 0;
             let minor = x % 32 == 0 || y % 32 == 0;
             let grey = match (major, minor) {
-                (true, _) => 208,
-                (_, true) => 230,
+                (true, _) => 52,
+                (_, true) => 30,
                 _ => continue,
             };
             canvas.blend(x as i64, y as i64, [grey; 3], 1.0);
         }
     }
     canvas.into_preview()
+}
+
+/// A plotted colour as it shows on black: the plot's black, and anything
+/// else too dark to see, becomes white.
+fn on_black(rgb: [u8; 3]) -> [u8; 3] {
+    if rgb.iter().all(|c| *c < 64) {
+        [255; 3]
+    } else {
+        rgb
+    }
 }
 
 /// A plotted sheet as a picture, its width spread over the picture's.
@@ -185,10 +197,10 @@ pub fn render_sheet(sheet: &PlotSheet) -> Preview {
     for path in &sheet.paths {
         let points: Vec<(f32, f32)> = path.points.iter().map(to_px).collect();
         for pair in points.windows(2) {
-            canvas.line(pair[0], pair[1], path.rgb);
+            canvas.line(pair[0], pair[1], on_black(path.rgb));
         }
         if path.closed && points.len() > 2 {
-            canvas.line(points[points.len() - 1], points[0], path.rgb);
+            canvas.line(points[points.len() - 1], points[0], on_black(path.rgb));
         }
     }
     for fill in &sheet.fills {
@@ -197,7 +209,7 @@ pub fn render_sheet(sheet: &PlotSheet) -> Preview {
             .iter()
             .map(|c| c.iter().map(to_px).collect())
             .collect();
-        canvas.fill(&contours, fill.rgb);
+        canvas.fill(&contours, on_black(fill.rgb));
     }
     canvas.into_preview()
 }
