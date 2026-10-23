@@ -37,7 +37,7 @@ fn tab_reaches_each_recent_drawing_then_its_pin_and_menu() {
 /// The Tab stop whose Enter pins a drawing, for each drawing.
 fn pin_stops() -> Vec<(usize, PathBuf)> {
     let mut found = Vec::new();
-    for stops in 1..=9 {
+    for stops in 1..=12 {
         let (mut app, ctx) = on_home();
         let mut time = 0.0;
         frame(&mut app, &ctx, Vec::new(), time);

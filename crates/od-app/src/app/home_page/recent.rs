@@ -5,23 +5,28 @@ use std::time::SystemTime;
 
 use eframe::egui;
 use od_ui::widgets;
-use od_ui::{icon_set, menu};
 
+use super::cards::{self, Pictures};
+use super::controls::{entry_controls, BUTTON};
 use super::Pick;
 use crate::home::size_text;
 use crate::home_scan::{FileState, RecentEntry};
-use crate::recent::MAX_PINNED;
+use crate::recent::RecentView;
 use crate::text::{age_text, plural};
 
 const ROW_HEIGHT: f32 = 46.0;
 
-pub(super) fn recent_section(
-    ui: &mut egui::Ui,
-    theme: &od_ui::Theme,
-    entries: &[RecentEntry],
-    pinned_full: bool,
-    pick: &mut Option<Pick>,
-) {
+/// What the Recent drawings section needs to draw itself.
+pub(super) struct Section<'a> {
+    pub theme: &'a od_ui::Theme,
+    pub entries: &'a [RecentEntry],
+    pub pinned_full: bool,
+    pub pictures: &'a Pictures,
+    pub view: RecentView,
+}
+
+pub(super) fn recent_section(ui: &mut egui::Ui, s: &Section, pick: &mut Option<Pick>) {
+    let (theme, entries) = (s.theme, s.entries);
     let unpinned = entries.iter().filter(|e| !e.pinned).count();
     let confirm_id = ui.id().with("confirm_clear");
     let confirming = ui.data(|d| d.get_temp::<bool>(confirm_id)).unwrap_or(false) && unpinned > 1;
@@ -31,6 +36,15 @@ pub(super) fn recent_section(
             return;
         }
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            // Right to left: the view toggle sits at the far end.
+            let mut chosen = usize::from(s.view == RecentView::List);
+            if widgets::tab_strip(ui, theme, &mut chosen, &["Grid", "List"]) {
+                *pick = Some(Pick::SetView(if chosen == 0 {
+                    RecentView::Grid
+                } else {
+                    RecentView::List
+                }));
+            }
             if confirming {
                 if widgets::secondary_button(ui, theme, "Cancel").clicked() {
                     ui.data_mut(|d| d.insert_temp(confirm_id, false));
@@ -62,15 +76,27 @@ pub(super) fn recent_section(
         );
         return;
     }
-    for entry in entries {
-        recent_row(ui, theme, entry, pinned_full, pick);
+    match s.view {
+        RecentView::Grid => cards::grid(ui, s, pick),
+        RecentView::List => {
+            for entry in entries {
+                recent_row(ui, theme, entry, s.pinned_full, pick);
+            }
+        }
     }
 }
 
-/// Width and height of the Pin and More buttons at the end of a row.
-const BUTTON: f32 = 28.0;
-const BUTTON_ICON: f32 = 16.0;
-const MENU_WIDTH: f32 = 170.0;
+/// What is known of the file: its age and size, or that it is missing.
+pub(super) fn meta_text(entry: &RecentEntry) -> String {
+    match &entry.state {
+        FileState::Pending => String::new(),
+        FileState::Present { modified, size } => match modified {
+            Some(at) => format!("{}  ·  {}", modified_text(*at), size_text(*size)),
+            None => size_text(*size),
+        },
+        FileState::Missing => "Missing".to_owned(),
+    }
+}
 
 fn recent_row(
     ui: &mut egui::Ui,
@@ -98,16 +124,8 @@ fn recent_row(
             notes.push("Open".to_owned());
         }
         let missing = entry.state == FileState::Missing;
-        match &entry.state {
-            FileState::Pending => {}
-            FileState::Present { modified, size } => {
-                if let Some(at) = modified {
-                    notes.push(modified_text(*at));
-                }
-                notes.push(size_text(*size));
-            }
-            FileState::Missing => notes.push("Missing".to_owned()),
-        }
+        notes.push(meta_text(entry));
+        notes.retain(|n| !n.is_empty());
         let response = row(
             ui,
             theme,
@@ -124,147 +142,14 @@ fn recent_row(
         if response.clicked() {
             *pick = Some(Pick::Recent(entry.id));
         }
-        // Right-click opens the same menu as More, at the pointer.
-        let at = response
-            .interact_pointer_pos()
-            .unwrap_or_else(|| response.rect.center());
-        let menu = menu::popup_at(
-            ui,
-            theme,
-            ui.id().with("context"),
-            response.secondary_clicked(),
-            egui::Rect::from_min_size(at, egui::Vec2::ZERO),
-            MENU_WIDTH,
-            |ui| menu_items(ui, theme, entry, pinned_full),
-        );
-        if menu.is_some() {
-            *pick = menu;
-        }
         // The buttons come after the row, so Tab visits the row, Pin, More.
         let centre = response.rect.right_center();
         let more_rect = egui::Rect::from_center_size(
             egui::pos2(centre.x - 8.0 - BUTTON / 2.0, centre.y),
             egui::Vec2::splat(BUTTON),
         );
-        let pin_rect = more_rect.translate(egui::vec2(-BUTTON, 0.0));
-        let pin_disabled = !entry.pinned && pinned_full;
-        let pin = icon_button(ui, theme, pin_rect, od_ui::icons::HOME_PIN, entry.pinned, {
-            !pin_disabled
-        });
-        let pin = if pin_disabled {
-            pin.on_hover_text(format!("You can pin up to {MAX_PINNED} drawings"))
-        } else {
-            pin.on_hover_text(if entry.pinned { "Unpin" } else { "Pin" })
-        };
-        if pin.clicked() {
-            *pick = Some(if entry.pinned {
-                Pick::Unpin(entry.id)
-            } else {
-                Pick::Pin(entry.id)
-            });
-        }
-        let more = icon_button(ui, theme, more_rect, od_ui::icons::HOME_MORE, false, true)
-            .on_hover_text("More actions");
-        let menu = menu::popup(ui, theme, ui.id().with("more"), &more, MENU_WIDTH, |ui| {
-            menu_items(ui, theme, entry, pinned_full)
-        });
-        if menu.is_some() {
-            *pick = menu;
-        }
+        entry_controls(ui, theme, entry, pinned_full, &response, more_rect, pick);
     });
-}
-
-/// A small icon button in `rect`, lit while `on`. Its id comes from `icon`,
-/// not from where it was added, so focus stays with it when the list moves.
-fn icon_button(
-    ui: &mut egui::Ui,
-    theme: &od_ui::Theme,
-    rect: egui::Rect,
-    icon: char,
-    on: bool,
-    enabled: bool,
-) -> egui::Response {
-    let c = &theme.colors;
-    let sense = if enabled {
-        egui::Sense::click()
-    } else {
-        egui::Sense::hover()
-    };
-    let response = ui.interact(rect, ui.id().with(icon), sense);
-    if enabled && (response.hovered() || on) {
-        ui.painter().rect_filled(rect, 4.0, c.hover);
-    }
-    if response.has_focus() {
-        ui.painter().rect_stroke(
-            rect,
-            4.0,
-            egui::Stroke::new(2.0_f32, c.accent),
-            egui::StrokeKind::Inside,
-        );
-    }
-    let colour = match (enabled, on) {
-        (false, _) => c.text_disabled,
-        (true, true) => c.text,
-        (true, false) => c.text_weak,
-    };
-    icon_set::paint(
-        ui.painter(),
-        rect.center(),
-        egui::Align2::CENTER_CENTER,
-        icon,
-        BUTTON_ICON,
-        colour,
-    );
-    response
-}
-
-/// The things that can be done to a recent drawing, as the app's other menus
-/// draw them. Copy path is done here; the rest is for the caller to carry out.
-fn menu_items(
-    ui: &mut egui::Ui,
-    theme: &od_ui::Theme,
-    entry: &RecentEntry,
-    pinned_full: bool,
-) -> Option<Pick> {
-    let mut chosen = None;
-    if menu::menu_row(ui, theme, "Open", false) {
-        chosen = Some(Pick::Recent(entry.id));
-    }
-    if entry.pinned {
-        if menu::menu_row(ui, theme, "Unpin", false) {
-            chosen = Some(Pick::Unpin(entry.id));
-        }
-    } else {
-        let label = if pinned_full {
-            format!("Pin (up to {MAX_PINNED} drawings)")
-        } else {
-            "Pin".to_owned()
-        };
-        let clicked = ui
-            .add_enabled_ui(!pinned_full, |ui| menu::menu_row(ui, theme, &label, false))
-            .inner;
-        if clicked {
-            chosen = Some(Pick::Pin(entry.id));
-        }
-    }
-    if menu::menu_row(ui, theme, "Copy path", false) {
-        ui.ctx().copy_text(entry.path.display().to_string());
-        // Done already; this closes the menu.
-        chosen = Some(Pick::Copied);
-    }
-    if entry.path.parent().is_some_and(std::path::Path::is_dir)
-        && menu::menu_row(ui, theme, "Show in folder", false)
-    {
-        chosen = Some(Pick::ShowInFolder(entry.path.clone()));
-    }
-    if entry.state == FileState::Missing && menu::menu_row(ui, theme, "Locate...", false) {
-        chosen = Some(Pick::Locate(entry.id));
-    }
-    ui.separator();
-    if menu::menu_row(ui, theme, "Remove from list", false) {
-        chosen = Some(Pick::Forget(entry.id));
-    }
-    chosen
 }
 
 fn modified_text(at: SystemTime) -> String {

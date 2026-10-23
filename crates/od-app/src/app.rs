@@ -99,8 +99,9 @@ pub struct OpenDraftApp {
     /// `OD_AUTOMATION=1` turned the endpoint on for this run only (nothing
     /// is saved), for scripts and tests.
     automation_forced: bool,
-    /// What is known of the files behind the recent drawings.
+    /// What Home knows of the recent files, and the pictures it shows for them.
     home_scan: crate::home_scan::HomeScan,
+    home_previews: crate::preview_textures::PreviewTextures,
 }
 
 impl OpenDraftApp {
@@ -118,6 +119,7 @@ impl OpenDraftApp {
         crate::icon_library::load(&mut state.cmdline);
         state.settings = settings;
         state.recent = recent;
+        let home_previews = crate::preview_textures::PreviewTextures::start(&mut state.previews);
         if open.is_empty() {
             state.start_on_home();
         }
@@ -133,6 +135,7 @@ impl OpenDraftApp {
             .collect();
         shortcuts.sort_by_key(|(s, _)| std::cmp::Reverse(modifier_count(s)));
         Self {
+            home_previews,
             theme,
             settings_draft: None,
             settings_tab: 0,
@@ -320,22 +323,6 @@ impl OpenDraftApp {
             self.last_autosave = std::time::Instant::now();
         }
         ctx.request_repaint_after(std::time::Duration::from_secs(30));
-    }
-
-    /// "name* - OpenDraft", following the active drawing.
-    fn update_window_title(&mut self, ctx: &egui::Context) {
-        let title = if self.state.home {
-            "Home - OpenDraft".to_owned()
-        } else {
-            format!(
-                "{} - OpenDraft",
-                self.state.docs[self.state.active].tab_title()
-            )
-        };
-        if title != self.window_title {
-            ctx.send_viewport_cmd(egui::ViewportCommand::Title(title.clone()));
-            self.window_title = title;
-        }
     }
 
     fn handle_shortcuts(&mut self, ctx: &egui::Context) {

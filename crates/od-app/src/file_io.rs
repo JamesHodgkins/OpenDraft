@@ -146,9 +146,17 @@ impl AppState {
         self.opening.push(path.to_owned());
         self.message = format!("Opening {}...", display_name(path));
         let path = path.to_owned();
-        Some(self.submit_cancellable(move |cancelled| Done::Opened {
-            result: Box::new(od_files::load_cancellable(&path, cancelled)),
-            path,
+        let previews = self.previews.clone();
+        Some(self.submit_cancellable(move |cancelled| {
+            let result = od_files::load_cancellable(&path, cancelled);
+            // Once it has read, a picture for Home, unless one is kept already.
+            if let (Some(previews), Ok(loaded)) = (&previews, &result) {
+                previews.request_unless_stored(&path, || loaded.document.clone());
+            }
+            Done::Opened {
+                result: Box::new(result),
+                path,
+            }
         }))
     }
 
@@ -228,11 +236,19 @@ impl AppState {
         self.saving.push(uid);
         self.message = format!("Saving {}...", display_name(path));
         let path = path.to_owned();
-        Some(self.submit_cancellable(move |cancelled| Done::Saved {
-            result: od_files::save_cancellable(&path, &copy, cancelled),
-            uid,
-            path,
-            position,
+        let previews = self.previews.clone();
+        Some(self.submit_cancellable(move |cancelled| {
+            let result = od_files::save_cancellable(&path, &copy, cancelled);
+            // What was written is what the picture shows.
+            if let (Some(previews), Ok(_)) = (&previews, &result) {
+                previews.request(&path, copy);
+            }
+            Done::Saved {
+                result,
+                uid,
+                path,
+                position,
+            }
         }))
     }
 

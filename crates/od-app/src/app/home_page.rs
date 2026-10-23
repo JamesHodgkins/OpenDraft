@@ -7,13 +7,15 @@ use std::path::{Path, PathBuf};
 use eframe::egui;
 use od_ui::widgets;
 
+mod cards;
+mod controls;
 mod recent;
 
 use super::OpenDraftApp;
 use crate::home_scan::ScanRequest;
-use crate::recent::{RecentId, MAX_PINNED};
+use crate::recent::{RecentId, RecentView, MAX_PINNED};
 use crate::text::plural;
-use recent::{recent_section, row, RowText};
+use recent::{recent_section, row, RowText, Section};
 
 const PAGE_WIDTH: f32 = 720.0;
 
@@ -40,6 +42,7 @@ pub(super) enum Pick {
     /// The path is on the clipboard.
     Copied,
     ClearUnpinned,
+    SetView(RecentView),
     Show(usize),
 }
 
@@ -48,6 +51,8 @@ impl OpenDraftApp {
         self.refresh_recent_entries(ui.ctx());
         let entries = self.home_scan.entries(&self.state.recent);
         let pinned_full = self.state.recent.pinned_count() >= MAX_PINNED;
+        let pictures = self.home_previews.update(ui.ctx(), &entries);
+        let view = self.state.recent.view;
         let theme = &self.theme;
         let mut pick = None;
         egui::ScrollArea::vertical()
@@ -63,7 +68,17 @@ impl OpenDraftApp {
                             self.open_drawings_section(ui, &mut pick)
                         });
                         ui.push_id("home_recent", |ui| {
-                            recent_section(ui, theme, &entries, pinned_full, &mut pick)
+                            recent_section(
+                                ui,
+                                &Section {
+                                    theme,
+                                    entries: &entries,
+                                    pinned_full,
+                                    pictures: &pictures,
+                                    view,
+                                },
+                                &mut pick,
+                            )
                         });
                         ui.add_space(22.0);
                         ui.push_id("home_keys", |ui| keys_section(ui, theme));
@@ -150,6 +165,7 @@ impl OpenDraftApp {
             Some(Pick::ClearUnpinned) => {
                 self.state.recent.clear_unpinned();
             }
+            Some(Pick::SetView(view)) => self.state.recent.view = view,
             Some(Pick::Copied) => self.state.message = "Path copied".to_owned(),
             Some(Pick::Show(i)) => self.state.show_document(i),
             None => {}
