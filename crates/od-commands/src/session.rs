@@ -120,7 +120,7 @@ impl Session {
         let changes = if follow.is_empty() {
             self.history.record(action)
         } else {
-            let mut update = ModifyEntities::new("Update hatch", follow);
+            let mut update = ModifyEntities::new("Update associations", follow);
             update.apply(&mut self.document);
             let name = action.name();
             self.history.record(Box::new(Batch {

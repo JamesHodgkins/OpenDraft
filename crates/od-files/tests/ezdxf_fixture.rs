@@ -267,3 +267,50 @@ fn splines_from_ezdxf_trace_the_same_curves() {
     assert_eq!(wave.start_point(), Point::new(40.0, 0.0));
     assert_eq!(wave.end_point(), Point::new(43.0, 0.0));
 }
+
+#[test]
+fn dimensions_come_in_with_their_points_styles_and_text() {
+    use od_core::{DimKind, DimText, Dimension};
+
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/ezdxf_dimensions.dxf");
+    let loaded = od_files::load(&path).expect("the fixture reads");
+    let dims: Vec<Dimension> = loaded
+        .document
+        .model_objects()
+        .filter_map(|o| match &o.entity {
+            Entity::Dimension(d) => Some((**d).clone()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(dims.len(), 10, "{:?}", loaded.warnings);
+    let measured: Vec<f64> = dims.iter().map(|d| d.measurement().unwrap()).collect();
+    let near = |a: f64, b: f64| (a - b).abs() < 1e-6;
+    // Horizontal, vertical, aligned, then radius and diameter.
+    assert!(near(measured[0], 30.0) && near(measured[1], 20.0) && near(measured[2], 50.0));
+    assert!(near(measured[3], 10.0) && near(measured[4], 20.0));
+    // Two lines: 45 degrees; three points: 90 degrees; ordinate: the X.
+    assert!(near(measured[5], 45.0_f64.to_radians()));
+    assert!(near(measured[6], 90.0_f64.to_radians()));
+    assert!(near(measured[7], 30.0));
+    assert!(matches!(
+        dims[0].kind,
+        DimKind::Linear { rotation: Some(r), .. } if near(r, 0.0)
+    ));
+    assert!(matches!(dims[5].kind, DimKind::Angular { lines: true, .. }));
+    assert!(matches!(
+        dims[7].kind,
+        DimKind::Ordinate { x_datum: true, .. }
+    ));
+    assert_eq!(dims[1].text, DimText::Custom("<> TYP".to_owned()));
+    // Styles by name, and the table in the drawing with Standard first.
+    assert_eq!(dims[8].style.name, "Big");
+    assert_eq!(dims[8].style.text_height, 6.0);
+    assert_eq!(dims[0].style.name, "EZDXF");
+    let styles = loaded.document.dim_styles();
+    assert_eq!(styles[0].name, "Standard");
+    assert!(loaded.document.dim_style_named("Big").is_some());
+    // The last has its style's name but a text height of its own.
+    assert_eq!(dims[9].style.name, "EZDXF");
+    assert_eq!(dims[9].style.text_height, 5.0);
+    assert_eq!(loaded.document.validate(), Ok(()));
+}

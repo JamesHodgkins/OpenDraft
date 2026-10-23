@@ -2,6 +2,7 @@
 
 use std::f64::consts::FRAC_PI_2;
 
+use super::centre::centre_segments;
 use super::font;
 use super::sketch::{along, direction, dist, outside_box, readable, sub, unit, Sketch};
 use super::{Arrow, Built, DimKind, Dimension};
@@ -13,10 +14,14 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
         chord_point,
         diameter,
         leader_length,
+        jog,
     } = &dim.kind
     else {
         return None;
     };
+    if jog.is_some() {
+        return super::jogged::build(dim);
+    }
     let (c, pt) = (*center, *chord_point);
     let r = dist(c, pt);
     let u = unit(sub(pt, c))?;
@@ -28,7 +33,8 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
     } else {
         s.arrow_size
     };
-    let width = font::text_width(&label, h);
+    let contents = dim.contents();
+    let width = font::contents_width(&contents, h);
     let clearance = if label.is_empty() {
         0.0
     } else {
@@ -100,6 +106,7 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
         }
     };
 
+    let text_angle = dim.text_angle.unwrap_or(text_angle);
     let mut out = Sketch::default();
     // Arrows touch the circle from inside.
     out.arrow(s.arrow, pt, (-u.0, -u.1), size);
@@ -108,10 +115,10 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
     }
     // Centre mark.
     // Text centred on a diameter would sit on top of the mark.
-    if s.centre_mark > 0.0 && !(*diameter && text_in && has_text && dim.text_pos.is_none()) {
-        let m = s.centre_mark;
-        out.line(Point::new(c.x - m, c.y), Point::new(c.x + m, c.y));
-        out.line(Point::new(c.x, c.y - m), Point::new(c.x, c.y + m));
+    if !(*diameter && text_in && has_text && dim.text_pos.is_none()) {
+        for (a, b) in centre_segments(c, r, s.centre_mark) {
+            out.line(a, b);
+        }
     }
 
     let breaks = text_in && has_text && s.text_above == 0 && dim.text_pos.is_none();
@@ -128,7 +135,9 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
     if text_in || s.force_line {
         draw(&mut out, inner_start, pt);
     }
-    if !text_in {
+    // Text left free (DIMTMOVE 2) has no line to it.
+    let free = dim.text_pos.is_some() && s.text_move == 2;
+    if !text_in && !free {
         // From the circle out to the text, with a landing for horizontal text.
         let stop = |toward: Point| {
             let dir = unit(sub(toward, pt)).unwrap_or(u);
@@ -154,7 +163,7 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
         }
     }
     if has_text {
-        out.text(&label, h, centre, text_angle, s.text_style);
+        out.label(&s, &contents, width, centre, centre, text_angle);
     }
     Some(Built {
         pieces: out.pieces,
@@ -225,6 +234,16 @@ mod tests {
             },
         );
         assert!(on.picture().len() > off.picture().len());
+    }
+
+    #[test]
+    fn text_moved_freely_has_no_line_to_it() {
+        let mut d = Dimension::radius(p(0.0, 0.0), p(50.0, 0.0), &DimStyle::default());
+        d.text_pos = Some(p(80.0, 30.0));
+        d.style.text_move = 2;
+        assert!(!has_line(&d, |a, _| a == p(50.0, 0.0)));
+        d.style.text_move = 1;
+        assert!(has_line(&d, |a, _| a == p(50.0, 0.0)));
     }
 
     #[test]

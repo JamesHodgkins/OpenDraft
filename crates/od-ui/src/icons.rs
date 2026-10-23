@@ -85,6 +85,17 @@ icons! {
     DIM_ALIGNED = '\u{e1c3}';
     DIM_ANGULAR = '\u{e4f1}';
     DIM_ARC = '\u{e4b4}';
+    DIM_BASELINE = '\u{e270}';
+    DIM_CENTRE = '\u{e348}';
+    DIM_CONTINUE = '\u{e596}';
+    DIM_DISASSOCIATE = '\u{e109}';
+    DIM_EDIT = '\u{e4f5}';
+    DIM_JOGGED = '\u{e542}';
+    DIM_JOGLINE = '\u{e611}';
+    DIM_ORDINATE = '\u{e0b0}';
+    DIM_REASSOCIATE = '\u{e108}';
+    DIM_SPACE = '\u{e27a}';
+    DIM_TEXTEDIT = '\u{e264}';
     DIM_DIAMETER = '\u{e52a}';
     DIM_DIM = '\u{e14e}';
     DIM_LINEAR = '\u{e1c5}';

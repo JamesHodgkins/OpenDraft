@@ -4,11 +4,12 @@
 
 use od_core::hatch::HatchFill;
 use od_core::mtext::MTextAttachment;
-use od_core::{Attr, Attributes, Color, DimKind, Entity, LayoutId, Object, Point};
+use od_core::{Attr, Attributes, Color, Entity, LayoutId, Object, Point};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 pub use crate::entity_bounds::BoundsDto;
+use crate::entity_dimensions;
 use crate::entity_leaders;
 use crate::limits::STRING_BYTES_MAX;
 use crate::WireId;
@@ -257,65 +258,6 @@ pub(crate) fn bounded(text: &str) -> (String, bool) {
     (text[..end].to_owned(), true)
 }
 
-fn named_points(points: &[(&str, Point)]) -> Vec<(String, PointDto)> {
-    points
-        .iter()
-        .map(|(name, p)| ((*name).to_owned(), (*p).into()))
-        .collect()
-}
-
-fn dimension_geometry(d: &od_core::Dimension) -> GeometryDto {
-    let (dimension, points) = match &d.kind {
-        DimKind::Linear {
-            p1,
-            p2,
-            line_point,
-            rotation,
-            ..
-        } => (
-            if rotation.is_some() {
-                "linear"
-            } else {
-                "aligned"
-            },
-            named_points(&[("p1", *p1), ("p2", *p2), ("line_point", *line_point)]),
-        ),
-        DimKind::Radial {
-            center,
-            chord_point,
-            diameter,
-            ..
-        } => (
-            if *diameter { "diameter" } else { "radius" },
-            named_points(&[("center", *center), ("chord_point", *chord_point)]),
-        ),
-        DimKind::ArcLength {
-            center,
-            start,
-            end,
-            arc_point,
-        } => (
-            "arc_length",
-            named_points(&[
-                ("center", *center),
-                ("start", *start),
-                ("end", *end),
-                ("arc_point", *arc_point),
-            ]),
-        ),
-    };
-    GeometryDto::Dimension {
-        dimension: dimension.to_owned(),
-        points,
-        text: match &d.text {
-            od_core::DimText::Measured => "measured",
-            od_core::DimText::Hidden => "hidden",
-            od_core::DimText::Custom(_) => "custom",
-        }
-        .to_owned(),
-    }
-}
-
 pub fn geometry_dto(entity: &Entity) -> GeometryDto {
     match entity {
         Entity::Point { at } => GeometryDto::Point { at: (*at).into() },
@@ -401,7 +343,7 @@ pub fn geometry_dto(entity: &Entity) -> GeometryDto {
             scale_y: num(i.scale_y),
             rotation: num(i.rotation),
         },
-        Entity::Dimension(d) => dimension_geometry(d),
+        Entity::Dimension(d) => entity_dimensions::geometry(d),
         Entity::Leader(l) => entity_leaders::leader(l),
         Entity::MLeader(m) => entity_leaders::multileader(m),
         Entity::Hatch(h) => GeometryDto::Hatch {

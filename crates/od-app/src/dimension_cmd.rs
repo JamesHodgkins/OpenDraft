@@ -13,20 +13,25 @@ use crate::draw::{add, distance, MIN_SIZE};
 
 /// What the user has changed from the defaults while placing a dimension.
 #[derive(Clone, Default)]
-struct Tweaks {
-    text: DimText,
+pub(crate) struct Tweaks {
+    pub text: DimText,
     /// A dimension line angle chosen with Horizontal, Vertical or Rotated.
     rotation: Option<f64>,
+    /// DIMARC: the leader option, and the two points of a partial arc.
+    leader: bool,
+    partial: Option<(Point, Point)>,
+    /// DIMORDINATE: `Some(true)` for the X datum, `Some(false)` for Y.
+    pub datum: Option<bool>,
 }
 
-type Make = Arc<dyn Fn(Point, &Tweaks) -> Option<Dimension> + Send + Sync>;
+pub(crate) type Make = Arc<dyn Fn(Point, &Tweaks) -> Option<Dimension> + Send + Sync>;
 
-fn style(ed: &Editor) -> Result<DimStyle, Cancelled> {
+pub(crate) fn style(ed: &Editor) -> Result<DimStyle, Cancelled> {
     ed.read(|doc| doc.dim_style().clone())
 }
 
 /// Click an object; `None` when the user ends the command with Enter.
-fn pick(ed: &Editor, message: &str) -> Result<Option<(Picked, Entity)>, Cancelled> {
+pub(crate) fn pick(ed: &Editor, message: &str) -> Result<Option<(Picked, Entity)>, Cancelled> {
     let Answer::Value(picked) = ed.ask_object(Options::<Picked>::new(message))? else {
         return Ok(None);
     };
@@ -38,7 +43,7 @@ fn pick(ed: &Editor, message: &str) -> Result<Option<(Picked, Entity)>, Cancelle
 /// Ask where the dimension goes, showing it follow the cursor, with the
 /// given keywords on offer. `sample` is any point, used to word the Text
 /// prompt with the measurement.
-fn place(
+pub(crate) fn place(
     ed: &Editor,
     message: &str,
     keywords: &[(&str, &str)],
@@ -69,6 +74,19 @@ fn place(
                 "Text" => tweaks.text = ask_text(ed, &make, sample, &tweaks)?,
                 "Horizontal" => tweaks.rotation = Some(0.0),
                 "Vertical" => tweaks.rotation = Some(FRAC_PI_2),
+                "Leader" => tweaks.leader = true,
+                "Xdatum" => tweaks.datum = Some(true),
+                "Ydatum" => tweaks.datum = Some(false),
+                "Partial" => {
+                    let first = ed.get_point(PointOptions::new(
+                        "Specify first point for arc length dimension",
+                    ))?;
+                    let second = ed.get_point(
+                        PointOptions::new("Specify second point for arc length dimension")
+                            .base(first),
+                    )?;
+                    tweaks.partial = Some((first, second));
+                }
                 "Rotated" => {
                     tweaks.rotation = Some(ed.get_angle("Specify angle of dimension line")?);
                 }
@@ -226,9 +244,31 @@ pub fn dim_diameter(ed: &mut Editor) -> Result<(), Cancelled> {
 /// a linear dimension from two points instead.
 pub fn dim_auto(ed: &mut Editor) -> Result<(), Cancelled> {
     loop {
-        let Some((picked, entity)) = pick(ed, "Select object to dimension or <specify points>")?
-        else {
-            return linear(ed, false);
+        let options = Options::<Picked>::new("Select object to dimension or <specify points>")
+            .keyword("Angular", "A")
+            .keyword("Baseline", "B")
+            .keyword("Continue", "C")
+            .keyword("Ordinate", "O")
+            .keyword("aLign", "L")
+            .keyword("Space", "S")
+            .allow_empty();
+        let picked = match ed.ask_object(options)? {
+            Answer::Value(picked) => picked,
+            Answer::Keyword(k) => {
+                return match k.as_str() {
+                    "Angular" => crate::dimension_angular_cmd::dim_angular(ed),
+                    "Baseline" => crate::dimension_chain_cmd::dim_baseline(ed),
+                    "Continue" => crate::dimension_chain_cmd::dim_continue(ed),
+                    "Ordinate" => crate::dimension_ordinate_cmd::dim_ordinate(ed),
+                    "Space" => crate::dimension_space_cmd::dim_space(ed),
+                    _ => linear(ed, true),
+                };
+            }
+            Answer::Enter => return linear(ed, false),
+        };
+        let id = picked.id;
+        let Some(entity) = ed.read(move |doc| doc.get(id).cloned())? else {
+            continue;
         };
         let style = style(ed)?;
         match &entity {
@@ -241,6 +281,21 @@ pub fn dim_auto(ed: &mut Editor) -> Result<(), Cancelled> {
             },
         }
     }
+}
+
+/// The point of the arc through `on` (any point of it) in the direction of
+/// `toward` from `center`.
+fn on_arc(center: Point, on: Point, toward: Point) -> Point {
+    let radius = distance(center, on);
+    let (dx, dy) = (toward.x - center.x, toward.y - center.y);
+    let length = dx.hypot(dy);
+    if length < MIN_SIZE {
+        return on;
+    }
+    Point::new(
+        center.x + dx / length * radius,
+        center.y + dy / length * radius,
+    )
 }
 
 /// DIMARC: pick an arc, then where the dimension arc goes.
@@ -264,14 +319,21 @@ pub fn dim_arc(ed: &mut Editor) -> Result<(), Cancelled> {
         }
     };
     let make: Make = Arc::new(move |at, tweaks| {
-        let mut dimension = Dimension::arc_length(center, start, end, at, &style);
+        let (from, to) = match tweaks.partial {
+            Some((a, b)) => (on_arc(center, start, a), on_arc(center, start, b)),
+            None => (start, end),
+        };
+        let mut dimension = Dimension::arc_length(center, from, to, at, &style);
+        if let od_core::DimKind::ArcLength { leader, .. } = &mut dimension.kind {
+            *leader = tweaks.leader;
+        }
         dimension.text = tweaks.text.clone();
         dimension.measurement().map(|_| dimension)
     });
     place(
         ed,
         "Specify arc length dimension location",
-        &[("Text", "T")],
+        &[("Text", "T"), ("Partial", "P"), ("Leader", "L")],
         start,
         make,
     )
@@ -279,6 +341,8 @@ pub fn dim_arc(ed: &mut Editor) -> Result<(), Cancelled> {
 
 #[cfg(test)]
 mod tests {
+    use std::f64::consts::PI;
+
     use super::*;
     use crate::state::AppState;
 
@@ -338,6 +402,16 @@ mod tests {
     }
 
     #[test]
+    fn dims_keywords_start_the_other_dimension_commands() {
+        let mut state = started(&[], "DIM", dim_auto);
+        submit(&mut state, "o");
+        assert!(state.cmd_prompt().text.contains("feature location"));
+        let mut state = started(&[], "DIM", dim_auto);
+        submit(&mut state, "a");
+        assert!(state.cmd_prompt().text.contains("Select arc, circle, line"));
+    }
+
+    #[test]
     fn aligned_takes_two_origins_and_a_location() {
         let mut state = started(&[], "DIMALIGNED", dim_aligned);
         submit(&mut state, "0,0");
@@ -391,6 +465,11 @@ mod tests {
         click(&mut state, 0, p(12.0, 0.0));
         submit(&mut state, "12,10");
         assert_eq!(dimensions(&state)[0].measurement(), Some(25.0));
+        assert_eq!(
+            dimensions(&state)[0].assoc.len(),
+            2,
+            "a dimension of an object follows its ends"
+        );
     }
 
     #[test]
@@ -452,6 +531,29 @@ mod tests {
         submit(&mut state, "12,12");
         let length = dimensions(&state)[0].measurement().unwrap();
         assert!((length - 10.0 * FRAC_PI_2).abs() < 1e-9);
+    }
+
+    #[test]
+    fn partial_measures_between_two_points_of_the_arc() {
+        let arc = Entity::Arc {
+            center: p(0.0, 0.0),
+            radius: 10.0,
+            start: 0.0,
+            end: PI,
+        };
+        let mut state = started(&[arc], "DIMARC", dim_arc);
+        click(&mut state, 0, p(0.0, 10.0));
+        submit(&mut state, "p");
+        submit(&mut state, "10,0");
+        submit(&mut state, "0,10");
+        submit(&mut state, "l");
+        submit(&mut state, "12,12");
+        let d = &dimensions(&state)[0];
+        assert!((d.measurement().unwrap() - 10.0 * FRAC_PI_2).abs() < 1e-9);
+        assert!(matches!(
+            d.kind,
+            od_core::DimKind::ArcLength { leader: true, .. }
+        ));
     }
 
     #[test]

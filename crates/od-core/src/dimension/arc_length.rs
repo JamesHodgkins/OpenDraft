@@ -75,6 +75,7 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
         start,
         end,
         arc_point,
+        leader,
     } = &dim.kind
     else {
         return None;
@@ -84,14 +85,63 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
         start: a1,
         sweep,
     } = geometry(&dim.kind)?;
+    draw(
+        dim,
+        Layout {
+            c: *center,
+            a1,
+            sweep,
+            on_arc: dist(*center, *arc_point),
+            measured,
+            ends: [dist(*center, *start), dist(*center, *end)],
+            leader: *leader,
+            symbol: true,
+            label: dim.label(),
+            contents: dim.contents(),
+        },
+    )
+}
+
+/// What a dimension arc is drawn from: its centre, where it starts and how
+/// far it turns, how far out the user put it, and the radii the extension
+/// lines start at (an angular dimension shares this with arc length).
+pub(super) struct Layout {
+    pub c: Point,
+    pub a1: f64,
+    pub sweep: f64,
+    /// The radius of the point the user placed the arc through (0 for none).
+    pub on_arc: f64,
+    /// The measured radius, where a leader points and a missing `on_arc`
+    /// falls back from.
+    pub measured: f64,
+    pub ends: [f64; 2],
+    pub leader: bool,
+    /// Whether the arc-length symbol goes with the text.
+    pub symbol: bool,
+    pub label: String,
+    /// The label as multiline text contents.
+    pub contents: String,
+}
+
+pub(super) fn draw(dim: &Dimension, layout: Layout) -> Option<Built> {
+    let Layout {
+        c,
+        a1,
+        sweep,
+        on_arc,
+        measured,
+        ends,
+        leader,
+        symbol,
+        label,
+        contents,
+    } = layout;
     let s = dim.style.resolved();
-    let c = *center;
     let size = if s.arrow == Arrow::None {
         0.0
     } else {
         s.arrow_size
     };
-    let on_arc = dist(c, *arc_point);
     let ra = if on_arc > 1e-12 {
         on_arc
     } else {
@@ -100,16 +150,16 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
     let a2 = a1 + sweep;
     let mid = a1 + sweep / 2.0;
 
-    let label = dim.label();
+    let symbol_mode = if symbol { s.arc_symbol } else { 2 };
     let (h, g) = (s.text_height, s.text_gap);
     // The symbol in front of the number takes room of its own; `width` is
     // the whole run, symbol and number.
-    let lead = if !label.is_empty() && s.arc_symbol == 0 {
+    let lead = if !label.is_empty() && symbol_mode == 0 {
         SYMBOL_WIDTH + SYMBOL_GAP
     } else {
         0.0
     };
-    let width = font::text_width(&label, h) + lead * h;
+    let width = font::contents_width(&contents, h) + lead * h;
     let clearance = if label.is_empty() {
         0.0
     } else {
@@ -129,6 +179,7 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
     } else {
         readable(mid + FRAC_PI_2)
     };
+    let text_angle = dim.text_angle.unwrap_or(text_angle);
     // Text runs straight along the tangent while the arc falls away from it,
     // so it is raised by how far the arc sags under the text's ends.
     let half = (width / 2.0).min(ra);
@@ -149,8 +200,7 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
 
     let mut out = Sketch::default();
     // Extension lines run along the radius through each end.
-    for (i, (pt, angle)) in [(*start, a1), (*end, a2)].into_iter().enumerate() {
-        let r = dist(c, pt);
+    for (i, (r, angle)) in [(ends[0], a1), (ends[1], a2)].into_iter().enumerate() {
         let sign = if ra >= r { 1.0 } else { -1.0 };
         if s.suppress_ext[i] || (ra - r).abs() <= s.ext_offset {
             continue;
@@ -169,14 +219,15 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
     };
     let tangent_start = (-a1.sin(), a1.cos());
     let tangent_end = (-a2.sin(), a2.cos());
+    let second = s.arrow2.unwrap_or(s.arrow);
     let tip1 = along(c, direction(a1), ra);
     let tip2 = along(c, direction(a2), ra);
     if arrows_in {
         out.arrow(s.arrow, tip1, tangent_start, size);
-        out.arrow(s.arrow, tip2, (-tangent_end.0, -tangent_end.1), size);
+        out.arrow(second, tip2, (-tangent_end.0, -tangent_end.1), size);
     } else {
         out.arrow(s.arrow, tip1, (-tangent_start.0, -tangent_start.1), size);
-        out.arrow(s.arrow, tip2, tangent_end, size);
+        out.arrow(second, tip2, tangent_end, size);
         let stub = 2.0 * size / ra;
         out.arc(c, ra, a1 - stub, a1);
         out.arc(c, ra, a2, a2 + stub);
@@ -191,7 +242,7 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
     }
     if !label.is_empty() {
         let (run, up) = (direction(text_angle), direction(text_angle + FRAC_PI_2));
-        match s.arc_symbol {
+        match symbol_mode {
             // In front of the number, its top level with the capitals.
             0 => {
                 let front = along(centre, run, (SYMBOL_WIDTH * h - width) / 2.0);
@@ -201,15 +252,21 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
             1 => arc_symbol(&mut out, along(centre, up, 0.6 * h), text_angle, h),
             _ => {}
         }
-        out.text(
-            &label,
-            h,
-            along(centre, run, lead * h / 2.0),
-            text_angle,
-            s.text_style,
-        );
+        let text_at = along(centre, run, lead * h / 2.0);
+        out.label(&s, &contents, width, centre, text_at, text_angle);
     }
-    let _ = arc_point;
+    // The leader runs radially, a quarter of the way along, so it clears
+    // the text at the middle.
+    if leader && sweep > FRAC_PI_2 && (ra - measured).abs() > size {
+        let at = a1 + sweep / 4.0;
+        let sign = if ra >= measured { 1.0 } else { -1.0 };
+        let (tip, far) = (
+            along(c, direction(at), measured),
+            along(c, direction(at), ra),
+        );
+        out.line(tip, far);
+        out.arrow(s.arrow, tip, (sign * at.cos(), sign * at.sin()), size);
+    }
     Some(Built {
         pieces: out.pieces,
         text_centre: centre,
@@ -267,6 +324,38 @@ mod tests {
             &DimStyle::default(),
         );
         assert!((d.measurement().unwrap() - 10.0 * PI * 1.5).abs() < 1e-9);
+    }
+
+    #[test]
+    fn a_leader_is_drawn_only_for_a_long_arc_and_runs_radially() {
+        let half = |leader: bool| {
+            let mut d = Dimension::arc_length(
+                p(0.0, 0.0),
+                p(10.0, 0.0),
+                p(-10.0, 0.0),
+                p(14.0, 0.0),
+                &DimStyle::default(),
+            );
+            if let DimKind::ArcLength { leader: l, .. } = &mut d.kind {
+                *l = leader;
+            }
+            d
+        };
+        let lines = |d: &Dimension| {
+            d.picture()
+                .into_iter()
+                .filter(|e| matches!(e, crate::Entity::Line { .. }))
+                .count()
+        };
+        assert_eq!(lines(&half(true)), lines(&half(false)) + 1);
+        let with_leader = {
+            let mut d = quarter(&DimStyle::default());
+            if let DimKind::ArcLength { leader, .. } = &mut d.kind {
+                *leader = true;
+            }
+            d
+        };
+        assert_eq!(lines(&with_leader), lines(&quarter(&DimStyle::default())));
     }
 
     #[test]

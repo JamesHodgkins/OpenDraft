@@ -12,7 +12,6 @@ use crate::array_path::array_path;
 use crate::block_cmd::{define_block, purge_blocks};
 use crate::break_cmd::break_object;
 use crate::corners::{chamfer_objects, fillet_objects};
-use crate::dimension_cmd::{dim_aligned, dim_arc, dim_auto, dim_diameter, dim_linear, dim_radius};
 use crate::draw::draw_line;
 use crate::edges::{extend_objects, trim_objects};
 use crate::ellipse_cmd::draw_ellipse;
@@ -52,6 +51,7 @@ pub fn build_registry() -> Registry<AppState> {
         crate::layer_cmd::commands(),
         crate::circle_arc_commands::commands(),
         crate::primitive_commands::commands(),
+        crate::dimension_commands::commands(),
     ];
     for command in all().into_iter().chain(tables.into_iter().flatten()) {
         registry
@@ -165,12 +165,6 @@ fn all() -> Vec<Command<AppState>> {
         editor_command!("annotate.mleader", "Multileader", "MLEADER", draw_mleader),
         editor_command!("annotate.leader", "Leader", "LEADER", draw_leader),
         editor_command!("annotate.mtedit", "Edit Text", "MTEDIT", edit_mtext_object),
-        editor_command!("dim.dim", "Dimension", "DIM", dim_auto),
-        editor_command!("dim.linear", "Linear", "DIMLINEAR", dim_linear),
-        editor_command!("dim.aligned", "Aligned", "DIMALIGNED", dim_aligned),
-        editor_command!("dim.arc", "Arc Length", "DIMARC", dim_arc),
-        editor_command!("dim.radius", "Radius", "DIMRADIUS", dim_radius),
-        editor_command!("dim.diameter", "Diameter", "DIMDIAMETER", dim_diameter),
         editor_command!("modify.move", "Move", move_objects),
         editor_command!("modify.copy", "Copy", copy_objects),
         editor_command!("modify.rotate", "Rotate", rotate_objects),

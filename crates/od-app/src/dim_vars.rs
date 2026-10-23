@@ -4,7 +4,7 @@
 //! keep the style they were made with.
 
 use od_commands::{SetDimStyle, SysVar, Value};
-use od_core::{Arrow, DimStyle, LengthFormat};
+use od_core::{AngleFormat, Arrow, DimStyle, LengthFormat};
 
 use crate::state::AppState;
 
@@ -26,32 +26,32 @@ impl AppState {
     }
 }
 
-fn int(value: Value) -> i64 {
+pub(crate) fn int(value: Value) -> i64 {
     match value {
         Value::Int(n) => n,
         _ => 0,
     }
 }
 
-fn real(value: Value) -> f64 {
+pub(crate) fn real(value: Value) -> f64 {
     match value {
         Value::Real(n) => n,
         _ => 0.0,
     }
 }
 
-fn text(value: Value) -> String {
+pub(crate) fn text(value: Value) -> String {
     match value {
         Value::Text(t) => t,
         _ => String::new(),
     }
 }
 
-fn flag(on: bool) -> Value {
+pub(crate) fn flag(on: bool) -> Value {
     Value::Int(i64::from(on))
 }
 
-fn change(s: &mut AppState, edit: impl FnOnce(&mut DimStyle)) -> Result<(), String> {
+pub(crate) fn change(s: &mut AppState, edit: impl FnOnce(&mut DimStyle)) -> Result<(), String> {
     let mut style = s.dim_style();
     edit(&mut style);
     s.set_dim_style(style);
@@ -123,9 +123,16 @@ pub fn variables() -> Vec<SysVar<AppState>> {
             |s, v| change(s, |d| d.text_gap = real(v)),
         ),
         SysVar::real(
-            "DIMCEN",
-            "Size of the centre mark of radius and diameter dimensions; 0 for none",
+            "DIMDLI",
+            "Distance between the lines of baseline dimensions",
             (0.0, 1.0e9),
+            |s| Value::Real(s.dim_style().baseline_spacing),
+            |s, v| change(s, |d| d.baseline_spacing = real(v)),
+        ),
+        SysVar::real(
+            "DIMCEN",
+            "Size of the centre mark of circles and radial dimensions; negative for centrelines; 0 for none",
+            (-1.0e9, 1.0e9),
             |s| Value::Real(s.dim_style().centre_mark),
             |s, v| change(s, |d| d.centre_mark = real(v)),
         ),
@@ -138,8 +145,8 @@ pub fn variables() -> Vec<SysVar<AppState>> {
         ),
         SysVar::int(
             "DIMJUST",
-            "Text along the line: 0 centred, 1 at extension line 1, 2 at extension line 2",
-            (0, 2),
+            "Text along the line: 0 centred, 1 at extension line 1, 2 at extension line 2, 3 over 1, 4 over 2",
+            (0, 4),
             |s| Value::Int(i64::from(s.dim_style().text_just)),
             |s, v| change(s, |d| d.text_just = int(v) as u8),
         ),
@@ -332,6 +339,23 @@ pub fn variables() -> Vec<SysVar<AppState>> {
                 change(s, |d| d.arrow = arrow)
             },
         },
+        SysVar::int(
+            "DIMAUNIT",
+            "Angular dimension format: 0 decimal degrees, 1 deg/min/sec, 2 grads, 3 radians, 4 surveyor",
+            (0, 4),
+            |s| Value::Int(s.dim_style().angle_format.code()),
+            |s, v| {
+                let format = AngleFormat::from_code(int(v)).unwrap_or_default();
+                change(s, |d| d.angle_format = format)
+            },
+        ),
+        SysVar::int(
+            "DIMADEC",
+            "Decimal places of an angular dimension",
+            (0, 8),
+            |s| Value::Int(i64::from(s.dim_style().angle_precision)),
+            |s, v| change(s, |d| d.angle_precision = int(v) as u8),
+        ),
         SysVar::int(
             "DIMARCSYM",
             "Arc length symbol: 0 before the text, 1 above it, 2 none",

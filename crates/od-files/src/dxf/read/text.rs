@@ -54,7 +54,10 @@ fn font_of(record: &Record) -> FontDescriptor {
 /// chunks, and the cut can fall after a space).
 pub(super) fn value_of(record: &str, code: i32, raw: &str) -> String {
     match (record, code) {
-        ("MTEXT", 1 | 3) | ("MULTILEADER", 304) => raw.trim_end_matches(['\r', '\n']).to_owned(),
+        // A dimension's one space means "no text".
+        ("MTEXT", 1 | 3) | ("MULTILEADER", 304) | ("DIMENSION", 1) => {
+            raw.trim_end_matches(['\r', '\n']).to_owned()
+        }
         _ => raw.trim().to_owned(),
     }
 }

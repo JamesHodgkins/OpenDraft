@@ -1,45 +1,56 @@
-//! DXF writing for dimensions. A real DIMENSION needs a block holding its
-//! picture and a dimension style table, which these writers do not have yet,
-//! so a dimension goes out as the lines, arcs and arrowheads (and text
-//! strokes) it is drawn with. It looks the same and no longer measures.
+//! Which dimensions the DXF writer writes as DIMENSION entities (see
+//! `write2000/dimension.rs`) and which it writes as the lines, arcs and
+//! text they are drawn with: an arc length dimension, a jogged radius, and
+//! a dimension with a jog line have no DIMENSION to map onto yet.
 
 use std::borrow::Cow;
 
-use od_core::{Document, Entity};
+use od_core::{DimKind, Dimension, Document, Entity};
 
-/// The drawing with each dimension replaced by its picture, and how many
-/// were replaced. A drawing with none is borrowed, not copied.
+/// Whether `d` is written as a DIMENSION.
+pub(super) fn is_real(d: &Dimension) -> bool {
+    d.jog_line.is_none()
+        && match &d.kind {
+            DimKind::ArcLength { .. } => false,
+            DimKind::Radial { jog, .. } => jog.is_none(),
+            _ => true,
+        }
+}
+
+/// The drawing with each dimension that is not [`is_real`] replaced by its
+/// picture, and how many were replaced. A drawing with none is borrowed,
+/// not copied.
 pub(super) fn exploded(document: &Document) -> (Cow<'_, Document>, usize) {
-    if !document
-        .objects()
-        .iter()
-        .any(|o| matches!(o.entity, Entity::Dimension(_)))
-    {
+    let unsupported = |entity: &Entity| matches!(entity, Entity::Dimension(d) if !is_real(d));
+    if !document.objects().iter().any(|o| unsupported(&o.entity)) {
         return (Cow::Borrowed(document), 0);
     }
     let mut flat = document.clone();
-    let replaced = flat.replace_each(|object| match &object.entity {
-        Entity::Dimension(_) => Some(
+    let replaced = flat.replace_each(|object| {
+        unsupported(&object.entity).then(|| {
             object
                 .dimension_picture()
                 .unwrap_or_default()
                 .iter()
                 .map(|piece| (piece.clone(), object.attrs.clone()))
-                .collect(),
-        ),
-        _ => None,
+                .collect()
+        })
     });
     (Cow::Owned(flat), replaced)
 }
 
 #[cfg(test)]
 mod tests {
-    use od_core::{DimStyle, Dimension, Point};
+    use od_core::{DimStyle, Point};
 
     use super::*;
 
     fn p(x: f64, y: f64) -> Point {
         Point::new(x, y)
+    }
+
+    fn aligned() -> Dimension {
+        Dimension::aligned(p(0.0, 0.0), p(10.0, 0.0), p(0.0, 5.0), &DimStyle::default())
     }
 
     #[test]
@@ -54,30 +65,48 @@ mod tests {
     }
 
     #[test]
-    fn a_dimension_becomes_its_picture_in_place() {
-        let dim = Dimension::aligned(p(0.0, 0.0), p(10.0, 0.0), p(0.0, 5.0), &DimStyle::default());
-        let pieces = dim.picture().len();
+    fn real_dimensions_stay_and_the_others_become_their_picture_in_place() {
+        let arc = Dimension::arc_length(
+            p(0.0, 0.0),
+            p(5.0, 0.0),
+            p(0.0, 5.0),
+            p(6.0, 6.0),
+            &DimStyle::default(),
+        );
+        let pieces = arc.picture().len();
         let mut doc = Document::default();
         doc.add(Entity::Line {
             start: p(0.0, 0.0),
             end: p(1.0, 0.0),
         });
-        doc.add(Entity::Dimension(Box::new(dim)));
+        doc.add(Entity::Dimension(Box::new(aligned())));
+        doc.add(Entity::Dimension(Box::new(arc)));
         doc.add(Entity::Circle {
             center: p(0.0, 0.0),
             radius: 1.0,
         });
         let (flat, count) = exploded(&doc);
         assert_eq!(count, 1);
-        assert_eq!(flat.len(), 2 + pieces);
-        assert!(matches!(flat.objects()[0].entity, Entity::Line { .. }));
+        assert_eq!(flat.len(), 3 + pieces);
+        assert!(matches!(flat.objects()[1].entity, Entity::Dimension(_)));
         assert!(matches!(
             flat.objects()[flat.len() - 1].entity,
             Entity::Circle { .. }
         ));
-        assert!(!flat
-            .objects()
-            .iter()
-            .any(|o| matches!(o.entity, Entity::Dimension(_))));
+    }
+
+    #[test]
+    fn a_jog_line_or_a_jogged_radius_is_not_real() {
+        assert!(is_real(&aligned()));
+        let jog = aligned().with_jog_line(Some(p(1.0, 5.0))).unwrap();
+        assert!(!is_real(&jog));
+        let jogged = Dimension::jogged(
+            p(0.0, 0.0),
+            p(5.0, 0.0),
+            p(3.0, 3.0),
+            p(4.0, 1.0),
+            &DimStyle::default(),
+        );
+        assert!(!is_real(&jogged));
     }
 }
