@@ -74,6 +74,12 @@ impl View {
                 }
             }
         }
+        if let Some(marker) = &prompt.marker {
+            let stroke = Stroke::new(1.5_f32, style.selected);
+            for entity in marker(1.0 / self.camera.zoom) {
+                self.stroke_entity(painter, rect, &entity, stroke);
+            }
+        }
         if let Some(base) = prompt.base {
             let (from, to) = (
                 self.camera.world_to_screen(base, rect),

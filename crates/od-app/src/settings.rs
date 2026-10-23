@@ -120,6 +120,7 @@ impl Settings {
         let Some(storage) = storage else {
             return Self::default();
         };
+        crate::pedit_memory::load(Some(storage));
         let settings = match storage.get_string(KEY) {
             Some(text) => Self::from_json(&text),
             None => crate::settings_legacy::load(storage),
@@ -154,6 +155,7 @@ impl Settings {
     pub fn save(&self, storage: &mut dyn eframe::Storage) {
         // A path that is not valid text cannot be written as JSON, and one
         // such folder must not cost the user every other setting.
+        crate::pedit_memory::save(storage);
         let mut saved = self.clone();
         saved.automation_roots.retain(|p| p.to_str().is_some());
         if let Ok(text) = serde_json::to_string(&saved) {

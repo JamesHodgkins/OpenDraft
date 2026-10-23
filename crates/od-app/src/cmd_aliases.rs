@@ -117,6 +117,8 @@ pub const ALIASES: &[(&str, &str, &str)] = &[
     ("LEN", "LENGTHEN", "modify.lengthen"),
     ("O", "OFFSET", "modify.offset"),
     ("J", "JOIN", "modify.join"),
+    ("PE", "PEDIT", "modify.pedit"),
+    ("PEDIT", "PEDIT", "modify.pedit"),
     ("F", "FILLET", "modify.fillet"),
     ("FIL", "FILLET", "modify.fillet"),
     ("CHA", "CHAMFER", "modify.chamfer"),
