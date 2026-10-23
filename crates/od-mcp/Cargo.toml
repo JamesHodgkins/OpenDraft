@@ -1,0 +1,23 @@
+[package]
+name = "od-mcp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "MCP server for OpenDraft: talks MCP on stdio and the running app over a local socket"
+
+[[bin]]
+name = "opendraft-mcp"
+path = "src/main.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+od-api.workspace = true
+interprocess = "2"
+schemars = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "io-std"] }
+# Pinned: the protocol and its SDK move quickly (spec section 4.1).
+rmcp = { version = "=3.5.1", default-features = false, features = ["server", "transport-io"] }

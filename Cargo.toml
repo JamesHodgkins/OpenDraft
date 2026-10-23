@@ -1,0 +1,39 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/od-app",
+    "crates/od-ui",
+    "crates/od-core",
+    "crates/od-commands",
+    "crates/od-canvas",
+    "crates/od-files",
+    "crates/od-dwg",
+    "crates/od-api",
+    "crates/od-mcp",
+]
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+unwrap_used = "warn"
+print_stdout = "warn"
+print_stderr = "warn"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-or-later"
+
+[workspace.dependencies]
+# accesskit is off: its Windows adapter panics when the dock rearranges panels.
+eframe = { version = "0.31", default-features = false, features = ["persistence", "glow", "default_fonts", "wayland", "x11"] }
+od-ui = { path = "crates/od-ui" }
+od-core = { path = "crates/od-core" }
+od-commands = { path = "crates/od-commands" }
+od-canvas = { path = "crates/od-canvas" }
+od-files = { path = "crates/od-files" }
+od-dwg = { path = "crates/od-dwg" }
+od-api = { path = "crates/od-api" }

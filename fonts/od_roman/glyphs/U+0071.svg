@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 13.446 26" width="13.446" height="26">
+  <title>U+0071 q</title>
+  <g id="guides" style="fill:none;stroke:#09f;stroke-width:0.05px">
+    <path d="M0,3.84 L13.446,3.84"/>
+    <path d="M0,8.936 L13.446,8.936"/>
+    <path d="M0,19.118 L13.446,19.118"/>
+  </g>
+  <path d="M10.925,8.936 L10.925,24.6" style="fill:none;stroke:#f00;stroke-width:0.1px;stroke-linecap:round;stroke-linejoin:round"/>
+  <path d="M10.925,17.554 C9.983,18.518 8.659,19.118 7.193,19.118 C4.336,19.118 2.017,17.356 2.017,14.027 C2.017,10.698 4.336,8.936 7.193,8.936 C8.658,8.936 9.983,9.536 10.925,10.5" style="fill:none;stroke:#f00;stroke-width:0.1px;stroke-linecap:round;stroke-linejoin:round"/>
+</svg>

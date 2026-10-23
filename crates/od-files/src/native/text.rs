@@ -1,0 +1,405 @@
+//! The native format's description of text styles and multiline text.
+
+use std::collections::HashSet;
+
+use od_core::mtext::{
+    BackgroundFill, ColumnKind, EntityLineSpacing, LineSpacingStyle, MTextAttachment,
+    MTextBackground, MTextColumns, MTextFlow, PreservedMTextFields,
+};
+use od_core::{Document, FontDescriptor, MText, TextStyle, TextStyleId, DEFAULT_STROKE_WEIGHT};
+use serde::{Deserialize, Serialize};
+
+use super::entity::{from_point, invalid, point, PointDto};
+use super::ColorDto;
+use crate::FileError;
+
+fn one() -> f64 {
+    1.0
+}
+
+fn default_weight() -> f64 {
+    DEFAULT_STROKE_WEIGHT
+}
+
+fn is_default_weight(v: &f64) -> bool {
+    *v == DEFAULT_STROKE_WEIGHT
+}
+
+fn one_code() -> u8 {
+    1
+}
+
+fn east() -> PointDto {
+    [1.0, 0.0]
+}
+
+fn is_zero(v: &f64) -> bool {
+    *v == 0.0
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+enum FontDto {
+    BundledSans,
+    TrueType {
+        family: String,
+        #[serde(default)]
+        bold: bool,
+        #[serde(default)]
+        italic: bool,
+    },
+    Shx {
+        file_name: String,
+    },
+    OdRoman {
+        #[serde(default)]
+        bold: bool,
+        #[serde(default)]
+        italic: bool,
+    },
+    Opaque {
+        raw_primary: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        raw_typeface: Option<i32>,
+    },
+}
+
+#[derive(Serialize, Deserialize)]
+pub(super) struct TextStyleDto {
+    id: u64,
+    name: String,
+    font: FontDto,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    big_font: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    fixed_height: Option<f64>,
+    #[serde(default = "one")]
+    width_factor: f64,
+    /// Radians.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    oblique: f64,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    backward: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    upside_down: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    vertical: bool,
+    /// Pen width of a stroke font, as a fraction of the text height.
+    #[serde(default = "default_weight", skip_serializing_if = "is_default_weight")]
+    stroke_weight: f64,
+}
+
+impl TextStyleDto {
+    pub(super) fn from_style(style: &TextStyle) -> Self {
+        let font = match &style.font {
+            FontDescriptor::BundledSans => FontDto::BundledSans,
+            FontDescriptor::TrueType {
+                family,
+                bold,
+                italic,
+            } => FontDto::TrueType {
+                family: family.clone(),
+                bold: *bold,
+                italic: *italic,
+            },
+            FontDescriptor::Shx { file_name } => FontDto::Shx {
+                file_name: file_name.clone(),
+            },
+            FontDescriptor::OdRoman { bold, italic } => FontDto::OdRoman {
+                bold: *bold,
+                italic: *italic,
+            },
+            FontDescriptor::Opaque {
+                raw_primary,
+                raw_typeface,
+            } => FontDto::Opaque {
+                raw_primary: raw_primary.clone(),
+                raw_typeface: *raw_typeface,
+            },
+        };
+        Self {
+            id: style.id.0,
+            name: style.name.clone(),
+            font,
+            big_font: style.big_font.clone(),
+            fixed_height: style.fixed_height,
+            width_factor: style.width_factor,
+            oblique: style.oblique_radians,
+            backward: style.backward,
+            upside_down: style.upside_down,
+            vertical: style.vertical,
+            stroke_weight: style.stroke_weight,
+        }
+    }
+
+    fn to_style(&self) -> Result<TextStyle, FileError> {
+        let font = match &self.font {
+            FontDto::BundledSans => FontDescriptor::BundledSans,
+            FontDto::TrueType {
+                family,
+                bold,
+                italic,
+            } => FontDescriptor::TrueType {
+                family: family.clone(),
+                bold: *bold,
+                italic: *italic,
+            },
+            FontDto::Shx { file_name } => FontDescriptor::Shx {
+                file_name: file_name.clone(),
+            },
+            FontDto::OdRoman { bold, italic } => FontDescriptor::OdRoman {
+                bold: *bold,
+                italic: *italic,
+            },
+            FontDto::Opaque {
+                raw_primary,
+                raw_typeface,
+            } => FontDescriptor::Opaque {
+                raw_primary: raw_primary.clone(),
+                raw_typeface: *raw_typeface,
+            },
+        };
+        let style = TextStyle {
+            id: TextStyleId(self.id),
+            name: self.name.clone(),
+            font,
+            big_font: self.big_font.clone(),
+            fixed_height: self.fixed_height,
+            width_factor: self.width_factor,
+            oblique_radians: self.oblique,
+            backward: self.backward,
+            upside_down: self.upside_down,
+            vertical: self.vertical,
+            stroke_weight: self.stroke_weight,
+        };
+        if style.is_valid() {
+            Ok(style)
+        } else {
+            invalid(format!("text style {} is not valid", self.id))
+        }
+    }
+}
+
+/// Load the style table into `document`. A file from before text styles has
+/// none, which leaves the stock `Standard`.
+pub(super) fn load_styles(
+    document: &mut Document,
+    styles: &[TextStyleDto],
+    current: u64,
+    next: u64,
+) -> Result<(), FileError> {
+    if !styles.is_empty() {
+        let (mut ids, mut names) = (HashSet::new(), HashSet::new());
+        for dto in styles {
+            let style = dto.to_style()?;
+            if !ids.insert(style.id) {
+                return invalid(format!("text style {} appears twice", dto.id));
+            }
+            if !names.insert(style.name.to_ascii_lowercase()) {
+                return invalid(format!("two text styles are called \"{}\"", style.name));
+            }
+            if style.id == TextStyleId::STANDARD {
+                document.replace_text_style(style);
+            } else {
+                document.push_text_style(style);
+            }
+        }
+        if !ids.contains(&TextStyleId::STANDARD) {
+            return invalid("there is no text style 0");
+        }
+    }
+    document.reserve_text_style_id(next);
+    // A current style that is gone falls back to Standard.
+    document.set_current_text_style(TextStyleId(current));
+    Ok(())
+}
+
+/// Whether a drawing's style table is the stock one, so the file can leave
+/// it out.
+pub(super) fn is_stock(document: &Document) -> bool {
+    document.text_styles() == [TextStyle::standard()]
+        && document.current_text_style() == TextStyleId::STANDARD
+        && document.next_text_style_id() == 1
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum FillDto {
+    Window,
+    Color(ColorDto),
+}
+
+#[derive(Serialize, Deserialize)]
+struct BackgroundDto {
+    fill: FillDto,
+    scale: f64,
+    /// Bits of the DXF fill setting this build does not know.
+    #[serde(default, skip_serializing_if = "is_zero_int")]
+    extra_bits: i32,
+}
+
+fn is_zero_int(v: &i32) -> bool {
+    *v == 0
+}
+
+#[derive(Serialize, Deserialize, Default)]
+struct ColumnsDto {
+    kind: String,
+    count: u32,
+    #[serde(default)]
+    reversed: bool,
+    #[serde(default)]
+    auto_height: bool,
+    #[serde(default)]
+    width: f64,
+    #[serde(default)]
+    gutter: f64,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    heights: Vec<f64>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct SpacingDto {
+    /// 1 at least, 2 exact.
+    style: u8,
+    factor: f64,
+}
+
+#[derive(Serialize, Deserialize)]
+pub(super) struct MTextDto {
+    insertion: PointDto,
+    #[serde(default = "east")]
+    direction: PointDto,
+    height: f64,
+    /// Where lines wrap; absent for no wrapping.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    width: f64,
+    /// DXF code 1 to 9.
+    #[serde(default = "one_code")]
+    attachment: u8,
+    /// DXF code 1, 3 or 5.
+    #[serde(default = "one_code")]
+    flow: u8,
+    #[serde(default)]
+    style: u64,
+    /// The AutoCAD format-code stream, exactly.
+    contents: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    line_spacing: Option<SpacingDto>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    background: Option<BackgroundDto>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    columns: Option<ColumnsDto>,
+    /// DXF group 441, kept and never used.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    unimplemented_441: Option<i32>,
+}
+
+impl MTextDto {
+    pub(super) fn from_mtext(m: &MText) -> Self {
+        let spacing = m.line_spacing;
+        let background = m.background.map(|b| BackgroundDto {
+            fill: match b.fill {
+                BackgroundFill::Window => FillDto::Window,
+                BackgroundFill::Color(c) => FillDto::Color(c.into()),
+            },
+            scale: b.scale,
+            extra_bits: m.preserved.background_extra_bits,
+        });
+        let columns = (m.columns.kind != ColumnKind::None).then(|| ColumnsDto {
+            kind: match m.columns.kind {
+                ColumnKind::Dynamic => "dynamic",
+                _ => "static",
+            }
+            .to_owned(),
+            count: m.columns.count,
+            reversed: m.columns.reversed,
+            auto_height: m.columns.auto_height,
+            width: m.columns.width,
+            gutter: m.columns.gutter,
+            heights: m.columns.heights.clone(),
+        });
+        Self {
+            insertion: point(m.insertion),
+            direction: point(m.direction),
+            height: m.nominal_height,
+            width: m.reference_width,
+            attachment: m.attachment.code(),
+            flow: m.flow.code(),
+            style: m.style.0,
+            contents: m.contents.clone(),
+            line_spacing: (spacing != EntityLineSpacing::default()).then(|| SpacingDto {
+                style: spacing.style.code(),
+                factor: spacing.factor,
+            }),
+            background,
+            columns,
+            unimplemented_441: m.preserved.unimplemented_441,
+        }
+    }
+
+    pub(super) fn to_mtext(&self) -> Result<MText, FileError> {
+        let Some(attachment) = MTextAttachment::from_code(self.attachment.into()) else {
+            return invalid("text has an attachment point that does not exist");
+        };
+        let Some(flow) = MTextFlow::from_code(self.flow.into()) else {
+            return invalid("text has a flow direction that does not exist");
+        };
+        let line_spacing = match &self.line_spacing {
+            None => EntityLineSpacing::default(),
+            Some(s) => {
+                let Some(style) = LineSpacingStyle::from_code(s.style.into()) else {
+                    return invalid("text has a line spacing style that does not exist");
+                };
+                EntityLineSpacing {
+                    style,
+                    factor: s.factor,
+                }
+            }
+        };
+        let background = self.background.as_ref().map(|b| MTextBackground {
+            fill: match &b.fill {
+                FillDto::Window => BackgroundFill::Window,
+                FillDto::Color(c) => BackgroundFill::Color((*c).into()),
+            },
+            scale: b.scale,
+        });
+        let columns = match &self.columns {
+            None => MTextColumns::default(),
+            Some(c) => MTextColumns {
+                kind: match c.kind.as_str() {
+                    "static" => ColumnKind::Static,
+                    "dynamic" => ColumnKind::Dynamic,
+                    other => return invalid(format!("text has a column kind \"{other}\"")),
+                },
+                count: c.count,
+                reversed: c.reversed,
+                auto_height: c.auto_height,
+                width: c.width,
+                gutter: c.gutter,
+                heights: c.heights.clone(),
+            },
+        };
+        let text = MText {
+            insertion: from_point(self.insertion)?,
+            direction: from_point(self.direction)?,
+            nominal_height: self.height,
+            reference_width: self.width,
+            attachment,
+            flow,
+            style: TextStyleId(self.style),
+            contents: self.contents.clone(),
+            line_spacing,
+            background,
+            columns,
+            preserved: PreservedMTextFields {
+                unimplemented_441: self.unimplemented_441,
+                background_extra_bits: self.background.as_ref().map_or(0, |b| b.extra_bits),
+            },
+        };
+        match text.validate() {
+            Ok(()) => Ok(text),
+            Err(e) => invalid(format!("text is not valid: {e}")),
+        }
+    }
+}

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14.507 26" width="14.507" height="26">
+  <title>U+0043 C</title>
+  <g id="guides" style="fill:none;stroke:#09f;stroke-width:0.05px">
+    <path d="M0,3.84 L14.507,3.84"/>
+    <path d="M0,8.936 L14.507,8.936"/>
+    <path d="M0,19.118 L14.507,19.118"/>
+  </g>
+  <path d="M12.975,7.472 C12.555,6.389 11.562,3.837 7.782,3.837 C3.837,3.837 1.833,7.352 1.833,11.488 C1.833,15.624 4.087,19.139 7.782,19.139 C11.337,19.139 12.736,16.407 12.979,15.49" style="fill:none;stroke:#f00;stroke-width:0.1px;stroke-linecap:round;stroke-linejoin:round"/>
+</svg>

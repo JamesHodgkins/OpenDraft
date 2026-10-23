@@ -1,0 +1,17 @@
+[package]
+name = "od-ui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+egui = "0.31"
+serde = { version = "1", features = ["derive"] }
+# Icon drawings (SVG) read at start-up; no text or system fonts needed.
+resvg = { version = "0.48", default-features = false }
+
+[dev-dependencies]
+eframe.workspace = true
