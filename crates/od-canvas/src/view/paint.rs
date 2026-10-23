@@ -12,6 +12,9 @@ pub(super) struct GripMarks<'a> {
 }
 
 /// A grip picked with Shift, waiting to be used.
+/// Half the length of the cross that marks a hovered circle or arc's centre.
+const CENTRE_HINT_ARM: f32 = 5.0;
+
 const WARM_GRIP: egui::Color32 = egui::Color32::from_rgb(230, 80, 80);
 
 impl View {
@@ -352,9 +355,34 @@ impl View {
             } else if hover == Some(*id) {
                 draw(Stroke::new(HIGHLIGHT_WIDTH, style.hover));
                 draw(Stroke::new(1.5_f32, line));
+                if let Entity::Circle { center, .. } | Entity::Arc { center, .. } = entity {
+                    self.centre_hint(painter, rect, *center, line);
+                }
             } else {
                 draw(Stroke::new(1.5_f32, line));
             }
         }
+    }
+
+    /// A small cross at the centre of a hovered circle or arc, so it can be
+    /// found (and snapped to) without hunting for it.
+    fn centre_hint(
+        &self,
+        painter: &egui::Painter,
+        rect: Rect,
+        center: Point,
+        color: egui::Color32,
+    ) {
+        let at = self.camera.world_to_screen(center, rect);
+        let arm = CENTRE_HINT_ARM;
+        let stroke = Stroke::new(1.0_f32, color);
+        painter.line_segment(
+            [at - egui::vec2(arm, 0.0), at + egui::vec2(arm, 0.0)],
+            stroke,
+        );
+        painter.line_segment(
+            [at - egui::vec2(0.0, arm), at + egui::vec2(0.0, arm)],
+            stroke,
+        );
     }
 }

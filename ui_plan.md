@@ -665,3 +665,10 @@ Known gaps are listed in the "Still to do" line of each section above.
 
 ## Sample drawings withdrawn from the repository (23-10-2026)
 The AutoCAD sample drawings (21 DXF and DWG files) moved from the tracked `test_data/` to the git-ignored `private_material/`, because their headers carry the author's work login. Every test that read them was removed: `od-files/tests/{block,dwg,hatch,linetype,spline}_fixtures.rs`, all of `od-dwg/tests/` (containers, inventory, drawing, blocks and the SHA-256 helper), five tests that compared our DXF output with `LEADERS1.dxf`, four more that read its multileaders, texts and leaders, and three app and file tests that imported `Test Drawing 2018.dwg`. The paths named in the sections above for those tests no longer exist. Left to do: rebuild the coverage from small hand-made drawings (DWG container, sections and blocks; leader, multileader and text import; hatch, linetype and spline fixtures), ideally written by our own tools so no personal data is involved.
+
+## Usability fixes: shared grips, dimension grip, suggestions, hover centre (done 23-10-2026)
+- A stretch grip shared by several selected objects (a corner two lines meet at) now moves all of them: `od_canvas::with_shared` adds the other objects' stretch grips at the same point when a grip is pressed.
+- A linear dimension's third grip sits in the middle of the dimension line (`linear::line_middle`), not where the line was first picked.
+- Modify, array, Match Properties, Create Block, MTEDIT and Power Select are no longer dimmed on an empty drawing; like Trim and Offset they ask for objects. Select All, Erase and the layer commands still wait for something to act on.
+- The command line's suggestion list stays up while the pointer is on it, so a click on a row runs the command (the press used to take focus from the input and hide the list before the click landed).
+- A hovered circle or arc shows a small cross at its centre.

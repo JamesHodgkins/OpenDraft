@@ -222,13 +222,21 @@ impl PanelViewer<'_> {
             self.state.cmdline.focus = true;
         }
 
-        // Suggestion list above the input row.
-        if owns_keyboard && !suggestions.is_empty() && !submit {
+        // Suggestion list above the input row. Pressing a row takes focus from
+        // the input, so the list stays up while the pointer is on it or the
+        // click would never land.
+        let popup_id = egui::Id::new("command_suggestions");
+        let on_popup = ui.ctx().memory(|m| m.area_rect(popup_id)).is_some_and(|r| {
+            ui.input(|i| i.pointer.interact_pos())
+                .is_some_and(|p| r.contains(p))
+        });
+        if (owns_keyboard || on_popup) && !suggestions.is_empty() && !submit {
             if let Some(command) =
                 suggestion_popup(ui.ctx(), theme, &suggestions, selected, panel, text_rect)
             {
                 picked = Some(command);
                 input.clear();
+                self.state.cmdline.focus = true;
             }
         }
 

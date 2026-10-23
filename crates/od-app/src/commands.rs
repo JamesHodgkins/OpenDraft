@@ -81,12 +81,6 @@ macro_rules! editor_command {
     };
 }
 
-/// Whether there is anything to edit. The modify commands need no selection:
-/// they ask for one.
-fn has_objects(s: &AppState) -> bool {
-    s.session().document().has_objects_here()
-}
-
 /// A command that flips a boolean setting and lights up while it is on.
 macro_rules! toggle_command {
     ($id:literal, $label:literal, $($field:ident).+) => {
@@ -170,18 +164,17 @@ fn all() -> Vec<Command<AppState>> {
         editor_command!("annotate.mtext", "Multiline Text", "MTEXT", draw_mtext),
         editor_command!("annotate.mleader", "Multileader", "MLEADER", draw_mleader),
         editor_command!("annotate.leader", "Leader", "LEADER", draw_leader),
-        editor_command!("annotate.mtedit", "Edit Text", "MTEDIT", edit_mtext_object)
-            .when(has_objects),
+        editor_command!("annotate.mtedit", "Edit Text", "MTEDIT", edit_mtext_object),
         editor_command!("dim.linear", "Linear", "DIMLINEAR", dim_linear),
         editor_command!("dim.aligned", "Aligned", "DIMALIGNED", dim_aligned),
         editor_command!("dim.arc", "Arc Length", "DIMARC", dim_arc),
         editor_command!("dim.radius", "Radius", "DIMRADIUS", dim_radius),
         editor_command!("dim.diameter", "Diameter", "DIMDIAMETER", dim_diameter),
-        editor_command!("modify.move", "Move", move_objects).when(has_objects),
-        editor_command!("modify.copy", "Copy", copy_objects).when(has_objects),
-        editor_command!("modify.rotate", "Rotate", rotate_objects).when(has_objects),
-        editor_command!("modify.mirror", "Mirror", mirror_objects).when(has_objects),
-        editor_command!("modify.scale", "Scale", scale_objects).when(has_objects),
+        editor_command!("modify.move", "Move", move_objects),
+        editor_command!("modify.copy", "Copy", copy_objects),
+        editor_command!("modify.rotate", "Rotate", rotate_objects),
+        editor_command!("modify.mirror", "Mirror", mirror_objects),
+        editor_command!("modify.scale", "Scale", scale_objects),
         editor_command!("modify.trim", "Trim", trim_objects),
         editor_command!("modify.extend", "Extend", extend_objects),
         editor_command!("modify.lengthen", "Lengthen", lengthen_objects),
@@ -191,31 +184,27 @@ fn all() -> Vec<Command<AppState>> {
         editor_command!("modify.chamfer", "Chamfer", chamfer_objects),
         editor_command!("modify.explode", "Explode", explode_objects),
         editor_command!("modify.break", "Break", break_object),
-        editor_command!("modify.array", "Array", "ARRAY", array_objects).when(has_objects),
+        editor_command!("modify.array", "Array", "ARRAY", array_objects),
         editor_command!(
             "modify.array_rect",
             "Rectangular Array",
             "ARRAYRECT",
             array_rect
-        )
-        .when(has_objects),
-        editor_command!("modify.array_path", "Path Array", "ARRAYPATH", array_path)
-            .when(has_objects),
+        ),
+        editor_command!("modify.array_path", "Path Array", "ARRAYPATH", array_path),
         editor_command!(
             "modify.array_polar",
             "Polar Array",
             "ARRAYPOLAR",
             array_polar
-        )
-        .when(has_objects),
+        ),
         editor_command!(
             "modify.matchprop",
             "Match Properties",
             "MATCHPROP",
             match_properties
-        )
-        .when(has_objects),
-        editor_command!("block.create", "Create Block", "BLOCK", define_block).when(has_objects),
+        ),
+        editor_command!("block.create", "Create Block", "BLOCK", define_block),
         editor_command!("block.insert", "Insert Block", "INSERT", insert_block),
         editor_command!("block.purge", "Purge", "PURGE", purge_blocks),
         // The Block Editor (`block_editor.rs`).
@@ -285,8 +274,7 @@ fn all() -> Vec<Command<AppState>> {
         cmd("format.units", "Units", |s| s.show_units = true),
         cmd("select.power", "Power Select", |s| {
             s.power_select.open = true
-        })
-        .when(has_objects),
+        }),
         cmd("format.linetype", "Linetypes", |s| s.show_linetypes = true),
         cmd("annotate.textstyle", "Text Style", |s| {
             s.show_text_styles = true

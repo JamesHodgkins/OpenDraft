@@ -2,7 +2,7 @@
 
 use std::collections::BTreeSet;
 
-use od_core::{Document, EntityId, Point};
+use od_core::{Document, EntityId, GripKind, Point};
 
 /// A grip of a selected object.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -52,6 +52,43 @@ pub fn grip_at(
         }
     }
     best.map(|(_, hit)| hit)
+}
+
+/// Two stretch grips this close are the same point.
+const SHARED: f64 = 1e-9;
+
+/// `hot` plus the stretch grips of the other selected objects that sit on the
+/// same points, so a corner two lines share moves as one.
+pub fn with_shared(
+    document: &Document,
+    selection: &BTreeSet<EntityId>,
+    hot: Vec<GripHit>,
+) -> Vec<GripHit> {
+    let stretch_at = |hit: &GripHit| {
+        let grip = document
+            .object(hit.id)?
+            .entity
+            .grips()
+            .get(hit.index)
+            .copied()?;
+        (grip.kind == GripKind::Stretch).then_some(grip.at)
+    };
+    let mut all = hot.clone();
+    for at in hot.iter().filter_map(stretch_at) {
+        for object in gripped(document, selection) {
+            for (index, grip) in object.entity.grips().iter().enumerate() {
+                let hit = GripHit {
+                    id: object.id,
+                    index,
+                };
+                let near = (grip.at.x - at.x).hypot(grip.at.y - at.y) <= SHARED;
+                if near && grip.kind == GripKind::Stretch && !all.contains(&hit) {
+                    all.push(hit);
+                }
+            }
+        }
+    }
+    all
 }
 
 /// What pressing a grip does when some grips are already picked ("warm").
@@ -141,6 +178,21 @@ mod tests {
             grip_at(&doc, &both, p(10.0, 9.5), 1.0),
             Some(GripHit { id: b, index: 1 })
         );
+    }
+
+    #[test]
+    fn a_shared_corner_brings_both_lines_ends_along() {
+        let (doc, a, b) = drawing();
+        let both: BTreeSet<_> = [a, b].into();
+        let pressed = GripHit { id: b, index: 0 };
+        assert_eq!(
+            with_shared(&doc, &both, vec![pressed]),
+            vec![pressed, GripHit { id: a, index: 1 }]
+        );
+        let only_b: BTreeSet<_> = [b].into();
+        assert_eq!(with_shared(&doc, &only_b, vec![pressed]), vec![pressed]);
+        let far = GripHit { id: b, index: 1 };
+        assert_eq!(with_shared(&doc, &both, vec![far]), vec![far]);
     }
 
     #[test]
