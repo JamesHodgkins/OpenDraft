@@ -84,12 +84,14 @@ The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
 | ![](draw-circle-diameter.svg) | `draw-circle-diameter.svg` | circle | Center, Diameter |
 | ![](draw-circle-radius.svg) | `draw-circle-radius.svg` | circle | Center, Radius, icon_set.rs |
 | ![](draw-circle-ttr.svg) | `draw-circle-ttr.svg` | circle | Tan, Tan, Radius |
+| ![](draw-divide.svg) | `draw-divide.svg` | ellipsis | Divide (Lucide's ellipsis: marks along a line.) |
 | ![](draw-donut.svg) | `draw-donut.svg` | donut | Donut (Lucide's donut.) |
 | ![](draw-ellipse.svg) | `draw-ellipse.svg` | egg | Ellipse (Lucide has no ellipse; its egg is the nearest single oval outline.) |
 | ![](draw-gradient.svg) | `draw-gradient.svg` | blend | Gradient |
 | ![](draw-hatch.svg) | `draw-hatch.svg` | square-slash | Hatch (A square with a diagonal: the nearest Lucide has to hatching.) |
 | ![](draw-line.svg) | `draw-line.svg` | minus | Line |
-| ![](draw-point.svg) | `draw-point.svg` | dot | Multiple Point, Single Point (Lucide's dot.) |
+| ![](draw-measure.svg) | `draw-measure.svg` | between-horizontal-start | Measure (Lucide's marks between two ends.) |
+| ![](draw-point.svg) | `draw-point.svg` | dot | Multiple Point, Point Style..., Single Point (Lucide's dot.) |
 | ![](draw-polygon.svg) | `draw-polygon.svg` | hexagon | Polygon |
 | ![](draw-polyline.svg) | `draw-polyline.svg` | spline | Polyline |
 | ![](draw-ray.svg) | `draw-ray.svg` | move-up-right | Ray (Lucide's arrow up and right: a line that leaves a point.) |
