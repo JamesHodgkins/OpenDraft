@@ -4,7 +4,7 @@
 use std::time::SystemTime;
 
 use eframe::egui;
-use od_ui::widgets;
+use od_ui::{icons, widgets};
 
 use super::cards::{self, Pictures};
 use super::controls::{entry_controls, BUTTON};
@@ -37,14 +37,22 @@ pub(super) fn recent_section(ui: &mut egui::Ui, s: &Section, pick: &mut Option<P
             widgets::section_header(ui, theme, "Recent drawings");
         },
         |ui| {
-            let mut chosen = usize::from(s.view == RecentView::List);
-            if widgets::tab_strip(ui, theme, &mut chosen, &["Grid", "List"]) {
-                *pick = Some(Pick::SetView(if chosen == 0 {
-                    RecentView::Grid
-                } else {
-                    RecentView::List
-                }));
-            }
+            // One group, in reading order, whichever way the bar runs.
+            ui.horizontal(|ui| {
+                let mut views = [
+                    (RecentView::Grid, icons::HOME_VIEW_GRID, "Show as cards"),
+                    (RecentView::List, icons::HOME_VIEW_LIST, "Show as a list"),
+                ];
+                // A group inside a right-to-left bar runs right to left too.
+                if ui.layout().main_dir() == egui::Direction::RightToLeft {
+                    views.reverse();
+                }
+                for (view, icon, tip) in views {
+                    if widgets::icon_toggle(ui, theme, icon, s.view == view, tip).clicked() {
+                        *pick = Some(Pick::SetView(view));
+                    }
+                }
+            });
             if unpinned == 0 {
                 return;
             }
@@ -72,6 +80,8 @@ pub(super) fn recent_section(ui: &mut egui::Ui, s: &Section, pick: &mut Option<P
             }
         },
     );
+    // Room between the bar and what it heads.
+    ui.add_space(10.0);
     if entries.is_empty() {
         ui.label(
             egui::RichText::new("Drawings you open or save will appear here.")
