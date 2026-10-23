@@ -47,6 +47,7 @@ fn app() -> OpenDraftApp {
         automation_forced: false,
         home_scan: Default::default(),
         home_previews: Default::default(),
+        templates: Default::default(),
     }
 }
 fn frame(app: &mut OpenDraftApp, ctx: &egui::Context, events: Vec<Event>, time: f64) {

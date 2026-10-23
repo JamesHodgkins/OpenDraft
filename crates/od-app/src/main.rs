@@ -117,6 +117,8 @@ mod style_rows;
 mod system_fonts;
 mod sysvar_line;
 mod sysvars;
+mod template_state;
+mod templates;
 mod text;
 mod text_memory;
 mod text_style_draft;

@@ -55,6 +55,8 @@ pub const ALIASES: &[(&str, &str, &str)] = &[
     ("SAVE", "SAVE", "file.save"),
     ("QSAVE", "SAVE", "file.save"),
     ("SAVEAS", "SAVEAS", "file.save_as"),
+    ("SAVEASTEMPLATE", "SAVEASTEMPLATE", "file.save_template"),
+    ("TEMPLATE", "SAVEASTEMPLATE", "file.save_template"),
     ("EXPORT", "EXPORT", "file.export_dxf"),
     ("DXFOUT", "EXPORT", "file.export_dxf"),
     ("EXIT", "EXIT", "file.exit"),

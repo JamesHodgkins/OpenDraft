@@ -107,6 +107,7 @@ impl AppState {
                 self.finish_export(&path, result);
                 self.file_ops.exported(&path, report);
             }
+            Done::FromTemplate { name, result } => self.finish_template(&name, *result),
             Done::Autosaved(results) => self.finish_autosave(results),
             Done::Finished => {}
         }
