@@ -24,6 +24,7 @@ mod dim_style_table;
 mod dim_vars;
 mod dimension_cmd;
 mod dock;
+mod donut_cmd;
 mod draw;
 mod dynamic_input;
 mod dynamic_settings;

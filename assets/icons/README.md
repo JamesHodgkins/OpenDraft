@@ -84,6 +84,7 @@ The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
 | ![](draw-circle-diameter.svg) | `draw-circle-diameter.svg` | circle | Center, Diameter |
 | ![](draw-circle-radius.svg) | `draw-circle-radius.svg` | circle | Center, Radius, icon_set.rs |
 | ![](draw-circle-ttr.svg) | `draw-circle-ttr.svg` | circle | Tan, Tan, Radius |
+| ![](draw-donut.svg) | `draw-donut.svg` | donut | Donut (Lucide's donut.) |
 | ![](draw-ellipse.svg) | `draw-ellipse.svg` | egg | Ellipse (Lucide has no ellipse; its egg is the nearest single oval outline.) |
 | ![](draw-gradient.svg) | `draw-gradient.svg` | blend | Gradient |
 | ![](draw-hatch.svg) | `draw-hatch.svg` | square-slash | Hatch (A square with a diagonal: the nearest Lucide has to hatching.) |
