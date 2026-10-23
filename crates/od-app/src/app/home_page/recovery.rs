@@ -6,6 +6,7 @@ use std::time::SystemTime;
 use eframe::egui;
 use od_ui::widgets;
 
+use super::layout::bar;
 use super::Pick;
 use crate::autosave::RecoveryReport;
 use crate::recovery::{Orphan, Recovered};
@@ -25,19 +26,21 @@ pub(super) fn recovery_section(
     if orphans.is_empty() && report.failed.is_empty() {
         return;
     }
-    ui.horizontal(|ui| {
-        widgets::section_header(ui, theme, "Recovered drawings");
-        if !orphans.is_empty() {
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if widgets::secondary_button(ui, theme, "Decide later")
+    bar(
+        ui,
+        |ui| {
+            widgets::section_header(ui, theme, "Recovered drawings");
+        },
+        |ui| {
+            if !orphans.is_empty()
+                && widgets::secondary_button(ui, theme, "Decide later")
                     .on_hover_text("Ask again next time; nothing is deleted")
                     .clicked()
-                {
-                    *pick = Some(Pick::DeferRecovery);
-                }
-            });
-        }
-    });
+            {
+                *pick = Some(Pick::DeferRecovery);
+            }
+        },
+    );
     if !orphans.is_empty() {
         ui.label(
             egui::RichText::new(
@@ -68,16 +71,19 @@ fn session(
     let count = orphan.items.len();
     let confirm_id = ui.id().with("confirm_discard");
     let confirming = ui.data(|d| d.get_temp::<bool>(confirm_id)).unwrap_or(false);
-    ui.horizontal(|ui| {
-        ui.label(
-            egui::RichText::new(format!(
-                "Recovered session  ·  {}",
-                plural(count, "drawing")
-            ))
-            .strong()
-            .color(theme.colors.text),
-        );
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+    bar(
+        ui,
+        |ui| {
+            ui.label(
+                egui::RichText::new(format!(
+                    "Recovered session  ·  {}",
+                    plural(count, "drawing")
+                ))
+                .strong()
+                .color(theme.colors.text),
+            );
+        },
+        |ui| {
             if confirming {
                 if widgets::secondary_button(ui, theme, "Keep").clicked() {
                     ui.data_mut(|d| d.insert_temp(confirm_id, false));
@@ -98,8 +104,8 @@ fn session(
                     ui.data_mut(|d| d.insert_temp(confirm_id, true));
                 }
             }
-        });
-    });
+        },
+    );
     for item in &orphan.items {
         item_row(ui, theme, item);
     }

@@ -92,7 +92,7 @@ fn icon_button(
         ui.painter().rect_stroke(
             rect,
             4.0,
-            egui::Stroke::new(2.0_f32, c.accent),
+            egui::Stroke::new(2.0_f32, c.accent_text),
             egui::StrokeKind::Inside,
         );
     }

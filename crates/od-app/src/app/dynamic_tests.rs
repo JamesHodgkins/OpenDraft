@@ -9,6 +9,7 @@ mod command_line_focus;
 mod ctrl;
 mod dim_styles;
 mod home_keyboard;
+mod home_layout;
 mod linetypes;
 mod mleader_styles;
 mod placement;

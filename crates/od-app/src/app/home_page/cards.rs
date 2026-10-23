@@ -57,7 +57,7 @@ fn card(
         }
         let radius = f32::from(theme.radius);
         let border = if response.has_focus() {
-            egui::Stroke::new(2.0_f32, c.accent)
+            egui::Stroke::new(2.0_f32, c.accent_text)
         } else if response.hovered() {
             egui::Stroke::new(1.0_f32, c.border_strong)
         } else {
@@ -227,7 +227,7 @@ fn badges(ui: &mut egui::Ui, s: &Section, entry: &RecentEntry, picture: egui::Re
             egui::Align2::CENTER_CENTER,
             od_ui::icons::HOME_PIN,
             16.0,
-            c.accent,
+            c.accent_text,
         );
     }
 }
