@@ -7,6 +7,7 @@
 //! A dimension keeps a copy of the style it was made with ([`DimStyle`]).
 //! Everything is pure geometry; the commands only ask for points.
 
+mod angular;
 mod arc_length;
 mod edit;
 mod fit;
@@ -20,9 +21,9 @@ mod text;
 
 use crate::{Bounds, Entity, Point};
 
-pub use pick::{auto_rotation, object_ends};
+pub use pick::{auto_rotation, lines_angle_points, object_ends};
 pub use style::{Arrow, DimStyle};
-pub use text::{expand_codes, measurement_text, DimText};
+pub use text::{angle_text, expand_codes, measurement_text, DimText};
 
 /// An arrowhead of `kind` as ordinary entities, its point at `tip` and `back`
 /// the unit direction from the tip along the body (what a multileader's
@@ -78,6 +79,16 @@ pub enum DimKind {
         /// A radial leader from the dimension arc to the measured arc, drawn
         /// for an arc of more than a quarter turn.
         leader: bool,
+    },
+    /// The angle between two rays out of `vertex`, through `p1` and `p2`,
+    /// drawn as an arc through `arc_point`. `lines` says the rays are whole
+    /// lines (four angles to choose from) rather than rays.
+    Angular {
+        vertex: Point,
+        p1: Point,
+        p2: Point,
+        arc_point: Point,
+        lines: bool,
     },
 }
 
@@ -167,6 +178,27 @@ impl Dimension {
         )
     }
 
+    /// The angle at `vertex` between the directions to `p1` and `p2`.
+    pub fn angular(
+        vertex: Point,
+        p1: Point,
+        p2: Point,
+        arc_point: Point,
+        lines: bool,
+        style: &DimStyle,
+    ) -> Dimension {
+        Self::with(
+            DimKind::Angular {
+                vertex,
+                p1,
+                p2,
+                arc_point,
+                lines,
+            },
+            style,
+        )
+    }
+
     pub fn arc_length(
         center: Point,
         start: Point,
@@ -202,6 +234,7 @@ impl Dimension {
                 (r > 1e-12).then_some(if *diameter { 2.0 * r } else { r })
             }
             DimKind::ArcLength { .. } => finite(arc_length::measurement(&self.kind)?),
+            DimKind::Angular { .. } => finite(angular::measurement(&self.kind)?),
         }
     }
 
@@ -217,9 +250,10 @@ impl Dimension {
 
     /// The text the dimension shows (empty when hidden or degenerate).
     pub fn label(&self) -> String {
-        let measured = match self.measurement() {
-            Some(m) => measurement_text(&self.style, m, self.prefix()),
-            None => String::new(),
+        let measured = match (self.measurement(), &self.kind) {
+            (Some(m), DimKind::Angular { .. }) => angle_text(&self.style, m),
+            (Some(m), _) => measurement_text(&self.style, m, self.prefix()),
+            (None, _) => String::new(),
         };
         text::shown(&self.text, &measured)
     }
@@ -230,6 +264,7 @@ impl Dimension {
             DimKind::Linear { .. } => linear::build(self),
             DimKind::Radial { .. } => radial::build(self),
             DimKind::ArcLength { .. } => arc_length::build(self),
+            DimKind::Angular { .. } => angular::build(self),
         }
     }
 

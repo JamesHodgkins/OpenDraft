@@ -2,7 +2,7 @@
 //! units, with prefix, suffix and any text the user typed over it.
 
 use super::style::DimStyle;
-use crate::units::{format_length, LengthFormat};
+use crate::units::{format_angle, format_length, LengthFormat, Units};
 
 /// What a dimension shows.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -88,6 +88,21 @@ pub fn measurement_text(style: &DimStyle, value: f64, prefix: &str) -> String {
     } else {
         format!("{core}{}", expand_codes(&style.post))
     }
+}
+
+/// An angle of `radians` as an angular dimension writes it (`DIMAUNIT`,
+/// `DIMADEC`).
+pub fn angle_text(style: &DimStyle, radians: f64) -> String {
+    let units = Units {
+        angle: style.angle_format,
+        angle_precision: style.angle_precision,
+        ..Units::default()
+    };
+    let mut shown = format_angle(&units, radians);
+    if style.length_format == LengthFormat::Decimal && style.decimal_separator != '.' {
+        shown = shown.replace('.', &style.decimal_separator.to_string());
+    }
+    shown
 }
 
 /// What to print for `text` given the generated `measured` string.

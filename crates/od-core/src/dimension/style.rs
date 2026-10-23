@@ -3,7 +3,7 @@
 //! the current style never moves an existing dimension.
 
 use crate::text_style::TextStyleId;
-use crate::units::{LengthFormat, Units};
+use crate::units::{AngleFormat, LengthFormat, Units};
 
 /// What the ends of a dimension line look like.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -95,6 +95,10 @@ pub struct DimStyle {
     pub decimal_separator: char,
     /// `DIMPOST`: text around the value, `<>` standing for it ("<> mm").
     pub post: String,
+    /// `DIMAUNIT`: how angular dimensions write their angle.
+    pub angle_format: AngleFormat,
+    /// `DIMADEC`: decimals of an angular dimension.
+    pub angle_precision: u8,
     /// `DIMARCSYM`: 0 symbol before the text, 1 above it, 2 none.
     pub arc_symbol: u8,
     /// `DIMTXSTY`: the text style the words are written in. Sizes are
@@ -133,6 +137,8 @@ impl Default for DimStyle {
             trim_zeros: false,
             decimal_separator: '.',
             post: String::new(),
+            angle_format: AngleFormat::DecimalDegrees,
+            angle_precision: 0,
             arc_symbol: 0,
             text_style: TextStyleId::STANDARD,
         }
@@ -178,6 +184,7 @@ impl DimStyle {
         self.text_move = self.text_move.min(2);
         self.precision = self.precision.min(crate::units::MAX_PRECISION);
         self.arc_symbol = self.arc_symbol.min(2);
+        self.angle_precision = self.angle_precision.min(crate::units::MAX_PRECISION);
         self
     }
 

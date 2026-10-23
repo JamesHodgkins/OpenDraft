@@ -4,7 +4,7 @@
 //! keep the style they were made with.
 
 use od_commands::{SetDimStyle, SysVar, Value};
-use od_core::{Arrow, DimStyle, LengthFormat};
+use od_core::{AngleFormat, Arrow, DimStyle, LengthFormat};
 
 use crate::state::AppState;
 
@@ -332,6 +332,23 @@ pub fn variables() -> Vec<SysVar<AppState>> {
                 change(s, |d| d.arrow = arrow)
             },
         },
+        SysVar::int(
+            "DIMAUNIT",
+            "Angular dimension format: 0 decimal degrees, 1 deg/min/sec, 2 grads, 3 radians, 4 surveyor",
+            (0, 4),
+            |s| Value::Int(s.dim_style().angle_format.code()),
+            |s, v| {
+                let format = AngleFormat::from_code(int(v)).unwrap_or_default();
+                change(s, |d| d.angle_format = format)
+            },
+        ),
+        SysVar::int(
+            "DIMADEC",
+            "Decimal places of an angular dimension",
+            (0, 8),
+            |s| Value::Int(i64::from(s.dim_style().angle_precision)),
+            |s, v| change(s, |d| d.angle_precision = int(v) as u8),
+        ),
         SysVar::int(
             "DIMARCSYM",
             "Arc length symbol: 0 before the text, 1 above it, 2 none",

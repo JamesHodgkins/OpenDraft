@@ -119,6 +119,7 @@ fn annotate() -> Tab {
                 columns: vec![
                     Column::Large(Item::new("dim.linear", "Linear", icons::DIM_LINEAR)),
                     Column::Large(Item::new("dim.aligned", "Aligned", icons::DIM_ALIGNED)),
+                    Column::Large(Item::new("dim.angular", "Angular", icons::DIM_ANGULAR)),
                     Column::Stack(vec![
                         Item::new("dim.radius", "Radius", icons::DIM_RADIUS),
                         Item::new("dim.diameter", "Diameter", icons::DIM_DIAMETER),

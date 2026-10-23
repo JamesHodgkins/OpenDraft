@@ -46,6 +46,33 @@ pub fn object_ends(entity: &Entity, at: Point) -> Option<(Point, Point)> {
     }
 }
 
+/// Where the lines through `first` and `second` cross, and for each the end
+/// farther from the crossing (the point that names its ray): the vertex and
+/// the two points an angular dimension between the lines is built on.
+/// `None` for parallel lines or a line of no length.
+pub fn lines_angle_points(
+    first: (Point, Point),
+    second: (Point, Point),
+) -> Option<(Point, Point, Point)> {
+    let (d1, d2) = (sub(first.1, first.0), sub(second.1, second.0));
+    let cross = d1.0 * d2.1 - d1.1 * d2.0;
+    let scale = (d1.0.hypot(d1.1) * d2.0.hypot(d2.1)).max(f64::MIN_POSITIVE);
+    if !(cross.is_finite() && (cross / scale).abs() > 1e-9) {
+        return None;
+    }
+    let between = sub(second.0, first.0);
+    let t = (between.0 * d2.1 - between.1 * d2.0) / cross;
+    let vertex = along(first.0, d1, t);
+    let far = |(a, b): (Point, Point)| {
+        if dist(vertex, a) >= dist(vertex, b) {
+            a
+        } else {
+            b
+        }
+    };
+    Some((vertex, far(first), far(second)))
+}
+
 /// Which way a linear dimension of `p1` to `p2` runs when its line is put
 /// through `at`: horizontal (0) when `at` is above or below the points,
 /// vertical (a quarter turn) when it is to the side. The diagonals of the
@@ -95,6 +122,19 @@ mod tests {
 
     fn p(x: f64, y: f64) -> Point {
         Point::new(x, y)
+    }
+
+    #[test]
+    fn two_lines_give_their_crossing_and_far_ends() {
+        let (v, a, b) =
+            lines_angle_points((p(0.0, 0.0), p(4.0, 0.0)), (p(5.0, 1.0), p(5.0, 9.0))).unwrap();
+        assert_eq!((v, a, b), (p(5.0, 0.0), p(0.0, 0.0), p(5.0, 9.0)));
+        assert!(
+            lines_angle_points((p(0.0, 0.0), p(1.0, 0.0)), (p(0.0, 1.0), p(5.0, 1.0))).is_none()
+        );
+        assert!(
+            lines_angle_points((p(0.0, 0.0), p(0.0, 0.0)), (p(0.0, 1.0), p(5.0, 1.0))).is_none()
+        );
     }
 
     #[test]

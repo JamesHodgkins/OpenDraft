@@ -82,6 +82,7 @@ pub const TABLE: &[(&str, AutomationPolicy, CommandEffect)] = &[
     ("dim.diameter", InteractiveInApp, Mutation),
     ("dim.override", InteractiveInApp, Mutation),
     ("dim.update", InteractiveInApp, Mutation),
+    ("dim.angular", InteractiveInApp, Mutation),
     ("dim.edit", InteractiveInApp, Mutation),
     ("dim.textedit", InteractiveInApp, Mutation),
     // Modifying. Erase acts on the selection at once, so it is not

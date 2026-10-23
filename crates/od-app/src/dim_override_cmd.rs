@@ -3,7 +3,7 @@
 //! made in, or give them the current style.
 
 use od_commands::{Answer, Cancelled, Editor, Options};
-use od_core::{Arrow, DimStyle, Entity, EntityId, LengthFormat};
+use od_core::{AngleFormat, Arrow, DimStyle, Entity, EntityId, LengthFormat};
 
 use crate::text::plural;
 
@@ -86,6 +86,10 @@ pub fn set_variable(style: &mut DimStyle, name: &str, value: &str) -> Result<(),
         "DIMSE2" => style.suppress_ext[1] = flag()?,
         "DIMDEC" => style.precision = choice(8)?,
         "DIMARCSYM" => style.arc_symbol = choice(2)?,
+        "DIMADEC" => style.angle_precision = choice(8)?,
+        "DIMAUNIT" => {
+            style.angle_format = AngleFormat::from_code(i64::from(choice(4)?)).unwrap_or_default()
+        }
         "DIMZIN" => style.trim_zeros = choice(8)? & 8 != 0,
         "DIMLUNIT" => {
             style.length_format = number()
