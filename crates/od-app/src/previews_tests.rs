@@ -42,6 +42,17 @@ fn drawing() -> Document {
     doc
 }
 
+/// Wait for the picture of `path` to stop being pending. A report is sent
+/// just before its path stops being pending, so right after the report the
+/// path may still be.
+fn settle(handle: &PreviewHandle, path: &Path) {
+    let started = std::time::Instant::now();
+    while handle.is_pending(path) {
+        assert!(started.elapsed() < Duration::from_secs(20), "still pending");
+        std::thread::sleep(Duration::from_millis(5));
+    }
+}
+
 fn wait(results: &Receiver<Output>) -> Output {
     results.recv_timeout(Duration::from_secs(20)).unwrap()
 }
@@ -134,12 +145,11 @@ fn a_saved_drawing_gets_a_picture_and_pending_ends() {
     std::fs::write(&file, "the file as written").unwrap();
     let (handle, results) = start(area.path("cache"));
     handle.request(&file, drawing());
-    assert!(handle.is_pending(&identity(&file)));
     let Output::Rendered(path) = wait(&results) else {
         panic!("expected the render's report");
     };
     assert_eq!(path, identity(&file));
-    assert!(!handle.is_pending(&path));
+    settle(&handle, &path);
     // Keyed by the file as it is after the write.
     let meta = std::fs::metadata(&file).unwrap();
     let k = FileKey::new(&file, meta.modified().unwrap(), meta.len());
@@ -179,7 +189,7 @@ fn an_opened_drawing_with_a_picture_already_is_not_drawn_again() {
         drawing()
     });
     assert_eq!(asked, 1, "the second open found the picture");
-    assert!(!handle.is_pending(&identity(&file)));
+    settle(&handle, &identity(&file));
 }
 
 #[test]
@@ -188,7 +198,7 @@ fn a_render_that_cannot_find_its_file_reports_and_ends_pending() {
     let (handle, results) = start(area.path("cache"));
     handle.request(&area.path("never-written.odx"), drawing());
     assert!(matches!(wait(&results), Output::Rendered(_)));
-    assert!(!handle.is_pending(&identity(&area.path("never-written.odx"))));
+    settle(&handle, &identity(&area.path("never-written.odx")));
     assert!(
         !area.path("cache").exists() || std::fs::read_dir(area.path("cache")).unwrap().count() == 0
     );
