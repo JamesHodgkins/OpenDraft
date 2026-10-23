@@ -18,11 +18,12 @@ fn hash(preview: &Preview) -> u64 {
     })
 }
 
-fn dark_pixels(preview: &Preview) -> usize {
+/// Pixels with something drawn in them (anything not near black).
+fn ink_pixels(preview: &Preview) -> usize {
     preview
         .rgba
         .chunks(4)
-        .filter(|p| p[0] < 128 && p[1] < 128 && p[2] < 128)
+        .filter(|p| p[0].max(p[1]).max(p[2]) > 100)
         .count()
 }
 
@@ -68,10 +69,10 @@ fn an_empty_drawing_is_the_blank_grid() {
     let preview = render(&Document::default()).unwrap();
     assert_eq!((preview.width, preview.height), (WIDTH, HEIGHT));
     assert_eq!(preview, blank());
-    assert_eq!(pixel(&preview, 1, 1), [255, 255, 255]);
-    assert_eq!(pixel(&preview, 32, 1), [230, 230, 230]);
-    assert_eq!(pixel(&preview, 128, 1), [208, 208, 208]);
-    assert_eq!(dark_pixels(&preview), 0);
+    assert_eq!(pixel(&preview, 1, 1), [0, 0, 0]);
+    assert_eq!(pixel(&preview, 32, 1), [30, 30, 30]);
+    assert_eq!(pixel(&preview, 128, 1), [52, 52, 52]);
+    assert_eq!(ink_pixels(&preview), 0);
 }
 
 fn line_and_circle() -> Document {
@@ -88,9 +89,9 @@ fn line_and_circle() -> Document {
 }
 
 // Fixture: a line from (0,0) to (100,50) and a circle of radius 20 at
-// (50,25), black on paper, 512 x 320. Expected hash from the first accepted
+// (50,25), white on black, 512 x 320. Expected hash from the first accepted
 // run; a change here is an intentional change of the renderer's output.
-const LINE_AND_CIRCLE: u64 = 9472657424578411776;
+const LINE_AND_CIRCLE: u64 = 2577612293854600616;
 
 #[test]
 fn a_line_and_a_circle_are_drawn_where_they_belong() {
@@ -98,12 +99,12 @@ fn a_line_and_a_circle_are_drawn_where_they_belong() {
     assert_eq!((preview.width, preview.height), (512, 320));
     // The centre of the circle's line crossing is at the picture's centre.
     assert!(
-        pixel(&preview, 256, 160)[0] < 200,
+        pixel(&preview, 256, 160)[0] > 50,
         "the line passes the centre"
     );
     // y points up: the line rises to the right, so the left end is lower.
-    let left = (0..320).find(|y| pixel(&preview, 40, *y)[0] < 128);
-    let right = (0..320).find(|y| pixel(&preview, 470, *y)[0] < 128);
+    let left = (0..320).find(|y| pixel(&preview, 40, *y)[0] > 128);
+    let right = (0..320).find(|y| pixel(&preview, 470, *y)[0] > 128);
     assert!(left.unwrap() > right.unwrap(), "{left:?} {right:?}");
     assert_eq!(hash(&preview), LINE_AND_CIRCLE);
 }
@@ -128,12 +129,12 @@ fn dashed_line() -> Document {
 }
 
 // Fixture: two horizontal lines 200 long and 10 apart, the lower one DASHED.
-const DASHED: u64 = 18278527669051949093;
+const DASHED: u64 = 14795757862774549061;
 
 #[test]
 fn a_dashed_line_has_gaps_where_a_continuous_one_has_none() {
     let preview = render(&dashed_line()).unwrap();
-    let row_dark = |y: u32| (0..512).filter(|x| pixel(&preview, *x, y)[0] < 160).count();
+    let row_dark = |y: u32| (0..512).filter(|x| pixel(&preview, *x, y)[0] > 95).count();
     let rows: Vec<u32> = (0..320).filter(|y| row_dark(*y) > 20).collect();
     assert_eq!(rows.len(), 2, "{rows:?}");
     let (upper, lower) = (row_dark(rows[0]), row_dark(rows[1]));
@@ -143,7 +144,7 @@ fn a_dashed_line_has_gaps_where_a_continuous_one_has_none() {
 }
 
 // Fixture: a 200 x 100 px rectangle with a 60 x 40 px hole, filled non-zero.
-const FILL: u64 = 11435696777225297957;
+const FILL: u64 = 6927676734421998373;
 
 #[test]
 fn a_fill_covers_its_shape_not_its_hole_and_has_soft_edges() {
@@ -161,11 +162,11 @@ fn a_fill_covers_its_shape_not_its_hole_and_has_soft_edges() {
         notes: Vec::new(),
     };
     let preview = render_sheet(&sheet);
-    assert_eq!(pixel(&preview, 60, 60), [255, 255, 255], "outside, above");
+    assert_eq!(pixel(&preview, 60, 60), [0, 0, 0], "outside, above");
     // The shape is x 40..240 px, rows 180..280; the hole x 100..160, rows 220..260.
     assert_eq!(pixel(&preview, 60, 200), [200, 0, 0], "inside the shape");
-    assert_eq!(pixel(&preview, 130, 240), [255, 255, 255], "in the hole");
-    assert_eq!(pixel(&preview, 20, 230), [255, 255, 255], "outside, left");
+    assert_eq!(pixel(&preview, 130, 240), [0, 0, 0], "in the hole");
+    assert_eq!(pixel(&preview, 20, 230), [0, 0, 0], "outside, left");
     let sheet_half = PlotSheet {
         fills: vec![PlotFill {
             contours: vec![vec![
@@ -174,17 +175,17 @@ fn a_fill_covers_its_shape_not_its_hole_and_has_soft_edges() {
                 pt(0.125, 16.0),
                 pt(0.0, 16.0),
             ]],
-            rgb: [0, 0, 0],
+            rgb: [255, 255, 255],
         }],
         ..sheet
     };
     let half = render_sheet(&sheet_half);
     // 0.125 mm is 2.5 px: two full pixels and half of the third.
-    assert_eq!(pixel(&half, 0, 100), [0, 0, 0]);
-    assert_eq!(pixel(&half, 1, 100), [0, 0, 0]);
+    assert_eq!(pixel(&half, 0, 100), [255, 255, 255]);
+    assert_eq!(pixel(&half, 1, 100), [255, 255, 255]);
     let edge = pixel(&half, 2, 100)[0];
     assert!((120..=135).contains(&edge), "{edge}");
-    assert_eq!(pixel(&half, 3, 100), [255, 255, 255]);
+    assert_eq!(pixel(&half, 3, 100), [0, 0, 0]);
     assert_eq!(hash(&preview), FILL);
 }
 
@@ -213,7 +214,7 @@ fn strokes_off_the_sheet_or_not_numbers_do_no_harm() {
         width: 0.0,
         ..sheet
     };
-    assert_eq!(dark_pixels(&render_sheet(&empty)), 0);
+    assert_eq!(ink_pixels(&render_sheet(&empty)), 0);
 }
 
 #[test]
@@ -233,7 +234,7 @@ fn a_very_large_drawing_still_gives_one_picture() {
     }
     let preview = render(&doc).unwrap();
     assert_eq!((preview.width, preview.height), (512, 320));
-    assert!(dark_pixels(&preview) > 1000);
+    assert!(ink_pixels(&preview) > 1000);
 }
 
 #[test]
@@ -273,7 +274,7 @@ fn a_stray_object_far_from_the_rest_does_not_shrink_the_drawing_to_a_speck() {
     assert!(fit.min.x > -50.0, "{fit:?}");
     // The cluster, not the stray, fills the picture.
     let preview = render(&doc).unwrap();
-    assert!(dark_pixels(&preview) > 500);
+    assert!(ink_pixels(&preview) > 500);
 }
 
 #[test]
