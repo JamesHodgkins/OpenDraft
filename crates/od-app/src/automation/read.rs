@@ -68,6 +68,7 @@ fn documents(state: &AppState, instance: &str) -> DocumentsResult {
         .docs
         .iter()
         .enumerate()
+        .filter(|(_, doc)| !doc.placeholder)
         .map(|(index, doc)| {
             // A drawing in the Block Editor says nothing about itself: what
             // its session holds right now is the block, not the drawing.

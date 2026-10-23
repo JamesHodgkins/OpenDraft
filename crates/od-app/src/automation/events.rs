@@ -74,7 +74,7 @@ impl EventLog {
         let baseline = !self.started;
         self.started = true;
         let mut present = Vec::with_capacity(docs.len());
-        for doc in docs {
+        for doc in docs.iter().filter(|d| !d.placeholder) {
             present.push(doc.uid);
             // A drawing in the Block Editor is not the drawing: say nothing
             // about its temporary session.

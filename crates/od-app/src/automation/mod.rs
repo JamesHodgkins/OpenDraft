@@ -168,7 +168,7 @@ pub(crate) fn resolve<'a>(
         .and_then(|rest| rest.strip_prefix('_'))
         .and_then(|n| n.parse::<u64>().ok());
     let doc = uid
-        .and_then(|uid| state.docs.iter().find(|d| d.uid == uid))
+        .and_then(|uid| state.docs.iter().find(|d| d.uid == uid && !d.placeholder))
         .ok_or_else(|| {
             ApiError::new(
                 od_api::ErrorCode::DocumentNotFound,

@@ -44,7 +44,6 @@ impl OpenDraftApp {
             .map(|(_, e)| e.clone())
             .unwrap_or_default();
         let theme = &self.theme;
-        let c = &theme.colors;
         let mut pick = None;
         egui::ScrollArea::vertical()
             .auto_shrink(false)
@@ -54,49 +53,15 @@ impl OpenDraftApp {
                     ui.add_space(side);
                     ui.vertical(|ui| {
                         ui.set_width(PAGE_WIDTH.min(ui.available_width() - side));
-                        ui.add_space(36.0);
-                        ui.label(
-                            egui::RichText::new("OpenDraft")
-                                .size(theme.font_size_heading * 1.6)
-                                .color(c.text),
-                        );
-                        ui.label(
-                            egui::RichText::new(format!(
-                                "2D drafting  ·  version {}",
-                                env!("CARGO_PKG_VERSION")
-                            ))
-                            .color(c.text_weak),
-                        );
-                        ui.add_space(18.0);
-                        ui.horizontal(|ui| {
-                            if widgets::primary_button(ui, theme, "New drawing").clicked() {
-                                pick = Some(Pick::New);
-                            }
-                            if widgets::secondary_button(ui, theme, "Open...").clicked() {
-                                pick = Some(Pick::Open);
-                            }
-                            ui.label(
-                                egui::RichText::new(
-                                    "or drop a .odx, .dxf or .dwg file on the window",
-                                )
-                                .color(c.text_weak),
-                            );
+                        ui.push_id("home_header", |ui| header_section(ui, theme, &mut pick));
+                        ui.push_id("home_open_now", |ui| {
+                            self.open_drawings_section(ui, &mut pick)
                         });
-                        ui.add_space(26.0);
-                        self.open_drawings_section(ui, &mut pick);
-                        recent_section(ui, theme, &entries, &mut pick);
+                        ui.push_id("home_recent", |ui| {
+                            recent_section(ui, theme, &entries, &mut pick)
+                        });
                         ui.add_space(22.0);
-                        widgets::section_header(ui, theme, "Handy keys");
-                        egui::Grid::new("home_keys")
-                            .num_columns(2)
-                            .spacing([24.0, 4.0])
-                            .show(ui, |ui| {
-                                for (key, what) in KEYS {
-                                    ui.label(egui::RichText::new(*key).strong().color(c.text));
-                                    ui.label(egui::RichText::new(*what).color(c.text_weak));
-                                    ui.end_row();
-                                }
-                            });
+                        ui.push_id("home_keys", |ui| keys_section(ui, theme));
                         ui.add_space(30.0);
                     });
                 });
@@ -140,7 +105,17 @@ impl OpenDraftApp {
                 None => "Not saved yet".to_owned(),
             };
             let right = plural(doc.session.document().len_here(), "object");
-            if row(ui, &self.theme, &doc.tab_title(), &detail, &right, false).clicked() {
+            if row(
+                ui,
+                &self.theme,
+                doc.uid,
+                &doc.tab_title(),
+                &detail,
+                &right,
+                false,
+            )
+            .clicked()
+            {
                 *pick = Some(Pick::Show(i));
             }
         }
@@ -162,6 +137,53 @@ impl OpenDraftApp {
             None => {}
         }
     }
+}
+
+/// Title, version and the two ways to start.
+fn header_section(ui: &mut egui::Ui, theme: &od_ui::Theme, pick: &mut Option<Pick>) {
+    let c = &theme.colors;
+    ui.add_space(36.0);
+    ui.label(
+        egui::RichText::new("OpenDraft")
+            .size(theme.font_size_heading * 1.6)
+            .color(c.text),
+    );
+    ui.label(
+        egui::RichText::new(format!(
+            "2D drafting  ·  version {}",
+            env!("CARGO_PKG_VERSION")
+        ))
+        .color(c.text_weak),
+    );
+    ui.add_space(18.0);
+    ui.horizontal(|ui| {
+        if widgets::primary_button(ui, theme, "New drawing").clicked() {
+            *pick = Some(Pick::New);
+        }
+        if widgets::secondary_button(ui, theme, "Open...").clicked() {
+            *pick = Some(Pick::Open);
+        }
+        ui.label(
+            egui::RichText::new("or drop a .odx, .dxf or .dwg file on the window")
+                .color(c.text_weak),
+        );
+    });
+    ui.add_space(26.0);
+}
+
+fn keys_section(ui: &mut egui::Ui, theme: &od_ui::Theme) {
+    let c = &theme.colors;
+    widgets::section_header(ui, theme, "Handy keys");
+    egui::Grid::new("grid")
+        .num_columns(2)
+        .spacing([24.0, 4.0])
+        .show(ui, |ui| {
+            for (key, what) in KEYS {
+                ui.label(egui::RichText::new(*key).strong().color(c.text));
+                ui.label(egui::RichText::new(*what).color(c.text_weak));
+                ui.end_row();
+            }
+        });
 }
 
 fn recent_section(
@@ -201,7 +223,7 @@ fn recent_section(
             (Some(at), Some(size)) => format!("{}  ·  {}", modified_text(at), size_text(size)),
             _ => "Missing".to_owned(),
         };
-        let response = row(ui, theme, &name, &folder, &right, missing)
+        let response = row(ui, theme, &entry.path, &name, &folder, &right, missing)
             .on_hover_text(entry.path.display().to_string());
         if response.clicked() {
             *pick = Some(Pick::Recent(i));
@@ -226,16 +248,19 @@ fn modified_text(at: SystemTime) -> String {
 fn row(
     ui: &mut egui::Ui,
     theme: &od_ui::Theme,
+    id: impl std::hash::Hash,
     name: &str,
     detail: &str,
     right: &str,
     dim: bool,
 ) -> egui::Response {
     let c = &theme.colors;
-    let (rect, response) = ui.allocate_exact_size(
+    let (rect, _) = ui.allocate_exact_size(
         egui::vec2(ui.available_width(), ROW_HEIGHT),
-        egui::Sense::click(),
+        egui::Sense::hover(),
     );
+    // Keyed by what the row is for, so it keeps its state when the list moves.
+    let response = ui.interact(rect, ui.id().with(id), egui::Sense::click());
     if response.hovered() {
         ui.painter().rect_filled(rect, 6.0, c.hover);
     }
