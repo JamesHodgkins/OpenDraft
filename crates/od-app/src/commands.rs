@@ -12,7 +12,7 @@ use crate::array_path::array_path;
 use crate::block_cmd::{define_block, purge_blocks};
 use crate::break_cmd::break_object;
 use crate::corners::{chamfer_objects, fillet_objects};
-use crate::dimension_cmd::{dim_aligned, dim_arc, dim_diameter, dim_linear, dim_radius};
+use crate::dimension_cmd::{dim_aligned, dim_arc, dim_auto, dim_diameter, dim_linear, dim_radius};
 use crate::draw::draw_line;
 use crate::edges::{extend_objects, trim_objects};
 use crate::ellipse_cmd::draw_ellipse;
@@ -165,6 +165,7 @@ fn all() -> Vec<Command<AppState>> {
         editor_command!("annotate.mleader", "Multileader", "MLEADER", draw_mleader),
         editor_command!("annotate.leader", "Leader", "LEADER", draw_leader),
         editor_command!("annotate.mtedit", "Edit Text", "MTEDIT", edit_mtext_object),
+        editor_command!("dim.dim", "Dimension", "DIM", dim_auto),
         editor_command!("dim.linear", "Linear", "DIMLINEAR", dim_linear),
         editor_command!("dim.aligned", "Aligned", "DIMALIGNED", dim_aligned),
         editor_command!("dim.arc", "Arc Length", "DIMARC", dim_arc),
