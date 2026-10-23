@@ -54,6 +54,13 @@ pub struct Orphan {
 }
 
 impl Orphan {
+    /// A name for this session that stays the same while it is on the list.
+    pub fn id(&self) -> String {
+        self.dir
+            .file_name()
+            .map_or_else(String::new, |n| n.to_string_lossy().into_owned())
+    }
+
     /// Delete the autosaved copies for good.
     pub fn discard(self) {
         let _ = fs::remove_dir_all(&self.dir);

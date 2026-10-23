@@ -99,8 +99,10 @@ pub struct OpenDraftApp {
     /// `OD_AUTOMATION=1` turned the endpoint on for this run only (nothing
     /// is saved), for scripts and tests.
     automation_forced: bool,
-    /// The recent drawings as last found on disk, and when.
-    home_recent: Option<(std::time::Instant, Vec<crate::home::RecentEntry>)>,
+    /// What Home knows of the recent files, and the pictures it shows for them.
+    home_scan: crate::home_scan::HomeScan,
+    home_previews: crate::preview_textures::PreviewTextures,
+    templates: home_page::TemplateList,
 }
 
 impl OpenDraftApp {
@@ -118,12 +120,14 @@ impl OpenDraftApp {
         crate::icon_library::load(&mut state.cmdline);
         state.settings = settings;
         state.recent = recent;
+        state.templates_dir = eframe::storage_dir("OpenDraft").map(|d| d.join("templates"));
+        let home_previews = crate::preview_textures::PreviewTextures::start(&mut state.previews);
         if open.is_empty() {
             state.start_on_home();
         }
         state.open_paths(&open);
         // Autosave copies live beside the saved settings; a crashed run's are
-        // offered back by `recovery_dialog`.
+        // offered back on the Home page.
         if let Some(root) = eframe::storage_dir("OpenDraft").map(|d| d.join("recovery")) {
             state.start_recovery(&root);
         }
@@ -133,6 +137,8 @@ impl OpenDraftApp {
             .collect();
         shortcuts.sort_by_key(|(s, _)| std::cmp::Reverse(modifier_count(s)));
         Self {
+            home_previews,
+            templates: Default::default(),
             theme,
             settings_draft: None,
             settings_tab: 0,
@@ -160,7 +166,7 @@ impl OpenDraftApp {
             dynamic_keys: Vec::new(),
             automation: None,
             automation_forced: std::env::var_os("OD_AUTOMATION").is_some_and(|v| v == "1"),
-            home_recent: None,
+            home_scan: Default::default(),
         }
     }
 
@@ -322,22 +328,6 @@ impl OpenDraftApp {
         ctx.request_repaint_after(std::time::Duration::from_secs(30));
     }
 
-    /// "name* - OpenDraft", following the active drawing.
-    fn update_window_title(&mut self, ctx: &egui::Context) {
-        let title = if self.state.home {
-            "Home - OpenDraft".to_owned()
-        } else {
-            format!(
-                "{} - OpenDraft",
-                self.state.docs[self.state.active].tab_title()
-            )
-        };
-        if title != self.window_title {
-            ctx.send_viewport_cmd(egui::ViewportCommand::Title(title.clone()));
-            self.window_title = title;
-        }
-    }
-
     fn handle_shortcuts(&mut self, ctx: &egui::Context) {
         // Don't steal keys while the user is typing in a text field.
         if self.state.mtext_editing()
@@ -422,7 +412,6 @@ impl eframe::App for OpenDraftApp {
         self.tool_windows(ctx);
         self.confirm_dialog(ctx);
         self.consent_dialog(ctx);
-        self.recovery_dialog(ctx);
         self.autosave_when_due(ctx);
         self.update_window_title(ctx);
         crate::window_memory::observe(ctx);

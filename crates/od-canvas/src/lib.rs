@@ -10,6 +10,7 @@ mod hit;
 mod indexed_tests;
 #[cfg(test)]
 mod picture_tests;
+pub mod preview;
 mod select;
 mod snap;
 mod snap_axis;

@@ -49,6 +49,24 @@ fn documents_list_names_each_drawing_by_a_stable_id() {
 }
 
 #[test]
+fn the_hidden_home_placeholder_is_not_a_listed_or_addressable_drawing() {
+    let mut state = AppState::new();
+    let uid = state.docs[0].uid;
+    state.close_document(0);
+    assert!(state.docs[0].placeholder);
+    let result = read(&state, "documents.list", Value::Null).unwrap();
+    assert_eq!(result["documents"].as_array().unwrap().len(), 0);
+    let err = read(
+        &state,
+        "document.get",
+        json!({"document_id": document_id(INSTANCE, state.docs[0].uid)}),
+    )
+    .unwrap_err();
+    assert_eq!(err.code, ErrorCode::DocumentNotFound);
+    assert_ne!(uid, state.docs[0].uid);
+}
+
+#[test]
 fn the_summary_counts_and_describes_the_drawing() {
     let state = with(vec![line(0.0), circle(5.0)]);
     let result = read(

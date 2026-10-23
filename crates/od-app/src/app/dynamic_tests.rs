@@ -8,6 +8,8 @@ use crate::{dock, dynamic_input::Field, state::AppState};
 mod command_line_focus;
 mod ctrl;
 mod dim_styles;
+mod home_keyboard;
+mod home_layout;
 mod linetypes;
 mod mleader_styles;
 mod placement;
@@ -43,7 +45,9 @@ fn app() -> OpenDraftApp {
         dynamic_keys: Vec::new(),
         automation: None,
         automation_forced: false,
-        home_recent: None,
+        home_scan: Default::default(),
+        home_previews: Default::default(),
+        templates: Default::default(),
     }
 }
 fn frame(app: &mut OpenDraftApp, ctx: &egui::Context, events: Vec<Event>, time: f64) {

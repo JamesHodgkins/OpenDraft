@@ -7,6 +7,8 @@ pub mod menu;
 pub mod ribbon;
 pub mod shortcuts;
 mod theme;
+#[cfg(test)]
+mod theme_contrast_tests;
 pub mod widgets;
 
 pub use doc_tabs::{document_tabs, DocumentTabEvent};

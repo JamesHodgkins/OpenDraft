@@ -24,6 +24,7 @@ pub const TABLE: &[(&str, AutomationPolicy, CommandEffect)] = &[
     ("file.save", Denied, FileWrite),
     ("file.save_as", Denied, FileWrite),
     ("file.export_dxf", Denied, FileWrite),
+    ("file.save_template", Denied, FileWrite),
     ("file.plot", Denied, FileWrite),
     ("file.close", Denied, Lifecycle),
     ("file.exit", Denied, Lifecycle),

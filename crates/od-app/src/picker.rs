@@ -7,11 +7,12 @@ pub trait FilePicker {
     /// Ask for a drawing to open; `None` if the user cancelled.
     fn open(&mut self) -> Option<PathBuf>;
 
-    /// Ask where to save; `None` if the user cancelled. `suggested` is the
-    /// file name to offer, `directory` where to start if known, and `filter`
+    /// Ask where to save; `None` if the user cancelled. `title` is the
+    /// dialog's, `suggested` the file name to offer, `directory` where to start if known, and `filter`
     /// the kind of file (name and extensions) to save.
     fn save(
         &mut self,
+        title: &str,
         suggested: &str,
         directory: Option<&Path>,
         filter: Filter,
@@ -40,12 +41,13 @@ impl FilePicker for NativePicker {
 
     fn save(
         &mut self,
+        title: &str,
         suggested: &str,
         directory: Option<&Path>,
         (name, extensions): Filter,
     ) -> Option<PathBuf> {
         let mut dialog = rfd::FileDialog::new()
-            .set_title("Save drawing as")
+            .set_title(title)
             .set_file_name(suggested)
             .add_filter(name, extensions);
         if let Some(directory) = directory {
@@ -78,6 +80,9 @@ mod scripted {
         pub saves: VecDeque<Option<PathBuf>>,
         /// The suggested name of each Save dialog shown.
         pub suggested: Vec<String>,
+        /// The title and starting folder each Save dialog was given.
+        pub titles: Vec<String>,
+        pub directories: Vec<Option<PathBuf>>,
         /// The kind of file (by name) each Save dialog offered.
         pub filters: Vec<String>,
         pub open_dialogs: usize,
@@ -106,6 +111,14 @@ mod scripted {
             self.0.borrow().suggested.clone()
         }
 
+        pub fn titles(&self) -> Vec<String> {
+            self.0.borrow().titles.clone()
+        }
+
+        pub fn directories(&self) -> Vec<Option<PathBuf>> {
+            self.0.borrow().directories.clone()
+        }
+
         pub fn filters(&self) -> Vec<String> {
             self.0.borrow().filters.clone()
         }
@@ -127,11 +140,14 @@ mod scripted {
 
         fn save(
             &mut self,
+            title: &str,
             suggested: &str,
-            _directory: Option<&Path>,
+            directory: Option<&Path>,
             filter: Filter,
         ) -> Option<PathBuf> {
             let mut data = self.0 .0.borrow_mut();
+            data.titles.push(title.to_owned());
+            data.directories.push(directory.map(Path::to_owned));
             data.suggested.push(suggested.to_owned());
             data.filters.push(filter.0.to_owned());
             data.saves.pop_front().flatten()
