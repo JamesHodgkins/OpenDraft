@@ -13,7 +13,7 @@ use super::OpenDraftApp;
 use crate::home_scan::ScanRequest;
 use crate::recent::{RecentId, MAX_PINNED};
 use crate::text::plural;
-use recent::{recent_section, row};
+use recent::{recent_section, row, RowText};
 
 const PAGE_WIDTH: f32 = 720.0;
 
@@ -110,10 +110,13 @@ impl OpenDraftApp {
                 ui,
                 &self.theme,
                 doc.uid,
-                &doc.tab_title(),
-                &detail,
-                &right,
-                false,
+                &RowText {
+                    name: &doc.tab_title(),
+                    detail: &detail,
+                    right: &right,
+                    dim: false,
+                    trailing: 0.0,
+                },
             )
             .clicked()
             {
