@@ -306,7 +306,9 @@ impl View {
             // zoomed far out. Selected ones are always drawn.
             let on_screen =
                 (bounds.max.x - bounds.min.x).max(bounds.max.y - bounds.min.y) * self.camera.zoom;
-            if on_screen < MIN_DRAW_PX && !selection.contains(id) {
+            // A point has no size of its own: its mode gives it one.
+            let sized = !matches!(entity, Entity::Point { .. });
+            if sized && on_screen < MIN_DRAW_PX && !selection.contains(id) {
                 continue;
             }
             if let Entity::MText(text) = entity {
