@@ -11,16 +11,23 @@ use super::Pick;
 use crate::home_scan::{FileState, RecentEntry};
 use crate::recent::RecentId;
 
-/// Below this content width the cards go one to a row.
-const TWO_COLUMNS_FROM: f32 = 540.0;
+/// The narrowest a card is made, so as many fit across as the room allows
+/// (a few more than one, at most `MAX_COLUMNS`).
+const MIN_CARD: f32 = 220.0;
+const MAX_COLUMNS: usize = 4;
 const GAP: f32 = 12.0;
 const PAD: f32 = 10.0;
 /// The name, folder and note under a card's picture.
 const TEXT_HEIGHT: f32 = 68.0;
 
+/// How many cards go across `width` points.
+pub(super) fn columns(width: f32) -> usize {
+    (((width + GAP) / (MIN_CARD + GAP)).floor() as usize).clamp(1, MAX_COLUMNS)
+}
+
 pub(super) fn grid(ui: &mut egui::Ui, s: &Section, pick: &mut Option<Pick>) {
     let width = ui.available_width();
-    let columns = if width >= TWO_COLUMNS_FROM { 2 } else { 1 };
+    let columns = columns(width);
     let card_w = (width - GAP * (columns - 1) as f32) / columns as f32;
     // 16:10, like the pictures.
     let card_h = card_w * 0.625 + TEXT_HEIGHT;
@@ -254,3 +261,27 @@ fn elided(
 
 /// What pictures there are, by recent drawing.
 pub(super) type Pictures = HashMap<RecentId, egui::TextureHandle>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn as_many_cards_fit_across_as_the_room_allows() {
+        assert_eq!(columns(180.0), 1, "a narrow window still gets one");
+        assert_eq!(columns(440.0), 1);
+        assert_eq!(columns(464.0), 2);
+        assert_eq!(columns(688.0), 3, "the usual 720 column");
+        assert_eq!(columns(720.0), 3);
+        assert_eq!(columns(1120.0), 4);
+        assert_eq!(columns(5000.0), MAX_COLUMNS);
+        // Every card is at least `MIN_CARD` wide.
+        for width in [300.0, 464.0, 700.0, 900.0, 1120.0] {
+            let n = columns(width) as f32;
+            assert!(
+                (width - GAP * (n - 1.0)) / n >= MIN_CARD || n == 1.0,
+                "{width}"
+            );
+        }
+    }
+}
