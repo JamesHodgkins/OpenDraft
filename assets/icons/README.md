@@ -121,8 +121,8 @@ The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
 | ![](edit-redo.svg) | `edit-redo.svg` | redo-2 | app.rs, app/context_menu.rs |
 | ![](edit-select-all.svg) | `edit-select-all.svg` | square-dashed-mouse-pointer | Select All |
 | ![](edit-undo.svg) | `edit-undo.svg` | undo-2 | app.rs, app/context_menu.rs |
-| ![](file-new.svg) | `file-new.svg` | file | app.rs |
-| ![](file-open.svg) | `file-open.svg` | folder-open | app.rs |
+| ![](file-new.svg) | `file-new.svg` | file | app.rs, app/home_page/start.rs |
+| ![](file-open.svg) | `file-open.svg` | folder-open | app.rs, app/home_page/start.rs |
 | ![](file-save.svg) | `file-save.svg` | save | app.rs, theme.rs |
 | ![](format-linetype.svg) | `format-linetype.svg` | ellipsis | Linetypes |
 | ![](format-units.svg) | `format-units.svg` | ruler | Units |
@@ -137,6 +137,7 @@ The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
 | ![](group-ungroup.svg) | `group-ungroup.svg` | ungroup | Ungroup |
 | ![](home-more.svg) | `home-more.svg` | ellipsis | app/home_page/controls.rs |
 | ![](home-pin.svg) | `home-pin.svg` | pin | app/home_page/cards.rs, app/home_page/controls.rs |
+| ![](home-template.svg) | `home-template.svg` | layout-template | app/home_page/start.rs |
 | ![](home-view-grid.svg) | `home-view-grid.svg` | layout-grid | app/home_page/recent.rs |
 | ![](home-view-list.svg) | `home-view-list.svg` | list | app/home_page/recent.rs |
 | ![](inquiry-angle.svg) | `inquiry-angle.svg` | triangle-right | Angle |
@@ -204,7 +205,7 @@ The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
 | ![](properties-lineweight.svg) | `properties-lineweight.svg` | align-justify | ribbon_slots.rs |
 | ![](ribbon-panel-close.svg) | `ribbon-panel-close.svg` | chevron-up | ribbon.rs |
 | ![](ribbon-panel-open.svg) | `ribbon-panel-open.svg` | chevron-down | ribbon.rs |
-| ![](ribbon-split-arrow.svg) | `ribbon-split-arrow.svg` | chevron-down | ribbon/split.rs |
+| ![](ribbon-split-arrow.svg) | `ribbon-split-arrow.svg` | chevron-down | app/home_page/start.rs, ribbon/split.rs |
 | ![](select-crossing-polygon.svg) | `select-crossing-polygon.svg` | lasso | Crossing Polygon |
 | ![](select-fence.svg) | `select-fence.svg` | route | Fence |
 | ![](select-power.svg) | `select-power.svg` | wand-sparkles | Quick Select, app/context_menu.rs |
