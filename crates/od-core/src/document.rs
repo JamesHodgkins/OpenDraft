@@ -386,8 +386,14 @@ impl Document {
         Self::union_of(self.visible_in(None))
     }
 
+    /// The box round the objects that have one: construction lines and rays
+    /// run off to infinity and are left out, as AutoCAD leaves them out of
+    /// the extents.
     fn union_of<'a>(objects: impl Iterator<Item = &'a Object>) -> Option<Bounds> {
-        objects.map(Object::bounds).reduce(Bounds::union)
+        objects
+            .map(Object::bounds)
+            .filter(Bounds::is_finite)
+            .reduce(Bounds::union)
     }
 
     /// Whether the space being edited holds any object.

@@ -237,6 +237,18 @@ fn dimensions_offer_nodes_not_insertions() {
 }
 
 #[test]
+fn a_ray_offers_its_base_as_an_endpoint_and_a_construction_line_offers_none() {
+    let origin = p(2.0, 3.0);
+    let direction = p(1.0, 0.0);
+    let ray = Entity::Ray { origin, direction };
+    let found = all(&[ray], p(2.1, 3.0), 1.0, &only(SnapKind::Endpoint));
+    assert_eq!(found.len(), 1);
+    assert_eq!(found[0].point, origin);
+    let xline = Entity::Xline { origin, direction };
+    assert!(all(&[xline], p(2.1, 3.0), 1.0, &only(SnapKind::Endpoint)).is_empty());
+}
+
+#[test]
 fn a_point_object_offers_a_node() {
     let point = Entity::Point { at: p(3.0, 4.0) };
     let found = all(&[point], p(3.1, 4.0), 1.0, &only(SnapKind::Node));

@@ -148,6 +148,11 @@ impl View {
                 self.fill_text(painter, rect, m, &layout, &|_| stroke.color);
             }
             Entity::Point { at } => self.stroke_point(painter, rect, *at, stroke),
+            Entity::Xline { .. } | Entity::Ray { .. } => {
+                if let Some((a, b)) = self.visible_part(rect, entity) {
+                    painter.line_segment([to_screen(a), to_screen(b)], stroke);
+                }
+            }
             Entity::Line { start, end } => {
                 painter.line_segment([to_screen(*start), to_screen(*end)], stroke);
             }

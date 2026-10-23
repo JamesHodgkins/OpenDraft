@@ -79,6 +79,14 @@ impl Document {
         {
             return Err("A block cannot hold a hatch yet.");
         }
+        // They have no ends to give the block a size.
+        if def
+            .entities
+            .iter()
+            .any(|e| matches!(e.entity, Entity::Xline { .. } | Entity::Ray { .. }))
+        {
+            return Err("A block cannot hold a construction line or a ray.");
+        }
         let loops = def.entities.iter().any(|e| match &e.entity {
             Entity::Insert(i) => self
                 .block(i.block.id)
@@ -162,7 +170,7 @@ impl Document {
                     Entity::Spline(s) => s.validate().is_ok(),
                     // A block cannot hold a hatch: the strokes of a pattern
                     // would have to be drawn and moved with it.
-                    Entity::Hatch(_) => false,
+                    Entity::Hatch(_) | Entity::Xline { .. } | Entity::Ray { .. } => false,
                     _ => true,
                 };
                 if !layer_ok || !shape_ok {

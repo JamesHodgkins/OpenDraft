@@ -21,6 +21,7 @@ mod fillet;
 mod fillet_ellipse;
 mod grip;
 pub mod hatch;
+pub mod infinite;
 mod intersect;
 mod join;
 mod layer;
@@ -168,6 +169,18 @@ pub enum Entity {
     Point {
         at: Point,
     },
+    /// A line with no ends (XLINE) through `origin` along the unit vector
+    /// `direction`. See [`infinite`].
+    Xline {
+        origin: Point,
+        direction: Point,
+    },
+    /// A line from `origin` with no far end (RAY) along the unit vector
+    /// `direction`. See [`infinite`].
+    Ray {
+        origin: Point,
+        direction: Point,
+    },
 }
 
 impl Entity {
@@ -187,6 +200,8 @@ impl Entity {
             Entity::MLeader(_) => EntityKind::MLeader,
             Entity::Leader(_) => EntityKind::Leader,
             Entity::Point { .. } => EntityKind::Point,
+            Entity::Xline { .. } => EntityKind::Xline,
+            Entity::Ray { .. } => EntityKind::Ray,
         }
     }
 }
@@ -211,6 +226,13 @@ impl Bounds {
             min: Point::new(self.min.x.min(other.min.x), self.min.y.min(other.min.y)),
             max: Point::new(self.max.x.max(other.max.x), self.max.y.max(other.max.y)),
         }
+    }
+
+    /// Whether all four sides are finite numbers.
+    pub fn is_finite(&self) -> bool {
+        [self.min.x, self.min.y, self.max.x, self.max.y]
+            .iter()
+            .all(|v| v.is_finite())
     }
 
     pub fn intersects(&self, other: &Bounds) -> bool {
@@ -254,6 +276,8 @@ impl Entity {
             Entity::MLeader(m) => m.bounds(),
             Entity::Leader(l) => l.bounds(),
             Entity::Point { at } => Bounds::from_points(*at, *at),
+            Entity::Xline { origin, direction } => infinite::bounds(*origin, *direction, false),
+            Entity::Ray { origin, direction } => infinite::bounds(*origin, *direction, true),
             Entity::Hatch(h) => h
                 .bounds()
                 .unwrap_or_else(|| Bounds::from_points(Point::default(), Point::default())),

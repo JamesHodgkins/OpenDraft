@@ -69,6 +69,9 @@ pub fn candidates(entity: &Entity) -> Vec<SnapPoint> {
             })
             .collect(),
         Entity::Point { at: p } => vec![at(*p, SnapKind::Node)],
+        Entity::Ray { origin, .. } => vec![at(*origin, SnapKind::Endpoint)],
+        // Nothing of its own: it is met by intersection, nearest and the like.
+        Entity::Xline { .. } => Vec::new(),
         Entity::Line { start, end } => vec![
             at(*start, SnapKind::Endpoint),
             at(*end, SnapKind::Endpoint),

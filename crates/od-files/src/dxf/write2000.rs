@@ -628,6 +628,31 @@ mod tests {
     }
 
     #[test]
+    fn construction_lines_and_rays_come_back_and_need_r2000() {
+        let mut original = Document::default();
+        let d = Point::new(0.6, 0.8);
+        original.add(Entity::Xline {
+            origin: Point::new(1.0, 2.0),
+            direction: d,
+        });
+        original.add(Entity::Ray {
+            origin: Point::new(-3.0, 4.0),
+            direction: Point::new(0.0, -1.0),
+        });
+        let bytes = super::super::write::write(&original).unwrap().bytes;
+        assert!(String::from_utf8_lossy(&bytes).contains("AC1015"));
+        let back = crate::dxf::read::read(&bytes).unwrap().document;
+        let kinds: Vec<_> = back.objects().iter().map(|o| o.entity.clone()).collect();
+        let want: Vec<_> = original
+            .objects()
+            .iter()
+            .map(|o| o.entity.clone())
+            .collect();
+        assert_eq!(kinds, want);
+        assert!(back.bounds().is_none(), "they have no extents");
+    }
+
+    #[test]
     fn points_and_their_style_come_back() {
         let mut original = drawing();
         original.add(Entity::Point {

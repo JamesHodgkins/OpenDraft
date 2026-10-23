@@ -22,6 +22,7 @@ mod backdrop;
 mod crosshair;
 mod dash_paint;
 mod hatch_paint;
+mod infinite_paint;
 mod insert_paint;
 mod layout;
 mod paint;

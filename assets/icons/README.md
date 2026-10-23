@@ -92,8 +92,10 @@ The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
 | ![](draw-point.svg) | `draw-point.svg` | dot | Multiple Point, Single Point (Lucide's dot.) |
 | ![](draw-polygon.svg) | `draw-polygon.svg` | hexagon | Polygon |
 | ![](draw-polyline.svg) | `draw-polyline.svg` | spline | Polyline |
+| ![](draw-ray.svg) | `draw-ray.svg` | move-up-right | Ray (Lucide's arrow up and right: a line that leaves a point.) |
 | ![](draw-rectangle.svg) | `draw-rectangle.svg` | square | Rectangle |
 | ![](draw-spline.svg) | `draw-spline.svg` | spline | Spline |
+| ![](draw-xline.svg) | `draw-xline.svg` | slash | Construction Line (Lucide's slash: a line that runs on both ways.) |
 | ![](dropdown-arrow.svg) | `dropdown-arrow.svg` | chevron-down | widgets.rs |
 | ![](dynamic-input-locked.svg) | `dynamic-input-locked.svg` | lock | app/dynamic_overlay.rs |
 | ![](dynamic-input-options.svg) | `dynamic-input-options.svg` | chevron-down | app/dynamic_overlay.rs |
