@@ -14,7 +14,6 @@ pub(super) fn whats_new_section(
     pick: &mut Option<Pick>,
 ) {
     let c = &theme.colors;
-    ui.add_space(22.0);
     widgets::section_header(ui, theme, "What's new");
     egui::Frame::new()
         .fill(c.panel_raised)

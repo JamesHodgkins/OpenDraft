@@ -129,6 +129,7 @@ impl OpenDraftApp {
                                     self.open_drawings_section(ui, &mut pick)
                                 });
                                 recent(ui, &mut pick);
+                                ui.add_space(22.0);
                                 announce(ui, &mut pick);
                             }
                             Layout::Wide { main, side, .. } => {
