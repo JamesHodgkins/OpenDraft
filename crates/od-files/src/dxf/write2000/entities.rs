@@ -142,7 +142,11 @@ pub(super) fn write_object(
         }
     };
     match &object.entity {
-        Entity::Dimension(_) | Entity::Insert(_) => return Err(unexploded()),
+        Entity::Dimension(d) => {
+            head(out, h, "DIMENSION");
+            super::dimension::entity(out, ids, document, object, d)?;
+        }
+        Entity::Insert(_) => return Err(unexploded()),
         Entity::Leader(l) => {
             head(out, h, "LEADER");
             super::leader::entity(out, ids, document, l)?;

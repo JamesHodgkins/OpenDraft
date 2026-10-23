@@ -126,16 +126,28 @@ pub(super) fn write_tables(
     out.pair(70, 0);
     out.pair(0, "ENDTAB");
 
-    let owner = table(out, h, "DIMSTYLE", 1);
+    let owner = table(out, h, "DIMSTYLE", document.dim_styles().len());
     out.pair(100, "AcDbDimStyleTable");
-    record(out, "DIMSTYLE", owner, "AcDbDimStyleTableRecord", h.next());
-    out.pair(2, "Standard");
-    for (code, value) in DIMSTYLE {
-        out.pair(*code, value);
+    for (style, handle) in document.dim_styles().iter().zip(&ids.dim_styles) {
+        record(out, "DIMSTYLE", owner, "AcDbDimStyleTableRecord", *handle);
+        out.pair(2, dxf_name(&style.name));
+        let text_style = document
+            .text_styles()
+            .iter()
+            .position(|t| t.id == style.text_style)
+            .and_then(|i| ids.text_styles.get(i).copied());
+        for (code, value) in super::dimension::style_pairs(style, text_style) {
+            out.pair(code, value);
+        }
     }
     out.pair(0, "ENDTAB");
 
-    let owner = table(out, h, "BLOCK_RECORD", document.layouts().len() + 1);
+    let owner = table(
+        out,
+        h,
+        "BLOCK_RECORD",
+        document.layouts().len() + 1 + ids.dim_blocks.len(),
+    );
     let block_record = |out: &mut Out, name: &str, handle: u32, layout: u32| {
         record(out, "BLOCK_RECORD", owner, "AcDbBlockTableRecord", handle);
         out.pair(2, name);
@@ -144,6 +156,9 @@ pub(super) fn write_tables(
     block_record(out, "*Model_Space", ids.model_record, ids.model_layout);
     for (i, _) in document.layouts().iter().enumerate() {
         block_record(out, &block_name(i), ids.records[i], ids.layouts[i]);
+    }
+    for (name, record_handle) in ids.dim_blocks.values() {
+        block_record(out, name, *record_handle, 0);
     }
     out.pair(0, "ENDTAB");
     out.end_section();
@@ -171,7 +186,7 @@ pub(super) fn record(out: &mut Out, kind: &str, owner: u32, subclass: &str, hand
 }
 
 /// DIMSTYLE "Standard" with AutoCAD's defaults (group code, value).
-const DIMSTYLE: &[(i32, &str)] = &[
+pub(super) const DIMSTYLE: &[(i32, &str)] = &[
     (70, "0"),
     (3, ""),
     (4, ""),

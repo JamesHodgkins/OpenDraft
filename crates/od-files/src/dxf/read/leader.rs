@@ -32,6 +32,7 @@ impl Importer {
     pub(super) fn scan_styles(&mut self, records: &[Record]) {
         self.scan_text_styles(records);
         self.scan_mleader_styles(records);
+        self.scan_dim_styles(records);
         for record in records.iter().filter(|r| r.name == "DIMSTYLE") {
             let Some(name) = record.text(2) else {
                 continue;
@@ -110,6 +111,7 @@ impl Importer {
     /// A handle that names nothing, or something that is not text, leaves the
     /// leader without an annotation.
     pub(super) fn resolve_leaders(&mut self) {
+        self.finish_dim_styles();
         for (id, handle) in std::mem::take(&mut self.leaders.pending) {
             let Some(text) = self.handles.get(&handle.to_uppercase()).copied() else {
                 continue;

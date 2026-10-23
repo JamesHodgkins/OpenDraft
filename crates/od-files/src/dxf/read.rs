@@ -15,6 +15,7 @@ use od_core::aci::aci_rgb;
 
 mod basic;
 mod blocks;
+mod dimension;
 mod ellipse;
 mod hatch;
 mod hatch_sources;
@@ -155,6 +156,7 @@ struct Importer {
     mleaders: mleader::Styles,
     text_styles: text::Styles,
     leaders: leader::Leaders,
+    dim_styles: dimension::Styles,
 }
 
 impl Importer {
@@ -296,6 +298,7 @@ impl Importer {
             "MTEXT" => self.mtext(record),
             "LEADER" => self.leader(record),
             "MULTILEADER" => self.multileader(record),
+            "DIMENSION" => self.dimension(record),
             "INSERT" => self.insert(record),
             "LWPOLYLINE" => {
                 let (vertices, constant) = polyline::lw_vertices(record);
