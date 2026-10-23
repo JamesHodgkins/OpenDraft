@@ -58,6 +58,9 @@ impl From<Bounds> for BoundsDto {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum GeometryDto {
+    Point {
+        at: PointDto,
+    },
     Line {
         start: PointDto,
         end: PointDto,
@@ -319,6 +322,7 @@ fn dimension_geometry(d: &od_core::Dimension) -> GeometryDto {
 
 pub fn geometry_dto(entity: &Entity) -> GeometryDto {
     match entity {
+        Entity::Point { at } => GeometryDto::Point { at: (*at).into() },
         Entity::Line { start, end } => GeometryDto::Line {
             start: (*start).into(),
             end: (*end).into(),

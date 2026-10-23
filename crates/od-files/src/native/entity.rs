@@ -18,6 +18,9 @@ pub(super) type PointDto = [f64; 2];
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub(super) enum EntityDto {
+    Point {
+        at: PointDto,
+    },
     Line {
         start: PointDto,
         end: PointDto,
@@ -103,6 +106,7 @@ pub(super) fn from_point(p: PointDto) -> Result<Point, FileError> {
 impl EntityDto {
     pub(super) fn from_entity(entity: &Entity) -> Result<Self, FileError> {
         let dto = match entity {
+            Entity::Point { at } => EntityDto::Point { at: point(*at) },
             Entity::Line { start, end } => EntityDto::Line {
                 start: point(*start),
                 end: point(*end),
@@ -183,6 +187,9 @@ impl EntityDto {
                 scale,
                 rotation,
             } => insert_entity(blocks, *block, *insertion, *scale, *rotation)?,
+            EntityDto::Point { at } => Entity::Point {
+                at: from_point(*at)?,
+            },
             EntityDto::Line { start, end } => Entity::Line {
                 start: from_point(*start)?,
                 end: from_point(*end)?,

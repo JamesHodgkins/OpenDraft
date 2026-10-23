@@ -51,6 +51,7 @@ pub fn build_registry() -> Registry<AppState> {
         crate::clipboard::commands(),
         crate::layer_cmd::commands(),
         crate::circle_arc_commands::commands(),
+        crate::primitive_commands::commands(),
     ];
     for command in all().into_iter().chain(tables.into_iter().flatten()) {
         registry
@@ -512,6 +513,8 @@ mod tests {
             ("draw.circle", "Circle"),
             ("draw.arc", "Arc"),
             ("draw.ellipse", "Ellipse"),
+            ("draw.point", "POINT"),
+            ("draw.point_multiple", "POINT"),
             ("draw.spline", "Spline"),
             ("draw.hatch", "Hatch"),
             ("draw.rectangle", "Rectangle"),

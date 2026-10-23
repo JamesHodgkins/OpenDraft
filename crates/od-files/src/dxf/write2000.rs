@@ -245,6 +245,10 @@ pub fn write(document: &Document) -> Result<Encoded, FileError> {
     out.pair(3, "ANSI_1252");
     out.pair(9, "$LTSCALE");
     out.pair(40, finite(document.linetype_scale())?);
+    for (name, code, value) in super::point_style::header(document.point_style()) {
+        out.pair(9, name);
+        out.pair(code, value);
+    }
     out.pair(9, "$INSBASE");
     out.point3(10, 0.0, 0.0, 0.0);
     let (lo, hi) = match document.model_bounds() {
@@ -621,6 +625,26 @@ mod tests {
         );
         assert_eq!(value(poly, 42), Some("0.5"));
         assert_eq!(value(poly, 40), Some("0.2"));
+    }
+
+    #[test]
+    fn points_and_their_style_come_back() {
+        let mut original = drawing();
+        original.add(Entity::Point {
+            at: Point::new(4.5, -1.0),
+        });
+        original.set_point_style(od_core::PointStyle {
+            mode: 66,
+            size: 2.5,
+        });
+        let back = crate::dxf::read::read(&write(&original).unwrap().bytes)
+            .unwrap()
+            .document;
+        assert!(back.objects().iter().any(|o| o.entity
+            == Entity::Point {
+                at: Point::new(4.5, -1.0)
+            }));
+        assert_eq!(back.point_style(), original.point_style());
     }
 
     #[test]

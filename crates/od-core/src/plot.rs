@@ -95,13 +95,14 @@ pub fn plot_layout(document: &Document, layout: LayoutId) -> Result<PlotSheet, P
             wide |= add_viewed(&mut sheet, document, &object, tolerance, &to_paper, &frame)?;
         }
     }
+    let sheet_height = sheet.height;
     for object in document
         .visible_in(Some(layout.id))
         .flat_map(|o| document.drawn(o))
     {
         wide |= has_width(&object.entity);
         let (rgb, width) = look(document, &object);
-        for (points, closed) in dashed_outlines(document, &object, TOLERANCE_MM)? {
+        for (points, closed) in dashed_outlines(document, &object, TOLERANCE_MM, sheet_height)? {
             sheet.paths.push(PlotPath {
                 points,
                 closed,
@@ -142,7 +143,10 @@ pub(crate) fn add_viewed(
     frame: &Bounds,
 ) -> Result<bool, PlotError> {
     let (rgb, width) = look(document, object);
-    for (points, closed) in dashed_outlines(document, object, tolerance)? {
+    // The height of what is shown, in the object's units: what a point sized
+    // as a share of the screen is a share of.
+    let view_height = (frame.max.y - frame.min.y) * tolerance / TOLERANCE_MM;
+    for (points, closed) in dashed_outlines(document, object, tolerance, view_height)? {
         let paper: Vec<Point> = points.iter().map(|p| to_paper(*p)).collect();
         for (points, closed) in clip_polyline(&paper, closed, frame) {
             sheet.paths.push(PlotPath {
@@ -206,7 +210,11 @@ fn dashed_outlines(
     document: &Document,
     object: &crate::Object,
     tolerance: f64,
+    view_height: f64,
 ) -> Result<Vec<(Vec<Point>, bool)>, PlotError> {
+    if let Entity::Point { at } = &object.entity {
+        return point_outlines(document, *at, tolerance, view_height);
+    }
     let Some((elements, scale)) = document
         .dash_pattern(object)
         .filter(|_| is_dashable(&object.entity))
@@ -236,6 +244,26 @@ fn dashed_outlines(
         }
     }
     Ok(out)
+}
+
+/// A point as `PDMODE` and `PDSIZE` draw it: the dot as a hair of line, whose
+/// round cap makes it a dot, and the other marks as outlines.
+fn point_outlines(
+    document: &Document,
+    at: Point,
+    tolerance: f64,
+    view_height: f64,
+) -> Result<Vec<(Vec<Point>, bool)>, PlotError> {
+    let style = document.point_style();
+    let marks = style.marks(at, style.size_in_units(view_height));
+    let mut all = Vec::new();
+    if marks.dot {
+        all.push((vec![at, Point::new(at.x + tolerance * 0.1, at.y)], false));
+    }
+    for shape in &marks.shapes {
+        all.extend(outlines(shape, tolerance)?);
+    }
+    Ok(all)
 }
 
 /// A stored object as flattened outlines: a dimension from the picture the
@@ -503,6 +531,32 @@ mod tests {
         let (doc, id) = plotted(&[line((0.0, 4000.0), (10000.0, 4000.0))]);
         let cut = &plot_layout(&doc, id).unwrap().paths[0];
         assert!((cut.points[0].x - 50.0).abs() < 1e-9 && (cut.points[1].x - 150.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn a_point_plots_in_the_drawings_point_style() {
+        let at = Point::new(5000.0, 4000.0);
+        let (mut doc, id) = plotted(&[Entity::Point { at }]);
+        // The default is a dot: a hair of line.
+        assert_eq!(plot_layout(&doc, id).unwrap().paths.len(), 1);
+        // A plus 400 model units across is 4 mm on the sheet at 1:100.
+        doc.set_point_style(crate::PointStyle {
+            mode: 2,
+            size: 400.0,
+        });
+        let sheet = plot_layout(&doc, id).unwrap();
+        assert_eq!(sheet.paths.len(), 2);
+        let across = sheet.paths[0].points[1].x - sheet.paths[0].points[0].x;
+        assert!((across - 4.0).abs() < 1e-9, "{across}");
+        // None draws nothing.
+        doc.set_point_style(crate::PointStyle { mode: 1, size: 0.0 });
+        assert!(plot_layout(&doc, id).unwrap().paths.is_empty());
+        // A share of the screen is a share of what the viewport shows: 5% of
+        // 80 mm is 4 mm.
+        doc.set_point_style(crate::PointStyle { mode: 2, size: 0.0 });
+        let sheet = plot_layout(&doc, id).unwrap();
+        let across = sheet.paths[0].points[1].x - sheet.paths[0].points[0].x;
+        assert!((across - 4.0).abs() < 1e-9, "{across}");
     }
 
     #[test]

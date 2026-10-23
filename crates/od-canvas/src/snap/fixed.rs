@@ -68,6 +68,7 @@ pub fn candidates(entity: &Entity) -> Vec<SnapPoint> {
                 _ => at(p, SnapKind::Midpoint),
             })
             .collect(),
+        Entity::Point { at: p } => vec![at(*p, SnapKind::Node)],
         Entity::Line { start, end } => vec![
             at(*start, SnapKind::Endpoint),
             at(*end, SnapKind::Endpoint),

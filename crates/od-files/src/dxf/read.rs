@@ -287,9 +287,7 @@ impl Importer {
                     self.polyline(header, &vertices, default, closed);
                 }
             }
-            "LINE" => self.line(record),
-            "CIRCLE" => self.circle(record),
-            "ARC" => self.arc(record),
+            "LINE" | "CIRCLE" | "ARC" | "POINT" => self.basic(record),
             "ELLIPSE" => self.ellipse(record),
             "SPLINE" => self.spline(record),
             "HATCH" => self.hatch(record),
@@ -372,10 +370,7 @@ pub fn read(bytes: &[u8]) -> Result<Loaded, FileError> {
                 }
                 if section == "HEADER" {
                     let groups = record.groups.iter().map(|g| (g.code, g.value.as_str()));
-                    importer
-                        .document
-                        .set_units(super::units::read_header(groups.clone()));
-                    super::linetypes::apply_header(groups, &mut importer.document);
+                    super::header::apply(groups, &mut importer.document);
                 }
             }
             "ENDSEC" => section.clear(),

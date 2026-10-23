@@ -632,6 +632,8 @@ A block definition is a record in the drawing's block table and a block referenc
 ## Legacy leaders (built: baseline)
 `Entity::Leader(Box<Leader>)` (`od-core/leader.rs`) is a polyline with an arrowhead and an optional reference to the MTEXT it annotates, which is a separate object. Like a multileader it is drawn from its stored points (`picture`, cached by `Object::dimension_picture`) and goes through every `Entity` match intentionally. The reference may name an erased text (ids are never reused); the leader does not follow the text. `.odx` version 2; DXF reads and writes `LEADER` in AutoCAD's layout, joining text by handle after everything is read. See `ui_plan.md`, "Legacy leaders".
 
+`Entity::Point { at }` is a bare location. How every point looks is a property of the drawing, not of the object: `Document::point_style()` (`PointStyle { mode, size }`, `od-core/src/point_style.rs`; the `PDMODE` and `PDSIZE` variables, undoable through `SetPointStyle`, saved in `.odx` as optional `point_mode` and `point_size`, read and written as `$PDMODE` and `$PDSIZE`). `PointStyle::marks` works out the lines, circle and square of a mode at a size; the canvas (`view/point_paint.rs`) and plotting (`plot.rs`, `point_outlines`) draw them, and a size of zero or below is a share of the screen height (the viewport's height when plotted). A point is picked, boxed and snapped (Node) at its location only, has one grip, and moves, rotates, mirrors and scales with it. `.odx` version 3.
+
 ## Linetypes (built: the table and dashed drawing and plotting)
 
 `Document` owns a linetype table (`od-core/src/linetype/`, `document/linetypes.rs`), following `private_material/autocad_linetype_reference_guide.md`, which is the compatibility contract.

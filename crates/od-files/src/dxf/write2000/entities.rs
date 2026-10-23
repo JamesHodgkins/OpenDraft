@@ -159,6 +159,11 @@ pub(super) fn write_object(
             head(out, h, "HATCH");
             super::hatch::hatch(out, hatch)?;
         }
+        Entity::Point { at } => {
+            head(out, h, "POINT");
+            out.pair(100, "AcDbPoint");
+            out.point3(10, finite(at.x)?, finite(at.y)?, 0.0);
+        }
         Entity::Line { start, end } => {
             head(out, h, "LINE");
             out.pair(100, "AcDbLine");

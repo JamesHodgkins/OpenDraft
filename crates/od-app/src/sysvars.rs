@@ -307,6 +307,7 @@ pub fn table() -> &'static SysVarTable<AppState> {
         variables.extend(crate::snap_vars::variables());
         variables.extend(crate::units_vars::variables());
         variables.extend(crate::linetype_vars::variables());
+        variables.extend(crate::point_vars::variables());
         variables.extend(crate::dim_vars::variables());
         variables.extend(crate::spline_memory::variables());
         variables.extend(crate::hatch_memory::variables());

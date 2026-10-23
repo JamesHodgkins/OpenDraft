@@ -36,6 +36,7 @@ pub mod plot;
 mod plot_hatch;
 pub mod plot_model;
 mod plot_text;
+pub mod point_style;
 mod polycorner;
 pub mod polygon;
 pub mod rect;
@@ -74,6 +75,7 @@ pub use leader::Leader;
 pub use linetype::{Linetype, LinetypeError, LinetypeId, LinetypeTable, StrokeElement};
 pub use mleader::{MLeader, MLeaderStyle, MLeaderStyleId};
 pub use mtext::MText;
+pub use point_style::{PointMarks, PointStyle};
 pub use polycorner::{round_polyline, Path, Round, Rounded};
 pub use spline::{KnotParameterization, Spline, SplineError, SplineFitData};
 pub use tangent::tangent_circle;
@@ -160,6 +162,11 @@ pub enum Entity {
     MLeader(Box<MLeader>),
     /// The legacy leader (LEADER). See [`leader`].
     Leader(Box<Leader>),
+    /// A single location (POINT). How it is drawn is the drawing's
+    /// [`PointStyle`].
+    Point {
+        at: Point,
+    },
 }
 
 impl Entity {
@@ -178,6 +185,7 @@ impl Entity {
             Entity::Hatch(_) => EntityKind::Hatch,
             Entity::MLeader(_) => EntityKind::MLeader,
             Entity::Leader(_) => EntityKind::Leader,
+            Entity::Point { .. } => EntityKind::Point,
         }
     }
 }
@@ -244,6 +252,7 @@ impl Entity {
             Entity::Insert(i) => i.bounds(),
             Entity::MLeader(m) => m.bounds(),
             Entity::Leader(l) => l.bounds(),
+            Entity::Point { at } => Bounds::from_points(*at, *at),
             Entity::Hatch(h) => h
                 .bounds()
                 .unwrap_or_else(|| Bounds::from_points(Point::default(), Point::default())),

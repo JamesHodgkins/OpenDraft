@@ -136,7 +136,7 @@ fn outline(entity: &Entity) -> Vec<Edge> {
             .flat_map(|c| closed_edges(c))
             .collect(),
         Entity::Line { start, end } => vec![(*start, *end)],
-        Entity::Circle { .. } => Vec::new(),
+        Entity::Point { .. } | Entity::Circle { .. } => Vec::new(),
         Entity::Arc {
             center,
             radius,
@@ -216,6 +216,7 @@ fn sample_points(entity: &Entity) -> Vec<Point> {
         // A window must hold everything the block draws.
         Entity::Insert(i) => i.picture().iter().flat_map(sample_points).collect(),
         Entity::Line { start, end } => vec![*start, *end],
+        Entity::Point { at } => vec![*at],
         Entity::Circle { center, radius } => {
             let r = radius.abs();
             vec![

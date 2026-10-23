@@ -30,6 +30,7 @@ impl Entity {
             | Entity::MLeader(_)
             | Entity::Leader(_)
             | Entity::Insert(_)
+            | Entity::Point { .. }
             | Entity::Hatch(_)
             | Entity::Spline(_) => {
                 vec![self.clone()]
