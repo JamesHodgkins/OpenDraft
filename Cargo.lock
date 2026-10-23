@@ -2193,6 +2193,7 @@ name = "od-app"
 version = "0.1.0"
 dependencies = [
  "arboard",
+ "chrono",
  "eframe",
  "egui_dock",
  "fontdb",
@@ -2204,6 +2205,7 @@ dependencies = [
  "od-core",
  "od-files",
  "od-ui",
+ "png",
  "rfd",
  "ron",
  "serde",

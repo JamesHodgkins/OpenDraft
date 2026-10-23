@@ -146,7 +146,7 @@ impl Colors {
             // Slightly softer than the reference's pure white: light-on-dark
             // text looks heavier than it is.
             text: hex(0xdcdcdc),
-            text_weak: hex(0xa6a6a6),
+            text_weak: hex(0xb4b4b4),
             text_disabled: hex(0x646464),
             text_on_accent: hex(0xffffff),
         }

@@ -35,6 +35,11 @@ pub enum Done {
         path: PathBuf,
         result: Result<Vec<String>, FileError>,
     },
+    /// A template file, read to start a new drawing from.
+    FromTemplate {
+        name: String,
+        result: Box<Result<Loaded, FileError>>,
+    },
     /// One pass of recovery copies: for each drawing written, where its
     /// history stood and whether it worked.
     Autosaved(Vec<(u64, u64, std::io::Result<()>)>),

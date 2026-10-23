@@ -11,6 +11,7 @@ mod error;
 mod linetype_import;
 mod native;
 mod plot;
+mod template;
 
 use std::fs;
 use std::io::Write;
@@ -24,6 +25,9 @@ pub use dxf::DxfFormat;
 pub use error::FileError;
 pub use native::{NativeFormat, CURRENT_VERSION, NATIVE_EXTENSION};
 pub use plot::{pdf, plot_cancellable, plot_filter, svg};
+pub use template::{
+    is_template, template_filter, template_path, TemplateFormat, TEMPLATE_EXTENSION,
+};
 
 /// "1 object", "2 objects": a count and a noun for a warning.
 pub(crate) fn plural(count: u64, noun: &str) -> String {
@@ -76,7 +80,7 @@ pub trait FileFormat: Sync {
 }
 
 /// Every format the app can open, native first.
-pub const FORMATS: &[&dyn FileFormat] = &[&NativeFormat, &DxfFormat, &DwgFormat];
+pub const FORMATS: &[&dyn FileFormat] = &[&NativeFormat, &TemplateFormat, &DxfFormat, &DwgFormat];
 
 /// The format whose extension `path` has.
 pub fn format_for(path: &Path) -> Option<&'static dyn FileFormat> {
@@ -377,10 +381,11 @@ mod tests {
     fn open_filters_start_with_everything() {
         let filters = open_filters();
         assert_eq!(filters[0].0, "All drawings");
-        assert_eq!(filters[0].1, vec!["odx", "dxf", "dwg"]);
+        assert_eq!(filters[0].1, vec!["odx", "odt", "dxf", "dwg"]);
         assert_eq!(filters[1].1, vec!["odx"]);
-        assert_eq!(filters[2].1, vec!["dxf"]);
-        assert_eq!(filters[3], ("AutoCAD DWG".to_owned(), vec!["dwg"]));
+        assert_eq!(filters[2], ("OpenDraft template".to_owned(), vec!["odt"]));
+        assert_eq!(filters[3].1, vec!["dxf"]);
+        assert_eq!(filters[4], ("AutoCAD DWG".to_owned(), vec!["dwg"]));
     }
 
     #[test]

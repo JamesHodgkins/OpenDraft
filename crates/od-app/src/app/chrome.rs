@@ -121,6 +121,7 @@ impl OpenDraftApp {
             ("Open...", "file.open"),
             ("Save", "file.save"),
             ("Save As...", "file.save_as"),
+            ("Save as Template...", "file.save_template"),
             ("Export DXF...", "file.export_dxf"),
             ("Plot layout...", "file.plot"),
         ];
@@ -377,5 +378,21 @@ impl OpenDraftApp {
             }
         }
         clicked
+    }
+
+    /// "name* - OpenDraft", following the active drawing.
+    pub(super) fn update_window_title(&mut self, ctx: &egui::Context) {
+        let title = if self.state.home {
+            "Home - OpenDraft".to_owned()
+        } else {
+            format!(
+                "{} - OpenDraft",
+                self.state.docs[self.state.active].tab_title()
+            )
+        };
+        if title != self.window_title {
+            ctx.send_viewport_cmd(egui::ViewportCommand::Title(title.clone()));
+            self.window_title = title;
+        }
     }
 }

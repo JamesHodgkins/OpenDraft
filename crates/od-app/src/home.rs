@@ -4,11 +4,11 @@
 //! point at; the registry blocks drawing commands while Home shows (see
 //! `Command::global`).
 
-use std::path::PathBuf;
-use std::time::SystemTime;
+use std::path::Path;
 
 use od_commands::Session;
 
+use crate::recent::RecentId;
 use crate::state::{AppState, Doc};
 
 impl AppState {
@@ -32,6 +32,26 @@ impl AppState {
         }
     }
 
+    /// Close a drawing without asking about unsaved changes (see
+    /// `request_close`). Closing the last one leaves the Home page.
+    pub fn close_document(&mut self, index: usize) {
+        if index < self.docs.len() && !self.docs[index].placeholder {
+            self.abort_command();
+            let uid = self.docs[index].uid;
+            self.docs.remove(index);
+            self.forget_recovery(uid);
+            if self.docs.is_empty() {
+                self.show_home_without_drawings();
+                return;
+            }
+            // Closing a tab to the left keeps the same drawing active.
+            if index < self.active {
+                self.active -= 1;
+            }
+            self.active = self.active.min(self.docs.len() - 1);
+        }
+    }
+
     /// Nothing is open: leave only the hidden placeholder, and show Home.
     pub(crate) fn show_home_without_drawings(&mut self) {
         self.abort_command();
@@ -51,29 +71,31 @@ impl AppState {
     }
 }
 
-/// One line of the recent-drawings list.
-#[derive(Clone, Debug, PartialEq)]
-pub struct RecentEntry {
-    pub path: PathBuf,
-    /// When the file was last written; `None` if it cannot be read (moved or
-    /// deleted), which the page shows as missing.
-    pub modified: Option<SystemTime>,
-    pub size: Option<u64>,
-}
+impl AppState {
+    /// Open the recent drawing `id`. A failure leaves it on the list: the
+    /// drive may only be away for now.
+    pub fn open_recent_id(&mut self, id: RecentId) {
+        if let Some(path) = self.recent.get(id).map(|i| i.path.clone()) {
+            self.open_path(&path);
+        }
+    }
 
-/// Look up the files on the recent list.
-pub fn recent_entries(paths: &[PathBuf]) -> Vec<RecentEntry> {
-    paths
-        .iter()
-        .map(|path| {
-            let meta = std::fs::metadata(path).ok().filter(|m| m.is_file());
-            RecentEntry {
-                path: path.clone(),
-                modified: meta.as_ref().and_then(|m| m.modified().ok()),
-                size: meta.map(|m| m.len()),
-            }
-        })
-        .collect()
+    /// Ask for a file to stand in for the recent drawing `id`. Nothing
+    /// changes unless it opens; then it takes the entry's place.
+    pub fn locate_recent(&mut self, id: RecentId) {
+        if let Some(path) = self.picker.open() {
+            self.locate.retain(|(_, old)| *old != id);
+            self.locate.push((path.clone(), id));
+            self.open_path(&path);
+        }
+    }
+
+    /// Note that `path` was opened or saved successfully.
+    pub(crate) fn commit_recent(&mut self, path: &Path) {
+        let old = self.locate.iter().position(|(p, _)| p == path);
+        let old = old.map(|i| self.locate.remove(i).1);
+        self.recent.add_replacing(path, old);
+    }
 }
 
 /// "12 KB", "3.4 MB".
@@ -141,13 +163,6 @@ mod tests {
         assert!(registry.is_enabled("file.new", &state));
         assert!(registry.is_enabled("file.open", &state));
         assert!(registry.is_enabled("manage.settings", &state));
-    }
-
-    #[test]
-    fn a_missing_recent_file_has_no_date() {
-        let entries = recent_entries(&[PathBuf::from("no/such/file.odx")]);
-        assert_eq!(entries[0].modified, None);
-        assert_eq!(entries[0].size, None);
     }
 
     #[test]

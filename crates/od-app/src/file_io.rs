@@ -107,6 +107,7 @@ impl AppState {
                 self.finish_export(&path, result);
                 self.file_ops.exported(&path, report);
             }
+            Done::FromTemplate { name, result } => self.finish_template(&name, *result),
             Done::Autosaved(results) => self.finish_autosave(results),
             Done::Finished => {}
         }
@@ -146,9 +147,17 @@ impl AppState {
         self.opening.push(path.to_owned());
         self.message = format!("Opening {}...", display_name(path));
         let path = path.to_owned();
-        Some(self.submit_cancellable(move |cancelled| Done::Opened {
-            result: Box::new(od_files::load_cancellable(&path, cancelled)),
-            path,
+        let previews = self.previews.clone();
+        Some(self.submit_cancellable(move |cancelled| {
+            let result = od_files::load_cancellable(&path, cancelled);
+            // Once it has read, a picture for Home, unless one is kept already.
+            if let (Some(previews), Ok(loaded)) = (&previews, &result) {
+                previews.request_unless_stored(&path, || loaded.document.clone());
+            }
+            Done::Opened {
+                result: Box::new(result),
+                path,
+            }
         }))
     }
 
@@ -157,7 +166,7 @@ impl AppState {
         let loaded = match result {
             Ok(loaded) => loaded,
             Err(error) => {
-                self.recent.remove(path);
+                self.locate.retain(|(p, _)| p != path);
                 self.tell(format!("Could not open {}: {error}", path.display()));
                 return;
             }
@@ -169,6 +178,7 @@ impl AppState {
             .position(|d| d.path.as_deref().is_some_and(|p| same_file(p, path)))
         {
             self.active = i;
+            self.commit_recent(path);
             return;
         }
         self.abort_command();
@@ -183,7 +193,7 @@ impl AppState {
             let session = Session::recovered(loaded.document);
             let doc = self.install_document(title, session);
             doc.view.request_zoom_extents();
-            self.recent.add(path);
+            self.commit_recent(path);
             let left_out = if loaded.warnings.is_empty() {
                 ""
             } else {
@@ -203,7 +213,7 @@ impl AppState {
         let doc = self.install_document(title.clone(), session);
         doc.path = Some(path.to_owned());
         doc.view.request_zoom_extents();
-        self.recent.add(path);
+        self.commit_recent(path);
         self.message = format!("Opened {title}");
     }
 
@@ -227,11 +237,19 @@ impl AppState {
         self.saving.push(uid);
         self.message = format!("Saving {}...", display_name(path));
         let path = path.to_owned();
-        Some(self.submit_cancellable(move |cancelled| Done::Saved {
-            result: od_files::save_cancellable(&path, &copy, cancelled),
-            uid,
-            path,
-            position,
+        let previews = self.previews.clone();
+        Some(self.submit_cancellable(move |cancelled| {
+            let result = od_files::save_cancellable(&path, &copy, cancelled);
+            // What was written is what the picture shows.
+            if let (Some(previews), Ok(_)) = (&previews, &result) {
+                previews.request(&path, copy);
+            }
+            Done::Saved {
+                result,
+                uid,
+                path,
+                position,
+            }
         }))
     }
 
@@ -257,6 +275,7 @@ impl AppState {
         let title = display_name(path);
         if let Some(doc) = self.docs.iter_mut().find(|d| d.uid == uid) {
             doc.path = Some(path.to_owned());
+            doc.recovery_origin = None;
             doc.title.clone_from(&title);
             // What was written is the drawing as it was when the copy was
             // taken; anything done since still counts as unsaved.

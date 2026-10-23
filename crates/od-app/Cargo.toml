@@ -28,3 +28,9 @@ ron = "0.8"
 rfd = "0.17.2"
 arboard = { version = "3", default-features = false }
 fontdb = "0.23"
+# PNG previews of recent drawings. 0.18.1 (MIT OR Apache-2.0, so fine under
+# GPL-3.0-or-later) is the version egui already brings in through `image`.
+png = "0.18.1"
+# The local date and time of an autosave on the Home page (MIT OR Apache-2.0;
+# already in the lock file).
+chrono = { version = "0.4.45", default-features = false, features = ["clock"] }
