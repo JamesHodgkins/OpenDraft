@@ -7,10 +7,10 @@ use od_core::{DimText, Dimension, Entity, EntityId};
 
 use crate::text::plural;
 
-type Change = Box<dyn Fn(&Dimension) -> Option<Dimension> + Send>;
+pub(crate) type Change = Box<dyn Fn(&Dimension) -> Option<Dimension> + Send>;
 
 /// The dimensions among `ids`; says so when there are none.
-fn dimensions_in(ed: &Editor, ids: Vec<EntityId>) -> Result<Vec<EntityId>, Cancelled> {
+pub(crate) fn dimensions_in(ed: &Editor, ids: Vec<EntityId>) -> Result<Vec<EntityId>, Cancelled> {
     let found = ed.read(move |doc| {
         ids.into_iter()
             .filter(|id| matches!(doc.get(*id), Some(Entity::Dimension(_))))
@@ -25,7 +25,7 @@ fn dimensions_in(ed: &Editor, ids: Vec<EntityId>) -> Result<Vec<EntityId>, Cance
 
 /// Apply `change` to each dimension as one undo step, saying how many it
 /// could not change.
-fn apply(
+pub(crate) fn apply(
     ed: &Editor,
     name: &'static str,
     ids: Vec<EntityId>,

@@ -14,6 +14,8 @@ mod chain;
 mod edit;
 mod fit;
 pub mod font;
+mod jogged;
+mod jogline;
 mod linear;
 mod ordinate;
 mod pick;
@@ -25,6 +27,7 @@ mod text;
 use crate::{Bounds, Entity, Point};
 
 pub use centre::centre_segments;
+pub use jogline::spaced_offsets;
 pub use ordinate::suggested_x_datum;
 pub use pick::{auto_rotation, lines_angle_points, object_ends};
 pub use style::{Arrow, DimStyle};
@@ -73,6 +76,9 @@ pub enum DimKind {
         chord_point: Point,
         diameter: bool,
         leader_length: f64,
+        /// A jogged radius dimension: where the centre is shown to be
+        /// (the line heads there) and where the jog is.
+        jog: Option<(Point, Point)>,
     },
     /// The length of the arc from `start` to `end` counter-clockwise about
     /// `center`; the dimension arc passes through `arc_point`.
@@ -115,6 +121,8 @@ pub struct Dimension {
     /// The angle the user turned the text to (radians, from the x axis);
     /// `None` lets the style decide.
     pub text_angle: Option<f64>,
+    /// Where a jog line is put in a linear dimension's line.
+    pub jog_line: Option<Point>,
 }
 
 /// The dimension drawn: its pieces and where the text's middle is.
@@ -131,6 +139,7 @@ impl Dimension {
             text: DimText::Measured,
             text_pos: None,
             text_angle: None,
+            jog_line: None,
         }
     }
 
@@ -185,9 +194,26 @@ impl Dimension {
                 chord_point,
                 diameter,
                 leader_length,
+                jog: None,
             },
             style,
         )
+    }
+
+    /// A radius dimension of the circle through `chord_point` about `center`
+    /// drawn as if its centre were at `shown_centre`, with the jog at `jog`.
+    pub fn jogged(
+        center: Point,
+        chord_point: Point,
+        shown_centre: Point,
+        jog: Point,
+        style: &DimStyle,
+    ) -> Dimension {
+        let mut out = Self::radius(center, chord_point, style);
+        if let DimKind::Radial { jog: j, .. } = &mut out.kind {
+            *j = Some((shown_centre, jog));
+        }
+        out
     }
 
     /// The angle at `vertex` between the directions to `p1` and `p2`.

@@ -265,6 +265,9 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
             lines.push((q1, along(q1, dir, end.min(0.0))));
         }
     }
+    if let Some(at) = dim.jog_line {
+        lines = super::jogline::zigzag(lines, at, q1, dir, 1.5 * s.text_height);
+    }
     let has_text = !label.is_empty();
     let breaks = has_text && text_in && centred && dim.text_pos.is_none();
     for (a, b) in lines {
