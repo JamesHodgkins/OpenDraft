@@ -55,11 +55,15 @@ impl Entity {
     /// - spline: its fit points, or its control points (see
     ///   [`crate::Spline::grips`]);
     /// - block reference: its insertion point, which moves it;
-    /// - hatch: one grip at the middle of its extent, which moves it.
+    /// - hatch: one grip at the middle of its extent, which moves it;
+    /// - construction line or ray: its base point, then a point on the line
+    ///   (two for a construction line) that turns it ([`crate::infinite`]).
     pub fn grips(&self) -> Vec<Grip> {
         use GripKind::{Move, Resize, Stretch};
         match self {
             Entity::Insert(i) => vec![grip(i.insertion, Move)],
+            Entity::Point { at } => vec![grip(*at, Move)],
+            Entity::Xline { .. } | Entity::Ray { .. } => self.line_grips(),
             Entity::Hatch(_) => {
                 let b = self.bounds();
                 vec![grip(mid(b.min, b.max), Move)]
@@ -147,7 +151,10 @@ impl Entity {
             Entity::Leader(l) => l
                 .with_grip_moved(index, to)
                 .map(|l| Entity::Leader(Box::new(l))),
-            Entity::Insert(_) | Entity::Hatch(_) => Some(self.translated(dx, dy)),
+            Entity::Xline { .. } | Entity::Ray { .. } => self.line_grip_moved(index, to),
+            Entity::Insert(_) | Entity::Hatch(_) | Entity::Point { .. } => {
+                Some(self.translated(dx, dy))
+            }
             Entity::Ellipse(e) => e.with_grip_moved(index, to).map(Entity::Ellipse),
             Entity::Spline(s) => s
                 .with_grip_moved(index, to)

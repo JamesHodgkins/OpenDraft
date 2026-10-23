@@ -147,6 +147,12 @@ impl View {
                 let layout = m.layout(&od_core::TextStyle::standard());
                 self.fill_text(painter, rect, m, &layout, &|_| stroke.color);
             }
+            Entity::Point { at } => self.stroke_point(painter, rect, *at, stroke),
+            Entity::Xline { .. } | Entity::Ray { .. } => {
+                if let Some((a, b)) = self.visible_part(rect, entity) {
+                    painter.line_segment([to_screen(a), to_screen(b)], stroke);
+                }
+            }
             Entity::Line { start, end } => {
                 painter.line_segment([to_screen(*start), to_screen(*end)], stroke);
             }
@@ -300,7 +306,9 @@ impl View {
             // zoomed far out. Selected ones are always drawn.
             let on_screen =
                 (bounds.max.x - bounds.min.x).max(bounds.max.y - bounds.min.y) * self.camera.zoom;
-            if on_screen < MIN_DRAW_PX && !selection.contains(id) {
+            // A point has no size of its own: its mode gives it one.
+            let sized = !matches!(entity, Entity::Point { .. });
+            if sized && on_screen < MIN_DRAW_PX && !selection.contains(id) {
                 continue;
             }
             if let Entity::MText(text) = entity {

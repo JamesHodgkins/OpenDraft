@@ -20,6 +20,12 @@ pub(crate) struct LineData {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub(crate) struct PointData {
+    pub at: Point3,
+    pub extrusion: Point3,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct CircleData {
     pub center: Point3,
     pub radius: f64,
@@ -129,6 +135,17 @@ pub(crate) fn read_line(s: &mut ObjectStreams<'_>) -> Result<LineData, DwgError>
         end: [ex, ey, ez],
         extrusion,
     })
+}
+
+/// POINT (§20.4.28): the point, thickness, extrusion and the angle of the
+/// X axis for a point style that turns (not used).
+pub(crate) fn read_point(s: &mut ObjectStreams<'_>) -> Result<PointData, DwgError> {
+    let d = &mut s.data;
+    let at = point3(d)?;
+    d.thickness()?;
+    let extrusion = d.extrusion()?;
+    d.bd()?;
+    Ok(PointData { at, extrusion })
 }
 
 /// CIRCLE (§20.4.20).
@@ -418,6 +435,19 @@ mod tests {
         assert_eq!(line.start, [0.0, 0.0, 7.0]);
         assert_eq!(line.end, [3.0, 4.0, 7.0]);
         assert_eq!(line.extrusion, [0.0, 0.0, -1.0]);
+    }
+
+    #[test]
+    fn a_point() {
+        let mut w = BitWriter::new();
+        w.bd3([3.0, -4.0, 0.0])
+            .thickness(0.0)
+            .extrusion([0.0, 0.0, 1.0])
+            .bd(0.5);
+        let b = with_data(&w);
+        let point = read_point(&mut b.streams()).unwrap();
+        assert_eq!(point.at, [3.0, -4.0, 0.0]);
+        assert_eq!(point.extrusion, [0.0, 0.0, 1.0]);
     }
 
     #[test]

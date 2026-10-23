@@ -52,6 +52,9 @@ pub fn is_writable(entity: &Entity) -> bool {
         | Entity::Ellipse(_)
         | Entity::MText(_) => true,
         Entity::Spline(_)
+        | Entity::Point { .. }
+        | Entity::Xline { .. }
+        | Entity::Ray { .. }
         | Entity::Dimension(_)
         | Entity::MLeader(_)
         | Entity::Leader(_)

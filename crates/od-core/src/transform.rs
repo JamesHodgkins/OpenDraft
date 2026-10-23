@@ -80,6 +80,12 @@ impl Entity {
             Entity::MLeader(m) => Entity::MLeader(Box::new(m.translated(dx, dy))),
             Entity::Leader(l) => Entity::Leader(Box::new(l.translated(dx, dy))),
             Entity::Insert(i) => Entity::Insert(Box::new(i.translated(dx, dy))),
+            Entity::Point { at } => Entity::Point {
+                at: at.translated(dx, dy),
+            },
+            Entity::Xline { .. } | Entity::Ray { .. } => {
+                self.remapped_line(|o, d| (o.translated(dx, dy), d))
+            }
             Entity::Hatch(h) => Entity::Hatch(Box::new(h.translated(dx, dy))),
             Entity::Ellipse(e) => Entity::Ellipse(e.translated(dx, dy)),
             Entity::Spline(s) => Entity::Spline(Box::new(s.translated(dx, dy))),
@@ -130,6 +136,12 @@ impl Entity {
             Entity::MLeader(m) => Entity::MLeader(Box::new(m.rotated(center, angle))),
             Entity::Leader(l) => Entity::Leader(Box::new(l.rotated(center, angle))),
             Entity::Insert(i) => Entity::Insert(Box::new(i.rotated(center, angle))),
+            Entity::Point { at } => Entity::Point {
+                at: at.rotated(center, angle),
+            },
+            Entity::Xline { .. } | Entity::Ray { .. } => self.remapped_line(|o, d| {
+                (o.rotated(center, angle), d.rotated(Point::default(), angle))
+            }),
             Entity::Hatch(h) => Entity::Hatch(Box::new(h.rotated(center, angle))),
             Entity::Ellipse(e) => Entity::Ellipse(e.rotated(center, angle)),
             Entity::Spline(s) => Entity::Spline(Box::new(s.rotated(center, angle))),
@@ -200,6 +212,15 @@ impl Entity {
             Entity::MLeader(m) => Entity::MLeader(Box::new(m.mirrored(a, b))),
             Entity::Leader(l) => Entity::Leader(Box::new(l.mirrored(a, b))),
             Entity::Insert(i) => Entity::Insert(Box::new(i.mirrored(a, b))),
+            Entity::Point { at } => Entity::Point {
+                at: at.mirrored(a, b),
+            },
+            Entity::Xline { .. } | Entity::Ray { .. } => self.remapped_line(|o, d| {
+                // The direction is reflected in the mirror line's direction.
+                let axis = crate::infinite::unit(Point::new(b.x - a.x, b.y - a.y));
+                let d = axis.map_or(d, |axis| crate::infinite::reflected(d, axis));
+                (o.mirrored(a, b), d)
+            }),
             Entity::Hatch(h) => Entity::Hatch(Box::new(h.mirrored(a, b))),
             Entity::Ellipse(e) => Entity::Ellipse(e.mirrored(a, b)),
             Entity::Spline(s) => Entity::Spline(Box::new(s.mirrored(a, b))),
@@ -285,6 +306,12 @@ impl Entity {
             Entity::MLeader(m) => Entity::MLeader(Box::new(m.scaled(base, factor))),
             Entity::Leader(l) => Entity::Leader(Box::new(l.scaled(base, factor))),
             Entity::Insert(i) => Entity::Insert(Box::new(i.scaled(base, factor))),
+            Entity::Point { at } => Entity::Point {
+                at: at.scaled(base, factor),
+            },
+            Entity::Xline { .. } | Entity::Ray { .. } => {
+                self.remapped_line(|o, d| (o.scaled(base, factor), d))
+            }
             Entity::Hatch(h) => Entity::Hatch(Box::new(h.scaled(base, factor))),
             Entity::Ellipse(e) => Entity::Ellipse(e.scaled(base, factor)),
             Entity::Spline(s) => Entity::Spline(Box::new(s.scaled(base, factor))),
@@ -401,6 +428,29 @@ mod tests {
         let mid = arc::midpoint(center, radius, start, end);
         let before = arc::midpoint(Point::new(1.0, 0.0), 2.0, 0.0, FRAC_PI_2);
         assert!(near(mid, before.mirrored(a, b)));
+    }
+
+    #[test]
+    fn a_point_object_moves_turns_mirrors_and_scales_with_its_position() {
+        let point = Entity::Point {
+            at: Point::new(2.0, 0.0),
+        };
+        let at = |e: Entity| match e {
+            Entity::Point { at } => at,
+            other => panic!("{other:?}"),
+        };
+        assert!(near(at(point.translated(1.0, 2.0)), Point::new(3.0, 2.0)));
+        let turned = point.rotated(Point::new(1.0, 0.0), FRAC_PI_2);
+        assert!(near(at(turned), Point::new(1.0, 1.0)));
+        let mirrored = point.mirrored(Point::new(0.0, 0.0), Point::new(0.0, 1.0));
+        assert!(near(at(mirrored), Point::new(-2.0, 0.0)));
+        assert!(near(
+            at(point.scaled(Point::new(0.0, 0.0), 3.0)),
+            Point::new(6.0, 0.0)
+        ));
+        assert_eq!(point.grips().len(), 1);
+        assert_eq!(point.explode(), None);
+        assert_eq!(point.bounds().min, point.bounds().max);
     }
 
     #[test]

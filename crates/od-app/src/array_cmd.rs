@@ -54,7 +54,9 @@ impl Source {
 pub(crate) fn read_source(ed: &Editor, ids: Vec<EntityId>) -> Result<Option<Source>, Cancelled> {
     ed.read(move |doc| {
         let found: Vec<_> = ids.iter().filter_map(|id| doc.object(*id)).collect();
-        let bounds = found.iter().map(|o| o.bounds()).reduce(Bounds::union)?;
+        let bounds = (found.iter().map(|o| o.bounds()))
+            .filter(Bounds::is_finite)
+            .reduce(Bounds::union)?;
         let objects = found
             .iter()
             .map(|o| (o.entity.clone(), o.attrs.clone()))

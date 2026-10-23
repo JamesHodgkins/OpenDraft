@@ -22,9 +22,11 @@ mod backdrop;
 mod crosshair;
 mod dash_paint;
 mod hatch_paint;
+mod infinite_paint;
 mod insert_paint;
 mod layout;
 mod paint;
+mod point_paint;
 mod snap_choice;
 mod snap_marker;
 mod text_paint;
@@ -66,6 +68,8 @@ pub struct View {
     sizes: PointerSizes,
     crosshair: Crosshair,
     ortho: Ortho,
+    /// How point objects look: the drawing's, copied in when it is shown.
+    point_style: od_core::PointStyle,
     /// Wheel zoom speed as a multiple of the base rate; none means 1.
     zoom_speed: Option<f32>,
     constraint: Option<Arc<dyn Fn(Point) -> Point + Send + Sync>>,
@@ -123,6 +127,8 @@ impl View {
         snap_modes: &SnapModes,
     ) -> CanvasOutput {
         let rect = ui.available_rect_before_wrap();
+        self.point_style = document.point_style();
+        od_core::infinite::set_pixel_size(1.0 / self.camera.zoom);
         let response = ui.allocate_rect(rect, Sense::click_and_drag());
         let painter = ui.painter_at(rect);
         painter.rect_filled(rect, 0.0, style.background);

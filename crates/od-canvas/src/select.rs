@@ -136,7 +136,13 @@ fn outline(entity: &Entity) -> Vec<Edge> {
             .flat_map(|c| closed_edges(c))
             .collect(),
         Entity::Line { start, end } => vec![(*start, *end)],
-        Entity::Circle { .. } => Vec::new(),
+        Entity::Point { .. } | Entity::Circle { .. } => Vec::new(),
+        // A long stretch of the line stands in for all of it.
+        Entity::Xline { .. } | Entity::Ray { .. } => entity
+            .infinite_line()
+            .map(|(o, d, ray)| od_core::infinite::segment(o, d, ray))
+            .into_iter()
+            .collect(),
         Entity::Arc {
             center,
             radius,
@@ -216,6 +222,16 @@ fn sample_points(entity: &Entity) -> Vec<Point> {
         // A window must hold everything the block draws.
         Entity::Insert(i) => i.picture().iter().flat_map(sample_points).collect(),
         Entity::Line { start, end } => vec![*start, *end],
+        Entity::Point { at } => vec![*at],
+        // No window holds the far end of a line, so a window never takes one;
+        // a crossing window takes a ray whose base point it holds.
+        Entity::Xline { .. } | Entity::Ray { .. } => entity
+            .infinite_line()
+            .map(|(o, d, ray)| {
+                let (near, far) = od_core::infinite::segment(o, d, ray);
+                vec![near, far]
+            })
+            .unwrap_or_default(),
         Entity::Circle { center, radius } => {
             let r = radius.abs();
             vec![

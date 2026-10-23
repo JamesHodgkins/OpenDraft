@@ -145,6 +145,7 @@ impl Document {
             next_block_id: self.next_block_id,
             linetypes: self.linetypes.clone(),
             linetype_scale: self.linetype_scale,
+            point_style: self.point_style,
             spatial: Default::default(),
         }
     }

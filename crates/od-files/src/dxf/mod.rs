@@ -5,9 +5,11 @@
 
 mod blocks;
 mod dimensions;
+mod header;
 #[cfg(test)]
 mod linetype_tests;
 mod linetypes;
+mod point_style;
 mod read;
 mod units;
 mod write;

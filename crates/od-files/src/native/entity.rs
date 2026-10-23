@@ -18,6 +18,17 @@ pub(super) type PointDto = [f64; 2];
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub(super) enum EntityDto {
+    Point {
+        at: PointDto,
+    },
+    Xline {
+        origin: PointDto,
+        direction: PointDto,
+    },
+    Ray {
+        origin: PointDto,
+        direction: PointDto,
+    },
     Line {
         start: PointDto,
         end: PointDto,
@@ -100,9 +111,23 @@ pub(super) fn from_point(p: PointDto) -> Result<Point, FileError> {
     }
 }
 
+/// A direction as stored, made a unit vector; a line must point somewhere.
+fn unit_direction(p: PointDto) -> Result<Point, FileError> {
+    od_core::infinite::unit(from_point(p)?).map_or_else(|| invalid("a line has no direction"), Ok)
+}
+
 impl EntityDto {
     pub(super) fn from_entity(entity: &Entity) -> Result<Self, FileError> {
         let dto = match entity {
+            Entity::Point { at } => EntityDto::Point { at: point(*at) },
+            Entity::Xline { origin, direction } => EntityDto::Xline {
+                origin: point(*origin),
+                direction: point(*direction),
+            },
+            Entity::Ray { origin, direction } => EntityDto::Ray {
+                origin: point(*origin),
+                direction: point(*direction),
+            },
             Entity::Line { start, end } => EntityDto::Line {
                 start: point(*start),
                 end: point(*end),
@@ -183,6 +208,17 @@ impl EntityDto {
                 scale,
                 rotation,
             } => insert_entity(blocks, *block, *insertion, *scale, *rotation)?,
+            EntityDto::Point { at } => Entity::Point {
+                at: from_point(*at)?,
+            },
+            EntityDto::Xline { origin, direction } => Entity::Xline {
+                origin: from_point(*origin)?,
+                direction: unit_direction(*direction)?,
+            },
+            EntityDto::Ray { origin, direction } => Entity::Ray {
+                origin: from_point(*origin)?,
+                direction: unit_direction(*direction)?,
+            },
             EntityDto::Line { start, end } => Entity::Line {
                 start: from_point(*start)?,
                 end: from_point(*end)?,
@@ -276,5 +312,46 @@ impl EntityDto {
                 }
             }
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use od_core::{Document, Entity, Point};
+
+    use crate::native::tests::roundtrip;
+
+    #[test]
+    fn points_construction_lines_and_rays_survive_a_round_trip() {
+        let mut document = Document::default();
+        document.add(Entity::Point {
+            at: Point::new(1.5, -2.0),
+        });
+        document.add(Entity::Xline {
+            origin: Point::new(0.0, 1.0),
+            direction: Point::new(0.6, 0.8),
+        });
+        document.add(Entity::Ray {
+            origin: Point::new(3.0, 3.0),
+            direction: Point::new(-1.0, 0.0),
+        });
+        let back = roundtrip(&document);
+        assert_eq!(back.objects().len(), 3);
+        for (a, b) in back.objects().iter().zip(document.objects()) {
+            assert_eq!(a.entity, b.entity);
+        }
+    }
+
+    #[test]
+    fn a_direction_is_made_a_unit_and_a_zero_one_is_refused() {
+        let line = |d: &str| format!(r#"{{"type": "ray", "origin": [0, 0], "direction": {d}}}"#);
+        let ok: super::EntityDto = serde_json::from_str(&line("[3, 4]")).unwrap();
+        let blocks = crate::native::block::Blocks::new();
+        let Entity::Ray { direction, .. } = ok.to_entity(&blocks).unwrap() else {
+            panic!("a ray");
+        };
+        assert!((direction.x - 0.6).abs() < 1e-12 && (direction.y - 0.8).abs() < 1e-12);
+        let zero: super::EntityDto = serde_json::from_str(&line("[0, 0]")).unwrap();
+        assert!(zero.to_entity(&blocks).is_err());
     }
 }

@@ -142,6 +142,7 @@ fn decode(v: &mut Visit<'_, '_>, limits: &DwgLimits, pass: &mut Pass) -> Result<
             Ok(t) => Stored::MText(t),
             Err(_) => return unread(pass, v.handle, "MTEXT"),
         },
+        FixedType::Point => Stored::Point(entities::read_point(s)?),
         FixedType::Line => Stored::Line(entities::read_line(s)?),
         FixedType::Circle => Stored::Circle(entities::read_circle(s)?),
         FixedType::Arc => Stored::Arc(entities::read_arc(s)?),
@@ -248,6 +249,7 @@ fn attributes(
 
 fn shape_of(record: &Record, pass: &Pass, report: &mut ImportReport) -> Result<Shape, Skipped> {
     match &record.stored {
+        Stored::Point(d) => shapes::point(d, report),
         Stored::Line(d) => shapes::line(d, report),
         Stored::Circle(d) => shapes::circle(d, report),
         Stored::Arc(d) => shapes::arc(d, report),

@@ -130,6 +130,8 @@ fn needs_r2000(document: &Document) -> bool {
                     | Entity::MText(_)
                     | Entity::MLeader(_)
                     | Entity::Leader(_)
+                    | Entity::Xline { .. }
+                    | Entity::Ray { .. }
             )
         })
 }
@@ -175,6 +177,10 @@ pub(super) fn write_r12(document: &Document) -> Result<Encoded, FileError> {
     }
     out.pair(9, "$LTSCALE");
     out.pair(40, finite(document.linetype_scale())?);
+    for (name, code, value) in super::point_style::header(document.point_style()) {
+        out.pair(9, name);
+        out.pair(code, value);
+    }
     if let Some(bounds) = document.model_bounds() {
         out.pair(9, "$EXTMIN");
         out.point(10, finite(bounds.min.x)?, finite(bounds.min.y)?);
@@ -266,6 +272,17 @@ pub(super) fn write_r12(document: &Document) -> Result<Encoded, FileError> {
                 return Err(FileError::Unsupported(
                     "R12 DXF cannot hold hatches; this drawing needs R2000".into(),
                 ))
+            }
+            Entity::Xline { .. } | Entity::Ray { .. } => {
+                return Err(FileError::Unsupported(
+                    "R12 DXF cannot hold construction lines or rays; this drawing needs R2000"
+                        .into(),
+                ))
+            }
+            Entity::Point { at } => {
+                out.pair(0, "POINT");
+                common(&mut out)?;
+                out.point(10, finite(at.x)?, finite(at.y)?);
             }
             Entity::Line { start, end } => {
                 out.pair(0, "LINE");
@@ -458,6 +475,11 @@ mod tests {
                 continuous_generation: true,
             },
         );
+        document.add(Entity::Point { at: p(7.5, -2.0) });
+        document.set_point_style(od_core::PointStyle {
+            mode: 35,
+            size: -4.0,
+        });
         document
     }
 
@@ -489,6 +511,7 @@ mod tests {
                 .collect::<Vec<_>>()
         };
         assert_eq!(entities(&back), entities(&document));
+        assert_eq!(back.point_style(), document.point_style());
 
         let layer = |name: &str| {
             back.layers()
@@ -621,7 +644,11 @@ mod tests {
             );
         }
         let entities: Vec<_> = parsed.entities().collect();
-        assert_eq!(entities.len(), 4);
+        assert_eq!(entities.len(), 5);
+        assert!(matches!(
+            entities[4].specific,
+            dxf::entities::EntityType::ModelPoint(_)
+        ));
         assert!(matches!(
             entities[0].specific,
             dxf::entities::EntityType::Line(_)

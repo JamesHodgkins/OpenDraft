@@ -73,7 +73,13 @@ impl Entity {
             | Entity::MLeader(_)
             | Entity::Leader(_)
             | Entity::Insert(_)
+            | Entity::Point { .. }
             | Entity::Hatch(_) => Vec::new(),
+            Entity::Xline { origin, direction } | Entity::Ray { origin, direction } => {
+                let ray = matches!(self, Entity::Ray { .. });
+                let (a, b) = crate::infinite::segment(*origin, *direction, ray);
+                vec![Curve::Segment { a, b }]
+            }
             Entity::Ellipse(e) => vec![Curve::Ellipse(*e)],
             // Not a curve the crossing code knows yet: Trim, Extend and the
             // corner commands refuse splines by name.

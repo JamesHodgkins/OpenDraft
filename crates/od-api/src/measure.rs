@@ -115,6 +115,15 @@ fn base(id: WireId, entity: &Entity) -> Measurement {
 pub fn measure(id: WireId, entity: &Entity) -> Measurement {
     let mut m = base(id, entity);
     match entity {
+        Entity::Point { at } => m.start = Some(pt(*at)),
+        Entity::Xline { origin, .. } => {
+            m.start = Some(pt(*origin));
+            m.notes.push("A construction line has no ends.".to_owned());
+        }
+        Entity::Ray { origin, .. } => {
+            m.start = Some(pt(*origin));
+            m.notes.push("A ray has no far end.".to_owned());
+        }
         Entity::Line { start, end } => {
             m.length = entity.curve_length();
             m.start = Some(pt(*start));

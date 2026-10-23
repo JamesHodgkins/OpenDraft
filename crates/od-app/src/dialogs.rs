@@ -7,6 +7,7 @@ impl AppState {
     pub fn modal_open(&self) -> bool {
         self.show_settings
             || self.show_units
+            || self.show_point_style
             || self.power_select.open
             || self.show_linetypes
             || self.show_text_styles
