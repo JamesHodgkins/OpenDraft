@@ -3,7 +3,6 @@
 <img src="./docs/branding/od_logo.png#gh-light-mode-only" alt="OpenDraft" width="420">
 <img src="./docs/branding/od_logo_reverse.png#gh-dark-mode-only" alt="OpenDraft" width="420">
 
-### ✏️ Draft at the speed of thought.
 **A fast, free, open-source 2D CAD application written in Rust.**
 
 [![CI](https://github.com/JamesHodgkins/OpenDraft/actions/workflows/ci.yml/badge.svg)](https://github.com/JamesHodgkins/OpenDraft/actions/workflows/ci.yml)
