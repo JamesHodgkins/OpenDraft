@@ -57,6 +57,7 @@ macro_rules! entries {
 
 entries! {
     3 => |d| Value::Text(d.post.clone()), |s, v| if let Value::Text(t) = v { s.post = t.clone() };
+    4 => |d| Value::Text(d.alt_post.clone()), |s, v| if let Value::Text(t) = v { s.alt_post = t.clone() };
     5 => |d| Value::Text(
         match d.arrow {
             Arrow::Open => "_OPEN",
@@ -90,7 +91,30 @@ entries! {
     142 => |d| Value::Real(if d.arrow == Arrow::Tick { d.arrow_size } else { 0.0 }),
         |s, v| if let Some(r) = real(v) { if r > 0.0 { s.arrow = Arrow::Tick; s.arrow_size = r } };
     144 => |d| Value::Real(d.linear_factor), |s, v| if let Some(r) = real(v) { s.linear_factor = r };
-    147 => |d| Value::Real(d.text_gap), |s, v| if let Some(r) = real(v) { s.text_gap = r };
+    // A gap below zero is how AutoCAD says "box the text".
+    147 => |d| Value::Real(if d.text_frame { -d.text_gap } else { d.text_gap }),
+        |s, v| if let Some(r) = real(v) { s.text_gap = r.abs(); s.text_frame = r < 0.0 };
+    143 => |d| Value::Real(d.alt_factor), |s, v| if let Some(r) = real(v) { s.alt_factor = r };
+    146 => |d| Value::Real(d.tol_scale), |s, v| if let Some(r) = real(v) { s.tol_scale = r };
+    47 => |d| Value::Real(d.tol_plus), |s, v| if let Some(r) = real(v) { s.tol_plus = r };
+    48 => |d| Value::Real(if d.tol_mode == 1 { d.tol_plus } else { d.tol_minus }),
+        |s, v| if let Some(r) = real(v) { s.tol_minus = r };
+    49 => |d| Value::Real(d.ext_fixed.unwrap_or(0.0)),
+        |s, v| if let Some(r) = real(v) { if r > 0.0 { s.ext_fixed = Some(r) } };
+    69 => |d| flag(d.text_fill), |s, v| if let Some(i) = int(v) { s.text_fill = i != 0 };
+    71 => |d| flag(matches!(d.tol_mode, 1 | 2)),
+        |s, v| if let Some(i) = int(v) {
+            if i != 0 { if s.tol_mode != 3 { s.tol_mode = 2 } }
+            else if matches!(s.tol_mode, 1 | 2) { s.tol_mode = 0 }
+        };
+    72 => |d| flag(d.tol_mode == 3),
+        |s, v| if let Some(i) = int(v) {
+            if i != 0 { s.tol_mode = 3 } else if s.tol_mode == 3 { s.tol_mode = 0 }
+        };
+    170 => |d| flag(d.alt_on), |s, v| if let Some(i) = int(v) { s.alt_on = i != 0 };
+    171 => |d| Value::Int(i64::from(d.alt_precision)), |s, v| if let Some(i) = int(v) { s.alt_precision = i.clamp(0, 8) as u8 };
+    272 => |d| Value::Int(i64::from(d.tol_precision)), |s, v| if let Some(i) = int(v) { s.tol_precision = i.clamp(0, 8) as u8 };
+    290 => |d| flag(d.ext_fixed.is_some()), |s, v| if let Some(i) = int(v) { if i == 0 { s.ext_fixed = None } };
     172 => |d| flag(d.force_line), |s, v| if let Some(i) = int(v) { s.force_line = i != 0 };
     174 => |d| flag(d.text_inside), |s, v| if let Some(i) = int(v) { s.text_inside = i != 0 };
     179 => |d| Value::Int(i64::from(d.angle_precision)), |s, v| if let Some(i) = int(v) { s.angle_precision = i.clamp(0, 8) as u8 };
@@ -151,6 +175,14 @@ pub(super) fn apply(style: &mut DimStyle, code: i32, value: &Value) -> bool {
     }
 }
 
+/// Settle what depends on several variables after they are all set: a
+/// tolerance with equal plus and minus is a symmetrical one.
+pub(super) fn finish(style: &mut DimStyle) {
+    if style.tol_mode == 2 && (style.tol_plus - style.tol_minus).abs() < 1e-12 {
+        style.tol_mode = 1;
+    }
+}
+
 /// The text of a variable as a group value.
 pub(super) fn text_of(value: &Value) -> String {
     match value {
@@ -196,6 +228,18 @@ mod tests {
             suppress_line: [false, true],
             centre_mark: -2.0,
             baseline_spacing: 7.0,
+            tol_mode: 2,
+            tol_plus: 0.1,
+            tol_minus: 0.05,
+            tol_scale: 0.7,
+            tol_precision: 3,
+            alt_on: true,
+            alt_factor: 2.0,
+            alt_precision: 1,
+            alt_post: "in".to_owned(),
+            text_frame: true,
+            text_fill: true,
+            ext_fixed: Some(1.5),
             linear_factor: 25.4,
             round_to: 0.5,
             ..DimStyle::default()
@@ -209,7 +253,24 @@ mod tests {
         for (code, value) in codes(&wanted) {
             assert!(apply(&mut back, code, &value), "{code}");
         }
+        finish(&mut back);
         assert_eq!(back, wanted);
+        // Equal plus and minus read back as a symmetrical tolerance.
+        let mut same = DimStyle {
+            tol_mode: 1,
+            tol_plus: 0.2,
+            ..DimStyle::default()
+        };
+        let mut again = DimStyle::default();
+        for (code, value) in codes(&same) {
+            apply(&mut again, code, &value);
+        }
+        finish(&mut again);
+        same.tol_minus = 0.2;
+        assert_eq!(
+            (again.tol_mode, again.tol_plus, again.tol_minus),
+            (1, 0.2, 0.2)
+        );
     }
 
     #[test]

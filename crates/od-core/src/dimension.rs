@@ -23,6 +23,7 @@ mod radial;
 mod sketch;
 mod style;
 mod text;
+mod tolerance;
 
 use crate::{Bounds, Entity, Point};
 
@@ -306,12 +307,7 @@ impl Dimension {
 
     /// The text the dimension shows (empty when hidden or degenerate).
     pub fn label(&self) -> String {
-        let measured = match (self.measurement(), &self.kind) {
-            (Some(m), DimKind::Angular { .. }) => angle_text(&self.style, m),
-            (Some(m), _) => measurement_text(&self.style, m, self.prefix()),
-            (None, _) => String::new(),
-        };
-        text::shown(&self.text, &measured)
+        text::shown(&self.text, &self.measured_label())
     }
 
     pub(crate) fn build(&self) -> Option<Built> {

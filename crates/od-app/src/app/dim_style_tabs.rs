@@ -9,8 +9,11 @@ use od_ui::{widgets, Theme};
 
 use crate::dim_style_draft::{alignment, Draft};
 
+#[path = "dim_style_tabs_more.rs"]
+pub(super) mod more;
+
 const LABEL_WIDTH: f32 = 150.0;
-const FIELD_WIDTH: f32 = 170.0;
+pub(super) const FIELD_WIDTH: f32 = 170.0;
 
 /// AutoCAD's tab names, in its order.
 pub(super) const TABS: [&str; 7] = [
@@ -52,7 +55,7 @@ const MOVED_TEXT: [&str; 3] = [
 ];
 
 /// A caption and a control on one row.
-fn row(ui: &mut egui::Ui, theme: &Theme, label: &str, add: impl FnOnce(&mut egui::Ui)) {
+pub(super) fn row(ui: &mut egui::Ui, theme: &Theme, label: &str, add: impl FnOnce(&mut egui::Ui)) {
     ui.horizontal(|ui| {
         ui.add_sized(
             [LABEL_WIDTH, 24.0],
@@ -64,7 +67,13 @@ fn row(ui: &mut egui::Ui, theme: &Theme, label: &str, add: impl FnOnce(&mut egui
 }
 
 /// A drop-down over `labels`, choosing an index.
-fn choice(ui: &mut egui::Ui, theme: &Theme, id: &str, labels: &[&str], value: &mut usize) {
+pub(super) fn choice(
+    ui: &mut egui::Ui,
+    theme: &Theme,
+    id: &str,
+    labels: &[&str],
+    value: &mut usize,
+) {
     let shown = labels.get(*value).copied().unwrap_or("");
     widgets::dropdown(ui, theme, id, shown, FIELD_WIDTH, |ui| {
         for (i, label) in labels.iter().enumerate() {
@@ -74,7 +83,7 @@ fn choice(ui: &mut egui::Ui, theme: &Theme, id: &str, labels: &[&str], value: &m
 }
 
 /// A length: a number that cannot go below zero.
-fn length(ui: &mut egui::Ui, theme: &Theme, value: &mut f64) {
+pub(super) fn length(ui: &mut egui::Ui, theme: &Theme, value: &mut f64) {
     widgets::number_field(ui, theme, value, "", 0.05);
     if !value.is_finite() || *value < 0.0 {
         *value = 0.0;
@@ -114,7 +123,21 @@ pub(super) fn lines(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft) {
         });
     });
     ui.add_space(8.0);
-    note(ui, theme, "Colour, linetype, lineweight, baseline spacing and fixed-length extension lines are not kept by the style yet.");
+    widgets::group_box(ui, theme, "Fixed length extension lines", |ui| {
+        let mut on = s.ext_fixed.is_some();
+        ui.checkbox(&mut on, "Fixed length extension lines");
+        let mut fixed = s.ext_fixed.unwrap_or(1.0);
+        ui.add_enabled_ui(on, |ui| {
+            row(ui, theme, "Length:", |ui| length(ui, theme, &mut fixed));
+        });
+        s.ext_fixed = on.then_some(fixed.max(1e-6));
+    });
+    ui.add_space(8.0);
+    note(
+        ui,
+        theme,
+        "Colour, linetype and lineweight are not kept by the style yet.",
+    );
 }
 
 pub(super) fn symbols(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft) {
@@ -126,6 +149,18 @@ pub(super) fn symbols(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft) {
             choice(ui, theme, "dim_arrow", &labels, &mut kind)
         });
         s.arrow = Arrow::ALL.get(kind).copied().unwrap_or(Arrow::Closed);
+        let mut second = s
+            .arrow2
+            .and_then(|a| Arrow::ALL.iter().position(|b| *b == a))
+            .map_or(0, |i| i + 1);
+        let mut names = vec!["Same as first"];
+        names.extend(labels);
+        row(ui, theme, "Second:", |ui| {
+            choice(ui, theme, "dim_arrow2", &names, &mut second)
+        });
+        s.arrow2 = second
+            .checked_sub(1)
+            .and_then(|i| Arrow::ALL.get(i).copied());
         row(ui, theme, "Arrow size:", |ui| {
             length(ui, theme, &mut s.arrow_size)
         });
@@ -167,7 +202,7 @@ pub(super) fn symbols(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft) {
         s.arc_symbol = at as u8;
     });
     ui.add_space(8.0);
-    note(ui, theme, "Separate first, second and leader arrowheads, dimension breaks and jogs are not kept by the style yet.");
+    note(ui, theme, "Leader arrowheads, custom arrowhead blocks and dimension breaks are not kept by the style yet.");
 }
 
 pub(super) fn text(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft, document: &Document) {
@@ -202,6 +237,11 @@ pub(super) fn text(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft, document
         });
     });
     ui.add_space(8.0);
+    widgets::group_box(ui, theme, "Text background", |ui| {
+        ui.checkbox(&mut s.text_fill, "Fill with the window colour");
+        ui.checkbox(&mut s.text_frame, "Draw frame around text");
+    });
+    ui.add_space(8.0);
     widgets::group_box(ui, theme, "Text placement", |ui| {
         let mut vertical = usize::from(s.text_above.min(4));
         row(ui, theme, "Vertical:", |ui| {
@@ -234,7 +274,11 @@ pub(super) fn text(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft, document
         alignment::set(s, how);
     });
     ui.add_space(6.0);
-    note(ui, theme, "Text colour, fill colour, fraction height scale, frames and view direction are not kept by the style yet.");
+    note(
+        ui,
+        theme,
+        "Text colour, fill colour and view direction are not kept by the style yet.",
+    );
 }
 
 pub(super) fn fit(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft) {
@@ -374,17 +418,6 @@ pub(super) fn primary(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft) {
     if post_changed {
         draft.sync_post();
     }
-}
-
-/// Alternate units and tolerances are not part of the style yet.
-pub(super) fn unsupported(ui: &mut egui::Ui, theme: &Theme, what: &str) {
-    note(
-        ui,
-        theme,
-        &format!(
-            "{what} are not kept by the dimension style yet, so there is nothing to set here."
-        ),
-    );
 }
 
 fn note(ui: &mut egui::Ui, theme: &Theme, text: &str) {

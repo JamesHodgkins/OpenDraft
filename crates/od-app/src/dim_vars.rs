@@ -26,32 +26,32 @@ impl AppState {
     }
 }
 
-fn int(value: Value) -> i64 {
+pub(crate) fn int(value: Value) -> i64 {
     match value {
         Value::Int(n) => n,
         _ => 0,
     }
 }
 
-fn real(value: Value) -> f64 {
+pub(crate) fn real(value: Value) -> f64 {
     match value {
         Value::Real(n) => n,
         _ => 0.0,
     }
 }
 
-fn text(value: Value) -> String {
+pub(crate) fn text(value: Value) -> String {
     match value {
         Value::Text(t) => t,
         _ => String::new(),
     }
 }
 
-fn flag(on: bool) -> Value {
+pub(crate) fn flag(on: bool) -> Value {
     Value::Int(i64::from(on))
 }
 
-fn change(s: &mut AppState, edit: impl FnOnce(&mut DimStyle)) -> Result<(), String> {
+pub(crate) fn change(s: &mut AppState, edit: impl FnOnce(&mut DimStyle)) -> Result<(), String> {
     let mut style = s.dim_style();
     edit(&mut style);
     s.set_dim_style(style);

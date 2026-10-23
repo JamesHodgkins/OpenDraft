@@ -13,7 +13,7 @@ use od_core::dimension::lines_angle_points;
 use od_core::{DimStyle, DimText, Dimension, Entity, Point};
 
 use super::{decode, Group, Importer, Record};
-use crate::dxf::dimstyle_codec::{apply, Value};
+use crate::dxf::dimstyle_codec::{apply, finish, Value};
 
 /// The dimension styles of the file's table, in its order.
 #[derive(Default)]
@@ -88,6 +88,7 @@ impl Importer {
                     apply(&mut style, group.code, &value);
                 }
             }
+            finish(&mut style);
             if !self
                 .dim_styles
                 .table
@@ -144,6 +145,7 @@ impl Importer {
         for (code, value) in overrides(&record.groups) {
             apply(&mut style, code, &value);
         }
+        finish(&mut style);
         let large = record
             .groups
             .iter()

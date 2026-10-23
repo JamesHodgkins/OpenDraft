@@ -97,6 +97,7 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
             leader: *leader,
             symbol: true,
             label: dim.label(),
+            contents: dim.contents(),
         },
     )
 }
@@ -118,6 +119,8 @@ pub(super) struct Layout {
     /// Whether the arc-length symbol goes with the text.
     pub symbol: bool,
     pub label: String,
+    /// The label as multiline text contents.
+    pub contents: String,
 }
 
 pub(super) fn draw(dim: &Dimension, layout: Layout) -> Option<Built> {
@@ -131,6 +134,7 @@ pub(super) fn draw(dim: &Dimension, layout: Layout) -> Option<Built> {
         leader,
         symbol,
         label,
+        contents,
     } = layout;
     let s = dim.style.resolved();
     let size = if s.arrow == Arrow::None {
@@ -155,7 +159,7 @@ pub(super) fn draw(dim: &Dimension, layout: Layout) -> Option<Built> {
     } else {
         0.0
     };
-    let width = font::text_width(&label, h) + lead * h;
+    let width = font::contents_width(&contents, h) + lead * h;
     let clearance = if label.is_empty() {
         0.0
     } else {
@@ -215,14 +219,15 @@ pub(super) fn draw(dim: &Dimension, layout: Layout) -> Option<Built> {
     };
     let tangent_start = (-a1.sin(), a1.cos());
     let tangent_end = (-a2.sin(), a2.cos());
+    let second = s.arrow2.unwrap_or(s.arrow);
     let tip1 = along(c, direction(a1), ra);
     let tip2 = along(c, direction(a2), ra);
     if arrows_in {
         out.arrow(s.arrow, tip1, tangent_start, size);
-        out.arrow(s.arrow, tip2, (-tangent_end.0, -tangent_end.1), size);
+        out.arrow(second, tip2, (-tangent_end.0, -tangent_end.1), size);
     } else {
         out.arrow(s.arrow, tip1, (-tangent_start.0, -tangent_start.1), size);
-        out.arrow(s.arrow, tip2, tangent_end, size);
+        out.arrow(second, tip2, tangent_end, size);
         let stub = 2.0 * size / ra;
         out.arc(c, ra, a1 - stub, a1);
         out.arc(c, ra, a2, a2 + stub);
@@ -247,13 +252,8 @@ pub(super) fn draw(dim: &Dimension, layout: Layout) -> Option<Built> {
             1 => arc_symbol(&mut out, along(centre, up, 0.6 * h), text_angle, h),
             _ => {}
         }
-        out.text(
-            &label,
-            h,
-            along(centre, run, lead * h / 2.0),
-            text_angle,
-            s.text_style,
-        );
+        let text_at = along(centre, run, lead * h / 2.0);
+        out.label(&s, &contents, width, centre, text_at, text_angle);
     }
     // The leader runs radially, a quarter of the way along, so it clears
     // the text at the middle.

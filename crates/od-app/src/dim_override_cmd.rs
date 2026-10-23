@@ -87,6 +87,47 @@ pub fn set_variable(style: &mut DimStyle, name: &str, value: &str) -> Result<(),
         "DIMSE2" => style.suppress_ext[1] = flag()?,
         "DIMDEC" => style.precision = choice(8)?,
         "DIMARCSYM" => style.arc_symbol = choice(2)?,
+        "DIMTOL" => crate::dim_vars_extra::set_tolerance(style, flag()?),
+        "DIMLIM" => crate::dim_vars_extra::set_limits(style, flag()?),
+        "DIMTP" => style.tol_plus = number()?,
+        "DIMTM" => style.tol_minus = number()?,
+        "DIMTDEC" => style.tol_precision = choice(8)?,
+        "DIMTFAC" => {
+            style.tol_scale = size().and_then(|n| {
+                if n > 0.0 {
+                    Ok(n)
+                } else {
+                    Err("Requires a value above zero.".to_owned())
+                }
+            })?
+        }
+        "DIMALT" => style.alt_on = flag()?,
+        "DIMALTF" => {
+            style.alt_factor = number().and_then(|n| {
+                if n != 0.0 {
+                    Ok(n)
+                } else {
+                    Err("Requires a value other than zero.".to_owned())
+                }
+            })?
+        }
+        "DIMALTD" => style.alt_precision = choice(8)?,
+        "DIMAPOST" => {
+            style.alt_post = if value == "." {
+                String::new()
+            } else {
+                value.to_owned()
+            }
+        }
+        "DIMTFILL" => style.text_fill = flag()?,
+        "DIMFXLON" => {
+            style.ext_fixed = if flag()? {
+                Some(style.ext_fixed.unwrap_or(1.0))
+            } else {
+                None
+            }
+        }
+        "DIMFXL" => style.ext_fixed = Some(size()?).filter(|l| *l > 0.0),
         "DIMADEC" => style.angle_precision = choice(8)?,
         "DIMAUNIT" => {
             style.angle_format = AngleFormat::from_code(i64::from(choice(4)?)).unwrap_or_default()

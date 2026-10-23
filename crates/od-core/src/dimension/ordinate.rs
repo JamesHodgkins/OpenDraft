@@ -40,7 +40,8 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
     let s = dim.style.resolved();
     let label = dim.label();
     let (h, g) = (s.text_height, s.text_gap);
-    let width = font::text_width(&label, h);
+    let contents = dim.contents();
+    let width = font::contents_width(&contents, h);
     // The leader runs along `axis` (the unit step of its main direction)
     // from the feature, standing off by the extension offset, to the end.
     let (fx, fy) = (feature.x, feature.y);
@@ -79,7 +80,7 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
         .text_pos
         .unwrap_or_else(|| Point::new(end.x + axis.0 * beyond, end.y + axis.1 * beyond));
     if !label.is_empty() {
-        out.text(&label, h, centre, angle, s.text_style);
+        out.label(&s, &contents, width, centre, centre, angle);
     }
     Some(Built {
         pieces: out.pieces,

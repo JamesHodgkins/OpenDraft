@@ -104,7 +104,8 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
         s.arrow_size
     };
     let span = dist(q1, q2);
-    let width = font::text_width(&label, h);
+    let contents = dim.contents();
+    let width = font::contents_width(&contents, h);
     let clearance = if label.is_empty() {
         0.0
     } else {
@@ -204,7 +205,15 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
             continue;
         }
         if let Some(u) = unit(sub(q, p)) {
-            out.line(along(p, u, s.ext_offset), along(q, u, s.ext_extend));
+            // A fixed length counts from the dimension line, not the origin.
+            let start = match s.ext_fixed {
+                Some(length) => {
+                    let from_line = dist(p, q) - length;
+                    along(p, u, from_line.max(s.ext_offset))
+                }
+                None => along(p, u, s.ext_offset),
+            };
+            out.line(start, along(q, u, s.ext_extend));
         }
     }
     // Arrows.
@@ -215,7 +224,7 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
         (flip(dir), dir)
     };
     out.arrow(s.arrow, q1, back1, size);
-    out.arrow(s.arrow, q2, back2, size);
+    out.arrow(s.arrow2.unwrap_or(s.arrow), q2, back2, size);
 
     // Dimension line, in pieces to draw.
     let mut lines: Vec<(Point, Point)> = Vec::new();
@@ -290,7 +299,7 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
         }
     }
     if has_text {
-        out.text(&label, h, centre, text_angle, s.text_style);
+        out.label(&s, &contents, width, centre, centre, text_angle);
     }
     Some(Built {
         pieces: out.pieces,
@@ -419,6 +428,33 @@ mod tests {
             (centre.x - 10.0).abs() < 1e-9 && centre.y > 5.0,
             "{centre:?}"
         );
+    }
+
+    #[test]
+    fn a_fixed_extension_line_counts_from_the_dimension_line() {
+        let fixed = DimStyle {
+            ext_fixed: Some(2.0),
+            ..style()
+        };
+        let d = Dimension::aligned(p(0.0, 0.0), p(10.0, 0.0), p(0.0, 5.0), &fixed);
+        let long = lines(&d)
+            .into_iter()
+            .filter(|(a, b)| (a.x - b.x).abs() < 1e-9 && a.x.abs() < 1e-9)
+            .map(|(a, b)| (b.y - a.y).abs())
+            .fold(0.0, f64::max);
+        // Two long from the line to the origin side, plus the overshoot.
+        assert!((long - (2.0 + fixed.ext_extend)).abs() < 1e-9, "{long}");
+    }
+
+    #[test]
+    fn a_second_arrowhead_of_its_own_kind() {
+        let mixed = DimStyle {
+            arrow2: Some(crate::dimension::Arrow::None),
+            ..style()
+        };
+        let d = Dimension::aligned(p(0.0, 0.0), p(10.0, 0.0), p(0.0, 5.0), &mixed);
+        let plain = Dimension::aligned(p(0.0, 0.0), p(10.0, 0.0), p(0.0, 5.0), &style());
+        assert!(d.picture().len() < plain.picture().len());
     }
 
     #[test]
