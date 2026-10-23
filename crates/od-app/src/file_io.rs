@@ -274,6 +274,7 @@ impl AppState {
         let title = display_name(path);
         if let Some(doc) = self.docs.iter_mut().find(|d| d.uid == uid) {
             doc.path = Some(path.to_owned());
+            doc.recovery_origin = None;
             doc.title.clone_from(&title);
             // What was written is the drawing as it was when the copy was
             // taken; anything done since still counts as unsaved.

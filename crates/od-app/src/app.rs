@@ -125,7 +125,7 @@ impl OpenDraftApp {
         }
         state.open_paths(&open);
         // Autosave copies live beside the saved settings; a crashed run's are
-        // offered back by `recovery_dialog`.
+        // offered back on the Home page.
         if let Some(root) = eframe::storage_dir("OpenDraft").map(|d| d.join("recovery")) {
             state.start_recovery(&root);
         }
@@ -409,7 +409,6 @@ impl eframe::App for OpenDraftApp {
         self.tool_windows(ctx);
         self.confirm_dialog(ctx);
         self.consent_dialog(ctx);
-        self.recovery_dialog(ctx);
         self.autosave_when_due(ctx);
         self.update_window_title(ctx);
         crate::window_memory::observe(ctx);

@@ -27,10 +27,12 @@ impl AppState {
             .as_deref()
             .and_then(Path::parent)
             .map(Path::to_owned);
-        let Some(chosen) =
-            self.picker
-                .save(&suggested, directory.as_deref(), od_files::plot_filter())
-        else {
+        let Some(chosen) = self.picker.save(
+            "Plot layout to file",
+            &suggested,
+            directory.as_deref(),
+            od_files::plot_filter(),
+        ) else {
             return false;
         };
         let known = chosen
