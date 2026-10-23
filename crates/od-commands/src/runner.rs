@@ -487,4 +487,17 @@ mod tests {
         assert_eq!(ghost(p(5.0, 0.0)), vec![circle_at(5.0)]);
         runner.cancel();
     }
+
+    #[test]
+    fn a_marker_is_given_the_size_of_a_screen_point() {
+        let mut session = Session::default();
+        let mut runner = Runner::start("test", vec![], |ed| {
+            ed.get_point(PointOptions::new("Next").marker(|unit| vec![circle_at(6.0 * unit)]))?;
+            Ok(())
+        });
+        runner.wait(&mut session);
+        let marker = runner.prompt().unwrap().marker.as_ref().unwrap();
+        assert_eq!(marker(0.5), vec![circle_at(3.0)]);
+        runner.cancel();
+    }
 }

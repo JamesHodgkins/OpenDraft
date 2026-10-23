@@ -276,6 +276,28 @@ impl Editor {
         }
     }
 
+    /// Choose one of `options.keywords`, typed or clicked. Enter alone is the
+    /// default's label if there is one, else `None`: an option menu that
+    /// ends when the user presses Enter.
+    pub fn ask_keyword(
+        &self,
+        options: impl Into<Options<String>>,
+    ) -> Result<Option<String>, Cancelled> {
+        let options = options.into();
+        let prompt = Prompt::new(
+            Wants::Keyword,
+            &options,
+            options.default.clone().map(Hint::Text),
+        );
+        match self.ask(prompt)? {
+            Reply::Keyword(label) if options.keywords.iter().any(|k| k.label == label) => {
+                Ok(Some(label))
+            }
+            Reply::Enter => Ok(options.default),
+            _ => Err(Cancelled),
+        }
+    }
+
     /// Ask the user to select objects. Enter accepts the current selection.
     pub fn get_selection(&self, message: &str) -> Result<Vec<EntityId>, Cancelled> {
         let options = Options::<()>::new(message);

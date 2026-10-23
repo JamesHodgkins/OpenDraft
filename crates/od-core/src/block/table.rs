@@ -168,6 +168,12 @@ impl Document {
                     Entity::Insert(i) => i.block.id != block.id && self.is_current(i),
                     Entity::Ellipse(e) => e.validate().is_ok(),
                     Entity::Spline(s) => s.validate().is_ok(),
+                    Entity::Polyline {
+                        points,
+                        bulges,
+                        widths,
+                        ..
+                    } => crate::polyline::check(points, bulges, widths).is_ok(),
                     // A block cannot hold a hatch: the strokes of a pattern
                     // would have to be drawn and moved with it.
                     Entity::Hatch(_) | Entity::Xline { .. } | Entity::Ray { .. } => false,

@@ -28,6 +28,7 @@ use crate::mleader_cmd::draw_mleader;
 use crate::modify::{copy_objects, mirror_objects, move_objects};
 use crate::mtext::{draw_mtext, edit_mtext_object};
 use crate::offset::offset_objects;
+use crate::pedit_cmd::pedit_objects;
 use crate::polygon_cmd::draw_polygon;
 use crate::polyline_cmd::draw_polyline;
 use crate::rectangle::draw_rectangle;
@@ -175,6 +176,7 @@ fn all() -> Vec<Command<AppState>> {
         editor_command!("modify.lengthen", "Lengthen", lengthen_objects),
         editor_command!("modify.offset", "Offset", offset_objects),
         editor_command!("modify.join", "Join", join_objects),
+        editor_command!("modify.pedit", "Edit Polyline", "PEDIT", pedit_objects),
         editor_command!("modify.fillet", "Fillet", fillet_objects),
         editor_command!("modify.chamfer", "Chamfer", chamfer_objects),
         editor_command!("modify.explode", "Explode", explode_objects),

@@ -6,12 +6,13 @@ mod ellipse;
 mod hatch;
 mod infinite;
 mod mleader;
+mod polyline;
 mod spline;
 mod unit;
 
 pub use unit::{format, parse, Unit};
 
-use od_core::{arc, bulge, Entity, Point};
+use od_core::{arc, Entity, Point};
 
 /// One editable or derived value of an entity.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -140,12 +141,6 @@ const RECTANGLE: &[Row] = &[
     row(Field::Area, "Area", Unit::Area, false),
 ];
 
-const POLYLINE: &[Row] = &[
-    row(Field::Vertices, "Vertices", Unit::Count, false),
-    row(Field::Length, "Length", Unit::Length, false),
-    row(Field::Area, "Area", Unit::Area, false),
-];
-
 const DIMENSION: &[Row] = &[row(Field::Measurement, "Measurement", Unit::Length, false)];
 
 const LEADER: &[Row] = &[row(Field::Vertices, "Vertices", Unit::Count, false)];
@@ -177,7 +172,7 @@ pub fn rows(entity: &Entity) -> &'static [Row] {
         Entity::Ellipse(e) => ellipse::rows(e),
         Entity::Spline(s) => spline::rows(s),
         Entity::Rectangle { .. } => RECTANGLE,
-        Entity::Polyline { .. } => POLYLINE,
+        Entity::Polyline { .. } => polyline::ROWS,
         Entity::Dimension(_) => DIMENSION,
         Entity::MText(_) => MTEXT,
         Entity::MLeader(m) => mleader::rows(m),
@@ -297,17 +292,7 @@ pub fn value(entity: &Entity, field: Field) -> f64 {
                 _ => f64::NAN,
             }
         }
-        Entity::Polyline {
-            points,
-            closed,
-            bulges,
-            ..
-        } => match field {
-            Field::Vertices => points.len() as f64,
-            Field::Length => bulge::path_length(points, bulges, *closed),
-            Field::Area => bulge::path_area(points, bulges),
-            _ => f64::NAN,
-        },
+        Entity::Polyline { .. } => polyline::value(entity, field),
     }
 }
 
@@ -403,7 +388,8 @@ pub fn with_value(entity: &Entity, field: Field, new: f64) -> Option<Entity> {
         },
         Entity::Ellipse(e) => *e = ellipse::with_value(e, field, new)?,
         Entity::Hatch(h) => **h = hatch::with_value(h, field, new)?,
-        Entity::Polyline { .. } | Entity::Dimension(_) | Entity::Spline(_) => return None,
+        Entity::Polyline { .. } => return polyline::with_value(entity, field, new),
+        Entity::Dimension(_) | Entity::Spline(_) => return None,
     }
     Some(out)
 }
