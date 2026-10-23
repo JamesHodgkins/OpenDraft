@@ -161,6 +161,8 @@ icons! {
     GROUP_MANAGER = '\u{e10b}';
     GROUP_SELECTION = '\u{e201}';
     GROUP_UNGROUP = '\u{e46b}';
+    HOME_MORE = '\u{e0ba}';
+    HOME_PIN = '\u{e258}';
     INQUIRY_ANGLE = '\u{e4f1}';
     INQUIRY_AREA = '\u{e16a}';
     INQUIRY_DISTANCE = '\u{e14e}';

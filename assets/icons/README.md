@@ -135,6 +135,8 @@ The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
 | ![](group-manager.svg) | `group-manager.svg` | list | Group Manager |
 | ![](group-selection.svg) | `group-selection.svg` | square-mouse-pointer | Group Selection On/Off |
 | ![](group-ungroup.svg) | `group-ungroup.svg` | ungroup | Ungroup |
+| ![](home-more.svg) | `home-more.svg` | ellipsis | (not used) |
+| ![](home-pin.svg) | `home-pin.svg` | pin | (not used) |
 | ![](inquiry-angle.svg) | `inquiry-angle.svg` | triangle-right | Angle |
 | ![](inquiry-area.svg) | `inquiry-area.svg` | square | Area |
 | ![](inquiry-distance.svg) | `inquiry-distance.svg` | ruler | Distance |

@@ -8,6 +8,7 @@ use crate::{dock, dynamic_input::Field, state::AppState};
 mod command_line_focus;
 mod ctrl;
 mod dim_styles;
+mod home_keyboard;
 mod linetypes;
 mod mleader_styles;
 mod placement;
