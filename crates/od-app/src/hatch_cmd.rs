@@ -250,6 +250,7 @@ fn from_point(ed: &Editor, at: Point) -> Result<Option<Found>, Cancelled> {
     let extent = entities
         .iter()
         .map(Entity::bounds)
+        .filter(od_core::Bounds::is_finite)
         .reduce(|a, b| a.union(b))
         .map_or(1.0, |b| (b.max.x - b.min.x).hypot(b.max.y - b.min.y));
     // Curves are followed to a hundred-thousandth of the drawing's size.

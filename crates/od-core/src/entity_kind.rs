@@ -13,6 +13,7 @@ pub enum EntityKind {
     Arc,
     Insert,
     Circle,
+    Xline,
     Dimension,
     Ellipse,
     Hatch,
@@ -20,17 +21,20 @@ pub enum EntityKind {
     Line,
     MText,
     MLeader,
+    Point,
     Polyline,
+    Ray,
     Rectangle,
     Spline,
 }
 
 impl EntityKind {
     /// Every kind, in order.
-    pub const ALL: [EntityKind; 13] = [
+    pub const ALL: [EntityKind; 16] = [
         EntityKind::Arc,
         EntityKind::Insert,
         EntityKind::Circle,
+        EntityKind::Xline,
         EntityKind::Dimension,
         EntityKind::Ellipse,
         EntityKind::Hatch,
@@ -38,7 +42,9 @@ impl EntityKind {
         EntityKind::Line,
         EntityKind::MText,
         EntityKind::MLeader,
+        EntityKind::Point,
         EntityKind::Polyline,
+        EntityKind::Ray,
         EntityKind::Rectangle,
         EntityKind::Spline,
     ];
@@ -49,6 +55,7 @@ impl EntityKind {
             EntityKind::Arc => "arc",
             EntityKind::Insert => "block reference",
             EntityKind::Circle => "circle",
+            EntityKind::Xline => "construction line",
             EntityKind::Dimension => "dimension",
             EntityKind::Ellipse => "ellipse",
             EntityKind::Hatch => "hatch",
@@ -56,7 +63,9 @@ impl EntityKind {
             EntityKind::Line => "line",
             EntityKind::MText => "mtext",
             EntityKind::MLeader => "multileader",
+            EntityKind::Point => "point",
             EntityKind::Polyline => "polyline",
+            EntityKind::Ray => "ray",
             EntityKind::Rectangle => "rectangle",
             EntityKind::Spline => "spline",
         }
@@ -68,6 +77,7 @@ impl EntityKind {
             EntityKind::Arc => "Arc",
             EntityKind::Insert => "Block reference",
             EntityKind::Circle => "Circle",
+            EntityKind::Xline => "Construction line",
             EntityKind::Dimension => "Dimension",
             EntityKind::Ellipse => "Ellipse",
             EntityKind::Hatch => "Hatch",
@@ -75,7 +85,9 @@ impl EntityKind {
             EntityKind::Line => "Line",
             EntityKind::MText => "Mtext",
             EntityKind::MLeader => "Multileader",
+            EntityKind::Point => "Point",
             EntityKind::Polyline => "Polyline",
+            EntityKind::Ray => "Ray",
             EntityKind::Rectangle => "Rectangle",
             EntityKind::Spline => "Spline",
         }
@@ -88,6 +100,7 @@ impl EntityKind {
             EntityKind::Arc => "arc",
             EntityKind::Insert => "block_reference",
             EntityKind::Circle => "circle",
+            EntityKind::Xline => "xline",
             EntityKind::Dimension => "dimension",
             EntityKind::Ellipse => "ellipse",
             EntityKind::Hatch => "hatch",
@@ -95,7 +108,9 @@ impl EntityKind {
             EntityKind::Line => "line",
             EntityKind::MText => "mtext",
             EntityKind::MLeader => "multileader",
+            EntityKind::Point => "point",
             EntityKind::Polyline => "polyline",
+            EntityKind::Ray => "ray",
             EntityKind::Rectangle => "rectangle",
             EntityKind::Spline => "spline",
         }
@@ -161,6 +176,7 @@ mod tests {
                 "arc",
                 "block_reference",
                 "circle",
+                "xline",
                 "dimension",
                 "ellipse",
                 "hatch",
@@ -168,7 +184,9 @@ mod tests {
                 "line",
                 "mtext",
                 "multileader",
+                "point",
                 "polyline",
+                "ray",
                 "rectangle",
                 "spline"
             ]

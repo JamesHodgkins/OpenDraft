@@ -245,6 +245,10 @@ pub fn write(document: &Document) -> Result<Encoded, FileError> {
     out.pair(3, "ANSI_1252");
     out.pair(9, "$LTSCALE");
     out.pair(40, finite(document.linetype_scale())?);
+    for (name, code, value) in super::point_style::header(document.point_style()) {
+        out.pair(9, name);
+        out.pair(code, value);
+    }
     out.pair(9, "$INSBASE");
     out.point3(10, 0.0, 0.0, 0.0);
     let (lo, hi) = match document.model_bounds() {
@@ -621,6 +625,51 @@ mod tests {
         );
         assert_eq!(value(poly, 42), Some("0.5"));
         assert_eq!(value(poly, 40), Some("0.2"));
+    }
+
+    #[test]
+    fn construction_lines_and_rays_come_back_and_need_r2000() {
+        let mut original = Document::default();
+        let d = Point::new(0.6, 0.8);
+        original.add(Entity::Xline {
+            origin: Point::new(1.0, 2.0),
+            direction: d,
+        });
+        original.add(Entity::Ray {
+            origin: Point::new(-3.0, 4.0),
+            direction: Point::new(0.0, -1.0),
+        });
+        let bytes = super::super::write::write(&original).unwrap().bytes;
+        assert!(String::from_utf8_lossy(&bytes).contains("AC1015"));
+        let back = crate::dxf::read::read(&bytes).unwrap().document;
+        let kinds: Vec<_> = back.objects().iter().map(|o| o.entity.clone()).collect();
+        let want: Vec<_> = original
+            .objects()
+            .iter()
+            .map(|o| o.entity.clone())
+            .collect();
+        assert_eq!(kinds, want);
+        assert!(back.bounds().is_none(), "they have no extents");
+    }
+
+    #[test]
+    fn points_and_their_style_come_back() {
+        let mut original = drawing();
+        original.add(Entity::Point {
+            at: Point::new(4.5, -1.0),
+        });
+        original.set_point_style(od_core::PointStyle {
+            mode: 66,
+            size: 2.5,
+        });
+        let back = crate::dxf::read::read(&write(&original).unwrap().bytes)
+            .unwrap()
+            .document;
+        assert!(back.objects().iter().any(|o| o.entity
+            == Entity::Point {
+                at: Point::new(4.5, -1.0)
+            }));
+        assert_eq!(back.point_style(), original.point_style());
     }
 
     #[test]

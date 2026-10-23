@@ -4,6 +4,7 @@
 
 mod ellipse;
 mod hatch;
+mod infinite;
 mod mleader;
 mod spline;
 mod unit;
@@ -97,6 +98,11 @@ const fn row(field: Field, label: &'static str, unit: Unit, editable: bool) -> R
     }
 }
 
+const POINT: &[Row] = &[
+    row(Field::X1, "Position X", Unit::Length, true),
+    row(Field::Y1, "Position Y", Unit::Length, true),
+];
+
 const LINE: &[Row] = &[
     row(Field::X1, "Start X", Unit::Length, true),
     row(Field::Y1, "Start Y", Unit::Length, true),
@@ -163,6 +169,8 @@ const INSERT: &[Row] = &[
 /// The rows shown for an entity, in display order.
 pub fn rows(entity: &Entity) -> &'static [Row] {
     match entity {
+        Entity::Point { .. } => POINT,
+        Entity::Xline { .. } | Entity::Ray { .. } => infinite::ROWS,
         Entity::Line { .. } => LINE,
         Entity::Circle { .. } => CIRCLE,
         Entity::Arc { .. } => ARC,
@@ -228,6 +236,14 @@ pub fn value(entity: &Entity, field: Field) -> f64 {
             Field::Angle => m.direction.y.atan2(m.direction.x).to_degrees(),
             Field::Height => m.nominal_height,
             Field::Width => m.reference_width,
+            _ => f64::NAN,
+        },
+        Entity::Xline { origin, direction } | Entity::Ray { origin, direction } => {
+            infinite::value(*origin, *direction, field)
+        }
+        Entity::Point { at } => match field {
+            Field::X1 => at.x,
+            Field::Y1 => at.y,
             _ => f64::NAN,
         },
         Entity::Line { start, end } => {
@@ -308,6 +324,14 @@ pub fn with_value(entity: &Entity, field: Field, new: f64) -> Option<Entity> {
         // Their points and text are edited with grips and the text editor.
         Entity::Leader(_) => return None,
         Entity::MLeader(m) => **m = mleader::with_value(m, field, new)?,
+        Entity::Xline { .. } | Entity::Ray { .. } => {
+            return infinite::with_value(entity, field, new)
+        }
+        Entity::Point { at } => match field {
+            Field::X1 => at.x = new,
+            Field::Y1 => at.y = new,
+            _ => return None,
+        },
         Entity::Line { start, end } => {
             let (dx, dy) = (end.x - start.x, end.y - start.y);
             let (length, angle) = (dx.hypot(dy), dy.atan2(dx));

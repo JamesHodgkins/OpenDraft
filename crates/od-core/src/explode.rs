@@ -16,6 +16,9 @@ impl Entity {
             | Entity::Circle { .. }
             | Entity::Arc { .. }
             | Entity::Ellipse(_)
+            | Entity::Point { .. }
+            | Entity::Xline { .. }
+            | Entity::Ray { .. }
             | Entity::Spline(_) => None,
             Entity::Dimension(d) => Some(d.picture()),
             // Its lines and text would have to become loose pieces, losing

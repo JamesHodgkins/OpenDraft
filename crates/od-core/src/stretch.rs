@@ -44,6 +44,10 @@ impl Entity {
                 (inside(b.min) && inside(b.max)).then(|| self.translated(dx, dy))
             }
             Entity::Circle { center, .. } => inside(*center).then(|| self.translated(dx, dy)),
+            Entity::Point { at } => inside(*at).then(|| self.translated(dx, dy)),
+            Entity::Xline { origin, .. } | Entity::Ray { origin, .. } => {
+                inside(*origin).then(|| self.translated(dx, dy))
+            }
             Entity::Ellipse(e) => inside(e.center).then(|| self.translated(dx, dy)),
             Entity::Spline(s) => s
                 .stretched(&inside, dx, dy)

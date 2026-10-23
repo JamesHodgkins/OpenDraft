@@ -8,10 +8,14 @@ pub mod array;
 pub mod block;
 mod breaking;
 pub mod bulge;
+pub mod closed_pair;
 mod corner;
+mod corner_infinite;
 mod curve_snap;
 pub mod dimension;
+pub mod divide;
 mod document;
+pub mod donut;
 pub mod ellipse;
 mod entity_kind;
 mod explode;
@@ -20,6 +24,7 @@ mod fillet;
 mod fillet_ellipse;
 mod grip;
 pub mod hatch;
+pub mod infinite;
 mod intersect;
 mod join;
 mod layer;
@@ -27,6 +32,7 @@ pub mod layout;
 pub mod leader;
 mod lengthen;
 pub mod linetype;
+pub mod loop_polyline;
 pub mod mleader;
 pub mod mtext;
 mod offset;
@@ -36,6 +42,7 @@ pub mod plot;
 mod plot_hatch;
 pub mod plot_model;
 mod plot_text;
+pub mod point_style;
 mod polycorner;
 pub mod polygon;
 pub mod rect;
@@ -54,13 +61,13 @@ mod validate_id_tests;
 pub mod width;
 
 pub use block::{Affine, BlockDef, BlockEntity, BlockId, Insert};
-pub use corner::{chamfer_lines, Chamfer, CornerError, Joined};
+pub use corner::{Chamfer, CornerError, Joined};
+pub use corner_infinite::{chamfer_lines, fillet};
 pub use dimension::{Arrow, DimKind, DimStyle, DimText, Dimension};
 pub use document::{Absorbed, Document, EntityId, Object, Placement, SpatialStats};
 pub use ellipse::{Ellipse, EllipseError};
 pub use entity_kind::EntityKind;
 pub use extend::End;
-pub use fillet::fillet;
 pub use grip::{Grip, GripKind};
 pub use hatch::HatchEntity;
 pub use intersect::Curve;
@@ -74,6 +81,7 @@ pub use leader::Leader;
 pub use linetype::{Linetype, LinetypeError, LinetypeId, LinetypeTable, StrokeElement};
 pub use mleader::{MLeader, MLeaderStyle, MLeaderStyleId};
 pub use mtext::MText;
+pub use point_style::{PointMarks, PointStyle};
 pub use polycorner::{round_polyline, Path, Round, Rounded};
 pub use spline::{KnotParameterization, Spline, SplineError, SplineFitData};
 pub use tangent::tangent_circle;
@@ -160,6 +168,23 @@ pub enum Entity {
     MLeader(Box<MLeader>),
     /// The legacy leader (LEADER). See [`leader`].
     Leader(Box<Leader>),
+    /// A single location (POINT). How it is drawn is the drawing's
+    /// [`PointStyle`].
+    Point {
+        at: Point,
+    },
+    /// A line with no ends (XLINE) through `origin` along the unit vector
+    /// `direction`. See [`infinite`].
+    Xline {
+        origin: Point,
+        direction: Point,
+    },
+    /// A line from `origin` with no far end (RAY) along the unit vector
+    /// `direction`. See [`infinite`].
+    Ray {
+        origin: Point,
+        direction: Point,
+    },
 }
 
 impl Entity {
@@ -178,6 +203,9 @@ impl Entity {
             Entity::Hatch(_) => EntityKind::Hatch,
             Entity::MLeader(_) => EntityKind::MLeader,
             Entity::Leader(_) => EntityKind::Leader,
+            Entity::Point { .. } => EntityKind::Point,
+            Entity::Xline { .. } => EntityKind::Xline,
+            Entity::Ray { .. } => EntityKind::Ray,
         }
     }
 }
@@ -202,6 +230,13 @@ impl Bounds {
             min: Point::new(self.min.x.min(other.min.x), self.min.y.min(other.min.y)),
             max: Point::new(self.max.x.max(other.max.x), self.max.y.max(other.max.y)),
         }
+    }
+
+    /// Whether all four sides are finite numbers.
+    pub fn is_finite(&self) -> bool {
+        [self.min.x, self.min.y, self.max.x, self.max.y]
+            .iter()
+            .all(|v| v.is_finite())
     }
 
     pub fn intersects(&self, other: &Bounds) -> bool {
@@ -244,6 +279,9 @@ impl Entity {
             Entity::Insert(i) => i.bounds(),
             Entity::MLeader(m) => m.bounds(),
             Entity::Leader(l) => l.bounds(),
+            Entity::Point { at } => Bounds::from_points(*at, *at),
+            Entity::Xline { origin, direction } => infinite::bounds(*origin, *direction, false),
+            Entity::Ray { origin, direction } => infinite::bounds(*origin, *direction, true),
             Entity::Hatch(h) => h
                 .bounds()
                 .unwrap_or_else(|| Bounds::from_points(Point::default(), Point::default())),

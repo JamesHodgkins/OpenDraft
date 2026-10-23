@@ -1,12 +1,19 @@
 //! The Units dialog (UNITS): length and angle format and precision, the
 //! direction of angle 0 and the insertion units. It edits a draft copy of the
 //! drawing's units; OK commits it as one undo step, Cancel / Escape / X drop it.
+//!
+//! The Point Style dialog (DDPTYPE) is here too: twenty pictures of how a
+//! point can look and the size, absolute or a share of the screen, edited the
+//! same way.
 
-use eframe::egui;
-use od_core::{units::MAX_PRECISION, AngleFormat, InsertUnits, LengthFormat, Units};
+use eframe::egui::{self, Pos2, Rect, Sense, Stroke, StrokeKind, Vec2};
+use od_core::{
+    units::MAX_PRECISION, AngleFormat, Entity, InsertUnits, LengthFormat, Point, PointStyle, Units,
+};
 use od_ui::{widgets, Theme};
 
 use super::OpenDraftApp;
+use crate::point_vars::Draft;
 
 const WIDTH: f32 = 430.0;
 const DIRECTION_WIDTH: f32 = 260.0;
@@ -196,4 +203,115 @@ fn insertion_box(ui: &mut egui::Ui, theme: &Theme, draft: &mut Units) {
             },
         );
     });
+}
+
+const POINT_WIDTH: f32 = 400.0;
+const CELL: f32 = 54.0;
+/// The pictures, left to right and top to bottom: each of the five shapes,
+/// then with a circle, a square, and both.
+const MODES: [[i32; 5]; 4] = [
+    [0, 1, 2, 3, 4],
+    [32, 33, 34, 35, 36],
+    [64, 65, 66, 67, 68],
+    [96, 97, 98, 99, 100],
+];
+
+impl OpenDraftApp {
+    /// The window opened by `format.point_style`.
+    pub(super) fn point_style_window(&mut self, ctx: &egui::Context) {
+        if !self.state.show_point_style {
+            self.state.point_style_draft = None;
+            return;
+        }
+        let mut draft = self
+            .state
+            .point_style_draft
+            .take()
+            .unwrap_or_else(|| Draft::of(self.state.point_style()));
+        let (mut open, mut ok, mut cancel) = (true, false, false);
+        widgets::dialog(
+            ctx,
+            &self.theme,
+            "Point Style",
+            &mut open,
+            POINT_WIDTH,
+            |ui| {
+                let theme = &self.theme;
+                for row in MODES {
+                    ui.horizontal(|ui| {
+                        for mode in row {
+                            if swatch(ui, theme, mode, draft.mode == mode).clicked() {
+                                draft.mode = mode;
+                            }
+                        }
+                    });
+                }
+                ui.add_space(8.0);
+                ui.horizontal(|ui| {
+                    widgets::field_label(ui, theme, "Point Size:");
+                    let suffix = if draft.relative { "%" } else { "" };
+                    widgets::number_field(ui, theme, &mut draft.value, suffix, 0.5);
+                });
+                ui.radio_value(&mut draft.relative, true, "Set Size Relative to Screen");
+                ui.radio_value(&mut draft.relative, false, "Set Size in Absolute Units");
+                ui.add_space(12.0);
+                ui.horizontal(|ui| {
+                    ok = widgets::primary_button(ui, theme, "OK").clicked();
+                    cancel = widgets::secondary_button(ui, theme, "Cancel").clicked();
+                });
+            },
+        );
+        if ok {
+            self.state.set_point_style(draft.style());
+        }
+        if ok || cancel || !open {
+            self.state.show_point_style = false;
+            self.state.point_style_draft = None;
+        } else {
+            self.state.point_style_draft = Some(draft);
+        }
+    }
+}
+
+/// One picture: the mode drawn in a frame, lit when it is the one chosen.
+fn swatch(ui: &mut egui::Ui, theme: &Theme, mode: i32, chosen: bool) -> egui::Response {
+    let (rect, response) = ui.allocate_exact_size(Vec2::splat(CELL), Sense::click());
+    let c = &theme.colors;
+    let line = if chosen { c.accent } else { c.text };
+    let painter = ui.painter_at(rect);
+    painter.rect_stroke(
+        rect.shrink(1.0),
+        2.0,
+        Stroke::new(if chosen { 2.0_f32 } else { 1.0_f32 }, line),
+        StrokeKind::Inside,
+    );
+    let size = f64::from(CELL) * 0.5;
+    let style = PointStyle { mode, size };
+    let marks = style.marks(Point::new(0.0, 0.0), size);
+    let at = |p: Point| Pos2::new(rect.center().x + p.x as f32, rect.center().y - p.y as f32);
+    let stroke = Stroke::new(1.5_f32, line);
+    if marks.dot {
+        painter.circle_filled(rect.center(), 2.0, line);
+    }
+    for shape in &marks.shapes {
+        paint(&painter, &at, shape, stroke);
+    }
+    response.on_hover_text(format!("PDMODE {mode}"))
+}
+
+/// The lines, circle and square a point's mode is made of.
+fn paint(painter: &egui::Painter, at: &dyn Fn(Point) -> Pos2, shape: &Entity, stroke: Stroke) {
+    match shape {
+        Entity::Line { start, end } => {
+            painter.line_segment([at(*start), at(*end)], stroke);
+        }
+        Entity::Circle { center, radius } => {
+            painter.circle_stroke(at(*center), *radius as f32, stroke);
+        }
+        Entity::Rectangle { min, max } => {
+            let rect = Rect::from_two_pos(at(*min), at(*max));
+            painter.rect_stroke(rect, 0.0, stroke, StrokeKind::Middle);
+        }
+        _ => {}
+    }
 }

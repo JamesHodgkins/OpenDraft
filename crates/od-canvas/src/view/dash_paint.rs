@@ -54,6 +54,9 @@ impl View {
             }
             return;
         }
+        if self.stroke_infinite(painter, rect, document, object, stroke) {
+            return;
+        }
         let continuous = object.attrs.continuous_generation;
         let dashed = document
             .dash_pattern(object)

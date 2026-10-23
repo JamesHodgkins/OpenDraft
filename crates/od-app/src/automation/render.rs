@@ -103,6 +103,7 @@ fn model_window(
             .iter()
             .filter_map(|id| document.object(*id))
             .map(|o| o.bounds())
+            .filter(Bounds::is_finite)
             .reduce(Bounds::union)
             .map(framed)
             .ok_or_else(|| invalid("Give at least one entity.")),

@@ -20,6 +20,7 @@ mod hatch;
 mod hatch_sources;
 #[cfg(test)]
 mod hatch_tests;
+mod infinite;
 mod layouts;
 mod leader;
 mod ltype;
@@ -287,9 +288,8 @@ impl Importer {
                     self.polyline(header, &vertices, default, closed);
                 }
             }
-            "LINE" => self.line(record),
-            "CIRCLE" => self.circle(record),
-            "ARC" => self.arc(record),
+            "LINE" | "CIRCLE" | "ARC" | "POINT" => self.basic(record),
+            "XLINE" | "RAY" => self.infinite_line(record),
             "ELLIPSE" => self.ellipse(record),
             "SPLINE" => self.spline(record),
             "HATCH" => self.hatch(record),
@@ -372,10 +372,7 @@ pub fn read(bytes: &[u8]) -> Result<Loaded, FileError> {
                 }
                 if section == "HEADER" {
                     let groups = record.groups.iter().map(|g| (g.code, g.value.as_str()));
-                    importer
-                        .document
-                        .set_units(super::units::read_header(groups.clone()));
-                    super::linetypes::apply_header(groups, &mut importer.document);
+                    super::header::apply(groups, &mut importer.document);
                 }
             }
             "ENDSEC" => section.clear(),
@@ -452,6 +449,34 @@ mod tests {
 
     fn load(layers: &[(i32, &str)], entities: &[(i32, &str)]) -> Loaded {
         read(&file(layers, entities)).unwrap()
+    }
+
+    #[test]
+    fn a_donut_of_two_vertices_and_two_arcs_comes_in_as_a_whole_ring() {
+        let loaded = load(
+            &[],
+            &[
+                (0, "LWPOLYLINE"),
+                (8, "0"),
+                (90, "2"),
+                (70, "1"),
+                (43, "2"),
+                (10, "1"),
+                (20, "0"),
+                (42, "1"),
+                (10, "-1"),
+                (20, "0"),
+                (42, "1"),
+            ],
+        );
+        let Some(Entity::Polyline { points, bulges, .. }) =
+            loaded.document.objects().first().map(|o| o.entity.clone())
+        else {
+            panic!("a polyline");
+        };
+        assert_eq!(points.len(), 4);
+        let round = od_core::bulge::path_length(&points, &bulges, true);
+        assert!((round - std::f64::consts::TAU).abs() < 1e-9, "{round}");
     }
 
     #[test]

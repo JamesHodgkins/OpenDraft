@@ -160,6 +160,7 @@ fn item(shape: &Shape, styles: &Styles) -> Result<Item<DwgHandle>, Refused> {
             start: point(*start),
             end: point(*end),
         },
+        Shape::Point { at } => Entity::Point { at: point(*at) },
         Shape::Circle { center, radius } => Entity::Circle {
             center: point(*center),
             radius: *radius,
@@ -208,12 +209,12 @@ fn item(shape: &Shape, styles: &Styles) -> Result<Item<DwgHandle>, Refused> {
             closed,
             bulges,
             widths,
-        } => Entity::Polyline {
+        } => od_core::closed_pair::expanded(Entity::Polyline {
             points: points.iter().map(|&p| point(p)).collect(),
             closed: *closed,
             bulges: bulges.clone(),
             widths: widths.iter().map(|w| (w[0], w[1])).collect(),
-        },
+        }),
         Shape::Text { .. } | Shape::MText { .. } => {
             text::entity(shape, styles).ok_or(Refused::Text)?
         }
