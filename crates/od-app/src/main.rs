@@ -21,6 +21,7 @@ mod coordinates;
 mod corner_memory;
 mod corners;
 mod dialogs;
+mod dim_override_cmd;
 mod dim_style_draft;
 mod dim_style_table;
 mod dim_vars;

@@ -117,12 +117,27 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
         }
         None => fit(span, size, clearance, s.fit, s.text_inside),
     };
+    // DIMJUST 3 and 4 put the text over an extension line, along it.
+    let over = s.text_just >= 3;
+    let (arrows_in, text_in) = if over {
+        (span >= 2.0 * size, false)
+    } else {
+        (arrows_in, text_in)
+    };
+    let over_foot = if s.text_just == 4 {
+        (*p2, q2)
+    } else {
+        (*p1, q1)
+    };
+    let over_dir = unit(sub(over_foot.1, over_foot.0)).unwrap_or(dir);
     let horizontal = if text_in {
         s.inside_horizontal
     } else {
         s.outside_horizontal
     };
-    let text_angle = if horizontal {
+    let text_angle = if over {
+        readable(over_dir.1.atan2(over_dir.0))
+    } else if horizontal {
         0.0
     } else {
         readable(line_angle)
@@ -163,7 +178,9 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
     } else {
         span + size + g + width / 2.0
     };
-    let default_centre = {
+    let default_centre = if over {
+        along(over_foot.1, over_dir, s.ext_extend + g + width / 2.0)
+    } else {
         let on_line = along(q1, dir, tc_along);
         let (ox, oy) = if centred && text_in {
             (0.0, 0.0)
@@ -225,7 +242,7 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
         lines.push((q2, along(q2, dir, stub)));
     }
     // A line that follows text moved off the end (DIMTMOVE 0) or outside.
-    let follows = dim.text_pos.is_none() || s.text_move == 0;
+    let follows = (dim.text_pos.is_none() || s.text_move == 0) && !over;
     if !text_in && !label.is_empty() && follows {
         if tc > span {
             let end = if centred {
@@ -379,6 +396,21 @@ mod tests {
     fn coincident_points_make_no_aligned_dimension() {
         let d = Dimension::aligned(p(1.0, 1.0), p(1.0, 1.0), p(0.0, 5.0), &style());
         assert!(d.picture().is_empty());
+    }
+
+    #[test]
+    fn text_over_an_extension_line_lies_along_it_beyond_its_end() {
+        let mut d = Dimension::aligned(p(0.0, 0.0), p(10.0, 0.0), p(0.0, 5.0), &style());
+        d.style.text_just = 3;
+        let centre = d.text_centre().unwrap();
+        // The first extension line runs up from (0, 0): the text continues it.
+        assert!(centre.x.abs() < 1e-9 && centre.y > 5.0, "{centre:?}");
+        d.style.text_just = 4;
+        let centre = d.text_centre().unwrap();
+        assert!(
+            (centre.x - 10.0).abs() < 1e-9 && centre.y > 5.0,
+            "{centre:?}"
+        );
     }
 
     #[test]

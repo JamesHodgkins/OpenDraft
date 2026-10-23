@@ -173,7 +173,7 @@ impl DimStyle {
             1.0
         };
         self.text_above = self.text_above.min(4);
-        self.text_just = self.text_just.min(2);
+        self.text_just = self.text_just.min(4);
         self.fit = self.fit.min(3);
         self.text_move = self.text_move.min(2);
         self.precision = self.precision.min(crate::units::MAX_PRECISION);

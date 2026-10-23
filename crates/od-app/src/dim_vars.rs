@@ -138,8 +138,8 @@ pub fn variables() -> Vec<SysVar<AppState>> {
         ),
         SysVar::int(
             "DIMJUST",
-            "Text along the line: 0 centred, 1 at extension line 1, 2 at extension line 2",
-            (0, 2),
+            "Text along the line: 0 centred, 1 at extension line 1, 2 at extension line 2, 3 over 1, 4 over 2",
+            (0, 4),
             |s| Value::Int(i64::from(s.dim_style().text_just)),
             |s, v| change(s, |d| d.text_just = int(v) as u8),
         ),

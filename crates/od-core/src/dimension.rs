@@ -75,6 +75,9 @@ pub enum DimKind {
         start: Point,
         end: Point,
         arc_point: Point,
+        /// A radial leader from the dimension arc to the measured arc, drawn
+        /// for an arc of more than a quarter turn.
+        leader: bool,
     },
 }
 
@@ -177,6 +180,7 @@ impl Dimension {
                 start,
                 end,
                 arc_point,
+                leader: false,
             },
             style,
         )

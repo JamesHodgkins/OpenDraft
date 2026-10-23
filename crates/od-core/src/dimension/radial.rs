@@ -129,7 +129,9 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
     if text_in || s.force_line {
         draw(&mut out, inner_start, pt);
     }
-    if !text_in {
+    // Text left free (DIMTMOVE 2) has no line to it.
+    let free = dim.text_pos.is_some() && s.text_move == 2;
+    if !text_in && !free {
         // From the circle out to the text, with a landing for horizontal text.
         let stop = |toward: Point| {
             let dir = unit(sub(toward, pt)).unwrap_or(u);
@@ -226,6 +228,16 @@ mod tests {
             },
         );
         assert!(on.picture().len() > off.picture().len());
+    }
+
+    #[test]
+    fn text_moved_freely_has_no_line_to_it() {
+        let mut d = Dimension::radius(p(0.0, 0.0), p(50.0, 0.0), &DimStyle::default());
+        d.text_pos = Some(p(80.0, 30.0));
+        d.style.text_move = 2;
+        assert!(!has_line(&d, |a, _| a == p(50.0, 0.0)));
+        d.style.text_move = 1;
+        assert!(has_line(&d, |a, _| a == p(50.0, 0.0)));
     }
 
     #[test]

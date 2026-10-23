@@ -17,6 +17,9 @@ struct Tweaks {
     text: DimText,
     /// A dimension line angle chosen with Horizontal, Vertical or Rotated.
     rotation: Option<f64>,
+    /// DIMARC: the leader option, and the two points of a partial arc.
+    leader: bool,
+    partial: Option<(Point, Point)>,
 }
 
 type Make = Arc<dyn Fn(Point, &Tweaks) -> Option<Dimension> + Send + Sync>;
@@ -69,6 +72,17 @@ fn place(
                 "Text" => tweaks.text = ask_text(ed, &make, sample, &tweaks)?,
                 "Horizontal" => tweaks.rotation = Some(0.0),
                 "Vertical" => tweaks.rotation = Some(FRAC_PI_2),
+                "Leader" => tweaks.leader = true,
+                "Partial" => {
+                    let first = ed.get_point(PointOptions::new(
+                        "Specify first point for arc length dimension",
+                    ))?;
+                    let second = ed.get_point(
+                        PointOptions::new("Specify second point for arc length dimension")
+                            .base(first),
+                    )?;
+                    tweaks.partial = Some((first, second));
+                }
                 "Rotated" => {
                     tweaks.rotation = Some(ed.get_angle("Specify angle of dimension line")?);
                 }
@@ -243,6 +257,21 @@ pub fn dim_auto(ed: &mut Editor) -> Result<(), Cancelled> {
     }
 }
 
+/// The point of the arc through `on` (any point of it) in the direction of
+/// `toward` from `center`.
+fn on_arc(center: Point, on: Point, toward: Point) -> Point {
+    let radius = distance(center, on);
+    let (dx, dy) = (toward.x - center.x, toward.y - center.y);
+    let length = dx.hypot(dy);
+    if length < MIN_SIZE {
+        return on;
+    }
+    Point::new(
+        center.x + dx / length * radius,
+        center.y + dy / length * radius,
+    )
+}
+
 /// DIMARC: pick an arc, then where the dimension arc goes.
 pub fn dim_arc(ed: &mut Editor) -> Result<(), Cancelled> {
     let style = style(ed)?;
@@ -264,14 +293,21 @@ pub fn dim_arc(ed: &mut Editor) -> Result<(), Cancelled> {
         }
     };
     let make: Make = Arc::new(move |at, tweaks| {
-        let mut dimension = Dimension::arc_length(center, start, end, at, &style);
+        let (from, to) = match tweaks.partial {
+            Some((a, b)) => (on_arc(center, start, a), on_arc(center, start, b)),
+            None => (start, end),
+        };
+        let mut dimension = Dimension::arc_length(center, from, to, at, &style);
+        if let od_core::DimKind::ArcLength { leader, .. } = &mut dimension.kind {
+            *leader = tweaks.leader;
+        }
         dimension.text = tweaks.text.clone();
         dimension.measurement().map(|_| dimension)
     });
     place(
         ed,
         "Specify arc length dimension location",
-        &[("Text", "T")],
+        &[("Text", "T"), ("Partial", "P"), ("Leader", "L")],
         start,
         make,
     )
@@ -279,6 +315,8 @@ pub fn dim_arc(ed: &mut Editor) -> Result<(), Cancelled> {
 
 #[cfg(test)]
 mod tests {
+    use std::f64::consts::PI;
+
     use super::*;
     use crate::state::AppState;
 
@@ -452,6 +490,29 @@ mod tests {
         submit(&mut state, "12,12");
         let length = dimensions(&state)[0].measurement().unwrap();
         assert!((length - 10.0 * FRAC_PI_2).abs() < 1e-9);
+    }
+
+    #[test]
+    fn partial_measures_between_two_points_of_the_arc() {
+        let arc = Entity::Arc {
+            center: p(0.0, 0.0),
+            radius: 10.0,
+            start: 0.0,
+            end: PI,
+        };
+        let mut state = started(&[arc], "DIMARC", dim_arc);
+        click(&mut state, 0, p(0.0, 10.0));
+        submit(&mut state, "p");
+        submit(&mut state, "10,0");
+        submit(&mut state, "0,10");
+        submit(&mut state, "l");
+        submit(&mut state, "12,12");
+        let d = &dimensions(&state)[0];
+        assert!((d.measurement().unwrap() - 10.0 * FRAC_PI_2).abs() < 1e-9);
+        assert!(matches!(
+            d.kind,
+            od_core::DimKind::ArcLength { leader: true, .. }
+        ));
     }
 
     #[test]

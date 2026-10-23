@@ -35,6 +35,8 @@ pub(super) enum DimKindDto {
         start: PointDto,
         end: PointDto,
         arc_point: PointDto,
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        leader: bool,
     },
 }
 
@@ -88,11 +90,13 @@ impl DimensionDto {
                 start,
                 end,
                 arc_point,
+                leader,
             } => DimKindDto::ArcLength {
                 center: point(*center),
                 start: point(*start),
                 end: point(*end),
                 arc_point: point(*arc_point),
+                leader: *leader,
             },
         };
         Self {
@@ -145,11 +149,13 @@ impl DimensionDto {
                 start,
                 end,
                 arc_point,
+                leader,
             } => DimKind::ArcLength {
                 center: pt(center)?,
                 start: pt(start)?,
                 end: pt(end)?,
                 arc_point: pt(arc_point)?,
+                leader: *leader,
             },
         };
         let dimension = Dimension {
