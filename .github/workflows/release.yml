@@ -1,0 +1,41 @@
+name: release
+# Builds the app and the MCP program for each system and packages them
+# (scripts/package.sh). Runs by hand from the Actions tab, or when a version
+# tag such as v0.1.0 is pushed, in which case the packages are also attached
+# to the GitHub release for that tag.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Linux system libraries
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libwayland-dev libx11-dev libxcb1-dev libgl1-mesa-dev
+      - name: Package
+        shell: bash
+        run: bash scripts/package.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenDraft-${{ runner.os }}
+          path: |
+            dist/*.zip
+            dist/*.tar.gz
+          if-no-files-found: error
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.ref_name }}" dist/*.zip dist/*.tar.gz --clobber 2>/dev/null || gh release create "${{ github.ref_name }}" dist/*.zip dist/*.tar.gz --generate-notes

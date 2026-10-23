@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3.361 26" width="3.361" height="26">
+  <title>U+0021 !</title>
+  <g id="guides" style="fill:none;stroke:#09f;stroke-width:0.05px">
+    <path d="M0,3.84 L3.361,3.84"/>
+    <path d="M0,8.936 L3.361,8.936"/>
+    <path d="M0,19.118 L3.361,19.118"/>
+  </g>
+  <path d="M1.681,13.959 L1.681,3.562" style="fill:none;stroke:#f00;stroke-width:0.1px;stroke-linecap:round;stroke-linejoin:round"/>
+  <circle class="dot" cx="1.681" cy="18.402" r="0.05" style="fill:none;stroke:#f00;stroke-width:0.1px;stroke-linecap:round;stroke-linejoin:round"/>
+</svg>

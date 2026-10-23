@@ -1,0 +1,19 @@
+[package]
+name = "od-files"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+od-core.workspace = true
+od-dwg.workspace = true
+serde = { version = "1", features = ["derive"] }
+# Exact float parsing, so a value read back is the value written.
+serde_json = { version = "1", features = ["float_roundtrip"] }
+
+[dev-dependencies]
+# An independent DXF parser, to check that what we write is well-formed.
+dxf = "0.6.2"

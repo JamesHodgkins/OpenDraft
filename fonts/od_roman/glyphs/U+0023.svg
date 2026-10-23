@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 13.841 26" width="13.841" height="26">
+  <title>U+0023 #</title>
+  <g id="guides" style="fill:none;stroke:#09f;stroke-width:0.05px">
+    <path d="M0,3.84 L13.841,3.84"/>
+    <path d="M0,8.936 L13.841,8.936"/>
+    <path d="M0,19.118 L13.841,19.118"/>
+  </g>
+  <path d="M1.528,14.695 L11.588,14.695" style="fill:none;stroke:#f00;stroke-width:0.1px;stroke-linecap:round;stroke-linejoin:round"/>
+  <path d="M2.253,10.251 L12.313,10.251" style="fill:none;stroke:#f00;stroke-width:0.1px;stroke-linecap:round;stroke-linejoin:round"/>
+  <path d="M3.76,16.841 L5.882,7.008" style="fill:none;stroke:#f00;stroke-width:0.1px;stroke-linecap:round;stroke-linejoin:round"/>
+  <path d="M8.213,16.841 L10.335,7.008" style="fill:none;stroke:#f00;stroke-width:0.1px;stroke-linecap:round;stroke-linejoin:round"/>
+</svg>

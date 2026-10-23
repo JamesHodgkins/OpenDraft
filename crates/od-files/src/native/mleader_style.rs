@@ -1,0 +1,413 @@
+//! The native format's description of multileader styles.
+
+use std::collections::HashSet;
+
+use od_core::mleader::{
+    LeaderAttachment, MLeaderContentType, MLeaderLineType, MLeaderStyle, MLeaderStyleContent,
+    MLeaderStyleId, TextAngle,
+};
+use od_core::{Arrow, Document, Lineweight, TextStyleId};
+use serde::{Deserialize, Serialize};
+
+use super::entity::invalid;
+use super::{attr_from_dto, attr_to_dto, AttrDto, ColorDto};
+use crate::FileError;
+
+/// A serde twin of a plain enum, so the file names the choice instead of
+/// numbering it.
+macro_rules! mirror {
+    ($dto:ident <-> $core:ident { $($variant:ident),+ $(,)? }) => {
+        #[derive(Clone, Copy, Serialize, Deserialize)]
+        #[serde(rename_all = "snake_case")]
+        pub(super) enum $dto {
+            $($variant),+
+        }
+
+        impl From<$core> for $dto {
+            fn from(value: $core) -> Self {
+                match value {
+                    $($core::$variant => Self::$variant),+
+                }
+            }
+        }
+
+        impl From<$dto> for $core {
+            fn from(value: $dto) -> Self {
+                match value {
+                    $($dto::$variant => Self::$variant),+
+                }
+            }
+        }
+    };
+}
+
+mirror!(LineTypeDto <-> MLeaderLineType { None, Straight, Spline });
+mirror!(ContentTypeDto <-> MLeaderContentType { None, MText });
+mirror!(AngleDto <-> TextAngle { KeepHorizontal, RightReading, AsInserted });
+mirror!(AttachmentDto <-> LeaderAttachment {
+    TopOfTopLine,
+    MiddleOfTopLine,
+    MiddleOfText,
+    MiddleOfBottomLine,
+    BottomOfBottomLine,
+    BottomLine,
+    UnderlineBottomLine,
+    UnderlineTopLine,
+    UnderlineAllText,
+});
+
+#[derive(Serialize, Deserialize)]
+#[serde(default)]
+struct ContentDto {
+    kind: ContentTypeDto,
+    default_text: String,
+    text_style: u64,
+    text_angle: AngleDto,
+    text_color: AttrDto<ColorDto>,
+    text_height: f64,
+    always_left_justify: bool,
+    frame: bool,
+    left_attachment: AttachmentDto,
+    right_attachment: AttachmentDto,
+    landing_gap: f64,
+    extend_to_text: bool,
+}
+
+impl Default for ContentDto {
+    fn default() -> Self {
+        Self::from_content(&MLeaderStyleContent::default())
+    }
+}
+
+impl ContentDto {
+    fn from_content(c: &MLeaderStyleContent) -> Self {
+        Self {
+            kind: c.kind.into(),
+            default_text: c.default_text.clone(),
+            text_style: c.text_style.0,
+            text_angle: c.text_angle.into(),
+            text_color: attr_to_dto(&c.text_color, |c| (*c).into()),
+            text_height: c.text_height,
+            always_left_justify: c.always_left_justify,
+            frame: c.frame,
+            left_attachment: c.left_attachment.into(),
+            right_attachment: c.right_attachment.into(),
+            landing_gap: c.landing_gap,
+            extend_to_text: c.extend_to_text,
+        }
+    }
+
+    fn into_content(self) -> MLeaderStyleContent {
+        MLeaderStyleContent {
+            kind: self.kind.into(),
+            default_text: self.default_text,
+            text_style: TextStyleId(self.text_style),
+            text_angle: self.text_angle.into(),
+            text_color: attr_from_dto(self.text_color, |c| c.into()),
+            text_height: self.text_height,
+            always_left_justify: self.always_left_justify,
+            frame: self.frame,
+            left_attachment: self.left_attachment.into(),
+            right_attachment: self.right_attachment.into(),
+            landing_gap: self.landing_gap,
+            extend_to_text: self.extend_to_text,
+        }
+    }
+}
+
+/// Everything about a style but who it is; a field the file leaves out takes
+/// the stock style's value.
+#[derive(Serialize, Deserialize)]
+#[serde(default)]
+struct BodyDto {
+    description: String,
+    leader_type: LineTypeDto,
+    leader_color: AttrDto<ColorDto>,
+    leader_linetype: AttrDto<String>,
+    leader_lineweight: AttrDto<u16>,
+    /// `Arrow::code`.
+    arrow: i64,
+    arrow_size: f64,
+    break_gap: f64,
+    max_points: Option<u32>,
+    /// Radians.
+    first_angle: Option<f64>,
+    second_angle: Option<f64>,
+    dogleg: bool,
+    dogleg_length: f64,
+    overall_scale: f64,
+    content: ContentDto,
+}
+
+impl Default for BodyDto {
+    fn default() -> Self {
+        Self::of(&MLeaderStyle::standard())
+    }
+}
+
+impl BodyDto {
+    fn of(s: &MLeaderStyle) -> Self {
+        Self {
+            description: s.description.clone(),
+            leader_type: s.leader_type.into(),
+            leader_color: attr_to_dto(&s.leader_color, |c| (*c).into()),
+            leader_linetype: attr_to_dto(&s.leader_linetype, String::clone),
+            leader_lineweight: attr_to_dto(&s.leader_lineweight, |w| w.0),
+            arrow: s.arrow.code(),
+            arrow_size: s.arrow_size,
+            break_gap: s.break_gap,
+            max_points: s.max_points,
+            first_angle: s.first_angle,
+            second_angle: s.second_angle,
+            dogleg: s.dogleg,
+            dogleg_length: s.dogleg_length,
+            overall_scale: s.overall_scale,
+            content: ContentDto::from_content(&s.content),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub(super) struct MLeaderStyleDto {
+    id: u64,
+    name: String,
+    #[serde(flatten)]
+    body: BodyDto,
+}
+
+impl MLeaderStyleDto {
+    pub(super) fn from_style(style: &MLeaderStyle) -> Self {
+        Self {
+            id: style.id.0,
+            name: style.name.clone(),
+            body: BodyDto::of(style),
+        }
+    }
+
+    fn into_style(self) -> Result<MLeaderStyle, FileError> {
+        let b = self.body;
+        let Some(arrow) = Arrow::from_code(b.arrow) else {
+            return invalid(format!(
+                "multileader style \"{}\" has an unknown arrow",
+                self.name
+            ));
+        };
+        Ok(MLeaderStyle {
+            id: MLeaderStyleId(self.id),
+            name: self.name,
+            description: b.description,
+            leader_type: b.leader_type.into(),
+            leader_color: attr_from_dto(b.leader_color, |c| c.into()),
+            leader_linetype: attr_from_dto(b.leader_linetype, |n| n),
+            leader_lineweight: attr_from_dto(b.leader_lineweight, Lineweight),
+            arrow,
+            arrow_size: b.arrow_size,
+            break_gap: b.break_gap,
+            max_points: b.max_points,
+            first_angle: b.first_angle,
+            second_angle: b.second_angle,
+            dogleg: b.dogleg,
+            dogleg_length: b.dogleg_length,
+            overall_scale: b.overall_scale,
+            content: b.content.into_content(),
+        })
+    }
+}
+
+/// The multileader styles, the current one and the id counter. Left out
+/// for the stock table (just `Standard`); files from before multileader
+/// styles have none.
+#[derive(Default, Serialize, Deserialize)]
+pub(super) struct TableDto {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    mleader_styles: Vec<MLeaderStyleDto>,
+    #[serde(default)]
+    current_mleader_style: u64,
+    #[serde(default)]
+    next_mleader_style_id: u64,
+}
+
+impl TableDto {
+    pub(super) fn of(document: &Document) -> Self {
+        let stock = document.mleader_styles() == [MLeaderStyle::standard()]
+            && document.current_mleader_style() == MLeaderStyleId::STANDARD
+            && document.next_mleader_style_id() == 1;
+        Self {
+            mleader_styles: if stock {
+                Vec::new()
+            } else {
+                document
+                    .mleader_styles()
+                    .iter()
+                    .map(MLeaderStyleDto::from_style)
+                    .collect()
+            },
+            current_mleader_style: document.current_mleader_style().0,
+            next_mleader_style_id: document.next_mleader_style_id(),
+        }
+    }
+
+    /// Put the file's styles in the drawing. An empty list leaves the stock
+    /// table; a current style that is gone falls back to `Standard`.
+    pub(super) fn load(self, document: &mut Document) -> Result<(), FileError> {
+        if self.mleader_styles.is_empty() {
+            document.reserve_mleader_style_id(self.next_mleader_style_id);
+            return Ok(());
+        }
+        let (mut ids, mut names) = (HashSet::new(), HashSet::new());
+        let mut table = Vec::with_capacity(self.mleader_styles.len());
+        for dto in self.mleader_styles {
+            let style = dto.into_style()?;
+            if !ids.insert(style.id) {
+                return invalid(format!("multileader style {} appears twice", style.id.0));
+            }
+            if !names.insert(style.name.to_ascii_lowercase()) {
+                return invalid(format!(
+                    "two multileader styles are called \"{}\"",
+                    style.name
+                ));
+            }
+            if !style.is_valid() {
+                return invalid(format!("multileader style \"{}\" is not valid", style.name));
+            }
+            if document.text_style(style.content.text_style).is_none() {
+                return invalid(format!(
+                    "multileader style \"{}\" uses a text style that does not exist",
+                    style.name
+                ));
+            }
+            table.push(style);
+        }
+        if table.first().map(|s| s.id) != Some(MLeaderStyleId::STANDARD) {
+            return invalid("there is no multileader style 0 first");
+        }
+        let current = MLeaderStyleId(self.current_mleader_style);
+        let current = if ids.contains(&current) {
+            current
+        } else {
+            MLeaderStyleId::STANDARD
+        };
+        let floor = table.iter().map(|s| s.id.0 + 1).max().unwrap_or(1);
+        document.set_mleader_styles(table, current, self.next_mleader_style_id.max(floor));
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use od_core::mleader::MLeaderStyleContent;
+    use od_core::{Attr, Color};
+
+    use crate::native::tests::{read, roundtrip};
+    use crate::native::NativeFormat;
+    use crate::FileFormat;
+
+    use super::*;
+
+    fn with_styles() -> Document {
+        let mut document = Document::default();
+        let notes = MLeaderStyleId(document.next_mleader_style_id());
+        let detail = MLeaderStyleId(notes.0 + 1);
+        let mut table = document.mleader_styles().to_vec();
+        table.push(MLeaderStyle {
+            description: "Notes in red".into(),
+            leader_type: MLeaderLineType::Spline,
+            leader_color: Attr::Set(Color::Rgb(200, 0, 0)),
+            leader_linetype: Attr::Set("DASHED".into()),
+            leader_lineweight: Attr::Set(Lineweight(70)),
+            arrow: Arrow::Open,
+            arrow_size: 3.0,
+            max_points: None,
+            first_angle: Some(0.5),
+            second_angle: Some(1.0),
+            dogleg: false,
+            dogleg_length: 5.0,
+            overall_scale: 2.0,
+            content: MLeaderStyleContent {
+                default_text: "NOTE".into(),
+                text_angle: TextAngle::RightReading,
+                text_color: Attr::Set(Color::Foreground),
+                frame: true,
+                left_attachment: LeaderAttachment::UnderlineAllText,
+                ..MLeaderStyleContent::default()
+            },
+            ..MLeaderStyle::new(notes, "Notes")
+        });
+        table.push(MLeaderStyle {
+            content: MLeaderStyleContent {
+                kind: MLeaderContentType::None,
+                ..MLeaderStyleContent::default()
+            },
+            ..MLeaderStyle::new(detail, "Detail")
+        });
+        document.set_mleader_styles(table, notes, detail.0 + 1);
+        document
+    }
+
+    #[test]
+    fn styles_survive_a_round_trip_exactly() {
+        let document = with_styles();
+        document.validate().unwrap();
+        assert_eq!(roundtrip(&document), document);
+    }
+
+    #[test]
+    fn a_drawing_with_stock_styles_writes_none_and_old_files_get_standard() {
+        let text =
+            String::from_utf8(NativeFormat.write(&Document::default()).unwrap().bytes).unwrap();
+        assert!(!text.contains("mleader_styles"));
+        let loaded = read(super::super::tests::MINIMAL).unwrap();
+        assert_eq!(loaded.mleader_styles().len(), 1);
+        assert_eq!(loaded.current_mleader_style(), MLeaderStyleId::STANDARD);
+        assert_eq!(loaded.next_mleader_style_id(), 1);
+    }
+
+    #[test]
+    fn a_changed_current_style_alone_is_kept() {
+        let mut document = Document::default();
+        let table = document.mleader_styles().to_vec();
+        document.set_mleader_styles(table, MLeaderStyleId::STANDARD, 4);
+        let loaded = roundtrip(&document);
+        assert_eq!(loaded.next_mleader_style_id(), 4);
+    }
+
+    #[test]
+    fn ids_are_not_reused_after_loading() {
+        let document = with_styles();
+        let loaded = roundtrip(&document);
+        assert_eq!(
+            loaded.next_mleader_style_id(),
+            document.next_mleader_style_id()
+        );
+    }
+
+    fn file(styles: &str) -> String {
+        super::super::tests::MINIMAL.replace(
+            "\"objects\": []",
+            &format!("\"objects\": [], \"mleader_styles\": [{styles}]"),
+        )
+    }
+
+    #[test]
+    fn a_style_the_file_leaves_bare_takes_the_stock_values() {
+        let loaded = read(&file(r#"{"id": 0, "name": "Standard"}"#)).unwrap();
+        assert_eq!(loaded.mleader_styles(), [MLeaderStyle::standard()]);
+    }
+
+    #[test]
+    fn bad_tables_are_refused() {
+        let cases = [
+            // Twice the same id, twice the same name, no Standard first,
+            // a negative size, a missing text style and an unknown arrow.
+            r#"{"id": 0, "name": "Standard"}, {"id": 0, "name": "B"}"#,
+            r#"{"id": 0, "name": "Standard"}, {"id": 1, "name": "STANDARD"}"#,
+            r#"{"id": 3, "name": "Standard"}"#,
+            r#"{"id": 0, "name": "Standard", "arrow_size": -1.0}"#,
+            r#"{"id": 0, "name": "Standard", "content": {"text_style": 9}}"#,
+            r#"{"id": 0, "name": "Standard", "arrow": 99}"#,
+        ];
+        for styles in cases {
+            assert!(read(&file(styles)).is_err(), "{styles}");
+        }
+    }
+}

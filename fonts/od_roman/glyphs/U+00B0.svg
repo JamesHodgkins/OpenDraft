@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 6.871 26" width="6.871" height="26">
+  <title>U+00B0 °</title>
+  <g id="guides" style="fill:none;stroke:#09f;stroke-width:0.05px">
+    <path d="M0,3.84 L6.871,3.84"/>
+    <path d="M0,8.936 L6.871,8.936"/>
+    <path d="M0,19.118 L6.871,19.118"/>
+  </g>
+  <circle cx="3.435" cy="3.554" r="1.602" style="fill:none;stroke:#f00;stroke-width:0.1px;stroke-linecap:round;stroke-linejoin:round"/>
+</svg>

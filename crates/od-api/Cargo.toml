@@ -1,0 +1,14 @@
+[package]
+name = "od-api"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+od-core.workspace = true
+schemars = "1"
+serde_json = { version = "1", features = ["float_roundtrip"] }

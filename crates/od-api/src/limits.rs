@@ -1,0 +1,44 @@
+//! Named limits (spec section 7.1). Errors quote the limit that was hit.
+
+pub const IPC_FRAME_BYTES: usize = 8 * 1024 * 1024;
+pub const MCP_REQUEST_BYTES: usize = 4 * 1024 * 1024;
+pub const QUERY_PAGE_DEFAULT: usize = 100;
+pub const QUERY_PAGE_MAX: usize = 1_000;
+pub const GET_IDS_MAX: usize = 1_000;
+pub const MEASURE_IDS_MAX: usize = 1_000;
+pub const INTERSECT_IDS_MAX: usize = 200;
+pub const INTERSECT_PAIRS_MAX: usize = 10_000;
+pub const INTERSECT_POINTS_MAX: usize = 10_000;
+pub const BATCH_OPERATIONS_MAX: usize = 1_000;
+pub const POINTS_PER_ENTITY_MAX: usize = 100_000;
+pub const POINTS_PER_BATCH_MAX: usize = 50_000;
+pub const KNOTS_PER_BATCH_MAX: usize = 100_000;
+pub const RENDER_ENTITIES_MAX: usize = 5_000;
+pub const RENDER_SIDE_MAX: u32 = 4_096;
+pub const RENDER_PIXELS_MAX: u64 = 16_000_000;
+pub const RENDER_RESULT_BYTES: usize = 6 * 1024 * 1024;
+pub const VECTOR_VERTICES_MAX: usize = 500_000;
+pub const STRING_BYTES_MAX: usize = 64 * 1024;
+pub const QUEUED_REQUESTS_MAX: usize = 64;
+pub const REQUEST_DEADLINE_MS: u64 = 30_000;
+
+/// The page size to use for a caller's `limit`: the default when absent,
+/// never above the maximum, never zero.
+pub fn page_size(requested: Option<usize>) -> usize {
+    requested
+        .unwrap_or(QUERY_PAGE_DEFAULT)
+        .clamp(1, QUERY_PAGE_MAX)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn page_size_is_bounded() {
+        assert_eq!(page_size(None), 100);
+        assert_eq!(page_size(Some(0)), 1);
+        assert_eq!(page_size(Some(5)), 5);
+        assert_eq!(page_size(Some(1_000_000)), QUERY_PAGE_MAX);
+    }
+}
