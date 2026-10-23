@@ -247,6 +247,28 @@ fn change_one(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn trimming_a_construction_line_between_two_edges_leaves_two_rays() {
+        use od_core::Point;
+        let target = Entity::Xline {
+            origin: Point::new(0.0, 0.0),
+            direction: Point::new(1.0, 0.0),
+        };
+        let wall = |x: f64| Entity::Line {
+            start: Point::new(x, -5.0),
+            end: Point::new(x, 5.0),
+        };
+        let left = trim_plan(&target, &[wall(3.0), wall(8.0)], Point::new(5.0, 0.0)).unwrap();
+        assert_eq!(left.len(), 2);
+        assert!(left.iter().all(|e| matches!(e, Entity::Ray { .. })));
+        let (origin, ..) = left
+            .iter()
+            .filter_map(Entity::infinite_line)
+            .find(|(_, d, _)| d.x > 0.0)
+            .unwrap();
+        assert!((origin.x - 8.0).abs() < 1e-6);
+    }
+
     use super::*;
     use crate::state::AppState;
 

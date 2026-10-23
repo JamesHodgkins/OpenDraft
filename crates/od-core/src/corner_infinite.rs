@@ -4,7 +4,6 @@
 //! becomes a ray, a ray stays a ray, and anything cut at both ends is an
 //! ordinary line.
 
-use crate::infinite::{self, REACH};
 use crate::{Chamfer, CornerError, Entity, Joined, Point};
 
 /// Round the corner of `a` and `b` with an arc of `radius`; see
@@ -43,50 +42,12 @@ fn through_lines(
     if a.infinite_line().is_none() && b.infinite_line().is_none() {
         return corner(a, b);
     }
-    let joined = corner(&as_line(a), &as_line(b))?;
+    let joined = corner(&a.long_line(), &b.long_line())?;
     Ok(Joined {
-        a: restore(a, joined.a),
-        b: restore(b, joined.b),
+        a: a.resumed(joined.a),
+        b: b.resumed(joined.b),
         joint: joined.joint,
     })
-}
-
-/// A construction line or ray as the long line that stands for it.
-fn as_line(entity: &Entity) -> Entity {
-    match entity.infinite_line() {
-        Some((origin, direction, ray)) => {
-            let (start, end) = infinite::segment(origin, direction, ray);
-            Entity::Line { start, end }
-        }
-        None => entity.clone(),
-    }
-}
-
-/// What `original` is after its stand-in became `result`.
-fn restore(original: &Entity, result: Entity) -> Entity {
-    let Some((origin, ..)) = original.infinite_line() else {
-        return result;
-    };
-    let Entity::Line { start, end } = result else {
-        return result;
-    };
-    let far = |p: Point| (p.x - origin.x).hypot(p.y - origin.y) > REACH / 2.0;
-    let from = |near: Point, toward: Point| {
-        let direction = infinite::unit(Point::new(toward.x - near.x, toward.y - near.y));
-        match direction {
-            Some(direction) => Entity::Ray {
-                origin: near,
-                direction,
-            },
-            None => original.clone(),
-        }
-    };
-    match (far(start), far(end)) {
-        (true, true) => original.clone(),
-        (true, false) => from(end, start),
-        (false, true) => from(start, end),
-        (false, false) => Entity::Line { start, end },
-    }
 }
 
 #[cfg(test)]

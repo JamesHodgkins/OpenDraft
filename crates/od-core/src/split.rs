@@ -24,6 +24,14 @@ impl Entity {
     ///   comes back as one open polyline that starts and ends at the cut.
     pub fn split_at(&self, points: &[Point]) -> Vec<Entity> {
         match self {
+            // Cut as the long line that stands for it: the pieces with one far
+            // end are rays, so a construction line cut once is two rays.
+            Entity::Xline { .. } | Entity::Ray { .. } => self
+                .long_line()
+                .split_at(points)
+                .into_iter()
+                .map(|piece| self.resumed(piece))
+                .collect(),
             // Splines are not cut yet (Trim and Break refuse them).
             Entity::Dimension(_)
             | Entity::MText(_)
@@ -31,8 +39,6 @@ impl Entity {
             | Entity::Leader(_)
             | Entity::Insert(_)
             | Entity::Point { .. }
-            | Entity::Xline { .. }
-            | Entity::Ray { .. }
             | Entity::Hatch(_)
             | Entity::Spline(_) => {
                 vec![self.clone()]

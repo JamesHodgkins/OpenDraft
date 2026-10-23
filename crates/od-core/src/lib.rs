@@ -13,6 +13,7 @@ mod corner;
 mod corner_infinite;
 mod curve_snap;
 pub mod dimension;
+pub mod divide;
 mod document;
 pub mod donut;
 pub mod ellipse;

@@ -37,6 +37,35 @@ fn arm() -> f64 {
     ARM_PIXELS * if pixel > 0.0 { pixel } else { 1.0 }
 }
 
+/// A construction line or ray (as `Entity::infinite_line` gives it) cut to
+/// `window`, a little widened, as a line that starts on a whole pattern period
+/// from the base point, so a linetype lies where it would on the whole line.
+/// `None` when it misses the window. `pattern` is the elements and scale.
+pub(crate) fn stand_in(
+    line: (Point, Point, bool),
+    pattern: Option<(&[crate::StrokeElement], f64)>,
+    window: &Bounds,
+) -> Option<Entity> {
+    let (origin, direction, ray) = line;
+    let margin = (window.max.x - window.min.x).max(window.max.y - window.min.y) * 0.05;
+    let wide = Bounds::from_points(
+        Point::new(window.min.x - margin, window.min.y - margin),
+        Point::new(window.max.x + margin, window.max.y + margin),
+    );
+    let (a, b) = clipped(origin, direction, ray, &wide)?;
+    let period = pattern.map_or(0.0, |(elements, scale)| {
+        elements.iter().map(|e| e.length()).sum::<f64>() * scale
+    });
+    let start = if period.is_finite() && period > 0.0 {
+        let along = (a.x - origin.x) * direction.x + (a.y - origin.y) * direction.y;
+        let t = (along / period).floor() * period;
+        Point::new(origin.x + direction.x * t, origin.y + direction.y * t)
+    } else {
+        a
+    };
+    Some(Entity::Line { start, end: b })
+}
+
 /// The unit vector along `direction`, or `None` when it is not a finite
 /// vector of some length.
 pub fn unit(direction: Point) -> Option<Point> {
@@ -216,6 +245,49 @@ impl Entity {
         }
     }
 
+    /// A construction line or ray as the long line that stands for it; any
+    /// other kind is returned as it is. Work done on the stand-in (a cut, a
+    /// corner) comes back through [`Entity::resumed`].
+    pub fn long_line(&self) -> Entity {
+        match self.infinite_line() {
+            Some((origin, direction, ray)) => {
+                let (start, end) = segment(origin, direction, ray);
+                Entity::Line { start, end }
+            }
+            None => self.clone(),
+        }
+    }
+
+    /// What `self` (a construction line or ray) is once its stand-in has
+    /// become `result`: a piece with one far end is a ray from the other end,
+    /// a piece with both ends near is a line, one with both far is the
+    /// original; any other result is returned as it is.
+    pub fn resumed(&self, result: Entity) -> Entity {
+        let Some((origin, ..)) = self.infinite_line() else {
+            return result;
+        };
+        let Entity::Line { start, end } = result else {
+            return result;
+        };
+        let far = |p: Point| (p.x - origin.x).hypot(p.y - origin.y) > REACH / 2.0;
+        let from = |near: Point, toward: Point| match unit(Point::new(
+            toward.x - near.x,
+            toward.y - near.y,
+        )) {
+            Some(direction) => Entity::Ray {
+                origin: near,
+                direction,
+            },
+            None => self.clone(),
+        };
+        match (far(start), far(end)) {
+            (true, true) => self.clone(),
+            (true, false) => from(end, start),
+            (false, true) => from(start, end),
+            (false, false) => Entity::Line { start, end },
+        }
+    }
+
     /// Move a construction line or ray: `map` takes the base point and the
     /// direction (a vector) to their new values.
     pub(crate) fn remapped_line(&self, map: impl FnOnce(Point, Point) -> (Point, Point)) -> Entity {
@@ -232,6 +304,41 @@ impl Entity {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cutting_a_construction_line_gives_rays_and_a_line_between() {
+        let line = Entity::Xline {
+            origin: p(0.0, 0.0),
+            direction: p(1.0, 0.0),
+        };
+        let one = line.split_at(&[p(3.0, 0.0)]);
+        assert_eq!(one.len(), 2);
+        assert!(one.iter().all(|e| matches!(e, Entity::Ray { .. })));
+        let rays: Vec<f64> = one.iter().map(|e| e.infinite_line().unwrap().1.x).collect();
+        assert_eq!(
+            rays.iter().filter(|x| **x < 0.0).count(),
+            1,
+            "one runs back"
+        );
+        let two = line.split_at(&[p(3.0, 0.0), p(8.0, 0.0)]);
+        assert_eq!(two.len(), 3);
+        let Entity::Line { start, end } = &two[1] else {
+            panic!("a line between the cuts, got {:?}", two[1]);
+        };
+        assert!((start.x - 3.0).abs() < 1e-6 && (end.x - 8.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn breaking_a_ray_removes_the_part_between_the_points() {
+        let ray = Entity::Ray {
+            origin: p(0.0, 0.0),
+            direction: p(1.0, 0.0),
+        };
+        let pieces = ray.break_between(p(2.0, 1.0), p(5.0, 1.0)).unwrap();
+        assert_eq!(pieces.len(), 2);
+        assert!(matches!(&pieces[0], Entity::Line { .. }), "{:?}", pieces[0]);
+        assert!(matches!(&pieces[1], Entity::Ray { .. }));
+    }
 
     #[test]
     fn grips_move_the_base_or_turn_the_line_about_it() {
