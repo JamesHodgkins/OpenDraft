@@ -220,7 +220,7 @@ impl OpenDraftApp {
                         .unwrap_or_default();
                     let name = name.trim().to_owned();
                     ui.selected = name.clone();
-                    self.state.dim_edit = DimEdit::New(DimStyle { name, ..base });
+                    self.state.dim_edit = DimEdit::New(Box::new(DimStyle { name, ..base }));
                     self.state.show_dim_style = true;
                 }
                 Some(Prompt::Rename { from, name }) => {

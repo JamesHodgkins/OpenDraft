@@ -154,6 +154,7 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
             leader: false,
             symbol: false,
             label: dim.label(),
+            contents: dim.contents(),
         },
     )
 }

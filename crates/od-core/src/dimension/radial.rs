@@ -33,7 +33,8 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
     } else {
         s.arrow_size
     };
-    let width = font::text_width(&label, h);
+    let contents = dim.contents();
+    let width = font::contents_width(&contents, h);
     let clearance = if label.is_empty() {
         0.0
     } else {
@@ -162,7 +163,7 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
         }
     }
     if has_text {
-        out.text(&label, h, centre, text_angle, s.text_style);
+        out.label(&s, &contents, width, centre, centre, text_angle);
     }
     Some(Built {
         pieces: out.pieces,

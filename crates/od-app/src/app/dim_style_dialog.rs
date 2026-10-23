@@ -10,6 +10,8 @@ use super::{dim_preview, dim_style_tabs as tabs, OpenDraftApp};
 use crate::dim_style_draft::{sample, Draft};
 use crate::dim_style_table::DimEdit;
 
+use tabs::more;
+
 const WIDTH: f32 = 760.0;
 const TAB_WIDTH: f32 = 420.0;
 const TAB_HEIGHT: f32 = 545.0;
@@ -38,7 +40,7 @@ impl OpenDraftApp {
                     .dim_style_named(name)
                     .unwrap_or_else(|| doc.dim_style())
                     .clone(),
-                DimEdit::New(style) => style.clone(),
+                DimEdit::New(style) => (**style).clone(),
             })
         });
         let (mut open, mut choice) = (true, None);
@@ -67,8 +69,8 @@ impl OpenDraftApp {
                         2 => tabs::text(ui, theme, &mut draft, document),
                         3 => tabs::fit(ui, theme, &mut draft),
                         4 => tabs::primary(ui, theme, &mut draft),
-                        5 => tabs::unsupported(ui, theme, "Alternate units"),
-                        _ => tabs::unsupported(ui, theme, "Tolerances"),
+                        5 => more::alternate(ui, theme, &mut draft),
+                        _ => more::tolerances(ui, theme, &mut draft),
                     }
                 });
                 ui.add_space(14.0);

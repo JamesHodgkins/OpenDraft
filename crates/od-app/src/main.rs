@@ -25,6 +25,7 @@ mod dim_override_cmd;
 mod dim_style_draft;
 mod dim_style_table;
 mod dim_vars;
+mod dim_vars_extra;
 mod dimension_angular_cmd;
 mod dimension_centre_cmd;
 mod dimension_chain_cmd;

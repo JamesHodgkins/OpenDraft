@@ -23,7 +23,8 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
     } else {
         s.arrow_size
     };
-    let width = font::text_width(&label, h);
+    let contents = dim.contents();
+    let width = font::contents_width(&contents, h);
     let pt = *chord_point;
     let dir = unit(sub(*shown, pt))?;
     let normal = left(dir);
@@ -76,12 +77,13 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
     path.dedup();
     out.polyline(path);
     if !label.is_empty() {
-        out.text(
-            &label,
-            h,
+        out.label(
+            &s,
+            &contents,
+            width,
+            centre,
             centre,
             dim.text_angle.unwrap_or(angle),
-            s.text_style,
         );
     }
     Some(Built {
