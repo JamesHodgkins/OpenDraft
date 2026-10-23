@@ -5,8 +5,8 @@
 use std::collections::BTreeMap;
 
 use crate::entities::{
-    ArcData, CircleData, EllipseData, InsertData, LineData, LwPolylineData, Polyline2dData,
-    Vertex2dData,
+    ArcData, CircleData, EllipseData, InsertData, LineData, LwPolylineData, PointData,
+    Polyline2dData, Vertex2dData,
 };
 use crate::handles::DwgHandle;
 use crate::spline::SplineData;
@@ -14,6 +14,7 @@ use crate::tables::{BlockData, DwgLinetypeDef, LayerData};
 use crate::text::{AttribData, DwgTextStyle, MTextData, TextData};
 
 pub(crate) enum Stored {
+    Point(PointData),
     Line(LineData),
     Circle(CircleData),
     Arc(ArcData),

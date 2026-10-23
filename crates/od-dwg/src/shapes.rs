@@ -5,8 +5,8 @@
 
 use crate::drawing::DwgColor;
 use crate::entities::{
-    ArcData, CircleData, EllipseData, InsertData, LineData, LwPolylineData, Point3, Polyline2dData,
-    Vertex2dData,
+    ArcData, CircleData, EllipseData, InsertData, LineData, LwPolylineData, Point3, PointData,
+    Polyline2dData, Vertex2dData,
 };
 use crate::geometry::{elevation_matters, NotFlat, Orientation};
 use crate::handles::DwgHandle;
@@ -21,6 +21,9 @@ pub const MAX_ABS_COORDINATE: f64 = 1e12;
 /// segment's arc angle, positive counter-clockwise.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Shape {
+    Point {
+        at: [f64; 2],
+    },
     Line {
         start: [f64; 2],
         end: [f64; 2],
@@ -163,6 +166,17 @@ pub(crate) fn line(d: &LineData, report: &mut ImportReport) -> Result<Shape, Ski
     Ok(Shape::Line {
         start: [d.start[0], d.start[1]],
         end: [d.end[0], d.end[1]],
+    })
+}
+
+pub(crate) fn point(d: &PointData, report: &mut ImportReport) -> Result<Shape, Skipped> {
+    if !all_sane(&d.at) {
+        return Err(Skipped::InvalidGeometry);
+    }
+    let o = orientation(d.extrusion)?;
+    flatten(d.at[2], d.at[0].abs().max(d.at[1].abs()), report);
+    Ok(Shape::Point {
+        at: o.point([d.at[0], d.at[1]]),
     })
 }
 
@@ -389,6 +403,29 @@ mod tests {
 
     fn report() -> ImportReport {
         ImportReport::new(DwgVersion::R2013)
+    }
+
+    #[test]
+    fn a_point_is_flattened_and_a_tilted_one_is_skipped() {
+        let mut report = report();
+        let flat = PointData {
+            at: [3.0, 4.0, 0.0],
+            extrusion: [0.0, 0.0, 1.0],
+        };
+        assert_eq!(
+            point(&flat, &mut report),
+            Ok(Shape::Point { at: [3.0, 4.0] })
+        );
+        let tilted = PointData {
+            extrusion: [1.0, 0.0, 0.0],
+            ..flat.clone()
+        };
+        assert_eq!(point(&tilted, &mut report), Err(Skipped::NonPlanar));
+        let huge = PointData {
+            at: [f64::NAN, 0.0, 0.0],
+            ..flat
+        };
+        assert_eq!(point(&huge, &mut report), Err(Skipped::InvalidGeometry));
     }
 
     #[test]
