@@ -12,6 +12,7 @@ mod break_cmd;
 mod circle;
 mod circle_arc_commands;
 mod clipboard;
+mod cmd_aliases;
 mod cmdline;
 mod colour_ui;
 mod command_record;

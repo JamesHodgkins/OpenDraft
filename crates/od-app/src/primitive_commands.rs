@@ -21,6 +21,9 @@ macro_rules! editor {
 /// The commands, for the command table.
 pub fn commands() -> Vec<Command<AppState>> {
     vec![
+        Command::new("format.point_style", "Point Style", |s: &mut AppState| {
+            s.show_point_style = true
+        }),
         editor!("draw.boundary", "Boundary", "BOUNDARY", draw_boundary),
         editor!("draw.donut", "Donut", "DONUT", draw_donut),
         editor!("draw.ray", "Ray", "RAY", draw_ray),

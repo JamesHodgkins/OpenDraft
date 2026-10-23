@@ -94,6 +94,7 @@ fn draw() -> Panel {
             item("draw.ray", "Ray", icons::DRAW_RAY),
             item("draw.point_multiple", "Multiple Point", icons::DRAW_POINT),
             item("draw.point", "Single Point", icons::DRAW_POINT),
+            item("format.point_style", "Point Style...", icons::DRAW_POINT),
         ],
     }
 }

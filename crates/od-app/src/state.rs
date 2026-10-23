@@ -104,6 +104,10 @@ pub struct AppState {
     pub show_settings: bool,
     /// Whether the Units dialog is open.
     pub show_units: bool,
+    /// Whether the Point Style dialog is open.
+    pub show_point_style: bool,
+    /// The Point Style dialog's working copy while it is open.
+    pub point_style_draft: Option<crate::point_vars::Draft>,
     /// The Power Select dialog.
     pub power_select: crate::power_select::Dialog,
     /// The Linetype Manager is open.
@@ -186,6 +190,8 @@ impl AppState {
             cursor: None,
             show_settings: false,
             show_units: false,
+            show_point_style: false,
+            point_style_draft: None,
             power_select: Default::default(),
             show_linetypes: false,
             show_text_styles: false,

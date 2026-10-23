@@ -23,7 +23,7 @@ impl Kind {
     }
 }
 
-/// FILLET: round the corner of two objects (lines, arcs, circles) with an arc
+/// FILLET: round the corner of two objects (lines, arcs, circles, construction lines, rays) with an arc
 /// of the current radius, or two segments of one polyline. Options set the
 /// radius, whether the objects are trimmed back to the arc, round every
 /// vertex of a polyline (Polyline), and carry on with more corners (Multiple).
@@ -412,6 +412,35 @@ mod tests {
             bulges: Vec::new(),
             widths: Vec::new(),
         }
+    }
+
+    #[test]
+    fn fillet_and_chamfer_cut_construction_lines_and_rays_back_to_rays() {
+        let _turn = take_turn();
+        let objects = [
+            Entity::Xline {
+                origin: p(0.0, 0.0),
+                direction: p(1.0, 0.0),
+            },
+            Entity::Ray {
+                origin: p(0.0, -5.0),
+                direction: p(0.0, 1.0),
+            },
+        ];
+        let mut state = started(&objects, fillet_objects, &["r", "2"]);
+        click(&mut state, 0, p(8.0, 0.0));
+        click(&mut state, 1, p(0.0, 8.0));
+        let all = entities(&state);
+        assert_eq!(all.len(), 3, "the arc is new");
+        let (origin, _, ray) = all[0].infinite_line().unwrap();
+        assert!(ray, "a construction line cut at one end is a ray");
+        assert!((origin.x - 2.0).abs() < 1e-6);
+        let (origin, _, ray) = all[1].infinite_line().unwrap();
+        assert!(ray && (origin.y - 2.0).abs() < 1e-6);
+        assert!(matches!(all[2], Entity::Arc { .. }));
+        state.undo();
+        assert_eq!(entities(&state).len(), 2, "one undo step");
+        assert!(matches!(entities(&state)[0], Entity::Xline { .. }));
     }
 
     #[test]
