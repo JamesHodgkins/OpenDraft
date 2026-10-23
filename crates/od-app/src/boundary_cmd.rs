@@ -9,6 +9,7 @@
 
 use od_commands::{Answer, Cancelled, Editor, PointOptions};
 use od_core::hatch::trace;
+use od_core::infinite;
 use od_core::loop_polyline::loop_polyline;
 use od_core::{Bounds, Entity, Point};
 
@@ -16,18 +17,31 @@ use crate::text::plural;
 
 /// The polylines round the area `at` is in, outer boundary first.
 fn around(ed: &Editor, at: Point, islands: bool) -> Result<Vec<Entity>, Cancelled> {
-    let drawn: Vec<Entity> = ed.read(|doc| {
-        doc.visible_objects()
-            .map(|o| o.entity.clone())
-            .filter(|e| e.infinite_line().is_none())
-            .collect()
-    })?;
-    let extent = drawn
+    let all: Vec<Entity> =
+        ed.read(|doc| doc.visible_objects().map(|o| o.entity.clone()).collect())?;
+    let seed = Bounds::from_points(at, at);
+    let finite = all
         .iter()
         .map(Entity::bounds)
         .filter(Bounds::is_finite)
-        .reduce(|a, b| a.union(b))
-        .map_or(1.0, |b| (b.max.x - b.min.x).hypot(b.max.y - b.min.y));
+        .fold(seed, Bounds::union);
+    let extent = (finite.max.x - finite.min.x).hypot(finite.max.y - finite.min.y);
+    // A construction line or ray is cut to a window a little wider than
+    // everything else, so it bounds an area the way a line across it would.
+    let margin = extent.max(1.0) / 2.0;
+    let window = Bounds::from_points(
+        Point::new(finite.min.x - margin, finite.min.y - margin),
+        Point::new(finite.max.x + margin, finite.max.y + margin),
+    );
+    let drawn: Vec<Entity> = all
+        .into_iter()
+        .filter_map(|e| match e.infinite_line() {
+            Some((origin, direction, ray)) => infinite::clipped(origin, direction, ray, &window)
+                .map(|(start, end)| Entity::Line { start, end }),
+            None => Some(e),
+        })
+        .collect();
+    let extent = extent.max(1.0);
     // Curves are followed to a hundred-thousandth of the drawing's size.
     let tolerance = (extent * 1e-5).max(1e-9);
     match trace(&drawn, at, tolerance) {
@@ -125,6 +139,38 @@ mod tests {
         state.cmd_submit("8,8");
         state.settle_command();
         assert_eq!(polylines(&state), 1);
+    }
+
+    #[test]
+    fn a_construction_line_bounds_an_area_like_a_line_across_it() {
+        let mut state = AppState::new();
+        square(&mut state, 0.0, 10.0);
+        state.perform(od_commands::AddEntity::new(Entity::Xline {
+            origin: Point::new(0.0, 5.0),
+            direction: Point::new(1.0, 0.0),
+        }));
+        state.start_command("BOUNDARY", draw_boundary);
+        state.settle_command();
+        state.cmd_submit("8,8");
+        state.settle_command();
+        let found: Vec<_> = state
+            .session()
+            .document()
+            .objects()
+            .iter()
+            .filter_map(|o| match &o.entity {
+                Entity::Polyline { points, bulges, .. } => {
+                    Some(od_core::bulge::path_area(points, bulges).abs())
+                }
+                _ => None,
+            })
+            .collect();
+        assert_eq!(found.len(), 1);
+        assert!(
+            (found[0] - 50.0).abs() < 1e-6,
+            "the upper half: {}",
+            found[0]
+        );
     }
 
     #[test]

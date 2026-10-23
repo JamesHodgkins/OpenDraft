@@ -92,17 +92,24 @@ pub fn plot_layout(document: &Document, layout: LayoutId) -> Result<PlotSheet, P
         let pieces = objects.flat_map(|o| document.drawn(o));
         for object in pieces.filter(|o| !vp.is_frozen(o.attrs.layer)) {
             let to_paper = |p: Point| vp.model_to_paper(p);
-            wide |= add_viewed(&mut sheet, document, &object, tolerance, &to_paper, &frame)?;
+            wide |= add_viewed(
+                &mut sheet,
+                document,
+                &object,
+                tolerance,
+                (&to_paper, &frame, &shown),
+            )?;
         }
     }
-    let sheet_height = sheet.height;
+    let sheet_window =
+        Bounds::from_points(Point::new(0.0, 0.0), Point::new(sheet.width, sheet.height));
     for object in document
         .visible_in(Some(layout.id))
         .flat_map(|o| document.drawn(o))
     {
         wide |= has_width(&object.entity);
         let (rgb, width) = look(document, &object);
-        for (points, closed) in dashed_outlines(document, &object, TOLERANCE_MM, sheet_height)? {
+        for (points, closed) in dashed_outlines(document, &object, TOLERANCE_MM, &sheet_window)? {
             sheet.paths.push(PlotPath {
                 points,
                 closed,
@@ -139,14 +146,13 @@ pub(crate) fn add_viewed(
     document: &Document,
     object: &crate::Object,
     tolerance: f64,
-    to_paper: &dyn Fn(Point) -> Point,
-    frame: &Bounds,
+    view: (&dyn Fn(Point) -> Point, &Bounds, &Bounds),
 ) -> Result<bool, PlotError> {
+    // How the object's units map to the sheet, the sheet's frame, and the
+    // window of the object's units that frame shows.
+    let (to_paper, frame, window) = view;
     let (rgb, width) = look(document, object);
-    // The height of what is shown, in the object's units: what a point sized
-    // as a share of the screen is a share of.
-    let view_height = (frame.max.y - frame.min.y) * tolerance / TOLERANCE_MM;
-    for (points, closed) in dashed_outlines(document, object, tolerance, view_height)? {
+    for (points, closed) in dashed_outlines(document, object, tolerance, window)? {
         let paper: Vec<Point> = points.iter().map(|p| to_paper(*p)).collect();
         for (points, closed) in clip_polyline(&paper, closed, frame) {
             sheet.paths.push(PlotPath {
@@ -210,29 +216,37 @@ fn dashed_outlines(
     document: &Document,
     object: &crate::Object,
     tolerance: f64,
-    view_height: f64,
+    window: &Bounds,
 ) -> Result<Vec<(Vec<Point>, bool)>, PlotError> {
     if let Entity::Point { at } = &object.entity {
-        return point_outlines(document, *at, tolerance, view_height);
+        // What a point sized as a share of the screen is a share of.
+        return point_outlines(document, *at, tolerance, window.max.y - window.min.y);
     }
-    // A long stretch of the line, solid; the window cuts it to size.
-    if let Some((origin, direction, ray)) = object.entity.infinite_line() {
-        let (a, b) = crate::infinite::segment(origin, direction, ray);
-        return Ok(vec![(vec![a, b], false)]);
-    }
+    // A construction line or ray is cut to the window (a little wider, so its
+    // end is not seen) and the pattern laid from its base point.
+    let infinite = object
+        .entity
+        .infinite_line()
+        .map(|line| crate::infinite::stand_in(line, document.dash_pattern(object), window));
+    let entity = match &infinite {
+        Some(None) => return Ok(Vec::new()),
+        Some(Some(line)) => line,
+        None => &object.entity,
+    };
     let Some((elements, scale)) = document
         .dash_pattern(object)
-        .filter(|_| is_dashable(&object.entity))
+        .filter(|_| is_dashable(entity))
     else {
-        return object_outlines(object, tolerance);
+        return match &infinite {
+            Some(_) => Ok(curve_outlines(entity, tolerance, false)
+                .map_err(|_| PlotError::TooDetailed)?
+                .unwrap_or_default()),
+            None => object_outlines(object, tolerance),
+        };
     };
-    let outlines = curve_outlines(
-        &object.entity,
-        tolerance,
-        !object.attrs.continuous_generation,
-    )
-    .map_err(|_| PlotError::TooDetailed)?
-    .unwrap_or_default();
+    let outlines = curve_outlines(entity, tolerance, !object.attrs.continuous_generation)
+        .map_err(|_| PlotError::TooDetailed)?
+        .unwrap_or_default();
     // A dot is a hair of line; the round cap makes it a dot.
     let dot = tolerance * 0.1;
     let mut out = Vec::new();
@@ -725,6 +739,39 @@ mod tests {
             .windows(2)
             .map(|w| (w[1].x - w[0].x).hypot(w[1].y - w[0].y))
             .sum()
+    }
+
+    #[test]
+    fn a_dashed_construction_line_plots_as_dashes_within_the_window_only() {
+        let dashed = Attributes {
+            linetype: Attr::Set("DASHED".into()),
+            ..Attributes::on_layer(crate::LayerId::DEFAULT)
+        };
+        let (mut doc, id) = plotted(&[]);
+        doc.add_with(
+            Entity::Xline {
+                origin: Point::new(5000.0, 4000.0),
+                direction: Point::new(1.0, 0.0),
+            },
+            dashed,
+        );
+        let sheet = plot_layout(&doc, id).unwrap();
+        // The pattern is laid in model units (12.7 of them, 0.127 mm at 1:100),
+        // so a 100 mm window holds hundreds of dashes, not the millions a line
+        // 2e7 units long would make.
+        assert!(
+            sheet.paths.len() > 100 && sheet.paths.len() < 2000,
+            "{}",
+            sheet.paths.len()
+        );
+        assert!(sheet.paths.iter().all(|p| p
+            .points
+            .iter()
+            .all(|q| q.x >= 50.0 - 1e-6 && q.x <= 150.0 + 1e-6)));
+        // The pattern lies where it would on the whole line: the same on a
+        // second plot whose window moves along it.
+        let again = plot_layout(&doc, id).unwrap();
+        assert_eq!(sheet.paths, again.paths);
     }
 
     #[test]

@@ -39,7 +39,13 @@ pub fn plot_region(
         .visible_in(None)
         .filter(|o| only.is_none_or(|ids| ids.contains(&o.id)) && o.bounds().intersects(&region));
     for object in objects.flat_map(|o| document.drawn(o)) {
-        wide |= add_viewed(&mut sheet, document, &object, tolerance, &to_paper, &frame)?;
+        wide |= add_viewed(
+            &mut sheet,
+            document,
+            &object,
+            tolerance,
+            (&to_paper, &frame, &region),
+        )?;
     }
     if wide {
         sheet

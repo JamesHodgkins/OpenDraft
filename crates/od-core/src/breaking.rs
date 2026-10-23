@@ -32,6 +32,10 @@ impl Entity {
         if matches!(self, Entity::Spline(_)) {
             return None;
         }
+        if self.infinite_line().is_some() {
+            let pieces = self.long_line().break_between(first, second)?;
+            return Some(pieces.into_iter().map(|p| self.resumed(p)).collect());
+        }
         let (a, b) = (self.nearest_point(first)?, self.nearest_point(second)?);
         let pieces = self.split_at(&[a, b]);
         if same(a, b) {
