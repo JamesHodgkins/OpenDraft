@@ -22,7 +22,7 @@ pub fn page(
     theme: &Theme,
     draft: &mut Settings,
     connections: &mut [ConnectionRow],
-    add_folder: &mut bool,
+    request: &mut Option<crate::settings_ui::FolderRequest>,
 ) {
     widgets::group_box(ui, theme, "MCP server (experimental)", |ui| {
         ui.checkbox(
@@ -113,7 +113,7 @@ pub fn page(
             draft.automation_roots.remove(i);
         }
         if widgets::secondary_button(ui, theme, "Add folder...").clicked() {
-            *add_folder = true;
+            *request = Some(crate::settings_ui::FolderRequest::Approve);
         }
     });
 }

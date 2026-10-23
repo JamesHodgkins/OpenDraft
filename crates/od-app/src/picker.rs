@@ -4,8 +4,9 @@
 use std::path::{Path, PathBuf};
 
 pub trait FilePicker {
-    /// Ask for a drawing to open; `None` if the user cancelled.
-    fn open(&mut self) -> Option<PathBuf>;
+    /// Ask for a drawing to open, starting in `directory` if known; `None`
+    /// if the user cancelled.
+    fn open(&mut self, directory: Option<&Path>) -> Option<PathBuf>;
 
     /// Ask where to save; `None` if the user cancelled. `title` is the
     /// dialog's, `suggested` the file name to offer, `directory` where to start if known, and `filter`
@@ -31,8 +32,11 @@ pub type Filter = (&'static str, &'static [&'static str]);
 pub struct NativePicker;
 
 impl FilePicker for NativePicker {
-    fn open(&mut self) -> Option<PathBuf> {
+    fn open(&mut self, directory: Option<&Path>) -> Option<PathBuf> {
         let mut dialog = rfd::FileDialog::new().set_title("Open drawing");
+        if let Some(directory) = directory {
+            dialog = dialog.set_directory(directory);
+        }
         for (name, extensions) in od_files::open_filters() {
             dialog = dialog.add_filter(name, &extensions);
         }
@@ -86,6 +90,8 @@ mod scripted {
         /// The kind of file (by name) each Save dialog offered.
         pub filters: Vec<String>,
         pub open_dialogs: usize,
+        /// The starting folder each Open dialog was given.
+        pub open_directories: Vec<Option<PathBuf>>,
         pub folders: VecDeque<Option<PathBuf>>,
     }
 
@@ -123,6 +129,10 @@ mod scripted {
             self.0.borrow().filters.clone()
         }
 
+        pub fn open_directories(&self) -> Vec<Option<PathBuf>> {
+            self.0.borrow().open_directories.clone()
+        }
+
         pub fn open_dialogs(&self) -> usize {
             self.0.borrow().open_dialogs
         }
@@ -132,9 +142,10 @@ mod scripted {
     pub struct ScriptedPicker(pub Script);
 
     impl FilePicker for ScriptedPicker {
-        fn open(&mut self) -> Option<PathBuf> {
+        fn open(&mut self, directory: Option<&Path>) -> Option<PathBuf> {
             let mut data = self.0 .0.borrow_mut();
             data.open_dialogs += 1;
+            data.open_directories.push(directory.map(Path::to_owned));
             data.opens.pop_front().flatten()
         }
 

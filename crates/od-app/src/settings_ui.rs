@@ -4,10 +4,20 @@
 use eframe::egui;
 use od_ui::{widgets, Palette, Theme};
 
+use crate::locations::Location;
 use crate::settings::{
     Settings, AUTOSAVE_CHOICES, CROSSHAIR_SIZE_RANGE, GRID_SPACING_RANGE, GRIP_SIZE_RANGE,
     PICK_SIZE_RANGE, SNAP_APERTURE_RANGE, UI_SCALES, ZOOM_SPEED_RANGE,
 };
+
+/// A folder the user asked to pick on the page; the dialog shows the picker
+/// once the page has been drawn.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FolderRequest {
+    /// Add a folder assistants may use.
+    Approve,
+    Choose(Location),
+}
 
 pub const TABS: &[&str] = &["Display", "Drafting", "Files", "Automation"];
 
@@ -17,13 +27,13 @@ pub fn page(
     index: usize,
     draft: &mut Settings,
     connections: &mut [crate::automation::ConnectionRow],
-    add_folder: &mut bool,
+    request: &mut Option<FolderRequest>,
 ) {
     match index {
         0 => display(ui, theme, draft),
         1 => drafting(ui, theme, draft),
-        2 => files(ui, theme, draft),
-        _ => crate::automation::settings_page(ui, theme, draft, connections, add_folder),
+        2 => files(ui, theme, draft, request),
+        _ => crate::automation::settings_page(ui, theme, draft, connections, request),
     }
 }
 
@@ -234,7 +244,65 @@ fn autosave_label(minutes: u32) -> String {
     }
 }
 
-fn files(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
+/// One folder: its name, where it points now, and Browse / Default.
+fn location_row(
+    ui: &mut egui::Ui,
+    theme: &Theme,
+    draft: &mut Settings,
+    location: Location,
+    request: &mut Option<FolderRequest>,
+) {
+    widgets::field_label(ui, theme, location.label());
+    let (text, set) = match location.chosen(draft) {
+        Some(folder) => (folder.display().to_string(), true),
+        None => (
+            location.default_folder().map_or_else(
+                || "Chosen by the system".to_owned(),
+                |d| d.display().to_string(),
+            ),
+            false,
+        ),
+    };
+    ui.horizontal(|ui| {
+        let color = if set {
+            theme.colors.text
+        } else {
+            theme.colors.text_weak
+        };
+        ui.add(egui::Label::new(egui::RichText::new(text).color(color)).truncate());
+    });
+    ui.horizontal(|ui| {
+        if widgets::secondary_button(ui, theme, "Browse...").clicked() {
+            *request = Some(FolderRequest::Choose(location));
+        }
+        ui.add_enabled_ui(set, |ui| {
+            if widgets::secondary_button(ui, theme, "Default").clicked() {
+                location.set(draft, None);
+            }
+        });
+    });
+    ui.label(
+        egui::RichText::new(location.note())
+            .size(theme.font_size_small)
+            .color(theme.colors.text_weak),
+    );
+}
+
+fn files(
+    ui: &mut egui::Ui,
+    theme: &Theme,
+    draft: &mut Settings,
+    request: &mut Option<FolderRequest>,
+) {
+    widgets::group_box(ui, theme, "Folders", |ui| {
+        for (i, location) in Location::ALL.into_iter().enumerate() {
+            if i > 0 {
+                ui.add_space(8.0);
+            }
+            location_row(ui, theme, draft, location, request);
+        }
+    });
+    ui.add_space(6.0);
     widgets::group_box(ui, theme, "Autosave", |ui| {
         widgets::field_label(ui, theme, "Keep a recovery copy of unsaved drawings every");
         let width = ui.available_width().min(160.0);
