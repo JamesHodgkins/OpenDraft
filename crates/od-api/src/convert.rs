@@ -5,14 +5,17 @@
 //! styles, linetypes).
 
 use od_core::mtext::MTextAttachment;
-use od_core::{Document, Ellipse, Entity, MText, Point, TextStyleId};
+use od_core::{
+    Attr, Attributes, Color, Document, Ellipse, Entity, LayerId, Lineweight, MText, Point,
+    TextStyleId,
+};
 
-use crate::entity::{attachment_name, PointDto};
+use crate::entity::{attachment_name, ColorDto, LinetypeDto, LineweightDto, PointDto};
 use crate::limits::{POINTS_PER_ENTITY_MAX, STRING_BYTES_MAX};
-use crate::write::{GeometryPatch, NewGeometry};
+use crate::write::{AttributesInput, GeometryPatch, NewGeometry};
 use crate::{ApiError, ErrorCode};
 
-pub(crate) fn bad(message: impl Into<String>) -> ApiError {
+fn bad(message: impl Into<String>) -> ApiError {
     ApiError::new(ErrorCode::InvalidGeometry, message)
 }
 
@@ -30,7 +33,7 @@ fn finite(what: &str, v: f64) -> Result<f64, ApiError> {
         .ok_or_else(|| bad(format!("{what} must be finite")))
 }
 
-pub(crate) fn positive(what: &str, v: f64) -> Result<f64, ApiError> {
+fn positive(what: &str, v: f64) -> Result<f64, ApiError> {
     finite(what, v).and_then(|v| {
         (v > 0.0)
             .then_some(v)
@@ -41,10 +44,7 @@ pub(crate) fn positive(what: &str, v: f64) -> Result<f64, ApiError> {
 /// Whether the kind can be written through the API; others are read-only.
 pub fn is_writable(entity: &Entity) -> bool {
     match entity {
-        Entity::Point { .. }
-        | Entity::Xline { .. }
-        | Entity::Ray { .. }
-        | Entity::Line { .. }
+        Entity::Line { .. }
         | Entity::Circle { .. }
         | Entity::Arc { .. }
         | Entity::Rectangle { .. }
@@ -52,6 +52,9 @@ pub fn is_writable(entity: &Entity) -> bool {
         | Entity::Ellipse(_)
         | Entity::MText(_) => true,
         Entity::Spline(_)
+        | Entity::Point { .. }
+        | Entity::Xline { .. }
+        | Entity::Ray { .. }
         | Entity::Dimension(_)
         | Entity::MLeader(_)
         | Entity::Leader(_)
@@ -181,27 +184,9 @@ fn check_text(m: &MText) -> Result<(), ApiError> {
     m.validate().map_err(|e| bad(e.to_string()))
 }
 
-/// A construction line or ray from a base point and any direction but zero.
-fn infinite_line(ray: bool, origin: &PointDto, direction: &PointDto) -> Result<Entity, ApiError> {
-    let origin = point("the base point", origin)?;
-    let direction = point("the direction", direction)?;
-    let direction = od_core::infinite::unit(direction)
-        .ok_or_else(|| bad("the direction must not be zero".to_owned()))?;
-    Ok(if ray {
-        Entity::Ray { origin, direction }
-    } else {
-        Entity::Xline { origin, direction }
-    })
-}
-
 /// The entity a [`NewGeometry`] describes.
 pub fn entity_from_new(doc: &Document, geometry: &NewGeometry) -> Result<Entity, ApiError> {
     match geometry {
-        NewGeometry::Point { at } => Ok(Entity::Point {
-            at: point("the point", at)?,
-        }),
-        NewGeometry::Xline { origin, direction } => infinite_line(false, origin, direction),
-        NewGeometry::Ray { origin, direction } => infinite_line(true, origin, direction),
         NewGeometry::Line { start, end } => Ok(Entity::Line {
             start: point("the start", start)?,
             end: point("the end", end)?,
@@ -285,25 +270,7 @@ pub fn patch_entity(
         Some(p) => point(what, p),
         None => Ok(was),
     };
-    let line = |ray: bool, origin: &Option<PointDto>, direction: &Option<PointDto>| {
-        let (was_origin, was_direction, _) = old.infinite_line().ok_or_else(|| unsupported(old))?;
-        let origin = pt("the base point", origin, was_origin)?;
-        let direction = match direction {
-            Some(d) => point("the direction", d)?,
-            None => was_direction,
-        };
-        infinite_line(ray, &origin.into(), &direction.into())
-    };
     match (old, patch) {
-        (Entity::Point { at }, GeometryPatch::Point { at: new }) => Ok(Entity::Point {
-            at: pt("the point", new, *at)?,
-        }),
-        (Entity::Xline { .. }, GeometryPatch::Xline { origin, direction }) => {
-            line(false, origin, direction)
-        }
-        (Entity::Ray { .. }, GeometryPatch::Ray { origin, direction }) => {
-            line(true, origin, direction)
-        }
         (Entity::Line { start, end }, GeometryPatch::Line { start: s, end: e }) => {
             Ok(Entity::Line {
                 start: pt("the start", s, *start)?,
@@ -408,9 +375,6 @@ pub fn patch_entity(
             Ok(Entity::MText(Box::new(m)))
         }
         (old, _) if !is_writable(old) => Err(unsupported(old)),
-        (old, GeometryPatch::Point { .. }) => Err(mismatch(old, "point")),
-        (old, GeometryPatch::Xline { .. }) => Err(mismatch(old, "xline")),
-        (old, GeometryPatch::Ray { .. }) => Err(mismatch(old, "ray")),
         (old, GeometryPatch::Line { .. }) => Err(mismatch(old, "line")),
         (old, GeometryPatch::Circle { .. }) => Err(mismatch(old, "circle")),
         (old, GeometryPatch::Arc { .. }) => Err(mismatch(old, "arc")),
@@ -421,14 +385,60 @@ pub fn patch_entity(
     }
 }
 
-pub use crate::convert_attrs::attributes_from;
+/// `base` with the fields set in `input` replaced, after checking that what
+/// they name exists.
+pub fn attributes_from(
+    doc: &Document,
+    mut base: Attributes,
+    input: &AttributesInput,
+) -> Result<Attributes, ApiError> {
+    if let Some(id) = input.layer_id {
+        let layer = LayerId(id.0);
+        doc.layer(layer).ok_or_else(|| {
+            ApiError::new(ErrorCode::InvalidReference, "No such layer.").detail("layer_id", id)
+        })?;
+        base.layer = layer;
+    }
+    match &input.color {
+        None => {}
+        Some(ColorDto::ByLayer) => base.color = Attr::ByLayer,
+        Some(ColorDto::Foreground) => base.color = Attr::Set(Color::Foreground),
+        Some(ColorDto::Rgb { r, g, b }) => base.color = Attr::Set(Color::Rgb(*r, *g, *b)),
+    }
+    match &input.linetype {
+        None => {}
+        Some(LinetypeDto::ByLayer) => base.linetype = Attr::ByLayer,
+        Some(LinetypeDto::Named { name }) => {
+            doc.linetypes().named(name).ok_or_else(|| {
+                ApiError::new(ErrorCode::InvalidReference, "No such linetype.")
+                    .detail("linetype", name)
+            })?;
+            base.linetype = Attr::Set(name.clone());
+        }
+    }
+    match &input.lineweight {
+        None => {}
+        Some(LineweightDto::ByLayer) => base.lineweight = Attr::ByLayer,
+        Some(LineweightDto::Set { hundredths_mm }) => {
+            let weight = Lineweight(*hundredths_mm);
+            if !Lineweight::STANDARD.contains(&weight) {
+                return Err(bad(format!(
+                    "{hundredths_mm} is not a standard lineweight (hundredths of a mm)"
+                )));
+            }
+            base.lineweight = Attr::Set(weight);
+        }
+    }
+    if let Some(scale) = input.linetype_scale {
+        base.linetype_scale = positive("the linetype scale", scale)?;
+    }
+    Ok(base)
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::entity::{ColorDto, LinetypeDto, LineweightDto};
-    use crate::write::{AttributesInput, NewGeometry as G};
-    use od_core::{Attr, Attributes, Color};
+    use crate::write::NewGeometry as G;
 
     fn p(x: f64, y: f64) -> PointDto {
         PointDto { x, y }
@@ -509,78 +519,6 @@ mod tests {
                 "{case:?}"
             );
         }
-    }
-
-    #[test]
-    fn points_construction_lines_and_rays_can_be_written_and_patched() {
-        let doc = Document::default();
-        let point = entity_from_new(&doc, &G::Point { at: p(1.0, 2.0) }).unwrap();
-        assert_eq!(
-            point,
-            Entity::Point {
-                at: Point::new(1.0, 2.0)
-            }
-        );
-        let moved = patch_entity(
-            &doc,
-            &point,
-            &GeometryPatch::Point {
-                at: Some(p(5.0, 6.0)),
-            },
-        )
-        .unwrap();
-        assert_eq!(
-            moved,
-            Entity::Point {
-                at: Point::new(5.0, 6.0)
-            }
-        );
-        let line = entity_from_new(
-            &doc,
-            &G::Xline {
-                origin: p(0.0, 0.0),
-                direction: p(3.0, 4.0),
-            },
-        )
-        .unwrap();
-        let (_, d, ray) = line.infinite_line().unwrap();
-        assert!((d.x - 0.6).abs() < 1e-12 && (d.y - 0.8).abs() < 1e-12 && !ray);
-        let turned = patch_entity(
-            &doc,
-            &line,
-            &GeometryPatch::Xline {
-                origin: None,
-                direction: Some(p(0.0, 2.0)),
-            },
-        )
-        .unwrap();
-        assert_eq!(turned.infinite_line().unwrap().1, Point::new(0.0, 1.0));
-        let ray = entity_from_new(
-            &doc,
-            &G::Ray {
-                origin: p(1.0, 1.0),
-                direction: p(-1.0, 0.0),
-            },
-        )
-        .unwrap();
-        assert!(ray.infinite_line().unwrap().2);
-        let none = entity_from_new(
-            &doc,
-            &G::Ray {
-                origin: p(1.0, 1.0),
-                direction: p(0.0, 0.0),
-            },
-        );
-        assert!(none.is_err(), "a direction needs a length");
-        let wrong = patch_entity(
-            &doc,
-            &line,
-            &GeometryPatch::Ray {
-                origin: None,
-                direction: None,
-            },
-        );
-        assert!(wrong.is_err(), "the kind stays");
     }
 
     #[test]

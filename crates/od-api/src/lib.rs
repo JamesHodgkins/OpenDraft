@@ -4,7 +4,6 @@
 
 pub mod command_ops;
 pub mod convert;
-mod convert_attrs;
 pub mod entity;
 mod entity_bounds;
 mod entity_leaders;
