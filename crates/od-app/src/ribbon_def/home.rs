@@ -89,6 +89,7 @@ fn draw() -> Panel {
         ],
         extra: vec![
             item("draw.spline", "Spline", icons::DRAW_SPLINE),
+            item("draw.donut", "Donut", icons::DRAW_DONUT),
             item("draw.point_multiple", "Multiple Point", icons::DRAW_POINT),
             item("draw.point", "Single Point", icons::DRAW_POINT),
         ],

@@ -102,6 +102,8 @@ icons! {
     DRAW_CIRCLE_DIAMETER = '\u{e07a}';
     DRAW_CIRCLE_RADIUS = '\u{e07a}';
     DRAW_CIRCLE_TTR = '\u{e07a}';
+    /// Lucide's donut.
+    DRAW_DONUT = '\u{e4c0}';
     /// Lucide has no ellipse; its egg is the nearest single oval outline.
     DRAW_ELLIPSE = '\u{e25c}';
     DRAW_GRADIENT = '\u{e5a0}';

@@ -12,6 +12,7 @@ mod corner;
 mod curve_snap;
 pub mod dimension;
 mod document;
+pub mod donut;
 pub mod ellipse;
 mod entity_kind;
 mod explode;
