@@ -24,6 +24,15 @@ pub fn page(
     connections: &mut [ConnectionRow],
     request: &mut Option<crate::settings_ui::FolderRequest>,
 ) {
+    ui.columns(2, |cols| {
+        let ui = &mut cols[0];
+        server_groups(ui, theme, draft);
+        let ui = &mut cols[1];
+        connection_groups(ui, theme, draft, connections, request);
+    });
+}
+
+fn server_groups(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
     widgets::group_box(ui, theme, "MCP server (experimental)", |ui| {
         ui.checkbox(
             &mut draft.automation_enabled,
@@ -47,10 +56,14 @@ pub fn page(
         "Connect an assistant",
         |ui| match super::setup::sidecar_path() {
             Some(program) => {
-                ui.label(
-                    egui::RichText::new(format!("Program: {}", program.display()))
-                        .size(theme.font_size_small),
-                );
+                ui.add(
+                    egui::Label::new(
+                        egui::RichText::new(format!("Program: {}", program.display()))
+                            .size(theme.font_size_small),
+                    )
+                    .truncate(),
+                )
+                .on_hover_text(program.display().to_string());
                 if widgets::secondary_button(ui, theme, "Copy MCP config").clicked() {
                     ui.ctx().copy_text(super::setup::config_snippet(&program));
                 }
@@ -73,7 +86,15 @@ pub fn page(
             }
         },
     );
-    ui.add_space(6.0);
+}
+
+fn connection_groups(
+    ui: &mut egui::Ui,
+    theme: &Theme,
+    draft: &mut Settings,
+    connections: &mut [ConnectionRow],
+    request: &mut Option<crate::settings_ui::FolderRequest>,
+) {
     widgets::group_box(ui, theme, "Connections", |ui| {
         if connections.is_empty() {
             ui.label(
