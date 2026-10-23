@@ -80,6 +80,8 @@ pub const TABLE: &[(&str, AutomationPolicy, CommandEffect)] = &[
     ("dim.arc", InteractiveInApp, Mutation),
     ("dim.radius", InteractiveInApp, Mutation),
     ("dim.diameter", InteractiveInApp, Mutation),
+    ("dim.edit", InteractiveInApp, Mutation),
+    ("dim.textedit", InteractiveInApp, Mutation),
     // Modifying. Erase acts on the selection at once, so it is not
     // interactive; the batch tool deletes by id instead.
     ("modify.hatchedit", InteractiveInApp, Mutation),

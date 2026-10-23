@@ -86,6 +86,9 @@ pub struct Dimension {
     /// Where the user put the middle of the text; `None` lets the style place
     /// it.
     pub text_pos: Option<Point>,
+    /// The angle the user turned the text to (radians, from the x axis);
+    /// `None` lets the style decide.
+    pub text_angle: Option<f64>,
 }
 
 /// The dimension drawn: its pieces and where the text's middle is.
@@ -101,6 +104,7 @@ impl Dimension {
             style: style.clone().sanitized(),
             text: DimText::Measured,
             text_pos: None,
+            text_angle: None,
         }
     }
 

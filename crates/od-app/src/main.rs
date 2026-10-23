@@ -25,6 +25,7 @@ mod dim_style_draft;
 mod dim_style_table;
 mod dim_vars;
 mod dimension_cmd;
+mod dimension_edit_cmd;
 mod divide_cmd;
 mod dock;
 mod donut_cmd;

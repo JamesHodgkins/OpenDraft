@@ -48,6 +48,9 @@ pub(super) struct DimensionDto {
     /// Where the user put the text, when they did.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     text_pos: Option<PointDto>,
+    /// The angle the user turned the text to, in radians.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    text_angle: Option<f64>,
     /// The style's differences from the stock one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     style: Option<Value>,
@@ -96,6 +99,7 @@ impl DimensionDto {
             kind,
             text: d.text.to_entry(),
             text_pos: d.text_pos.map(point),
+            text_angle: d.text_angle,
             style: sparse_style(&d.style),
         }
     }
@@ -153,6 +157,7 @@ impl DimensionDto {
             style: style_from(self.style.as_ref())?,
             text: DimText::from_entry(&self.text),
             text_pos: self.text_pos.as_ref().map(pt).transpose()?,
+            text_angle: angle(&self.text_angle)?,
         };
         if dimension.measurement().is_none() {
             return invalid("a dimension has nothing to measure");
@@ -424,6 +429,7 @@ mod tests {
         let mut linear = Dimension::linear(p(0.0, 0.0), p(10.0, 3.0), p(0.0, 8.0), 0.5, &style);
         linear.text = DimText::Custom("<> TYP".to_owned());
         linear.text_pos = Some(p(4.0, 9.0));
+        linear.text_angle = Some(0.75);
         let mut aligned = Dimension::aligned(p(1.0, 1.0), p(5.0, 9.0), p(0.0, 0.0), &style);
         if let DimKind::Linear { oblique, .. } = &mut aligned.kind {
             *oblique = Some(1.2);
@@ -567,6 +573,7 @@ mod tests {
             },
             text: String::new(),
             text_pos: None,
+            text_angle: None,
             style: None,
         };
         assert!(nothing.to_dimension().is_err(), "nothing to measure");
