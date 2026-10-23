@@ -342,6 +342,8 @@ impl Merge<'_> {
             Entity::Dimension(d) => {
                 let mut d = d.clone();
                 d.style = self.dim_style(&d.style);
+                // Its objects have other ids here, or none.
+                d.assoc.clear();
                 Entity::Dimension(d)
             }
             Entity::MLeader(l) => {

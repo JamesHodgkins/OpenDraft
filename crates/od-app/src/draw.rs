@@ -17,6 +17,11 @@ pub(crate) fn distance(a: Point, b: Point) -> f64 {
 
 pub(crate) fn add(ed: &Editor, entity: Entity, name: &'static str) -> Result<(), Cancelled> {
     ed.transaction(name, move |tx| {
+        // A dimension follows the objects its points were taken from.
+        let entity = match entity {
+            Entity::Dimension(d) => Entity::Dimension(Box::new(d.associated(tx.document()))),
+            other => other,
+        };
         tx.add(entity);
         Ok(())
     })

@@ -58,6 +58,11 @@ fn frame(kind: &DimKind) -> Option<Frame> {
     Some(Frame { dir, q1, q2 })
 }
 
+/// The direction the dimension line runs.
+pub(super) fn line_direction(kind: &DimKind) -> Option<(f64, f64)> {
+    frame(kind).map(|f| f.dir)
+}
+
 /// The middle of the dimension line, where its grip sits.
 pub(super) fn line_middle(kind: &DimKind) -> Option<Point> {
     let Frame { q1, q2, .. } = frame(kind)?;
@@ -99,7 +104,8 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
         s.arrow_size
     };
     let span = dist(q1, q2);
-    let width = font::text_width(&label, h);
+    let contents = dim.contents();
+    let width = font::contents_width(&contents, h);
     let clearance = if label.is_empty() {
         0.0
     } else {
@@ -117,16 +123,32 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
         }
         None => fit(span, size, clearance, s.fit, s.text_inside),
     };
+    // DIMJUST 3 and 4 put the text over an extension line, along it.
+    let over = s.text_just >= 3;
+    let (arrows_in, text_in) = if over {
+        (span >= 2.0 * size, false)
+    } else {
+        (arrows_in, text_in)
+    };
+    let over_foot = if s.text_just == 4 {
+        (*p2, q2)
+    } else {
+        (*p1, q1)
+    };
+    let over_dir = unit(sub(over_foot.1, over_foot.0)).unwrap_or(dir);
     let horizontal = if text_in {
         s.inside_horizontal
     } else {
         s.outside_horizontal
     };
-    let text_angle = if horizontal {
+    let text_angle = if over {
+        readable(over_dir.1.atan2(over_dir.0))
+    } else if horizontal {
         0.0
     } else {
         readable(line_angle)
     };
+    let text_angle = dim.text_angle.unwrap_or(text_angle);
     let up = direction(text_angle + FRAC_PI_2);
     let sloped = horizontal && dir.1.abs() > 1e-9;
     let mid_points = Point::new((p1.x + p2.x) / 2.0, (p1.y + p2.y) / 2.0);
@@ -162,7 +184,9 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
     } else {
         span + size + g + width / 2.0
     };
-    let default_centre = {
+    let default_centre = if over {
+        along(over_foot.1, over_dir, s.ext_extend + g + width / 2.0)
+    } else {
         let on_line = along(q1, dir, tc_along);
         let (ox, oy) = if centred && text_in {
             (0.0, 0.0)
@@ -181,7 +205,15 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
             continue;
         }
         if let Some(u) = unit(sub(q, p)) {
-            out.line(along(p, u, s.ext_offset), along(q, u, s.ext_extend));
+            // A fixed length counts from the dimension line, not the origin.
+            let start = match s.ext_fixed {
+                Some(length) => {
+                    let from_line = dist(p, q) - length;
+                    along(p, u, from_line.max(s.ext_offset))
+                }
+                None => along(p, u, s.ext_offset),
+            };
+            out.line(start, along(q, u, s.ext_extend));
         }
     }
     // Arrows.
@@ -192,7 +224,7 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
         (flip(dir), dir)
     };
     out.arrow(s.arrow, q1, back1, size);
-    out.arrow(s.arrow, q2, back2, size);
+    out.arrow(s.arrow2.unwrap_or(s.arrow), q2, back2, size);
 
     // Dimension line, in pieces to draw.
     let mut lines: Vec<(Point, Point)> = Vec::new();
@@ -224,7 +256,7 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
         lines.push((q2, along(q2, dir, stub)));
     }
     // A line that follows text moved off the end (DIMTMOVE 0) or outside.
-    let follows = dim.text_pos.is_none() || s.text_move == 0;
+    let follows = (dim.text_pos.is_none() || s.text_move == 0) && !over;
     if !text_in && !label.is_empty() && follows {
         if tc > span {
             let end = if centred {
@@ -241,6 +273,9 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
             };
             lines.push((q1, along(q1, dir, end.min(0.0))));
         }
+    }
+    if let Some(at) = dim.jog_line {
+        lines = super::jogline::zigzag(lines, at, q1, dir, 1.5 * s.text_height);
     }
     let has_text = !label.is_empty();
     let breaks = has_text && text_in && centred && dim.text_pos.is_none();
@@ -264,7 +299,7 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
         }
     }
     if has_text {
-        out.text(&label, h, centre, text_angle, s.text_style);
+        out.label(&s, &contents, width, centre, centre, text_angle);
     }
     Some(Built {
         pieces: out.pieces,
@@ -378,6 +413,48 @@ mod tests {
     fn coincident_points_make_no_aligned_dimension() {
         let d = Dimension::aligned(p(1.0, 1.0), p(1.0, 1.0), p(0.0, 5.0), &style());
         assert!(d.picture().is_empty());
+    }
+
+    #[test]
+    fn text_over_an_extension_line_lies_along_it_beyond_its_end() {
+        let mut d = Dimension::aligned(p(0.0, 0.0), p(10.0, 0.0), p(0.0, 5.0), &style());
+        d.style.text_just = 3;
+        let centre = d.text_centre().unwrap();
+        // The first extension line runs up from (0, 0): the text continues it.
+        assert!(centre.x.abs() < 1e-9 && centre.y > 5.0, "{centre:?}");
+        d.style.text_just = 4;
+        let centre = d.text_centre().unwrap();
+        assert!(
+            (centre.x - 10.0).abs() < 1e-9 && centre.y > 5.0,
+            "{centre:?}"
+        );
+    }
+
+    #[test]
+    fn a_fixed_extension_line_counts_from_the_dimension_line() {
+        let fixed = DimStyle {
+            ext_fixed: Some(2.0),
+            ..style()
+        };
+        let d = Dimension::aligned(p(0.0, 0.0), p(10.0, 0.0), p(0.0, 5.0), &fixed);
+        let long = lines(&d)
+            .into_iter()
+            .filter(|(a, b)| (a.x - b.x).abs() < 1e-9 && a.x.abs() < 1e-9)
+            .map(|(a, b)| (b.y - a.y).abs())
+            .fold(0.0, f64::max);
+        // Two long from the line to the origin side, plus the overshoot.
+        assert!((long - (2.0 + fixed.ext_extend)).abs() < 1e-9, "{long}");
+    }
+
+    #[test]
+    fn a_second_arrowhead_of_its_own_kind() {
+        let mixed = DimStyle {
+            arrow2: Some(crate::dimension::Arrow::None),
+            ..style()
+        };
+        let d = Dimension::aligned(p(0.0, 0.0), p(10.0, 0.0), p(0.0, 5.0), &mixed);
+        let plain = Dimension::aligned(p(0.0, 0.0), p(10.0, 0.0), p(0.0, 5.0), &style());
+        assert!(d.picture().len() < plain.picture().len());
     }
 
     #[test]

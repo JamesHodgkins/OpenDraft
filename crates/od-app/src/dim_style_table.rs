@@ -17,7 +17,7 @@ pub enum DimEdit {
     /// A style of the table, by name.
     Named(String),
     /// A style that is not in the table yet: OK adds it.
-    New(DimStyle),
+    New(Box<DimStyle>),
 }
 
 /// Why `name` cannot be a style's name, if it cannot. `ignoring` is the

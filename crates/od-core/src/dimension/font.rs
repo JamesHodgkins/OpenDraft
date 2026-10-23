@@ -8,18 +8,23 @@ use crate::text::escape_for_contents;
 use crate::text_style::{TextStyle, TextStyleId};
 use crate::Point;
 
-fn label_at_origin(text: &str, height: f64) -> MText {
+fn label_at_origin(contents: &str, height: f64) -> MText {
     MText::new(
         Point::new(0.0, 0.0),
         height,
-        escape_for_contents(text),
+        contents.to_owned(),
         TextStyleId::STANDARD,
     )
 }
 
 /// Width of `text` at cap height `height`.
 pub fn text_width(text: &str, height: f64) -> f64 {
-    label_at_origin(text, height)
+    contents_width(&escape_for_contents(text), height)
+}
+
+/// Width of text written as multiline text `contents` (stacks, sizes).
+pub fn contents_width(contents: &str, height: f64) -> f64 {
+    label_at_origin(contents, height)
         .layout(&TextStyle::standard())
         .frame_width
 }
@@ -33,10 +38,21 @@ pub fn place(
     angle: f64,
     style: TextStyleId,
 ) -> Option<MText> {
-    if text.is_empty() {
+    place_contents(&escape_for_contents(text), height, centre, angle, style)
+}
+
+/// As [`place`] for text written as multiline text `contents`.
+pub fn place_contents(
+    contents: &str,
+    height: f64,
+    centre: Point,
+    angle: f64,
+    style: TextStyleId,
+) -> Option<MText> {
+    if contents.is_empty() {
         return None;
     }
-    let mut label = label_at_origin(text, height);
+    let mut label = label_at_origin(contents, height);
     label.style = style;
     let layout = label.layout(&TextStyle::standard());
     let baseline = layout.lines.first()?.baseline;
@@ -104,7 +120,7 @@ mod tests {
     #[test]
     fn the_symbols_dimensions_use_are_in_the_font() {
         for symbol in ["Ø", "°", "±"] {
-            let label = label_at_origin(symbol, 2.5);
+            let label = label_at_origin(&escape_for_contents(symbol), 2.5);
             let layout = label.layout(&TextStyle::standard());
             assert!(
                 layout.diagnostics.is_empty() && !layout.glyphs.is_empty(),

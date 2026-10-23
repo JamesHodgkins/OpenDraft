@@ -3,7 +3,7 @@
 //! the current style never moves an existing dimension.
 
 use crate::text_style::TextStyleId;
-use crate::units::{LengthFormat, Units};
+use crate::units::{AngleFormat, LengthFormat, Units};
 
 /// What the ends of a dimension line look like.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -95,8 +95,42 @@ pub struct DimStyle {
     pub decimal_separator: char,
     /// `DIMPOST`: text around the value, `<>` standing for it ("<> mm").
     pub post: String,
+    /// `DIMAUNIT`: how angular dimensions write their angle.
+    pub angle_format: AngleFormat,
+    /// `DIMADEC`: decimals of an angular dimension.
+    pub angle_precision: u8,
+    /// `DIMDLI`: distance between the lines of baseline dimensions.
+    pub baseline_spacing: f64,
     /// `DIMARCSYM`: 0 symbol before the text, 1 above it, 2 none.
     pub arc_symbol: u8,
+    /// Tolerance (`DIMTOL`, `DIMLIM`): 0 none, 1 symmetrical (`DIMTP`),
+    /// 2 deviation (`DIMTP` over `DIMTM`), 3 limits.
+    pub tol_mode: u8,
+    /// `DIMTP`, `DIMTM`.
+    pub tol_plus: f64,
+    pub tol_minus: f64,
+    /// `DIMTDEC`: decimals of the tolerance.
+    pub tol_precision: u8,
+    /// `DIMTFAC`: the tolerance text's height as a fraction of the text's.
+    pub tol_scale: f64,
+    /// `DIMALT`: the measurement again in alternate units, in brackets.
+    pub alt_on: bool,
+    /// `DIMALTF`: the multiplier to alternate units.
+    pub alt_factor: f64,
+    /// `DIMALTD`: decimals of the alternate value.
+    pub alt_precision: u8,
+    /// `DIMAPOST`: text after the alternate value.
+    pub alt_post: String,
+    /// A box round the text (AutoCAD: `DIMGAP` below zero).
+    pub text_frame: bool,
+    /// A mask behind the text in the colour of the window (`DIMTFILL`).
+    pub text_fill: bool,
+    /// The second arrowhead when it differs from the first (`DIMSAH`,
+    /// `DIMBLK2`).
+    pub arrow2: Option<Arrow>,
+    /// Extension lines of one length from the dimension line
+    /// (`DIMFXLON`, `DIMFXL`).
+    pub ext_fixed: Option<f64>,
     /// `DIMTXSTY`: the text style the words are written in. Sizes are
     /// worked out in the Standard style; the style only shapes the glyphs
     /// when they are drawn or plotted.
@@ -133,7 +167,23 @@ impl Default for DimStyle {
             trim_zeros: false,
             decimal_separator: '.',
             post: String::new(),
+            angle_format: AngleFormat::DecimalDegrees,
+            angle_precision: 0,
+            baseline_spacing: 3.75,
             arc_symbol: 0,
+            tol_mode: 0,
+            tol_plus: 0.0,
+            tol_minus: 0.0,
+            tol_precision: 2,
+            tol_scale: 1.0,
+            alt_on: false,
+            alt_factor: 25.4,
+            alt_precision: 2,
+            alt_post: String::new(),
+            text_frame: false,
+            text_fill: false,
+            arrow2: None,
+            ext_fixed: None,
             text_style: TextStyleId::STANDARD,
         }
     }
@@ -165,7 +215,36 @@ impl DimStyle {
             d.text_height
         };
         self.text_gap = size(self.text_gap, d.text_gap);
-        self.centre_mark = size(self.centre_mark, d.centre_mark);
+        self.centre_mark = if self.centre_mark.is_finite() {
+            self.centre_mark
+        } else {
+            d.centre_mark
+        };
+        self.baseline_spacing = size(self.baseline_spacing, d.baseline_spacing);
+        self.tol_mode = self.tol_mode.min(3);
+        self.tol_plus = if self.tol_plus.is_finite() {
+            self.tol_plus
+        } else {
+            0.0
+        };
+        self.tol_minus = if self.tol_minus.is_finite() {
+            self.tol_minus
+        } else {
+            0.0
+        };
+        self.tol_precision = self.tol_precision.min(crate::units::MAX_PRECISION);
+        self.tol_scale = if self.tol_scale.is_finite() && self.tol_scale > 0.0 {
+            self.tol_scale
+        } else {
+            1.0
+        };
+        self.alt_factor = if self.alt_factor.is_finite() && self.alt_factor != 0.0 {
+            self.alt_factor
+        } else {
+            d.alt_factor
+        };
+        self.alt_precision = self.alt_precision.min(crate::units::MAX_PRECISION);
+        self.ext_fixed = self.ext_fixed.filter(|l| l.is_finite() && *l > 0.0);
         self.round_to = size(self.round_to, 0.0);
         self.linear_factor = if self.linear_factor.is_finite() && self.linear_factor != 0.0 {
             self.linear_factor
@@ -173,11 +252,12 @@ impl DimStyle {
             1.0
         };
         self.text_above = self.text_above.min(4);
-        self.text_just = self.text_just.min(2);
+        self.text_just = self.text_just.min(4);
         self.fit = self.fit.min(3);
         self.text_move = self.text_move.min(2);
         self.precision = self.precision.min(crate::units::MAX_PRECISION);
         self.arc_symbol = self.arc_symbol.min(2);
+        self.angle_precision = self.angle_precision.min(crate::units::MAX_PRECISION);
         self
     }
 

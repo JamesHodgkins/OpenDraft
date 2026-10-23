@@ -67,6 +67,17 @@ The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
 | ![](dim-aligned.svg) | `dim-aligned.svg` | move-diagonal | Aligned |
 | ![](dim-angular.svg) | `dim-angular.svg` | triangle-right | Angular |
 | ![](dim-arc.svg) | `dim-arc.svg` | circle-dashed | Arc Length |
+| ![](dim-baseline.svg) | `dim-baseline.svg` | align-start-vertical | Baseline |
+| ![](dim-centre.svg) | `dim-centre.svg` | circle-dot | Center Mark |
+| ![](dim-continue.svg) | `dim-continue.svg` | between-horizontal-start | Continue |
+| ![](dim-disassociate.svg) | `dim-disassociate.svg` | link-2-off | Disassociate |
+| ![](dim-edit.svg) | `dim-edit.svg` | pencil-ruler | Edit |
+| ![](dim-jogged.svg) | `dim-jogged.svg` | route | Jogged |
+| ![](dim-jogline.svg) | `dim-jogline.svg` | chart-spline | Jog Line |
+| ![](dim-ordinate.svg) | `dim-ordinate.svg` | crosshair | Ordinate |
+| ![](dim-reassociate.svg) | `dim-reassociate.svg` | link-2 | Reassociate |
+| ![](dim-space.svg) | `dim-space.svg` | align-vertical-space-between | Space |
+| ![](dim-textedit.svg) | `dim-textedit.svg` | text-cursor-input | Text Edit |
 | ![](dim-diameter.svg) | `dim-diameter.svg` | diameter | Diameter |
 | ![](dim-dim.svg) | `dim-dim.svg` | ruler | Dimension |
 | ![](dim-linear.svg) | `dim-linear.svg` | move-horizontal | Linear |

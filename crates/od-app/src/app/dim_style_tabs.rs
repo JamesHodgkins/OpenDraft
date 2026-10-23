@@ -4,13 +4,16 @@
 
 use eframe::egui::{self, RichText};
 use od_core::units::MAX_PRECISION;
-use od_core::{Arrow, Document, LengthFormat, Units};
+use od_core::{AngleFormat, Arrow, Document, LengthFormat, Units};
 use od_ui::{widgets, Theme};
 
 use crate::dim_style_draft::{alignment, Draft};
 
+#[path = "dim_style_tabs_more.rs"]
+pub(super) mod more;
+
 const LABEL_WIDTH: f32 = 150.0;
-const FIELD_WIDTH: f32 = 170.0;
+pub(super) const FIELD_WIDTH: f32 = 170.0;
 
 /// AutoCAD's tab names, in its order.
 pub(super) const TABS: [&str; 7] = [
@@ -24,7 +27,13 @@ pub(super) const TABS: [&str; 7] = [
 ];
 
 const VERTICAL: [&str; 5] = ["Centered", "Above", "Outside", "JIS", "Below"];
-const HORIZONTAL: [&str; 3] = ["Centered", "At Ext Line 1", "At Ext Line 2"];
+const HORIZONTAL: [&str; 5] = [
+    "Centered",
+    "At Ext Line 1",
+    "At Ext Line 2",
+    "Over Ext Line 1",
+    "Over Ext Line 2",
+];
 const SEPARATORS: [(char, &str); 3] = [
     ('.', "'.' (Period)"),
     (',', "',' (Comma)"),
@@ -46,7 +55,7 @@ const MOVED_TEXT: [&str; 3] = [
 ];
 
 /// A caption and a control on one row.
-fn row(ui: &mut egui::Ui, theme: &Theme, label: &str, add: impl FnOnce(&mut egui::Ui)) {
+pub(super) fn row(ui: &mut egui::Ui, theme: &Theme, label: &str, add: impl FnOnce(&mut egui::Ui)) {
     ui.horizontal(|ui| {
         ui.add_sized(
             [LABEL_WIDTH, 24.0],
@@ -58,7 +67,13 @@ fn row(ui: &mut egui::Ui, theme: &Theme, label: &str, add: impl FnOnce(&mut egui
 }
 
 /// A drop-down over `labels`, choosing an index.
-fn choice(ui: &mut egui::Ui, theme: &Theme, id: &str, labels: &[&str], value: &mut usize) {
+pub(super) fn choice(
+    ui: &mut egui::Ui,
+    theme: &Theme,
+    id: &str,
+    labels: &[&str],
+    value: &mut usize,
+) {
     let shown = labels.get(*value).copied().unwrap_or("");
     widgets::dropdown(ui, theme, id, shown, FIELD_WIDTH, |ui| {
         for (i, label) in labels.iter().enumerate() {
@@ -68,7 +83,7 @@ fn choice(ui: &mut egui::Ui, theme: &Theme, id: &str, labels: &[&str], value: &m
 }
 
 /// A length: a number that cannot go below zero.
-fn length(ui: &mut egui::Ui, theme: &Theme, value: &mut f64) {
+pub(super) fn length(ui: &mut egui::Ui, theme: &Theme, value: &mut f64) {
     widgets::number_field(ui, theme, value, "", 0.05);
     if !value.is_finite() || *value < 0.0 {
         *value = 0.0;
@@ -108,7 +123,21 @@ pub(super) fn lines(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft) {
         });
     });
     ui.add_space(8.0);
-    note(ui, theme, "Colour, linetype, lineweight, baseline spacing and fixed-length extension lines are not kept by the style yet.");
+    widgets::group_box(ui, theme, "Fixed length extension lines", |ui| {
+        let mut on = s.ext_fixed.is_some();
+        ui.checkbox(&mut on, "Fixed length extension lines");
+        let mut fixed = s.ext_fixed.unwrap_or(1.0);
+        ui.add_enabled_ui(on, |ui| {
+            row(ui, theme, "Length:", |ui| length(ui, theme, &mut fixed));
+        });
+        s.ext_fixed = on.then_some(fixed.max(1e-6));
+    });
+    ui.add_space(8.0);
+    note(
+        ui,
+        theme,
+        "Colour, linetype and lineweight are not kept by the style yet.",
+    );
 }
 
 pub(super) fn symbols(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft) {
@@ -120,22 +149,45 @@ pub(super) fn symbols(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft) {
             choice(ui, theme, "dim_arrow", &labels, &mut kind)
         });
         s.arrow = Arrow::ALL.get(kind).copied().unwrap_or(Arrow::Closed);
+        let mut second = s
+            .arrow2
+            .and_then(|a| Arrow::ALL.iter().position(|b| *b == a))
+            .map_or(0, |i| i + 1);
+        let mut names = vec!["Same as first"];
+        names.extend(labels);
+        row(ui, theme, "Second:", |ui| {
+            choice(ui, theme, "dim_arrow2", &names, &mut second)
+        });
+        s.arrow2 = second
+            .checked_sub(1)
+            .and_then(|i| Arrow::ALL.get(i).copied());
         row(ui, theme, "Arrow size:", |ui| {
             length(ui, theme, &mut s.arrow_size)
         });
     });
     ui.add_space(8.0);
     widgets::group_box(ui, theme, "Center marks", |ui| {
-        let mut mark = usize::from(s.centre_mark > 0.0);
-        radios(ui, &["None", "Mark"], &mut mark);
-        if mark == 0 {
-            s.centre_mark = 0.0;
-        } else if s.centre_mark <= 0.0 {
-            s.centre_mark = 2.5;
+        let mut mark = match s.centre_mark {
+            m if m > 0.0 => 1,
+            m if m < 0.0 => 2,
+            _ => 0,
+        };
+        let before = mark;
+        radios(ui, &["None", "Mark", "Line"], &mut mark);
+        let size = s.centre_mark.abs();
+        match (mark, before) {
+            (0, _) => s.centre_mark = 0.0,
+            (m, b) if m != b => {
+                let size = if size > 0.0 { size } else { 2.5 };
+                s.centre_mark = if m == 1 { size } else { -size };
+            }
+            _ => {}
         }
-        ui.add_enabled_ui(mark == 1, |ui| {
+        ui.add_enabled_ui(mark != 0, |ui| {
             row(ui, theme, "Size:", |ui| {
-                length(ui, theme, &mut s.centre_mark)
+                let mut shown = s.centre_mark.abs();
+                length(ui, theme, &mut shown);
+                s.centre_mark = if mark == 2 { -shown } else { shown };
             });
         });
     });
@@ -150,7 +202,7 @@ pub(super) fn symbols(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft) {
         s.arc_symbol = at as u8;
     });
     ui.add_space(8.0);
-    note(ui, theme, "Separate first, second and leader arrowheads, dimension breaks and jogs are not kept by the style yet.");
+    note(ui, theme, "Leader arrowheads, custom arrowhead blocks and dimension breaks are not kept by the style yet.");
 }
 
 pub(super) fn text(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft, document: &Document) {
@@ -185,13 +237,18 @@ pub(super) fn text(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft, document
         });
     });
     ui.add_space(8.0);
+    widgets::group_box(ui, theme, "Text background", |ui| {
+        ui.checkbox(&mut s.text_fill, "Fill with the window colour");
+        ui.checkbox(&mut s.text_frame, "Draw frame around text");
+    });
+    ui.add_space(8.0);
     widgets::group_box(ui, theme, "Text placement", |ui| {
         let mut vertical = usize::from(s.text_above.min(4));
         row(ui, theme, "Vertical:", |ui| {
             choice(ui, theme, "dim_text_vertical", &VERTICAL, &mut vertical)
         });
         s.text_above = vertical as u8;
-        let mut horizontal = usize::from(s.text_just.min(2));
+        let mut horizontal = usize::from(s.text_just.min(4));
         row(ui, theme, "Horizontal:", |ui| {
             choice(
                 ui,
@@ -217,7 +274,11 @@ pub(super) fn text(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft, document
         alignment::set(s, how);
     });
     ui.add_space(6.0);
-    note(ui, theme, "Text colour, fill colour, fraction height scale, frames and view direction are not kept by the style yet.");
+    note(
+        ui,
+        theme,
+        "Text colour, fill colour and view direction are not kept by the style yet.",
+    );
 }
 
 pub(super) fn fit(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft) {
@@ -328,6 +389,27 @@ pub(super) fn primary(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft) {
         });
     });
     ui.add_space(8.0);
+    widgets::group_box(ui, theme, "Angular dimensions", |ui| {
+        let mut format = AngleFormat::ALL
+            .iter()
+            .position(|f| *f == s.angle_format)
+            .unwrap_or(0);
+        let names = AngleFormat::ALL.map(AngleFormat::label);
+        row(ui, theme, "Units format:", |ui| {
+            choice(ui, theme, "dim_angle_format", &names, &mut format)
+        });
+        s.angle_format = AngleFormat::ALL.get(format).copied().unwrap_or_default();
+        row(ui, theme, "Precision:", |ui| {
+            let now = Units::angle_precision_label(s.angle_format, s.angle_precision);
+            widgets::dropdown(ui, theme, "dim_angle_precision", &now, FIELD_WIDTH, |ui| {
+                for p in 0..=MAX_PRECISION {
+                    let label = Units::angle_precision_label(s.angle_format, p);
+                    ui.selectable_value(&mut s.angle_precision, p, label);
+                }
+            });
+        });
+    });
+    ui.add_space(8.0);
     widgets::group_box(ui, theme, "Zero suppression", |ui| {
         ui.add_enabled_ui(s.length_format == LengthFormat::Decimal, |ui| {
             ui.checkbox(&mut s.trim_zeros, "Trailing");
@@ -336,17 +418,6 @@ pub(super) fn primary(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft) {
     if post_changed {
         draft.sync_post();
     }
-}
-
-/// Alternate units and tolerances are not part of the style yet.
-pub(super) fn unsupported(ui: &mut egui::Ui, theme: &Theme, what: &str) {
-    note(
-        ui,
-        theme,
-        &format!(
-            "{what} are not kept by the dimension style yet, so there is nothing to set here."
-        ),
-    );
 }
 
 fn note(ui: &mut egui::Ui, theme: &Theme, text: &str) {

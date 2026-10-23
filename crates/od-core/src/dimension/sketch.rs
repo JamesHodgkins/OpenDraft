@@ -4,8 +4,8 @@
 use std::f64::consts::{FRAC_PI_2, FRAC_PI_4, PI, TAU};
 
 use super::font;
-use super::style::Arrow;
-use crate::text_style::TextStyleId;
+use super::style::{Arrow, DimStyle};
+use crate::mtext::{BackgroundFill, MTextBackground};
 use crate::{Entity, Point};
 
 const TINY: f64 = 1e-12;
@@ -161,10 +161,45 @@ impl Sketch {
         }
     }
 
-    /// Text with its middle at `centre`, along `angle`.
-    pub fn text(&mut self, text: &str, height: f64, centre: Point, angle: f64, style: TextStyleId) {
-        if let Some(label) = font::place(text, height, centre, angle, style) {
-            self.pieces.push(Entity::MText(Box::new(label)));
+    /// A dimension's words as multiline text `contents`, `width` wide, with
+    /// the middle of its capitals at `text_at` and along `angle`; with the
+    /// style's mask behind it and box round it (centred on `frame_at`) when
+    /// it has them.
+    pub fn label(
+        &mut self,
+        style: &DimStyle,
+        contents: &str,
+        width: f64,
+        frame_at: Point,
+        text_at: Point,
+        angle: f64,
+    ) {
+        let h = style.text_height;
+        let Some(mut label) = font::place_contents(contents, h, text_at, angle, style.text_style)
+        else {
+            return;
+        };
+        if style.text_fill {
+            label.background = Some(MTextBackground {
+                fill: BackgroundFill::Window,
+                scale: 1.1,
+            });
+        }
+        self.pieces.push(Entity::MText(Box::new(label)));
+        if style.text_frame {
+            let (half_w, half_h) = (width / 2.0 + style.text_gap, h / 2.0 + style.text_gap);
+            let (run, up) = (direction(angle), direction(angle + FRAC_PI_2));
+            let corner =
+                |sx: f64, sy: f64| along(along(frame_at, run, sx * half_w), up, sy * half_h);
+            let corners = [
+                corner(-1.0, -1.0),
+                corner(1.0, -1.0),
+                corner(1.0, 1.0),
+                corner(-1.0, 1.0),
+            ];
+            for i in 0..4 {
+                self.line(corners[i], corners[(i + 1) % 4]);
+            }
         }
     }
 }

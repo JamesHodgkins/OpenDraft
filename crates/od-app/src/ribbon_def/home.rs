@@ -177,6 +177,10 @@ fn annotation() -> Panel {
                     item("dim.arc", "Arc Length", icons::DIM_ARC),
                     item("dim.radius", "Radius", icons::DIM_RADIUS),
                     item("dim.diameter", "Diameter", icons::DIM_DIAMETER),
+                    item("dim.jogged", "Jogged", icons::DIM_JOGGED),
+                    item("dim.ordinate", "Ordinate", icons::DIM_ORDINATE),
+                    item("dim.baseline", "Baseline", icons::DIM_BASELINE),
+                    item("dim.continue", "Continue", icons::DIM_CONTINUE),
                 ]))],
                 vec![Cell::Split(Split::labelled(
                     "Leader",
@@ -456,7 +460,6 @@ mod tests {
         "draw.gradient",
         "modify.blend",
         "annotate.text",
-        "dim.angular",
         "annotate.mleader_add",
         "annotate.mleader_remove",
         "annotate.mleader_align",

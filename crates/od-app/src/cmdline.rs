@@ -414,6 +414,14 @@ mod tests {
     }
 
     #[test]
+    fn dimension_commands_are_found_by_their_names() {
+        assert_eq!(command_for("DIMSTYLE"), Some("dim.style"));
+        assert_eq!(command_for("-DIMSTYLE"), Some("dim.update"));
+        assert_eq!(command_for("DIMEDIT"), Some("dim.edit"));
+        assert_eq!(command_for("DOV"), Some("dim.override"));
+    }
+
+    #[test]
     fn f_and_cp_follow_autocad() {
         assert_eq!(command_for("F"), Some("modify.fillet"));
         assert_eq!(command_for("CP"), Some("modify.copy"));
