@@ -189,16 +189,32 @@ impl AppState {
         let Some(doc) = self.docs.get(index) else {
             return false;
         };
-        let suggested = format!("{}.{}", doc.title, od_files::NATIVE_EXTENSION);
-        let directory = doc
-            .path
-            .as_deref()
-            .and_then(Path::parent)
-            .map(Path::to_owned);
-        let Some(chosen) =
-            self.picker
-                .save(&suggested, directory.as_deref(), od_files::native_filter())
-        else {
+        // A recovered drawing has no file of its own: its original is only
+        // where to start, so saving can never silently replace it.
+        let (title, suggested, directory) = match &doc.recovery_origin {
+            Some(origin) => (
+                "Save recovered drawing as",
+                origin.file_name().map_or_else(
+                    || format!("{}.{}", doc.title, od_files::NATIVE_EXTENSION),
+                    |n| n.to_string_lossy().into_owned(),
+                ),
+                origin.parent().map(Path::to_owned),
+            ),
+            None => (
+                "Save drawing as",
+                format!("{}.{}", doc.title, od_files::NATIVE_EXTENSION),
+                doc.path
+                    .as_deref()
+                    .and_then(Path::parent)
+                    .map(Path::to_owned),
+            ),
+        };
+        let Some(chosen) = self.picker.save(
+            title,
+            &suggested,
+            directory.as_deref(),
+            od_files::native_filter(),
+        ) else {
             return false;
         };
         let path = od_files::native_path(&chosen);
@@ -220,10 +236,12 @@ impl AppState {
             .as_deref()
             .and_then(Path::parent)
             .map(Path::to_owned);
-        let Some(chosen) =
-            self.picker
-                .save(&suggested, directory.as_deref(), od_files::dxf_filter())
-        else {
+        let Some(chosen) = self.picker.save(
+            "Export DXF",
+            &suggested,
+            directory.as_deref(),
+            od_files::dxf_filter(),
+        ) else {
             return false;
         };
         let path = if od_files::format_for(&chosen).is_some_and(|f| f.extensions() == ["dxf"]) {

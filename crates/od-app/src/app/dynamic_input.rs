@@ -156,7 +156,6 @@ impl OpenDraftApp {
         let unavailable = self.state.mtext_editing()
             || self.state.modal_open()
             || self.state.confirm.is_some()
-            || !self.state.pending_recovery.is_empty()
             || !self.state.settings.dynamic_input.enabled()
             || self.state.cmdline.focus
             || !self.state.cmdline.input.is_empty()

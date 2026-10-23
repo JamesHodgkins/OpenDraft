@@ -42,6 +42,10 @@ pub struct Doc {
     /// Stands in for "no drawing open" so there is always something for the
     /// rest of the app to point at. It has no tab and is never saved.
     pub placeholder: bool,
+    /// Where a recovered drawing came from. It is not the drawing's file
+    /// (`path` is none, so Save asks where): only where Save As starts, until
+    /// the drawing is saved.
+    pub recovery_origin: Option<PathBuf>,
 }
 
 impl Doc {
@@ -58,6 +62,7 @@ impl Doc {
             mtext_editor: None,
             block_edit: None,
             placeholder: false,
+            recovery_origin: None,
         }
     }
 
@@ -151,6 +156,8 @@ pub struct AppState {
     /// Drawings a crashed run left, waiting for the user to recover or
     /// discard them.
     pub pending_recovery: Vec<Orphan>,
+    /// What this run's recoveries came to, for Home to say.
+    pub recovery_report: crate::autosave::RecoveryReport,
     /// The worker that reads and writes files off the UI thread.
     pub(crate) io: Io,
     /// Drawings (by uid) being written right now.
@@ -220,6 +227,7 @@ impl AppState {
             exit_ok: false,
             recovery: None,
             pending_recovery: Vec::new(),
+            recovery_report: Default::default(),
             io: crate::files::default_io(),
             saving: Vec::new(),
             opening: Vec::new(),
@@ -404,26 +412,6 @@ impl AppState {
         self.docs.push(Doc::new(uid, title, session));
         self.active = self.docs.len() - 1;
         &mut self.docs[self.active]
-    }
-
-    /// Close a drawing without asking about unsaved changes (see
-    /// `request_close`). Closing the last one leaves the Home page.
-    pub fn close_document(&mut self, index: usize) {
-        if index < self.docs.len() && !self.docs[index].placeholder {
-            self.abort_command();
-            let uid = self.docs[index].uid;
-            self.docs.remove(index);
-            self.forget_recovery(uid);
-            if self.docs.is_empty() {
-                self.show_home_without_drawings();
-                return;
-            }
-            // Closing a tab to the left keeps the same drawing active.
-            if index < self.active {
-                self.active -= 1;
-            }
-            self.active = self.active.min(self.docs.len() - 1);
-        }
     }
 }
 

@@ -32,6 +32,26 @@ impl AppState {
         }
     }
 
+    /// Close a drawing without asking about unsaved changes (see
+    /// `request_close`). Closing the last one leaves the Home page.
+    pub fn close_document(&mut self, index: usize) {
+        if index < self.docs.len() && !self.docs[index].placeholder {
+            self.abort_command();
+            let uid = self.docs[index].uid;
+            self.docs.remove(index);
+            self.forget_recovery(uid);
+            if self.docs.is_empty() {
+                self.show_home_without_drawings();
+                return;
+            }
+            // Closing a tab to the left keeps the same drawing active.
+            if index < self.active {
+                self.active -= 1;
+            }
+            self.active = self.active.min(self.docs.len() - 1);
+        }
+    }
+
     /// Nothing is open: leave only the hidden placeholder, and show Home.
     pub(crate) fn show_home_without_drawings(&mut self) {
         self.abort_command();

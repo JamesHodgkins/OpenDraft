@@ -10,12 +10,14 @@ use od_ui::widgets;
 mod cards;
 mod controls;
 mod recent;
+mod recovery;
 
 use super::OpenDraftApp;
 use crate::home_scan::ScanRequest;
 use crate::recent::{RecentId, RecentView, MAX_PINNED};
 use crate::text::plural;
 use recent::{recent_section, row, RowText, Section};
+use recovery::recovery_section;
 
 const PAGE_WIDTH: f32 = 720.0;
 
@@ -43,6 +45,9 @@ pub(super) enum Pick {
     Copied,
     ClearUnpinned,
     SetView(RecentView),
+    RecoverSession(usize),
+    DiscardSession(usize),
+    DeferRecovery,
     Show(usize),
 }
 
@@ -64,6 +69,15 @@ impl OpenDraftApp {
                     ui.vertical(|ui| {
                         ui.set_width(PAGE_WIDTH.min(ui.available_width() - side));
                         ui.push_id("home_header", |ui| header_section(ui, theme, &mut pick));
+                        ui.push_id("home_recovery", |ui| {
+                            recovery_section(
+                                ui,
+                                theme,
+                                &self.state.pending_recovery,
+                                &self.state.recovery_report,
+                                &mut pick,
+                            )
+                        });
                         ui.push_id("home_open_now", |ui| {
                             self.open_drawings_section(ui, &mut pick)
                         });
@@ -166,6 +180,9 @@ impl OpenDraftApp {
                 self.state.recent.clear_unpinned();
             }
             Some(Pick::SetView(view)) => self.state.recent.view = view,
+            Some(Pick::RecoverSession(i)) => self.state.recover_session(i),
+            Some(Pick::DiscardSession(i)) => self.state.discard_session(i),
+            Some(Pick::DeferRecovery) => self.state.defer_recovery(),
             Some(Pick::Copied) => self.state.message = "Path copied".to_owned(),
             Some(Pick::Show(i)) => self.state.show_document(i),
             None => {}

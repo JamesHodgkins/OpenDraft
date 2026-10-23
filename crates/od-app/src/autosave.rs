@@ -7,7 +7,7 @@ use std::path::Path;
 use od_commands::Session;
 
 use crate::io::Done;
-use crate::recovery::{Orphan, Recovery};
+use crate::recovery::Recovery;
 use crate::state::AppState;
 
 impl AppState {
@@ -43,7 +43,8 @@ impl AppState {
                     doc.uid,
                     position,
                     doc.title.clone(),
-                    doc.path.clone(),
+                    // A recovered drawing is still "from" where it was.
+                    doc.path.clone().or_else(|| doc.recovery_origin.clone()),
                     doc.drawing().document.clone(),
                 )),
                 (false, Some(_)) => {
@@ -106,47 +107,70 @@ impl AppState {
         }
     }
 
-    /// Open the drawings a crash left behind, as unsaved ones (saving them
-    /// writes to where they came from, if they had been saved before).
-    pub fn recover_pending(&mut self) {
-        let orphans: Vec<Orphan> = std::mem::take(&mut self.pending_recovery);
-        let mut recovered = 0;
-        for orphan in orphans {
-            for item in &orphan.items {
-                match od_files::load(&item.file) {
-                    Ok(loaded) => {
-                        let session = Session::recovered(loaded.document);
-                        let doc = self.install_document(item.title.clone(), session);
-                        doc.path.clone_from(&item.original);
-                        recovered += 1;
-                    }
-                    Err(error) => self
-                        .cmdline
-                        .say(format!("Could not recover {}: {error}", item.title)),
+    /// Open the drawings of crashed session `index` (of `pending_recovery`)
+    /// as unsaved ones with no file of their own: the first Save asks where,
+    /// starting at where each came from, so it cannot overwrite a newer
+    /// original. The session's copies are deleted after the attempt; a
+    /// drawing that could not be read is noted in `recovery_report` (and
+    /// said on the command line), since its copy is gone too.
+    pub fn recover_session(&mut self, index: usize) {
+        if index >= self.pending_recovery.len() {
+            return;
+        }
+        let orphan = self.pending_recovery.remove(index);
+        let (mut recovered, mut failed) = (0, 0);
+        for item in &orphan.items {
+            match od_files::load(&item.file) {
+                Ok(loaded) => {
+                    let session = Session::recovered(loaded.document);
+                    let doc = self.install_document(item.title.clone(), session);
+                    doc.recovery_origin.clone_from(&item.original);
+                    doc.view.request_zoom_extents();
+                    recovered += 1;
+                }
+                Err(error) => {
+                    self.cmdline
+                        .say(format!("Could not recover {}: {error}", item.title));
+                    self.recovery_report
+                        .failed
+                        .push((item.title.clone(), error.to_string()));
+                    failed += 1;
                 }
             }
-            orphan.discard();
         }
-        if recovered > 0 {
-            self.message = format!(
-                "Recovered {recovered} unsaved drawing{}",
-                if recovered == 1 { "" } else { "s" }
-            );
-            self.cmdline.say(self.message.clone());
+        orphan.discard();
+        self.recovery_report.recovered += recovered;
+        self.message = format!(
+            "Recovered {}{}",
+            crate::text::plural(recovered, "unsaved drawing"),
+            if failed > 0 {
+                format!(", {failed} could not be read")
+            } else {
+                String::new()
+            }
+        );
+        self.cmdline.say(self.message.clone());
+    }
+
+    /// Delete the recovery copies of session `index` for good.
+    pub fn discard_session(&mut self, index: usize) {
+        if index < self.pending_recovery.len() {
+            self.pending_recovery.remove(index).discard();
         }
     }
 
-    /// Delete the recovery copies for good.
-    pub fn discard_pending(&mut self) {
-        for orphan in std::mem::take(&mut self.pending_recovery) {
-            orphan.discard();
-        }
-    }
-
-    /// Decide later: stop asking this run, keep the copies for the next.
-    pub fn defer_pending(&mut self) {
+    /// Decide later: stop offering this run, keep the copies for the next.
+    pub fn defer_recovery(&mut self) {
         self.pending_recovery.clear();
     }
+}
+
+/// What this run's recoveries came to.
+#[derive(Debug, Default)]
+pub struct RecoveryReport {
+    pub recovered: usize,
+    /// Drawings that could not be read: title and why.
+    pub failed: Vec<(String, String)>,
 }
 
 #[cfg(test)]
@@ -260,39 +284,109 @@ mod tests {
         assert_eq!(autosaved_files(&state), 0);
     }
 
-    #[test]
-    fn a_crashed_run_is_offered_back_and_recovers_as_unsaved() {
-        let root = Scratch::new("recover");
-        let original = root.0.join("plan.odx");
+    /// A session that crashed with drawing "plan" (from `original`) and an
+    /// untitled one, as a fresh app finds it.
+    fn crashed_session(root: &Scratch, original: &Path) -> AppState {
         {
             let mut crashed = AppState::new();
             crashed.start_recovery(&root.0);
             draw(&mut crashed);
             draw(&mut crashed);
-            crashed.docs[0].path = Some(original.clone());
+            crashed.docs[0].path = Some(original.to_owned());
             crashed.docs[0].title = "plan".into();
+            crashed.new_document();
+            draw(&mut crashed);
             crashed.autosave();
             // The process dies: the lock goes, the files stay.
             let recovery = crashed.recovery.take().unwrap();
             recovery_crash(recovery);
         }
-
         let mut state = AppState::new();
         state.start_recovery(&root.0);
+        state
+    }
+
+    #[test]
+    fn a_crashed_run_is_offered_back_and_recovers_as_unsaved_with_no_file() {
+        let root = Scratch::new("recover");
+        let original = root.0.join("plan.odx");
+        let mut state = crashed_session(&root, &original);
         assert_eq!(state.pending_recovery.len(), 1);
-        state.recover_pending();
+        assert_eq!(state.pending_recovery[0].items.len(), 2);
+        state.recover_session(0);
         assert!(state.pending_recovery.is_empty());
-        // The blank drawing is still there; the recovered one is a new tab.
-        let doc = state.docs.last().unwrap();
-        assert_eq!(doc.title, "plan");
-        assert_eq!(doc.path, Some(original));
-        assert_eq!(doc.session.document().len(), 2);
-        assert!(doc.is_modified(), "it is not in any file yet");
-        assert!(state.message.contains("Recovered 1 unsaved drawing"));
+        // The blank drawing makes way for the first; the second is a new tab.
+        let plan = state.docs.iter().find(|d| d.title == "plan").unwrap();
+        assert_eq!(plan.path, None, "Save must not go to the original");
+        assert_eq!(plan.recovery_origin, Some(original));
+        assert_eq!(plan.session.document().len(), 2);
+        assert!(plan.is_modified(), "it is not in any file yet");
+        assert_eq!(state.recovery_report.recovered, 2);
+        assert!(state.recovery_report.failed.is_empty());
+        assert!(state.message.contains("Recovered 2 unsaved drawings"));
         // And the old session's files are gone.
         let mut other = AppState::new();
         other.start_recovery(&root.0);
         assert!(other.pending_recovery.is_empty());
+    }
+
+    #[test]
+    fn the_first_save_of_a_recovered_drawing_asks_where_and_starts_at_the_original() {
+        let root = Scratch::new("saveas");
+        let original = root.0.join("work").join("plan.odx");
+        let mut state = crashed_session(&root, &original);
+        state.recover_session(0);
+        let script = crate::picker::Script::default();
+        state.picker = Box::new(crate::picker::ScriptedPicker(script.clone()));
+        let index = state.docs.iter().position(|d| d.title == "plan").unwrap();
+        state.show_document(index);
+        // Cancelling the dialog leaves it unsaved and the original alone.
+        assert!(!state.save_active());
+        assert_eq!(script.suggested(), ["plan.odx"]);
+        assert_eq!(script.directories(), [Some(root.0.join("work"))]);
+        assert_eq!(script.titles(), ["Save recovered drawing as"]);
+        assert!(state.docs[index].is_modified());
+        assert!(!original.exists());
+        // Saving somewhere makes that its file and forgets the origin.
+        let elsewhere = root.0.join("plan-recovered.odx");
+        script.will_save_to(Some(elsewhere.clone()));
+        assert!(state.save_active());
+        assert_eq!(state.docs[index].path, Some(elsewhere));
+        assert_eq!(state.docs[index].recovery_origin, None);
+        assert!(!original.exists(), "the original was never written");
+    }
+
+    #[test]
+    fn a_recovered_drawing_is_autosaved_still_from_its_original() {
+        let root = Scratch::new("again");
+        let original = root.0.join("plan.odx");
+        let mut state = crashed_session(&root, &original);
+        state.recover_session(0);
+        state.autosave();
+        let again = std::sync::Arc::into_inner(state.recovery.take().unwrap()).unwrap();
+        again.abandon();
+        let mut next = AppState::new();
+        next.start_recovery(&root.0);
+        let items = &next.pending_recovery[0].items;
+        assert!(items
+            .iter()
+            .any(|i| i.original.as_deref() == Some(original.as_path())));
+    }
+
+    #[test]
+    fn a_damaged_copy_is_reported_and_the_rest_still_recovers() {
+        let root = Scratch::new("damaged");
+        let mut state = crashed_session(&root, &root.0.join("plan.odx"));
+        let bad = state.pending_recovery[0].items[0].file.clone();
+        fs::write(&bad, "not a drawing").unwrap();
+        let bad_title = state.pending_recovery[0].items[0].title.clone();
+        state.recover_session(0);
+        assert_eq!(state.recovery_report.recovered, 1);
+        assert_eq!(state.recovery_report.failed.len(), 1);
+        assert_eq!(state.recovery_report.failed[0].0, bad_title);
+        assert!(!state.recovery_report.failed[0].1.is_empty());
+        assert!(state.message.contains("1 could not be read"));
+        assert!(state.pending_recovery.is_empty());
     }
 
     /// Leave the session folder behind, as a crash would.
@@ -315,7 +409,8 @@ mod tests {
         let mut state = AppState::new();
         state.start_recovery(&root.0);
         assert_eq!(state.pending_recovery.len(), 1);
-        state.discard_pending();
+        state.discard_session(0);
+        assert!(state.pending_recovery.is_empty());
         let mut next = AppState::new();
         next.start_recovery(&root.0);
         assert!(next.pending_recovery.is_empty());
@@ -333,7 +428,7 @@ mod tests {
         }
         let mut state = AppState::new();
         state.start_recovery(&root.0);
-        state.defer_pending();
+        state.defer_recovery();
         assert!(state.pending_recovery.is_empty());
         drop(state);
         let mut next = AppState::new();
