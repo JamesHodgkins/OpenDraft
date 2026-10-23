@@ -4,7 +4,8 @@
 //!
 //! AutoCAD uses two vertices and two half circles. Here a closed polyline of
 //! two points is one segment (`bulge::segment_count`), so the ring is four
-//! quarter circles.
+//! quarter circles, which is also what a file's two-vertex donut is read as
+//! (`closed_pair`).
 
 use crate::{Entity, Point};
 
