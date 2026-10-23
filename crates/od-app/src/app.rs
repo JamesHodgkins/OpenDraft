@@ -41,6 +41,7 @@ use od_ui::shortcuts::{modifier_count, parse_shortcut};
 use od_ui::Theme;
 
 use crate::dock::{self, PanelTab};
+use crate::locations::Location;
 use crate::recent::RecentFiles;
 use crate::settings::Settings;
 use crate::state::AppState;
@@ -118,17 +119,17 @@ impl OpenDraftApp {
         let mut state = AppState::new();
         // Read fresh each launch, so redrawn icons show without a rebuild.
         crate::icon_library::load(&mut state.cmdline);
-        state.settings = settings;
         state.recent = recent;
-        state.templates_dir = eframe::storage_dir("OpenDraft").map(|d| d.join("templates"));
+        state.templates_dir = Location::Templates.resolve(&settings);
+        let recovery = Location::Recovery.resolve(&settings);
+        state.settings = settings;
         let home_previews = crate::preview_textures::PreviewTextures::start(&mut state.previews);
         if open.is_empty() {
             state.start_on_home();
         }
         state.open_paths(&open);
-        // Autosave copies live beside the saved settings; a crashed run's are
-        // offered back on the Home page.
-        if let Some(root) = eframe::storage_dir("OpenDraft").map(|d| d.join("recovery")) {
+        // A crashed run's autosave copies are offered back on the Home page.
+        if let Some(root) = recovery {
             state.start_recovery(&root);
         }
         let mut shortcuts: Vec<_> = registry

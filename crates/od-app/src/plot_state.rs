@@ -2,8 +2,6 @@
 //! is `od_core::plot` and the writers are in `od_files`; the file is written
 //! off the UI thread like an export, from a copy of the drawing.
 
-use std::path::Path;
-
 use crate::state::AppState;
 
 impl AppState {
@@ -22,11 +20,7 @@ impl AppState {
             return false;
         };
         let (id, suggested) = (layout.id, format!("{}-{}.pdf", doc.title, layout.name));
-        let directory = doc
-            .path
-            .as_deref()
-            .and_then(Path::parent)
-            .map(Path::to_owned);
+        let directory = self.folder_for_dialogs(doc.path.as_deref());
         let Some(chosen) = self.picker.save(
             "Plot layout to file",
             &suggested,

@@ -71,6 +71,12 @@ impl RecentFiles {
         &self.items
     }
 
+    /// The folder of the drawing opened or saved most recently, if any.
+    pub fn last_folder(&self) -> Option<PathBuf> {
+        let newest = self.items.iter().max_by_key(|i| i.last_opened)?;
+        newest.path.parent().map(Path::to_owned)
+    }
+
     pub fn paths(&self) -> Vec<PathBuf> {
         self.items.iter().map(|i| i.path.clone()).collect()
     }
