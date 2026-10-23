@@ -785,3 +785,4 @@ The preview pictures are on black, like the drawing area, with the drawing in it
 The background is a dark grey rather than pure black (`preview::BACKGROUND`, #2b2b2b: a little lighter than the page, darker than a card, so the picture reads as a screen on the card). `RENDERER_VERSION` is 4; the blank grid is #3a3a3a with #4e4e4e every 128 px.
 
 The Recent drawings bar: the Grid and List text tabs are now two icon toggles (`HOME_VIEW_GRID`, `HOME_VIEW_LIST`, the selected one filled with the accent as the app's other icon toggles are), the same height as the Clear unpinned button so the row is level, and there is 10 px more between the bar and the cards.
+The Grid and List toggles are neutral, with no accent: the chosen one has the lit (hover) tone behind it and a brighter icon, drawn with the same `icon_button` as Pin and More.

@@ -7,7 +7,7 @@ use eframe::egui;
 use od_ui::{icons, widgets};
 
 use super::cards::{self, Pictures};
-use super::controls::{entry_controls, BUTTON};
+use super::controls::{entry_controls, icon_button, BUTTON};
 use super::layout::bar;
 use super::Pick;
 use crate::home::size_text;
@@ -48,7 +48,13 @@ pub(super) fn recent_section(ui: &mut egui::Ui, s: &Section, pick: &mut Option<P
                     views.reverse();
                 }
                 for (view, icon, tip) in views {
-                    if widgets::icon_toggle(ui, theme, icon, s.view == view, tip).clicked() {
+                    // Neutral: the chosen one is lit like a hovered button, with
+                    // no accent colour.
+                    let side = theme.control_height;
+                    let (rect, _) =
+                        ui.allocate_exact_size(egui::vec2(side, side), egui::Sense::hover());
+                    let toggle = icon_button(ui, theme, rect, icon, s.view == view, true);
+                    if toggle.on_hover_text(tip).clicked() {
                         *pick = Some(Pick::SetView(view));
                     }
                 }

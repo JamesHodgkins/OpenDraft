@@ -70,7 +70,7 @@ pub(super) fn entry_controls(
 
 /// A small icon button in `rect`, lit while `on`. Its id comes from `icon`,
 /// not from where it was added, so focus stays with it when the list moves.
-fn icon_button(
+pub(super) fn icon_button(
     ui: &mut egui::Ui,
     theme: &od_ui::Theme,
     rect: egui::Rect,
