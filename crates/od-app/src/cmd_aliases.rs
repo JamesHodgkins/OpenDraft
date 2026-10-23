@@ -138,6 +138,8 @@ pub const ALIASES: &[(&str, &str, &str)] = &[
     ("DIMLINEAR", "DIMLINEAR", "dim.linear"),
     ("DAL", "DIMALIGNED", "dim.aligned"),
     ("DIMALIGNED", "DIMALIGNED", "dim.aligned"),
+    ("DAN", "DIMANGULAR", "dim.angular"),
+    ("DIMANGULAR", "DIMANGULAR", "dim.angular"),
     ("DAR", "DIMARC", "dim.arc"),
     ("DIMARC", "DIMARC", "dim.arc"),
     ("DRA", "DIMRADIUS", "dim.radius"),

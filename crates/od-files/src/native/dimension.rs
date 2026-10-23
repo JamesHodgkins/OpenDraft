@@ -2,7 +2,7 @@
 //! style values that differ from the stock style are written, so a dimension
 //! stays short and a style added later reads as the default.
 
-use od_core::{Arrow, DimKind, DimStyle, DimText, Dimension, LengthFormat};
+use od_core::{AngleFormat, Arrow, DimKind, DimStyle, DimText, Dimension, LengthFormat};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
@@ -37,6 +37,14 @@ pub(super) enum DimKindDto {
         arc_point: PointDto,
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         leader: bool,
+    },
+    Angular {
+        vertex: PointDto,
+        p1: PointDto,
+        p2: PointDto,
+        arc_point: PointDto,
+        #[serde(default)]
+        lines: bool,
     },
 }
 
@@ -84,6 +92,19 @@ impl DimensionDto {
                 chord_point: point(*chord_point),
                 diameter: *diameter,
                 leader_length: *leader_length,
+            },
+            DimKind::Angular {
+                vertex,
+                p1,
+                p2,
+                arc_point,
+                lines,
+            } => DimKindDto::Angular {
+                vertex: point(*vertex),
+                p1: point(*p1),
+                p2: point(*p2),
+                arc_point: point(*arc_point),
+                lines: *lines,
             },
             DimKind::ArcLength {
                 center,
@@ -144,6 +165,19 @@ impl DimensionDto {
                     leader_length: *leader_length,
                 }
             }
+            DimKindDto::Angular {
+                vertex,
+                p1,
+                p2,
+                arc_point,
+                lines,
+            } => DimKind::Angular {
+                vertex: pt(vertex)?,
+                p1: pt(p1)?,
+                p2: pt(p2)?,
+                arc_point: pt(arc_point)?,
+                lines: *lines,
+            },
             DimKindDto::ArcLength {
                 center,
                 start,
@@ -204,6 +238,9 @@ pub(super) struct DimStyleDto {
     decimal_separator: String,
     post: String,
     arc_symbol: u8,
+    /// `AUNITS` code of an angular dimension's angle.
+    angle_format: i64,
+    angle_precision: u8,
     /// The text style's id.
     text_style: u64,
 }
@@ -244,6 +281,8 @@ impl From<&DimStyle> for DimStyleDto {
             decimal_separator: s.decimal_separator.to_string(),
             post: s.post.clone(),
             arc_symbol: s.arc_symbol,
+            angle_format: s.angle_format.code(),
+            angle_precision: s.angle_precision,
             text_style: s.text_style.0,
         }
     }
@@ -258,6 +297,12 @@ impl DimStyleDto {
             return invalid(format!(
                 "dimension length format {} does not exist",
                 self.length_format
+            ));
+        };
+        let Some(angle_format) = AngleFormat::from_code(self.angle_format) else {
+            return invalid(format!(
+                "dimension angle format {} does not exist",
+                self.angle_format
             ));
         };
         let numbers = [
@@ -307,6 +352,8 @@ impl DimStyleDto {
             decimal_separator,
             post: self.post,
             arc_symbol: self.arc_symbol,
+            angle_format,
+            angle_precision: self.angle_precision,
             text_style: od_core::TextStyleId(self.text_style),
         }
         .sanitized())
@@ -447,6 +494,18 @@ mod tests {
             Dimension::radius(p(0.0, 0.0), p(5.0, 0.0), &style),
             Dimension::diameter(p(0.0, 0.0), p(0.0, 5.0), &DimStyle::default()),
             Dimension::arc_length(p(0.0, 0.0), p(5.0, 0.0), p(0.0, 5.0), p(6.0, 6.0), &style),
+            Dimension::angular(
+                p(0.0, 0.0),
+                p(5.0, 0.0),
+                p(0.0, 5.0),
+                p(3.0, 3.0),
+                true,
+                &DimStyle {
+                    angle_format: od_core::AngleFormat::Radians,
+                    angle_precision: 3,
+                    ..DimStyle::default()
+                },
+            ),
         ];
         let mut document = Document::default();
         for d in &all {

@@ -13,8 +13,8 @@ use crate::draw::{add, distance, MIN_SIZE};
 
 /// What the user has changed from the defaults while placing a dimension.
 #[derive(Clone, Default)]
-struct Tweaks {
-    text: DimText,
+pub(crate) struct Tweaks {
+    pub text: DimText,
     /// A dimension line angle chosen with Horizontal, Vertical or Rotated.
     rotation: Option<f64>,
     /// DIMARC: the leader option, and the two points of a partial arc.
@@ -22,14 +22,14 @@ struct Tweaks {
     partial: Option<(Point, Point)>,
 }
 
-type Make = Arc<dyn Fn(Point, &Tweaks) -> Option<Dimension> + Send + Sync>;
+pub(crate) type Make = Arc<dyn Fn(Point, &Tweaks) -> Option<Dimension> + Send + Sync>;
 
-fn style(ed: &Editor) -> Result<DimStyle, Cancelled> {
+pub(crate) fn style(ed: &Editor) -> Result<DimStyle, Cancelled> {
     ed.read(|doc| doc.dim_style().clone())
 }
 
 /// Click an object; `None` when the user ends the command with Enter.
-fn pick(ed: &Editor, message: &str) -> Result<Option<(Picked, Entity)>, Cancelled> {
+pub(crate) fn pick(ed: &Editor, message: &str) -> Result<Option<(Picked, Entity)>, Cancelled> {
     let Answer::Value(picked) = ed.ask_object(Options::<Picked>::new(message))? else {
         return Ok(None);
     };
@@ -41,7 +41,7 @@ fn pick(ed: &Editor, message: &str) -> Result<Option<(Picked, Entity)>, Cancelle
 /// Ask where the dimension goes, showing it follow the cursor, with the
 /// given keywords on offer. `sample` is any point, used to word the Text
 /// prompt with the measurement.
-fn place(
+pub(crate) fn place(
     ed: &Editor,
     message: &str,
     keywords: &[(&str, &str)],

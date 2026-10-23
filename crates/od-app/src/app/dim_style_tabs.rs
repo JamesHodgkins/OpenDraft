@@ -4,7 +4,7 @@
 
 use eframe::egui::{self, RichText};
 use od_core::units::MAX_PRECISION;
-use od_core::{Arrow, Document, LengthFormat, Units};
+use od_core::{AngleFormat, Arrow, Document, LengthFormat, Units};
 use od_ui::{widgets, Theme};
 
 use crate::dim_style_draft::{alignment, Draft};
@@ -331,6 +331,27 @@ pub(super) fn primary(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft) {
             if !s.linear_factor.is_finite() || s.linear_factor == 0.0 {
                 s.linear_factor = 1.0;
             }
+        });
+    });
+    ui.add_space(8.0);
+    widgets::group_box(ui, theme, "Angular dimensions", |ui| {
+        let mut format = AngleFormat::ALL
+            .iter()
+            .position(|f| *f == s.angle_format)
+            .unwrap_or(0);
+        let names = AngleFormat::ALL.map(AngleFormat::label);
+        row(ui, theme, "Units format:", |ui| {
+            choice(ui, theme, "dim_angle_format", &names, &mut format)
+        });
+        s.angle_format = AngleFormat::ALL.get(format).copied().unwrap_or_default();
+        row(ui, theme, "Precision:", |ui| {
+            let now = Units::angle_precision_label(s.angle_format, s.angle_precision);
+            widgets::dropdown(ui, theme, "dim_angle_precision", &now, FIELD_WIDTH, |ui| {
+                for p in 0..=MAX_PRECISION {
+                    let label = Units::angle_precision_label(s.angle_format, p);
+                    ui.selectable_value(&mut s.angle_precision, p, label);
+                }
+            });
         });
     });
     ui.add_space(8.0);

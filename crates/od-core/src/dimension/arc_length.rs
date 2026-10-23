@@ -85,14 +85,59 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
         start: a1,
         sweep,
     } = geometry(&dim.kind)?;
+    draw(
+        dim,
+        Layout {
+            c: *center,
+            a1,
+            sweep,
+            on_arc: dist(*center, *arc_point),
+            measured,
+            ends: [dist(*center, *start), dist(*center, *end)],
+            leader: *leader,
+            symbol: true,
+            label: dim.label(),
+        },
+    )
+}
+
+/// What a dimension arc is drawn from: its centre, where it starts and how
+/// far it turns, how far out the user put it, and the radii the extension
+/// lines start at (an angular dimension shares this with arc length).
+pub(super) struct Layout {
+    pub c: Point,
+    pub a1: f64,
+    pub sweep: f64,
+    /// The radius of the point the user placed the arc through (0 for none).
+    pub on_arc: f64,
+    /// The measured radius, where a leader points and a missing `on_arc`
+    /// falls back from.
+    pub measured: f64,
+    pub ends: [f64; 2],
+    pub leader: bool,
+    /// Whether the arc-length symbol goes with the text.
+    pub symbol: bool,
+    pub label: String,
+}
+
+pub(super) fn draw(dim: &Dimension, layout: Layout) -> Option<Built> {
+    let Layout {
+        c,
+        a1,
+        sweep,
+        on_arc,
+        measured,
+        ends,
+        leader,
+        symbol,
+        label,
+    } = layout;
     let s = dim.style.resolved();
-    let c = *center;
     let size = if s.arrow == Arrow::None {
         0.0
     } else {
         s.arrow_size
     };
-    let on_arc = dist(c, *arc_point);
     let ra = if on_arc > 1e-12 {
         on_arc
     } else {
@@ -101,11 +146,11 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
     let a2 = a1 + sweep;
     let mid = a1 + sweep / 2.0;
 
-    let label = dim.label();
+    let symbol_mode = if symbol { s.arc_symbol } else { 2 };
     let (h, g) = (s.text_height, s.text_gap);
     // The symbol in front of the number takes room of its own; `width` is
     // the whole run, symbol and number.
-    let lead = if !label.is_empty() && s.arc_symbol == 0 {
+    let lead = if !label.is_empty() && symbol_mode == 0 {
         SYMBOL_WIDTH + SYMBOL_GAP
     } else {
         0.0
@@ -151,8 +196,7 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
 
     let mut out = Sketch::default();
     // Extension lines run along the radius through each end.
-    for (i, (pt, angle)) in [(*start, a1), (*end, a2)].into_iter().enumerate() {
-        let r = dist(c, pt);
+    for (i, (r, angle)) in [(ends[0], a1), (ends[1], a2)].into_iter().enumerate() {
         let sign = if ra >= r { 1.0 } else { -1.0 };
         if s.suppress_ext[i] || (ra - r).abs() <= s.ext_offset {
             continue;
@@ -193,7 +237,7 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
     }
     if !label.is_empty() {
         let (run, up) = (direction(text_angle), direction(text_angle + FRAC_PI_2));
-        match s.arc_symbol {
+        match symbol_mode {
             // In front of the number, its top level with the capitals.
             0 => {
                 let front = along(centre, run, (SYMBOL_WIDTH * h - width) / 2.0);
@@ -213,7 +257,7 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
     }
     // The leader runs radially, a quarter of the way along, so it clears
     // the text at the middle.
-    if *leader && sweep > FRAC_PI_2 && (ra - measured).abs() > size {
+    if leader && sweep > FRAC_PI_2 && (ra - measured).abs() > size {
         let at = a1 + sweep / 4.0;
         let sign = if ra >= measured { 1.0 } else { -1.0 };
         let (tip, far) = (

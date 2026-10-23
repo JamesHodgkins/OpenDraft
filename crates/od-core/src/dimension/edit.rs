@@ -24,6 +24,13 @@ impl Dimension {
                 arc_point,
                 ..
             } => vec![*center, *start, *end, *arc_point],
+            DimKind::Angular {
+                vertex,
+                p1,
+                p2,
+                arc_point,
+                ..
+            } => vec![*vertex, *p1, *p2, *arc_point],
         }
     }
 
@@ -57,6 +64,18 @@ impl Dimension {
                 *center = f(*center);
                 *start = f(*start);
                 *end = f(*end);
+                *arc_point = f(*arc_point);
+            }
+            DimKind::Angular {
+                vertex,
+                p1,
+                p2,
+                arc_point,
+                ..
+            } => {
+                *vertex = f(*vertex);
+                *p1 = f(*p1);
+                *p2 = f(*p2);
                 *arc_point = f(*arc_point);
             }
         }
@@ -165,6 +184,18 @@ impl Dimension {
                 *end = shift(*end);
                 *arc_point = shift(*arc_point);
             }
+            DimKind::Angular {
+                vertex,
+                p1,
+                p2,
+                arc_point,
+                ..
+            } => {
+                *vertex = shift(*vertex);
+                *p1 = shift(*p1);
+                *p2 = shift(*p2);
+                *arc_point = shift(*arc_point);
+            }
         }
         out.text_pos = out.text_pos.map(shift);
         Some(out)
@@ -218,6 +249,10 @@ impl Dimension {
             (DimKind::ArcLength { start, .. }, 1) => *start = to,
             (DimKind::ArcLength { end, .. }, 2) => *end = to,
             (DimKind::ArcLength { arc_point, .. }, 3) => *arc_point = to,
+            (DimKind::Angular { vertex, .. }, 0) => *vertex = to,
+            (DimKind::Angular { p1, .. }, 1) => *p1 = to,
+            (DimKind::Angular { p2, .. }, 2) => *p2 = to,
+            (DimKind::Angular { arc_point, .. }, 3) => *arc_point = to,
             _ => return None,
         }
         // A dimension left with nothing to measure is refused.
