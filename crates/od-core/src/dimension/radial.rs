@@ -14,10 +14,14 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
         chord_point,
         diameter,
         leader_length,
+        jog,
     } = &dim.kind
     else {
         return None;
     };
+    if jog.is_some() {
+        return super::jogged::build(dim);
+    }
     let (c, pt) = (*center, *chord_point);
     let r = dist(c, pt);
     let u = unit(sub(pt, c))?;

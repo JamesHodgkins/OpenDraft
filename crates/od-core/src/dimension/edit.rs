@@ -15,8 +15,13 @@ impl Dimension {
             DimKind::Radial {
                 center,
                 chord_point,
+                jog,
                 ..
-            } => vec![*center, *chord_point],
+            } => {
+                let mut points = vec![*center, *chord_point];
+                points.extend(jog.iter().flat_map(|(shown, at)| [*shown, *at]));
+                points
+            }
             DimKind::ArcLength {
                 center,
                 start,
@@ -54,10 +59,12 @@ impl Dimension {
             DimKind::Radial {
                 center,
                 chord_point,
+                jog,
                 ..
             } => {
                 *center = f(*center);
                 *chord_point = f(*chord_point);
+                *jog = jog.map(|(shown, at)| (f(shown), f(at)));
             }
             DimKind::ArcLength {
                 center,
@@ -92,7 +99,8 @@ impl Dimension {
                 *leader_end = f(*leader_end);
             }
         }
-        out.text_pos = out.text_pos.map(f);
+        out.text_pos = out.text_pos.map(&f);
+        out.jog_line = out.jog_line.map(&f);
         out
     }
 
@@ -180,10 +188,12 @@ impl Dimension {
             DimKind::Radial {
                 center,
                 chord_point,
+                jog,
                 ..
             } => {
                 *center = shift(*center);
                 *chord_point = shift(*chord_point);
+                *jog = jog.map(|(shown, at)| (shift(shown), shift(at)));
             }
             DimKind::ArcLength {
                 center,
@@ -219,6 +229,7 @@ impl Dimension {
             }
         }
         out.text_pos = out.text_pos.map(shift);
+        out.jog_line = out.jog_line.map(shift);
         Some(out)
     }
 
@@ -266,6 +277,8 @@ impl Dimension {
             (DimKind::Linear { line_point, .. }, 2) => *line_point = to,
             (DimKind::Radial { center, .. }, 0) => *center = to,
             (DimKind::Radial { chord_point, .. }, 1) => *chord_point = to,
+            (DimKind::Radial { jog: Some(j), .. }, 2) => j.0 = to,
+            (DimKind::Radial { jog: Some(j), .. }, 3) => j.1 = to,
             (DimKind::ArcLength { center, .. }, 0) => *center = to,
             (DimKind::ArcLength { start, .. }, 1) => *start = to,
             (DimKind::ArcLength { end, .. }, 2) => *end = to,

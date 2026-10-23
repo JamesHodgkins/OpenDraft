@@ -30,6 +30,10 @@ pub(super) enum DimKindDto {
         #[serde(default)]
         diameter: bool,
         leader_length: f64,
+        /// The centre a jogged radius dimension is shown to head for, and
+        /// its jog.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        jog: Option<(PointDto, PointDto)>,
     },
     ArcLength {
         center: PointDto,
@@ -67,6 +71,9 @@ pub(super) struct DimensionDto {
     /// The angle the user turned the text to, in radians.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     text_angle: Option<f64>,
+    /// Where a jog line is put in the dimension line.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    jog_line: Option<PointDto>,
     /// The style's differences from the stock one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     style: Option<Value>,
@@ -93,11 +100,13 @@ impl DimensionDto {
                 chord_point,
                 diameter,
                 leader_length,
+                jog,
             } => DimKindDto::Radial {
                 center: point(*center),
                 chord_point: point(*chord_point),
                 diameter: *diameter,
                 leader_length: *leader_length,
+                jog: jog.map(|(shown, at)| (point(shown), point(at))),
             },
             DimKind::Ordinate {
                 feature,
@@ -140,6 +149,7 @@ impl DimensionDto {
             text: d.text.to_entry(),
             text_pos: d.text_pos.map(point),
             text_angle: d.text_angle,
+            jog_line: d.jog_line.map(point),
             style: sparse_style(&d.style),
         }
     }
@@ -169,6 +179,7 @@ impl DimensionDto {
                 chord_point,
                 diameter,
                 leader_length,
+                jog,
             } => {
                 if !leader_length.is_finite() {
                     return invalid("a dimension leader length is not a finite number");
@@ -178,6 +189,10 @@ impl DimensionDto {
                     chord_point: pt(chord_point)?,
                     diameter: *diameter,
                     leader_length: *leader_length,
+                    jog: jog
+                        .as_ref()
+                        .map(|(shown, at)| Ok::<_, FileError>((pt(shown)?, pt(at)?)))
+                        .transpose()?,
                 }
             }
             DimKindDto::Ordinate {
@@ -222,6 +237,7 @@ impl DimensionDto {
             text: DimText::from_entry(&self.text),
             text_pos: self.text_pos.as_ref().map(pt).transpose()?,
             text_angle: angle(&self.text_angle)?,
+            jog_line: self.jog_line.as_ref().map(pt).transpose()?,
         };
         if dimension.measurement().is_none() {
             return invalid("a dimension has nothing to measure");
@@ -266,6 +282,7 @@ mod tests {
         linear.text = DimText::Custom("<> TYP".to_owned());
         linear.text_pos = Some(p(4.0, 9.0));
         linear.text_angle = Some(0.75);
+        linear.jog_line = Some(p(2.0, 8.0));
         let mut aligned = Dimension::aligned(p(1.0, 1.0), p(5.0, 9.0), p(0.0, 0.0), &style);
         if let DimKind::Linear { oblique, .. } = &mut aligned.kind {
             *oblique = Some(1.2);
@@ -276,6 +293,13 @@ mod tests {
             aligned,
             Dimension::radius(p(0.0, 0.0), p(5.0, 0.0), &style),
             Dimension::diameter(p(0.0, 0.0), p(0.0, 5.0), &DimStyle::default()),
+            Dimension::jogged(
+                p(0.0, 0.0),
+                p(5.0, 0.0),
+                p(2.0, 3.0),
+                p(3.0, 1.5),
+                &DimStyle::default(),
+            ),
             Dimension::arc_length(p(0.0, 0.0), p(5.0, 0.0), p(0.0, 5.0), p(6.0, 6.0), &style),
             Dimension::ordinate(p(3.0, 4.0), p(3.0, 9.0), true, &style),
             Dimension::angular(
@@ -419,10 +443,12 @@ mod tests {
                 chord_point: [1.0, 1.0],
                 diameter: false,
                 leader_length: 1.0,
+                jog: None,
             },
             text: String::new(),
             text_pos: None,
             text_angle: None,
+            jog_line: None,
             style: None,
         };
         assert!(nothing.to_dimension().is_err(), "nothing to measure");
