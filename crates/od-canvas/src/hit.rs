@@ -82,6 +82,7 @@ pub fn distance_to_entity(entity: &Entity, p: Point) -> f64 {
                 .map(|i| distance_to_segment(p, corners[i], corners[(i + 1) % 4]))
                 .fold(f64::INFINITY, f64::min)
         }
+        Entity::Point { at } => distance(p, *at),
         Entity::Line { start, end } => distance_to_segment(p, *start, *end),
         Entity::Circle { center, radius } => (distance(p, *center) - radius.abs()).abs(),
         Entity::Arc {
@@ -298,6 +299,19 @@ mod tests {
         };
         assert_eq!(distance_to_entity(&r, Point::new(5.0, 2.0)), 2.0);
         assert_eq!(distance_to_entity(&r, Point::new(5.0, 12.0)), 2.0);
+    }
+
+    #[test]
+    fn a_point_is_hit_only_near_the_point_itself() {
+        let entities = [Entity::Point {
+            at: Point::new(2.0, 2.0),
+        }];
+        assert_eq!(distance_to_entity(&entities[0], Point::new(5.0, 6.0)), 5.0);
+        assert_eq!(
+            pick(&objs(&entities), Point::new(2.2, 2.0), 0.5),
+            Some(EntityId(0))
+        );
+        assert_eq!(pick(&objs(&entities), Point::new(3.0, 2.0), 0.5), None);
     }
 
     #[test]

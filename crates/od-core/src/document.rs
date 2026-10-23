@@ -11,7 +11,7 @@ use crate::linetype::{LinetypeTable, StrokeElement};
 use crate::mleader::{MLeaderStyle, MLeaderStyleId};
 use crate::text_style::{TextStyle, TextStyleId};
 use crate::units::Units;
-use crate::{Bounds, Entity};
+use crate::{Bounds, Entity, PointStyle};
 
 /// Permanent identity of an object. Ids are never reused within a drawing,
 /// so selections, undo records and (later) files and plugins can hold them
@@ -81,6 +81,8 @@ pub struct Document {
     linetypes: LinetypeTable,
     /// The drawing-wide multiplier of every linetype pattern (`LTSCALE`).
     linetype_scale: f64,
+    /// How point objects are drawn (`PDMODE`, `PDSIZE`).
+    point_style: PointStyle,
     /// Where the objects are, for the queries that look at a part of the
     /// drawing. Derived from `objects`: it takes no part in equality.
     spatial: spatial::SpatialIndex,
@@ -94,6 +96,7 @@ mod linetypes;
 mod mleader_styles;
 mod object;
 mod object_list;
+mod point_style;
 mod settings;
 mod spatial;
 #[cfg(test)]
@@ -141,6 +144,7 @@ impl Default for Document {
             next_block_id: 1,
             linetypes: LinetypeTable::default(),
             linetype_scale: 1.0,
+            point_style: PointStyle::default(),
             spatial: Default::default(),
         };
         doc.push_layer(Layer::new(LayerId::DEFAULT, "0"));

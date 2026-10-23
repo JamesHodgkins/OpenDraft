@@ -17,6 +17,7 @@ mod layout_action;
 mod linetype_action;
 mod mleader_style_action;
 mod paste_action;
+mod point_style_action;
 mod prompt;
 mod registry;
 mod runner;
@@ -38,6 +39,7 @@ pub use layout_action::SetLayouts;
 pub use linetype_action::SetLinetypes;
 pub use mleader_style_action::SetMLeaderStyles;
 pub use paste_action::PasteDrawing;
+pub use point_style_action::SetPointStyle;
 pub use prompt::{
     Answer, Cancelled, DynamicDimensions, Ghost, GhostStyle, Hint, Keyword, NumberOptions,
     NumberOrPoint, Options, Picked, PointOptions, Prompt, Reply, TextOptions, Wants,

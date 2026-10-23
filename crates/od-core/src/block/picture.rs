@@ -165,6 +165,7 @@ fn uneven(entity: &Entity, map: &Affine) -> Vec<Entity> {
             start: map.apply(*start),
             end: map.apply(*end),
         }],
+        Entity::Point { at } => vec![Entity::Point { at: map.apply(*at) }],
         Entity::Circle { center, radius } => {
             curved(Ellipse::circular(*center, *radius, 0.0, 0.0), map)
         }

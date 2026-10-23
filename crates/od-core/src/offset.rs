@@ -31,6 +31,7 @@ impl Entity {
             | Entity::MLeader(_)
             | Entity::Leader(_)
             | Entity::Insert(_)
+            | Entity::Point { .. }
             | Entity::Hatch(_) => None,
             // The offset of an ellipse is not an ellipse; AutoCAD makes a
             // spline, which the drawing has no kind for yet.

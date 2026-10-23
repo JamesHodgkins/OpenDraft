@@ -73,6 +73,7 @@ impl Entity {
             | Entity::MLeader(_)
             | Entity::Leader(_)
             | Entity::Insert(_)
+            | Entity::Point { .. }
             | Entity::Hatch(_) => Vec::new(),
             Entity::Ellipse(e) => vec![Curve::Ellipse(*e)],
             // Not a curve the crossing code knows yet: Trim, Extend and the

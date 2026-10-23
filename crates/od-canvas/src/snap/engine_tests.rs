@@ -237,6 +237,14 @@ fn dimensions_offer_nodes_not_insertions() {
 }
 
 #[test]
+fn a_point_object_offers_a_node() {
+    let point = Entity::Point { at: p(3.0, 4.0) };
+    let found = all(&[point], p(3.1, 4.0), 1.0, &only(SnapKind::Node));
+    assert_eq!(found.len(), 1);
+    assert_eq!(found[0].point, p(3.0, 4.0));
+}
+
+#[test]
 fn the_same_pixels_reach_less_of_the_drawing_when_zoomed_in() {
     // The aperture arrives as a radius in drawing units: 8 px at zoom 2 is
     // 4 units, at zoom 4 it is 2.

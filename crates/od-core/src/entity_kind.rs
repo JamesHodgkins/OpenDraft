@@ -20,6 +20,7 @@ pub enum EntityKind {
     Line,
     MText,
     MLeader,
+    Point,
     Polyline,
     Rectangle,
     Spline,
@@ -27,7 +28,7 @@ pub enum EntityKind {
 
 impl EntityKind {
     /// Every kind, in order.
-    pub const ALL: [EntityKind; 13] = [
+    pub const ALL: [EntityKind; 14] = [
         EntityKind::Arc,
         EntityKind::Insert,
         EntityKind::Circle,
@@ -38,6 +39,7 @@ impl EntityKind {
         EntityKind::Line,
         EntityKind::MText,
         EntityKind::MLeader,
+        EntityKind::Point,
         EntityKind::Polyline,
         EntityKind::Rectangle,
         EntityKind::Spline,
@@ -56,6 +58,7 @@ impl EntityKind {
             EntityKind::Line => "line",
             EntityKind::MText => "mtext",
             EntityKind::MLeader => "multileader",
+            EntityKind::Point => "point",
             EntityKind::Polyline => "polyline",
             EntityKind::Rectangle => "rectangle",
             EntityKind::Spline => "spline",
@@ -75,6 +78,7 @@ impl EntityKind {
             EntityKind::Line => "Line",
             EntityKind::MText => "Mtext",
             EntityKind::MLeader => "Multileader",
+            EntityKind::Point => "Point",
             EntityKind::Polyline => "Polyline",
             EntityKind::Rectangle => "Rectangle",
             EntityKind::Spline => "Spline",
@@ -95,6 +99,7 @@ impl EntityKind {
             EntityKind::Line => "line",
             EntityKind::MText => "mtext",
             EntityKind::MLeader => "multileader",
+            EntityKind::Point => "point",
             EntityKind::Polyline => "polyline",
             EntityKind::Rectangle => "rectangle",
             EntityKind::Spline => "spline",
@@ -168,6 +173,7 @@ mod tests {
                 "line",
                 "mtext",
                 "multileader",
+                "point",
                 "polyline",
                 "rectangle",
                 "spline"

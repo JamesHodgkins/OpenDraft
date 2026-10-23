@@ -108,6 +108,8 @@ icons! {
     /// A square with a diagonal: the nearest Lucide has to hatching.
     DRAW_HATCH = '\u{e177}';
     DRAW_LINE = '\u{e11f}';
+    /// Lucide's dot.
+    DRAW_POINT = '\u{e453}';
     DRAW_POLYGON = '\u{e0f6}';
     DRAW_POLYLINE = '\u{e38e}';
     DRAW_RECTANGLE = '\u{e16a}';

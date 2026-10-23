@@ -37,6 +37,7 @@ mod load;
 mod mleader;
 mod mleader_style;
 mod new_style;
+mod point_style;
 pub(crate) mod spline;
 mod text;
 mod units;
@@ -50,7 +51,7 @@ use units::UnitsDto;
 
 /// The file format version this build writes and reads. Versions before the
 /// first release are not kept: see the module notes.
-pub const CURRENT_VERSION: u32 = 2;
+pub const CURRENT_VERSION: u32 = 3;
 /// The largest `.odx` file that is opened. Reading holds the whole file and the
 /// drawing built from it in memory at once, so a file past this is refused
 /// before it is read.
@@ -212,6 +213,9 @@ struct DrawingDto {
     linetypes: linetype::TableDto,
     #[serde(flatten)]
     new_style: new_style::NewStyleDto,
+    /// `PDMODE` and `PDSIZE`; each is left out at its default.
+    #[serde(flatten)]
+    point_style: point_style::PointStyleDto,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -370,6 +374,7 @@ impl DrawingDto {
             next_block_id: document.next_block_id(),
             linetypes: linetype::TableDto::of(document),
             new_style: new_style::NewStyleDto::of(document),
+            point_style: point_style::PointStyleDto::of(document),
         })
     }
 }
@@ -542,7 +547,7 @@ mod tests {
     }
 
     pub(super) const MINIMAL: &str = r#"{
-        "format": "opendraft-drawing", "version": 2,
+        "format": "opendraft-drawing", "version": 3,
         "drawing": {
             "next_object_id": 0, "next_layer_id": 1, "current_layer": 0,
             "layers": [ { "id": 0, "name": "0", "color": "foreground",
@@ -741,7 +746,7 @@ mod tests {
             })
         ));
         // Also when it would have read: only the current version does.
-        let older = MINIMAL.replace("\"version\": 2", "\"version\": 1");
+        let older = MINIMAL.replace("\"version\": 3", "\"version\": 1");
         assert!(matches!(read(&older), Err(FileError::TooOld { .. })));
     }
 
@@ -783,7 +788,7 @@ mod tests {
 
     fn invalid_with(objects: &str, layers: &str) -> FileError {
         let text = format!(
-            r#"{{ "format": "opendraft-drawing", "version": 2,
+            r#"{{ "format": "opendraft-drawing", "version": 3,
               "drawing": {{ "next_object_id": 0, "next_layer_id": 1, "current_layer": 0,
                 "layers": [{layers}], "objects": [{objects}] }} }}"#
         );

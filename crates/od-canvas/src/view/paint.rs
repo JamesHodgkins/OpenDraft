@@ -147,6 +147,7 @@ impl View {
                 let layout = m.layout(&od_core::TextStyle::standard());
                 self.fill_text(painter, rect, m, &layout, &|_| stroke.color);
             }
+            Entity::Point { at } => self.stroke_point(painter, rect, *at, stroke),
             Entity::Line { start, end } => {
                 painter.line_segment([to_screen(*start), to_screen(*end)], stroke);
             }

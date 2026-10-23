@@ -115,6 +115,7 @@ fn base(id: WireId, entity: &Entity) -> Measurement {
 pub fn measure(id: WireId, entity: &Entity) -> Measurement {
     let mut m = base(id, entity);
     match entity {
+        Entity::Point { at } => m.start = Some(pt(*at)),
         Entity::Line { start, end } => {
             m.length = entity.curve_length();
             m.start = Some(pt(*start));
