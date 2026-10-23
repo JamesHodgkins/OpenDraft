@@ -113,6 +113,9 @@ pub struct PointPrompt {
     pub base: Option<Point>,
     pub ghost: Option<Ghost>,
     pub ghost_style: GhostStyle,
+    /// Marks that keep one size on the screen; given the drawing units a
+    /// screen point spans.
+    pub marker: Option<Arc<dyn Fn(f64) -> Vec<Entity> + Send + Sync>>,
     /// The command wants an object clicked, not a point: no snapping, the
     /// object under the pointer is highlighted and reported with the click.
     pub pick: bool,

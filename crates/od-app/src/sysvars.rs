@@ -160,6 +160,16 @@ fn build() -> Vec<SysVar<AppState>> {
                 Ok(())
             },
         ),
+        SysVar::int(
+            "PEDITACCEPT",
+            "1 to turn lines and arcs into polylines in PEDIT without asking",
+            (0, 1),
+            |_| Value::Int(i64::from(crate::pedit_memory::memory().accept)),
+            |_, v| {
+                crate::pedit_memory::remember(|m| m.accept = int(v) == 1);
+                Ok(())
+            },
+        ),
         SysVar::real(
             "TEXTSIZE",
             "Height of new text",
@@ -398,5 +408,15 @@ mod tests {
         );
         assert!(table.set("FILLETRAD", "-1", &mut state).is_err());
         assert!(table.set("TRIMMODE", "2", &mut state).is_err());
+    }
+
+    #[test]
+    fn peditaccept_is_a_variable() {
+        let (table, mut state) = (table(), AppState::new());
+        let _turn = crate::pedit_memory::take_turn_for_tests();
+        assert_eq!(table.get("PEDITACCEPT", &state), Ok(Value::Int(0)));
+        table.set("PEDITACCEPT", "1", &mut state).unwrap();
+        assert!(crate::pedit_memory::memory().accept);
+        assert!(table.set("PEDITACCEPT", "2", &mut state).is_err());
     }
 }

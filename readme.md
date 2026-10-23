@@ -151,7 +151,7 @@ Dependencies point downward: the document knows nothing about the UI. Read [ARCH
 
 Work follows the standard 2D drafting command set; `ui_plan.md` has the detailed to-do list.
 
-- Next: PEDIT, the remaining draw commands (Point, Donut, Boundary, Construction line, Ray), Distance and Area, Overkill and associative arrays
+- Next: the remaining draw commands (Point, Donut, Boundary, Construction line, Ray), Distance and Area, Overkill and associative arrays
 - Spline editing (trim, extend, break, join, offset)
 - The rest of dimensions (associativity, a styles table, real DXF dimensions), block attributes, ByBlock and dynamic blocks
 - Linetypes from `.lin` files, hatch gap tolerance and gradients
