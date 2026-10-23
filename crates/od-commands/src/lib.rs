@@ -41,7 +41,7 @@ pub use mleader_style_action::SetMLeaderStyles;
 pub use paste_action::PasteDrawing;
 pub use point_style_action::SetPointStyle;
 pub use prompt::{
-    Answer, Cancelled, DynamicDimensions, Ghost, GhostStyle, Hint, Keyword, NumberOptions,
+    Answer, Cancelled, DynamicDimensions, Ghost, GhostStyle, Hint, Keyword, Marker, NumberOptions,
     NumberOrPoint, Options, Picked, PointOptions, Prompt, Reply, TextOptions, Wants,
 };
 pub use registry::{

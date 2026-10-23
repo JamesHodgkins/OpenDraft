@@ -40,6 +40,10 @@ impl Keyword {
 /// point: given the pointer position, returns the entities to show.
 pub type Ghost = Arc<dyn Fn(Point) -> Vec<Entity> + Send + Sync>;
 
+/// Draws marks that keep one size on the screen: called with how many
+/// drawing units a screen point spans.
+pub type Marker = Arc<dyn Fn(f64) -> Vec<Entity> + Send + Sync>;
+
 /// How the ghost is drawn: the usual preview, or the colours of a selection
 /// region (blue for Window, green and dashed for Crossing and Fence).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -73,6 +77,8 @@ pub struct Options<T> {
     /// Live preview shown while choosing a point.
     pub ghost: Option<Ghost>,
     pub ghost_style: GhostStyle,
+    /// Marks drawn at a fixed size on the screen, whatever the zoom.
+    pub marker: Option<Marker>,
     /// For a selection prompt: Enter with nothing selected is an answer (an
     /// empty selection), not a request to select something first.
     pub allow_empty: bool,
@@ -95,6 +101,7 @@ impl<T> Options<T> {
             base: None,
             ghost: None,
             ghost_style: GhostStyle::Normal,
+            marker: None,
             allow_empty: false,
             pick_locked: false,
         }
@@ -119,6 +126,13 @@ impl<T> Options<T> {
 
     pub fn dimensions(mut self, dimensions: DynamicDimensions) -> Self {
         self.dynamic_dimensions = dimensions;
+        self
+    }
+
+    /// Show marks that stay the same size on the screen (a vertex cross,
+    /// say): `marker` is given how many drawing units a screen point spans.
+    pub fn marker(mut self, marker: impl Fn(f64) -> Vec<Entity> + Send + Sync + 'static) -> Self {
+        self.marker = Some(Arc::new(marker));
         self
     }
 
@@ -209,6 +223,7 @@ pub struct Prompt {
     pub base: Option<Point>,
     pub ghost: Option<Ghost>,
     pub ghost_style: GhostStyle,
+    pub marker: Option<Marker>,
     /// Enter alone is accepted (a default exists); the UI may show it.
     pub default_hint: Option<Hint>,
     /// See [`Options::allow_empty`].
@@ -229,6 +244,7 @@ impl Prompt {
             base: options.base,
             ghost: options.ghost.clone(),
             ghost_style: options.ghost_style,
+            marker: options.marker.clone(),
             default_hint: hint,
             allow_empty: options.allow_empty,
             pick_locked: options.pick_locked,

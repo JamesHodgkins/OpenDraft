@@ -9,7 +9,8 @@ use std::collections::HashSet;
 use std::fmt;
 
 use crate::{
-    Document, EllipseError, Entity, EntityId, LayerId, MLeaderStyleId, SplineError, TextStyleId,
+    Document, EllipseError, Entity, EntityId, LayerId, MLeaderStyleId, PolylineError, SplineError,
+    TextStyleId,
 };
 
 /// What is wrong with a drawing.
@@ -54,6 +55,8 @@ pub enum DocumentError {
     BadHatch(EntityId, String),
     /// A spline that could not exist.
     BadSpline(EntityId, SplineError),
+    /// A polyline that could not exist.
+    BadPolyline(EntityId, PolylineError),
     /// A block definition has a repeated id or name, a bad name, an object
     /// on a missing layer, an insert of a block not in the table, or an
     /// ellipse or spline that could not exist.
@@ -111,6 +114,9 @@ impl fmt::Display for DocumentError {
             Self::BadSpline(object, why) => {
                 write!(f, "object {} is not a valid spline: {why}", object.0)
             }
+            Self::BadPolyline(object, why) => {
+                write!(f, "object {} is not a valid polyline: {why}", object.0)
+            }
             Self::BadBlock(name) => write!(f, "block \"{name}\" is not valid"),
             Self::BadInsert(object) => {
                 write!(f, "object {} is not a valid block insert", object.0)
@@ -157,6 +163,13 @@ impl Document {
                 Entity::Spline(s) => s
                     .validate()
                     .map_err(|why| DocumentError::BadSpline(object.id, why))?,
+                Entity::Polyline {
+                    points,
+                    bulges,
+                    widths,
+                    ..
+                } => crate::polyline::check(points, bulges, widths)
+                    .map_err(|why| DocumentError::BadPolyline(object.id, why))?,
                 Entity::Hatch(h) => h
                     .validate()
                     .map_err(|why| DocumentError::BadHatch(object.id, why.to_string()))?,
@@ -323,6 +336,24 @@ mod tests {
                 id,
                 crate::SplineError::KnotsDecrease
             ))
+        );
+    }
+
+    #[test]
+    fn a_polyline_that_could_not_exist_is_found() {
+        let mut document = Document::default();
+        let polyline = |bulges: Vec<f64>| Entity::Polyline {
+            points: vec![Point::new(0.0, 0.0), Point::new(1.0, 0.0)],
+            closed: false,
+            bulges,
+            widths: Vec::new(),
+        };
+        document.add(polyline(vec![0.0, 0.5]));
+        assert_eq!(document.validate(), Ok(()));
+        let id = document.add(polyline(vec![f64::NAN, 0.0]));
+        assert_eq!(
+            document.validate(),
+            Err(DocumentError::BadPolyline(id, PolylineError::BadBulge(0)))
         );
     }
 

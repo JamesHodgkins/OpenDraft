@@ -305,10 +305,14 @@ uses it or, if nothing is selected, asks the user to select objects.
 When a prompt has keywords (`Options::keyword("Undo", "U")`) or a bare Enter
 means something, use `ask_point`, `ask_distance`, `ask_angle`, `ask_number` or
 `ask_string`, which return an `Answer`: `Value`, `Keyword(label)` or `Enter`.
+An option menu that ends on Enter uses `ask_keyword` (`Some(label)` or `None`):
+typed letters match its keywords, which `ask_string` would take as text.
+Leave the keyword list out of the message; the prompt line adds it.
 Options (`PointOptions`, ...) hold the message, keywords, a default (Enter
 takes it), a base point (rubber band, relative input, distances and angles
-measure from it) and a `ghost` callback that returns the entities to preview at
-each pointer position. An object prompt (`ask_object`) picks only objects
+measure from it), a `ghost` callback that returns the entities to preview at
+each pointer position and a `marker` callback for marks that keep one size on
+the screen (it is given how many drawing units a screen point spans). An object prompt (`ask_object`) picks only objects
 that can be edited unless `Options::pick_locked` lets it reach locked layers
 too (LAYULK). Angles are radians; the user types degrees. The canvas
 and the command line answer the same prompt, so the status-bar text, the

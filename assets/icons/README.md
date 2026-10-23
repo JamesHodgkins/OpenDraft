@@ -187,6 +187,7 @@ The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
 | ![](modify-mirror.svg) | `modify-mirror.svg` | flip-horizontal | Mirror |
 | ![](modify-move.svg) | `modify-move.svg` | move | Move, app/context_menu.rs |
 | ![](modify-offset.svg) | `modify-offset.svg` | stretch-horizontal | Offset |
+| ![](modify-pedit.svg) | `modify-pedit.svg` | waypoints | Edit Polyline |
 | ![](modify-rotate.svg) | `modify-rotate.svg` | rotate-cw | Rotate, app/context_menu.rs |
 | ![](modify-scale.svg) | `modify-scale.svg` | maximize | Scale, app/context_menu.rs |
 | ![](modify-stretch.svg) | `modify-stretch.svg` | unfold-horizontal | Stretch |
