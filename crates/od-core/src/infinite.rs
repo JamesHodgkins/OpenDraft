@@ -8,10 +8,34 @@
 //! Where a finite stand-in is needed (intersections, selection edges) a long
 //! [`segment`] serves.
 
-use crate::{Bounds, Entity, Point};
+use std::sync::atomic::{AtomicU64, Ordering};
+
+use crate::{Bounds, Entity, Grip, GripKind, Point};
 
 /// How far along the line [`segment`] reaches from the base point.
 pub const REACH: f64 = 1e7;
+
+/// How far from the base point the direction grips sit, in screen pixels.
+const ARM_PIXELS: f64 = 80.0;
+
+/// The size of a screen pixel in drawing units, as the bits of an `f64`; zero
+/// until a view sets it.
+static PIXEL: AtomicU64 = AtomicU64::new(0);
+
+/// Tell the grips how big a screen pixel is (drawing units) in the view being
+/// edited, so a direction grip can sit a fixed number of pixels from its base
+/// point. The canvas sets it every frame; a grip, picked or dragged on any
+/// thread, is then where it was drawn.
+pub fn set_pixel_size(units_per_pixel: f64) {
+    if units_per_pixel.is_finite() && units_per_pixel > 0.0 {
+        PIXEL.store(units_per_pixel.to_bits(), Ordering::Relaxed);
+    }
+}
+
+fn arm() -> f64 {
+    let pixel = f64::from_bits(PIXEL.load(Ordering::Relaxed));
+    ARM_PIXELS * if pixel > 0.0 { pixel } else { 1.0 }
+}
 
 /// The unit vector along `direction`, or `None` when it is not a finite
 /// vector of some length.
@@ -152,6 +176,46 @@ impl Entity {
         }
     }
 
+    /// The grips of a construction line or ray: the base point (moves it) and
+    /// a point on the line a fixed distance from the screen along it (turns
+    /// it), with a second one behind the base for a construction line.
+    pub(crate) fn line_grips(&self) -> Vec<Grip> {
+        let Some((origin, direction, ray)) = self.infinite_line() else {
+            return Vec::new();
+        };
+        let at = |t: f64| Point::new(origin.x + direction.x * t, origin.y + direction.y * t);
+        let mut grips = vec![
+            Grip {
+                at: origin,
+                kind: GripKind::Move,
+            },
+            Grip {
+                at: at(arm()),
+                kind: GripKind::Stretch,
+            },
+        ];
+        if !ray {
+            grips.push(Grip {
+                at: at(-arm()),
+                kind: GripKind::Stretch,
+            });
+        }
+        grips
+    }
+
+    /// The line with grip `index` dragged to `to`: the base moves, or the
+    /// line turns about the base to run through `to`.
+    pub(crate) fn line_grip_moved(&self, index: usize, to: Point) -> Option<Entity> {
+        let (origin, ..) = self.infinite_line()?;
+        let toward = Point::new(to.x - origin.x, to.y - origin.y);
+        match index {
+            0 => Some(self.translated(to.x - origin.x, to.y - origin.y)),
+            1 => unit(toward).map(|d| self.with_infinite_line(origin, d)),
+            2 => unit(Point::new(-toward.x, -toward.y)).map(|d| self.with_infinite_line(origin, d)),
+            _ => None,
+        }
+    }
+
     /// Move a construction line or ray: `map` takes the base point and the
     /// direction (a vector) to their new values.
     pub(crate) fn remapped_line(&self, map: impl FnOnce(Point, Point) -> (Point, Point)) -> Entity {
@@ -168,6 +232,37 @@ impl Entity {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn grips_move_the_base_or_turn_the_line_about_it() {
+        let line = Entity::Xline {
+            origin: Point::new(1.0, 1.0),
+            direction: Point::new(1.0, 0.0),
+        };
+        let grips = line.grips();
+        assert_eq!(grips.len(), 3, "base and a point either way");
+        assert_eq!(grips[0].at, Point::new(1.0, 1.0));
+        assert!(grips[1].at.x > 1.0 && grips[2].at.x < 1.0);
+        let moved = line.with_grip_moved(0, Point::new(4.0, 5.0)).unwrap();
+        assert_eq!(moved.infinite_line().unwrap().0, Point::new(4.0, 5.0));
+        let turned = line.with_grip_moved(1, Point::new(1.0, 9.0)).unwrap();
+        let (o, d, _) = turned.infinite_line().unwrap();
+        assert_eq!(o, Point::new(1.0, 1.0));
+        assert!(d.x.abs() < 1e-12 && (d.y - 1.0).abs() < 1e-12);
+        // The grip behind the base turns it the other way round.
+        let behind = line.with_grip_moved(2, Point::new(1.0, -9.0)).unwrap();
+        assert!((behind.infinite_line().unwrap().1.y - 1.0).abs() < 1e-12);
+        assert_eq!(line.with_grip_moved(1, Point::new(1.0, 1.0)), None);
+    }
+
+    #[test]
+    fn a_ray_has_no_grip_behind_its_base() {
+        let ray = Entity::Ray {
+            origin: Point::new(0.0, 0.0),
+            direction: Point::new(0.0, 1.0),
+        };
+        assert_eq!(ray.grips().len(), 2);
+    }
 
     fn p(x: f64, y: f64) -> Point {
         Point::new(x, y)

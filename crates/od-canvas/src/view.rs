@@ -128,6 +128,7 @@ impl View {
     ) -> CanvasOutput {
         let rect = ui.available_rect_before_wrap();
         self.point_style = document.point_style();
+        od_core::infinite::set_pixel_size(1.0 / self.camera.zoom);
         let response = ui.allocate_rect(rect, Sense::click_and_drag());
         let painter = ui.painter_at(rect);
         painter.rect_filled(rect, 0.0, style.background);
