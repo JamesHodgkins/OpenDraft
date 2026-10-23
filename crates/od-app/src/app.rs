@@ -28,7 +28,6 @@ mod panels;
 mod power_select_dialog;
 mod settings_dialog;
 mod snap_menu;
-mod template_dialog;
 mod text_style_dialog;
 mod text_style_preview;
 mod units_dialog;
@@ -103,7 +102,7 @@ pub struct OpenDraftApp {
     /// What Home knows of the recent files, and the pictures it shows for them.
     home_scan: crate::home_scan::HomeScan,
     home_previews: crate::preview_textures::PreviewTextures,
-    templates: template_dialog::TemplateDialog,
+    templates: home_page::TemplateList,
 }
 
 impl OpenDraftApp {
@@ -412,7 +411,6 @@ impl eframe::App for OpenDraftApp {
         self.context_menu(ctx);
         self.tool_windows(ctx);
         self.confirm_dialog(ctx);
-        self.template_dialog(ctx);
         self.consent_dialog(ctx);
         self.autosave_when_due(ctx);
         self.update_window_title(ctx);

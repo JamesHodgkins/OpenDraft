@@ -13,6 +13,7 @@ mod layout;
 mod news;
 mod recent;
 mod recovery;
+mod start;
 
 use super::OpenDraftApp;
 use crate::home_scan::ScanRequest;
@@ -22,12 +23,17 @@ use layout::{layout, Layout, COLUMN_GAP};
 use news::whats_new_section;
 use recent::{recent_section, row, RowText, Section};
 use recovery::recovery_section;
+use start::start_section;
+pub(super) use start::TemplateList;
 
 /// What the user chose on the page this frame.
 pub(super) enum Pick {
     New,
     Open,
-    Template,
+    /// The templates dropdown was opened: read the folder again.
+    ScanTemplates,
+    NewFromTemplate(crate::templates::Template),
+    OpenTemplatesFolder,
     Recent(RecentId),
     Pin(RecentId),
     Unpin(RecentId),
@@ -48,6 +54,7 @@ pub(super) enum Pick {
 impl OpenDraftApp {
     pub(super) fn home_page(&mut self, ui: &mut egui::Ui) {
         self.refresh_recent_entries(ui.ctx());
+        self.templates.collect();
         let entries = self.home_scan.entries(&self.state.recent);
         let pinned_full = self.state.recent.pinned_count() >= MAX_PINNED;
         let pictures = self.home_previews.update(ui.ctx(), &entries);
@@ -83,6 +90,17 @@ impl OpenDraftApp {
                         });
                     }
                 };
+                let start = |ui: &mut egui::Ui, pick: &mut Option<Pick>| {
+                    ui.push_id("home_start", |ui| {
+                        start_section(
+                            ui,
+                            theme,
+                            &self.templates,
+                            self.state.templates_dir.as_deref(),
+                            pick,
+                        )
+                    });
+                };
                 let recent = |ui: &mut egui::Ui, pick: &mut Option<Pick>| {
                     ui.push_id("home_recent", |ui| {
                         recent_section(
@@ -102,16 +120,15 @@ impl OpenDraftApp {
                     ui.add_space(margin);
                     ui.vertical(|ui| {
                         ui.set_width(width);
-                        ui.push_id("home_header", |ui| header_section(ui, theme, &mut pick));
+                        ui.push_id("home_header", |ui| header_section(ui, theme));
                         match shown {
                             Layout::Single { .. } => {
                                 recovery(ui, &mut pick);
+                                start(ui, &mut pick);
                                 ui.push_id("home_open_now", |ui| {
                                     self.open_drawings_section(ui, &mut pick)
                                 });
                                 recent(ui, &mut pick);
-                                ui.add_space(22.0);
-                                ui.push_id("home_start", |ui| start_section(ui, theme, &mut pick));
                                 announce(ui, &mut pick);
                             }
                             Layout::Wide { main, side, .. } => {
@@ -119,6 +136,7 @@ impl OpenDraftApp {
                                     ui.vertical(|ui| {
                                         ui.set_width(main);
                                         recovery(ui, &mut pick);
+                                        start(ui, &mut pick);
                                         recent(ui, &mut pick);
                                     });
                                     ui.add_space(COLUMN_GAP);
@@ -126,9 +144,6 @@ impl OpenDraftApp {
                                         ui.set_width(side);
                                         ui.push_id("home_open_now", |ui| {
                                             self.open_drawings_section(ui, &mut pick)
-                                        });
-                                        ui.push_id("home_start", |ui| {
-                                            start_section(ui, theme, &mut pick)
                                         });
                                         announce(ui, &mut pick);
                                     });
@@ -203,7 +218,19 @@ impl OpenDraftApp {
         match pick {
             Some(Pick::New) => self.run("file.new"),
             Some(Pick::Open) => self.run("file.open"),
-            Some(Pick::Template) => self.templates.show(ctx, self.state.templates_dir.clone()),
+            Some(Pick::ScanTemplates) => self
+                .templates
+                .refresh(ctx, self.state.templates_dir.clone()),
+            Some(Pick::NewFromTemplate(template)) => self.state.new_from_template(&template),
+            Some(Pick::OpenTemplatesFolder) => {
+                if let Some(folder) = self.state.templates_dir.clone() {
+                    let _ = std::fs::create_dir_all(&folder);
+                    if let Err(error) = open_folder(&folder) {
+                        self.state
+                            .tell(format!("Could not open {}: {error}", folder.display()));
+                    }
+                }
+            }
             Some(Pick::Recent(id)) => self.state.open_recent_id(id),
             Some(Pick::Pin(id)) => {
                 if self.state.recent.pin(id).is_err() {
@@ -237,6 +264,18 @@ impl OpenDraftApp {
     }
 }
 
+/// Open `folder` in the system's file manager.
+fn open_folder(folder: &Path) -> std::io::Result<()> {
+    #[cfg(windows)]
+    let program = "explorer";
+    #[cfg(not(windows))]
+    let program = "xdg-open";
+    std::process::Command::new(program)
+        .arg(folder)
+        .spawn()
+        .map(|_| ())
+}
+
 /// Reveal `path` in the system's file manager.
 fn show_in_folder(path: &Path) -> std::io::Result<()> {
     #[cfg(windows)]
@@ -250,8 +289,8 @@ fn show_in_folder(path: &Path) -> std::io::Result<()> {
     child.map(|_| ())
 }
 
-/// Title, version and the two ways to start.
-fn header_section(ui: &mut egui::Ui, theme: &od_ui::Theme, pick: &mut Option<Pick>) {
+/// The title, the version, and how to open a file by dropping it.
+fn header_section(ui: &mut egui::Ui, theme: &od_ui::Theme) {
     let c = &theme.colors;
     ui.add_space(36.0);
     ui.label(
@@ -261,52 +300,14 @@ fn header_section(ui: &mut egui::Ui, theme: &od_ui::Theme, pick: &mut Option<Pic
     );
     ui.label(
         egui::RichText::new(format!(
-            "2D drafting  ·  version {}",
+            "2D drafting  \u{b7}  version {}",
             env!("CARGO_PKG_VERSION")
         ))
         .color(c.text_weak),
     );
-    ui.add_space(18.0);
-    ui.horizontal_wrapped(|ui| {
-        if widgets::primary_button(ui, theme, "New drawing").clicked() {
-            *pick = Some(Pick::New);
-        }
-        if widgets::secondary_button(ui, theme, "Open...").clicked() {
-            *pick = Some(Pick::Open);
-        }
-        if widgets::secondary_button(ui, theme, "Template...").clicked() {
-            *pick = Some(Pick::Template);
-        }
-        ui.label(
-            egui::RichText::new("or drop a .odx, .dxf or .dwg file on the window")
-                .color(c.text_weak),
-        );
-    });
+    ui.label(
+        egui::RichText::new("Drop a .odx, .dxf or .dwg file on the window to open it.")
+            .color(c.text_weak),
+    );
     ui.add_space(26.0);
-}
-
-/// Two ways to begin: nothing, or from a template.
-fn start_section(ui: &mut egui::Ui, theme: &od_ui::Theme, pick: &mut Option<Pick>) {
-    widgets::section_header(ui, theme, "Start");
-    for (id, name, detail, choice) in [
-        ("blank", "Blank drawing", "Start from scratch", Pick::New),
-        (
-            "template",
-            "From template...",
-            "Starters, and your own templates",
-            Pick::Template,
-        ),
-    ] {
-        let text = RowText {
-            name,
-            detail,
-            right: "",
-            dim: false,
-            trailing: 0.0,
-        };
-        if row(ui, theme, id, &text).clicked() {
-            *pick = Some(choice);
-        }
-    }
-    ui.add_space(22.0);
 }

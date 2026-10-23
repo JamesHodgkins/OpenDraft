@@ -163,6 +163,7 @@ icons! {
     GROUP_UNGROUP = '\u{e46b}';
     HOME_MORE = '\u{e0ba}';
     HOME_PIN = '\u{e258}';
+    HOME_TEMPLATE = '\u{e206}';
     HOME_VIEW_GRID = '\u{e104}';
     HOME_VIEW_LIST = '\u{e10b}';
     INQUIRY_ANGLE = '\u{e4f1}';
