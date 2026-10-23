@@ -160,6 +160,7 @@ fn item(shape: &Shape, styles: &Styles) -> Result<Item<DwgHandle>, Refused> {
             start: point(*start),
             end: point(*end),
         },
+        Shape::Point { at } => Entity::Point { at: point(*at) },
         Shape::Circle { center, radius } => Entity::Circle {
             center: point(*center),
             radius: *radius,
