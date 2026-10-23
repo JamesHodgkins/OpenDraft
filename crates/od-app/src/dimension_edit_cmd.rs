@@ -141,6 +141,39 @@ pub fn dim_text_edit(ed: &mut Editor) -> Result<(), Cancelled> {
     apply(ed, "Edit dimension text", ids, change)
 }
 
+/// DIMDISASSOCIATE: the selected dimensions no longer follow their objects.
+pub fn dim_disassociate(ed: &mut Editor) -> Result<(), Cancelled> {
+    let ids = ed.pickset_or_select("Select dimensions")?;
+    let ids = dimensions_in(ed, ids)?;
+    apply(
+        ed,
+        "Disassociate dimension",
+        ids,
+        Box::new(|d: &Dimension| Some(d.detached())),
+    )
+}
+
+/// DIMREASSOCIATE: the selected dimensions follow the objects their points
+/// now sit on (an end, a centre, a vertex).
+pub fn dim_reassociate(ed: &mut Editor) -> Result<(), Cancelled> {
+    let ids = ed.pickset_or_select("Select dimensions")?;
+    let ids = dimensions_in(ed, ids)?;
+    let tied = ed.transaction("Reassociate dimension", move |tx| {
+        let mut tied = 0usize;
+        for id in ids {
+            let next = match tx.document().get(id) {
+                Some(Entity::Dimension(d)) => d.associated(tx.document()),
+                _ => continue,
+            };
+            tied += next.assoc.len();
+            tx.modify(id, |_| Entity::Dimension(Box::new(next.clone())));
+        }
+        Ok(tied)
+    })?;
+    ed.say(format!("{} tied.", plural(tied, "point")));
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use std::f64::consts::PI;
@@ -179,6 +212,30 @@ mod tests {
             Entity::Dimension(d) => (**d).clone(),
             _ => unreachable!(),
         }
+    }
+
+    #[test]
+    fn disassociate_and_reassociate_untie_and_retie_a_dimension() {
+        let mut state = AppState::new();
+        state.add_entity(Entity::Line {
+            start: p(0.0, 0.0),
+            end: p(10.0, 0.0),
+        });
+        let d = Dimension::aligned(p(0.0, 0.0), p(10.0, 0.0), p(0.0, 5.0), &DimStyle::default());
+        state.add_entity(Entity::Dimension(Box::new(d)));
+        let ties = |state: &AppState| match &state.session().document().objects()[1].entity {
+            Entity::Dimension(d) => d.assoc.len(),
+            _ => unreachable!(),
+        };
+        assert_eq!(ties(&state), 0, "added directly, not tied");
+        state.select_all();
+        state.start_command("DIMREASSOCIATE", dim_reassociate);
+        state.settle_command();
+        assert_eq!(ties(&state), 2);
+        state.select_all();
+        state.start_command("DIMDISASSOCIATE", dim_disassociate);
+        state.settle_command();
+        assert_eq!(ties(&state), 0);
     }
 
     #[test]

@@ -9,6 +9,7 @@
 
 mod angular;
 mod arc_length;
+mod assoc;
 mod centre;
 mod chain;
 mod edit;
@@ -27,6 +28,7 @@ mod tolerance;
 
 use crate::{Bounds, Entity, Point};
 
+pub use assoc::{follow as follow_associations, Assoc, AssocPoint};
 pub use centre::centre_segments;
 pub use jogline::spaced_offsets;
 pub use ordinate::suggested_x_datum;
@@ -124,6 +126,8 @@ pub struct Dimension {
     pub text_angle: Option<f64>,
     /// Where a jog line is put in a linear dimension's line.
     pub jog_line: Option<Point>,
+    /// What the defining points follow (see `assoc`); empty for none.
+    pub assoc: Vec<Assoc>,
 }
 
 /// The dimension drawn: its pieces and where the text's middle is.
@@ -141,6 +145,7 @@ impl Dimension {
             text_pos: None,
             text_angle: None,
             jog_line: None,
+            assoc: Vec::new(),
         }
     }
 

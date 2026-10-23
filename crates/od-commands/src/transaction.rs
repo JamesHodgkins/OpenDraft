@@ -109,7 +109,7 @@ impl<'a> Transaction<'a> {
         let changes = Changes::merged(self.done.iter().map(|a| a.changes()));
         let follow = crate::associations::updates(self.document, &changes);
         if !follow.is_empty() {
-            self.perform(ModifyEntities::new("Update hatch", follow));
+            self.perform(ModifyEntities::new("Update associations", follow));
         }
         Some(Box::new(Batch {
             name: name.to_owned(),

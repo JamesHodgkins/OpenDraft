@@ -7,7 +7,7 @@ use crate::dimension_angular_cmd::dim_angular;
 use crate::dimension_centre_cmd::dim_centre;
 use crate::dimension_chain_cmd::{dim_baseline, dim_continue};
 use crate::dimension_cmd::{dim_aligned, dim_arc, dim_auto, dim_diameter, dim_linear, dim_radius};
-use crate::dimension_edit_cmd::{dim_edit, dim_text_edit};
+use crate::dimension_edit_cmd::{dim_disassociate, dim_edit, dim_reassociate, dim_text_edit};
 use crate::dimension_jogged_cmd::dim_jogged;
 use crate::dimension_ordinate_cmd::dim_ordinate;
 use crate::dimension_space_cmd::{dim_jog_line, dim_space};
@@ -47,6 +47,18 @@ pub fn commands() -> Vec<Command<AppState>> {
         ),
         editor_command!("dim.update", "Update Dimension", "-DIMSTYLE", dim_update),
         editor_command!("dim.edit", "Dimension Edit", "DIMEDIT", dim_edit),
+        editor_command!(
+            "dim.disassociate",
+            "Disassociate",
+            "DIMDISASSOCIATE",
+            dim_disassociate
+        ),
+        editor_command!(
+            "dim.reassociate",
+            "Reassociate",
+            "DIMREASSOCIATE",
+            dim_reassociate
+        ),
         editor_command!(
             "dim.textedit",
             "Dimension Text Edit",

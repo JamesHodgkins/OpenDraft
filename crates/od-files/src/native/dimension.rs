@@ -2,7 +2,8 @@
 //! style values that differ from the stock style are written, so a dimension
 //! stays short and a style added later reads as the default.
 
-use od_core::{DimKind, DimText, Dimension};
+use od_core::dimension::{Assoc, AssocPoint};
+use od_core::{DimKind, DimText, Dimension, EntityId};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -58,6 +59,50 @@ pub(super) enum DimKindDto {
     },
 }
 
+/// A defining point tied to a point of an object.
+#[derive(Serialize, Deserialize)]
+struct AssocDto {
+    point: usize,
+    target: u64,
+    /// `start`, `end`, `center`, `circumference` or `vertex:N`.
+    at: String,
+}
+
+impl AssocDto {
+    fn from_assoc(a: &Assoc) -> Self {
+        let at = match a.at {
+            AssocPoint::Start => "start".to_owned(),
+            AssocPoint::End => "end".to_owned(),
+            AssocPoint::Center => "center".to_owned(),
+            AssocPoint::Circumference => "circumference".to_owned(),
+            AssocPoint::Vertex(i) => format!("vertex:{i}"),
+        };
+        Self {
+            point: a.point,
+            target: a.target.0,
+            at,
+        }
+    }
+
+    fn to_assoc(&self) -> Result<Assoc, FileError> {
+        let at = match self.at.as_str() {
+            "start" => AssocPoint::Start,
+            "end" => AssocPoint::End,
+            "center" => AssocPoint::Center,
+            "circumference" => AssocPoint::Circumference,
+            other => match other.strip_prefix("vertex:").and_then(|n| n.parse().ok()) {
+                Some(i) => AssocPoint::Vertex(i),
+                None => return invalid(format!("a dimension ties to \"{other}\"")),
+            },
+        };
+        Ok(Assoc {
+            point: self.point,
+            target: EntityId(self.target),
+            at,
+        })
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub(super) struct DimensionDto {
     #[serde(flatten)]
@@ -74,6 +119,9 @@ pub(super) struct DimensionDto {
     /// Where a jog line is put in the dimension line.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     jog_line: Option<PointDto>,
+    /// The objects the defining points follow.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    assoc: Vec<AssocDto>,
     /// The style's differences from the stock one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     style: Option<Value>,
@@ -150,6 +198,7 @@ impl DimensionDto {
             text_pos: d.text_pos.map(point),
             text_angle: d.text_angle,
             jog_line: d.jog_line.map(point),
+            assoc: d.assoc.iter().map(AssocDto::from_assoc).collect(),
             style: sparse_style(&d.style),
         }
     }
@@ -238,6 +287,11 @@ impl DimensionDto {
             text_pos: self.text_pos.as_ref().map(pt).transpose()?,
             text_angle: angle(&self.text_angle)?,
             jog_line: self.jog_line.as_ref().map(pt).transpose()?,
+            assoc: self
+                .assoc
+                .iter()
+                .map(AssocDto::to_assoc)
+                .collect::<Result<_, _>>()?,
         };
         if dimension.measurement().is_none() {
             return invalid("a dimension has nothing to measure");
@@ -283,6 +337,18 @@ mod tests {
         linear.text_pos = Some(p(4.0, 9.0));
         linear.text_angle = Some(0.75);
         linear.jog_line = Some(p(2.0, 8.0));
+        linear.assoc = vec![
+            Assoc {
+                point: 0,
+                target: EntityId(3),
+                at: AssocPoint::Vertex(2),
+            },
+            Assoc {
+                point: 1,
+                target: EntityId(4),
+                at: AssocPoint::Circumference,
+            },
+        ];
         let mut aligned = Dimension::aligned(p(1.0, 1.0), p(5.0, 9.0), p(0.0, 0.0), &style);
         if let DimKind::Linear { oblique, .. } = &mut aligned.kind {
             *oblique = Some(1.2);
@@ -449,6 +515,7 @@ mod tests {
             text_pos: None,
             text_angle: None,
             jog_line: None,
+            assoc: Vec::new(),
             style: None,
         };
         assert!(nothing.to_dimension().is_err(), "nothing to measure");

@@ -465,6 +465,11 @@ mod tests {
         click(&mut state, 0, p(12.0, 0.0));
         submit(&mut state, "12,10");
         assert_eq!(dimensions(&state)[0].measurement(), Some(25.0));
+        assert_eq!(
+            dimensions(&state)[0].assoc.len(),
+            2,
+            "a dimension of an object follows its ends"
+        );
     }
 
     #[test]
