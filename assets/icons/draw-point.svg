@@ -1,15 +1,24 @@
-<!-- @license lucide-static v0.469.0 - ISC -->
-<svg
-  class="lucide lucide-dot"
-  xmlns="http://www.w3.org/2000/svg"
-  width="24"
-  height="24"
-  viewBox="0 0 24 24"
-  fill="none"
-  stroke="currentColor"
-  stroke-width="2"
-  stroke-linecap="round"
-  stroke-linejoin="round"
->
-  <circle cx="12.1" cy="12.1" r="1" />
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:affinity="https://www.affinity.studio/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
+    <g transform="matrix(1,0,0,1,-1184,0)">
+        <rect id="draw-point" x="1184" y="0" width="64" height="64" style="fill:none;"/>
+        <g id="draw-point1" affinity:id="draw-point">
+            <g transform="matrix(0.599306,0,0,0.599306,1198.140278,20.235394)">
+                <circle cx="29.801" cy="19.591" r="5.006" style="fill:rgb(0,199,154);"/>
+            </g>
+            <g transform="matrix(0.864241,0.135759,0.135759,0.864241,164.726066,-164.726066)">
+                <path d="M1216,32L1230.685,17.315" style="fill:none;stroke:rgb(243,243,243);stroke-width:2.08px;"/>
+            </g>
+            <g transform="matrix(0.864241,0.135759,0.135759,0.864241,146.101056,-146.101056)">
+                <path d="M1216,32L1230.685,17.315" style="fill:none;stroke:rgb(243,243,243);stroke-width:2.08px;"/>
+            </g>
+            <g transform="matrix(-0.864241,0.135759,-0.135759,0.864241,2267.321452,-164.726066)">
+                <path d="M1216,32L1230.685,17.315" style="fill:none;stroke:rgb(243,243,243);stroke-width:2.08px;"/>
+            </g>
+            <g transform="matrix(-0.864241,0.135759,-0.135759,0.864241,2285.946462,-146.101056)">
+                <path d="M1216,32L1230.685,17.315" style="fill:none;stroke:rgb(243,243,243);stroke-width:2.08px;"/>
+            </g>
+        </g>
+    </g>
 </svg>
