@@ -672,3 +672,4 @@ The AutoCAD sample drawings (21 DXF and DWG files) moved from the tracked `test_
 - Modify, array, Match Properties, Create Block, MTEDIT and Power Select are no longer dimmed on an empty drawing; like Trim and Offset they ask for objects. Select All, Erase and the layer commands still wait for something to act on.
 - The command line's suggestion list stays up while the pointer is on it, so a click on a row runs the command (the press used to take focus from the input and hide the list before the click landed).
 - A hovered circle or arc shows a small cross at its centre.
+- The Home tab's Dimension button was dimmed because `dim.dim` was not built, not because of the element count. `DIM` now exists (`dim_auto` in `dimension_cmd.rs`): a circle or arc gets a radius dimension, a line or straight segment a linear one, Enter starts a linear dimension from two points. Still missing: its other options (Angular, Baseline, Continue...).

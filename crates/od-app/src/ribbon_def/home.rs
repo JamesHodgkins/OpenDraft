@@ -456,7 +456,6 @@ mod tests {
         "draw.gradient",
         "modify.blend",
         "annotate.text",
-        "dim.dim",
         "dim.angular",
         "annotate.mleader_add",
         "annotate.mleader_remove",
