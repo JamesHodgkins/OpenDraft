@@ -129,6 +129,7 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
     } else {
         readable(mid + FRAC_PI_2)
     };
+    let text_angle = dim.text_angle.unwrap_or(text_angle);
     // Text runs straight along the tangent while the arc falls away from it,
     // so it is raised by how far the arc sags under the text's ends.
     let half = (width / 2.0).min(ra);

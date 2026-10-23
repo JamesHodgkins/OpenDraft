@@ -62,12 +62,26 @@ impl Dimension {
         out
     }
 
+    /// The same dimension with its extension lines slanted to `angle`
+    /// radians (`None` stands them square again). Only a linear or aligned
+    /// dimension has them.
+    pub fn with_oblique(&self, angle: Option<f64>) -> Option<Dimension> {
+        let mut out = self.clone();
+        match &mut out.kind {
+            DimKind::Linear { oblique, .. } => *oblique = angle,
+            _ => return None,
+        }
+        out.measurement()?;
+        Some(out)
+    }
+
     pub fn translated(&self, dx: f64, dy: f64) -> Dimension {
         self.mapped(|p| p.translated(dx, dy))
     }
 
     pub fn rotated(&self, center: Point, angle: f64) -> Dimension {
         let mut out = self.mapped(|p| p.rotated(center, angle));
+        out.text_angle = out.text_angle.map(|a| a + angle);
         if let DimKind::Linear {
             rotation, oblique, ..
         } = &mut out.kind
@@ -92,6 +106,7 @@ impl Dimension {
     pub fn mirrored(&self, a: Point, b: Point) -> Dimension {
         let mut out = self.mapped(|p| p.mirrored(a, b));
         let axis = (b.y - a.y).atan2(b.x - a.x);
+        out.text_angle = out.text_angle.map(|r| 2.0 * axis - r);
         if let DimKind::Linear {
             rotation, oblique, ..
         } = &mut out.kind
@@ -207,9 +222,32 @@ impl Dimension {
         Some(out)
     }
 
+    /// With the text turned to `angle` radians (`None` for the style's own
+    /// angle).
+    pub fn with_text_angle(&self, angle: Option<f64>) -> Dimension {
+        Dimension {
+            text_angle: angle,
+            ..self.clone()
+        }
+    }
+
+    /// With the text at the left (1), right (2) or centre (0) of the
+    /// dimension line, as DIMTEDIT's options. Only a linear, aligned or arc
+    /// length dimension has a line to justify along.
+    pub fn with_text_justified(&self, just: u8) -> Option<Dimension> {
+        if matches!(self.kind, DimKind::Radial { .. }) {
+            return None;
+        }
+        let mut out = self.clone();
+        out.style.text_just = just.min(2);
+        out.text_pos = None;
+        Some(out)
+    }
+
     /// Back to the style's own text position.
     pub fn reset_text(&mut self) {
         self.text_pos = None;
+        self.text_angle = None;
     }
 }
 
@@ -226,6 +264,58 @@ mod tests {
 
     fn linear() -> Dimension {
         Dimension::aligned(p(0.0, 0.0), p(10.0, 0.0), p(0.0, 5.0), &DimStyle::default())
+    }
+
+    #[test]
+    fn text_angle_turns_with_the_dimension_and_resets_with_the_text() {
+        let d = linear().with_text_angle(Some(0.5));
+        let turned = d.rotated(p(0.0, 0.0), FRAC_PI_2);
+        assert_eq!(turned.text_angle, Some(0.5 + FRAC_PI_2));
+        let mirrored = d.mirrored(p(0.0, 0.0), p(1.0, 0.0));
+        assert_eq!(mirrored.text_angle, Some(-0.5));
+        let mut again = d;
+        again.reset_text();
+        assert_eq!(again.text_angle, None);
+    }
+
+    #[test]
+    fn text_angle_turns_the_drawn_text() {
+        let angles = |d: &Dimension| -> Vec<f64> {
+            d.picture()
+                .into_iter()
+                .filter_map(|e| match e {
+                    crate::Entity::MText(t) => Some(t.direction.y.atan2(t.direction.x)),
+                    _ => None,
+                })
+                .collect()
+        };
+        let d = linear();
+        assert!(angles(&d)[0].abs() < 1e-9);
+        let turned = d.with_text_angle(Some(FRAC_PI_2));
+        assert!((angles(&turned)[0] - FRAC_PI_2).abs() < 1e-9);
+    }
+
+    #[test]
+    fn justifying_text_clears_its_position_and_skips_radial() {
+        let mut d = linear();
+        d.text_pos = Some(p(4.0, 9.0));
+        let left = d.with_text_justified(1).unwrap();
+        assert_eq!((left.text_pos, left.style.text_just), (None, 1));
+        let r = Dimension::radius(p(0.0, 0.0), p(5.0, 0.0), &DimStyle::default());
+        assert!(r.with_text_justified(1).is_none());
+    }
+
+    #[test]
+    fn oblique_slants_only_linear_dimensions() {
+        let slanted = linear().with_oblique(Some(1.0)).unwrap();
+        assert!(matches!(
+            slanted.kind,
+            DimKind::Linear {
+                oblique: Some(a), ..
+            } if a == 1.0
+        ));
+        let r = Dimension::radius(p(0.0, 0.0), p(5.0, 0.0), &DimStyle::default());
+        assert!(r.with_oblique(Some(1.0)).is_none());
     }
 
     #[test]

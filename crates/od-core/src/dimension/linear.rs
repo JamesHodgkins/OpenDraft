@@ -127,6 +127,7 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
     } else {
         readable(line_angle)
     };
+    let text_angle = dim.text_angle.unwrap_or(text_angle);
     let up = direction(text_angle + FRAC_PI_2);
     let sloped = horizontal && dir.1.abs() > 1e-9;
     let mid_points = Point::new((p1.x + p2.x) / 2.0, (p1.y + p2.y) / 2.0);

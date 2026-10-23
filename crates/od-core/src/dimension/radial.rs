@@ -100,6 +100,7 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
         }
     };
 
+    let text_angle = dim.text_angle.unwrap_or(text_angle);
     let mut out = Sketch::default();
     // Arrows touch the circle from inside.
     out.arrow(s.arrow, pt, (-u.0, -u.1), size);
