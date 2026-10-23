@@ -16,20 +16,6 @@ use crate::WireId;
 #[derive(Clone, Debug, PartialEq, Deserialize, JsonSchema)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum NewGeometry {
-    Point {
-        at: PointDto,
-    },
-    /// A line with no ends; `direction` is any vector but zero (it is made a
-    /// unit vector).
-    Xline {
-        origin: PointDto,
-        direction: PointDto,
-    },
-    /// A line from `origin` with no far end.
-    Ray {
-        origin: PointDto,
-        direction: PointDto,
-    },
     Line {
         start: PointDto,
         end: PointDto,
@@ -94,22 +80,6 @@ pub enum NewGeometry {
 #[derive(Clone, Debug, PartialEq, Deserialize, JsonSchema)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum GeometryPatch {
-    Point {
-        #[serde(default)]
-        at: Option<PointDto>,
-    },
-    Xline {
-        #[serde(default)]
-        origin: Option<PointDto>,
-        #[serde(default)]
-        direction: Option<PointDto>,
-    },
-    Ray {
-        #[serde(default)]
-        origin: Option<PointDto>,
-        #[serde(default)]
-        direction: Option<PointDto>,
-    },
     Line {
         #[serde(default)]
         start: Option<PointDto>,
