@@ -37,6 +37,8 @@ pub(super) enum Pick {
     Forget(RecentId),
     Locate(RecentId),
     ShowInFolder(PathBuf),
+    /// The path is on the clipboard.
+    Copied,
     ClearUnpinned,
     Show(usize),
 }
@@ -148,6 +150,7 @@ impl OpenDraftApp {
             Some(Pick::ClearUnpinned) => {
                 self.state.recent.clear_unpinned();
             }
+            Some(Pick::Copied) => self.state.message = "Path copied".to_owned(),
             Some(Pick::Show(i)) => self.state.show_document(i),
             None => {}
         }
