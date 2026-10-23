@@ -452,6 +452,34 @@ mod tests {
     }
 
     #[test]
+    fn a_donut_of_two_vertices_and_two_arcs_comes_in_as_a_whole_ring() {
+        let loaded = load(
+            &[],
+            &[
+                (0, "LWPOLYLINE"),
+                (8, "0"),
+                (90, "2"),
+                (70, "1"),
+                (43, "2"),
+                (10, "1"),
+                (20, "0"),
+                (42, "1"),
+                (10, "-1"),
+                (20, "0"),
+                (42, "1"),
+            ],
+        );
+        let Some(Entity::Polyline { points, bulges, .. }) =
+            loaded.document.objects().first().map(|o| o.entity.clone())
+        else {
+            panic!("a polyline");
+        };
+        assert_eq!(points.len(), 4);
+        let round = od_core::bulge::path_length(&points, &bulges, true);
+        assert!((round - std::f64::consts::TAU).abs() < 1e-9, "{round}");
+    }
+
+    #[test]
     fn lines_and_circles_come_in_on_their_layers() {
         let loaded = load(
             &[

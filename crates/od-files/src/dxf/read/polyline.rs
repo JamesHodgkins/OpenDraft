@@ -120,12 +120,13 @@ impl Importer {
                 end: points[1],
             }
         } else {
-            Entity::Polyline {
+            // AutoCAD's donuts and circles are two vertices and two arcs.
+            od_core::closed_pair::expanded(Entity::Polyline {
                 points,
                 closed,
                 bulges,
                 widths,
-            }
+            })
         };
         self.add(record, entity);
     }
