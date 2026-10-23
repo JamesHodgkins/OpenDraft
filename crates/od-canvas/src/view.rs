@@ -8,7 +8,7 @@ use od_core::{
 
 use crate::camera::Camera;
 use crate::grid::{grid_step, line_indices};
-use crate::grips::{grip_at, keep_selected, press_grip, GripHit};
+use crate::grips::{grip_at, keep_selected, press_grip, with_shared, GripHit};
 use crate::hatch_cache::HatchCache;
 use crate::hit::{pick_here, pick_visible_here};
 use crate::select::Region;
@@ -260,6 +260,7 @@ impl View {
         }
         let grips = grip_pick
             .and_then(|pick| press_grip(&mut self.warm, pick, shift))
+            .map(|hot| with_shared(document, selection, hot))
             .unwrap_or_default();
         let click = (primary && selecting && grip_pick.is_none() && !swallow)
             .then(|| {
