@@ -122,6 +122,7 @@ mod text_memory;
 mod text_style_draft;
 mod units_state;
 mod units_vars;
+mod whats_new;
 mod window_memory;
 mod xline_cmd;
 

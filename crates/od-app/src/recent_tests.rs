@@ -282,3 +282,34 @@ fn the_chosen_view_is_remembered_and_grid_is_the_default() {
     recent.save(&mut storage);
     assert_eq!(RecentFiles::load(Some(&storage)).view, RecentView::List);
 }
+
+#[test]
+fn a_dismissed_note_is_remembered_by_its_exact_version_and_only_sixteen_are_kept() {
+    let mut recent = RecentFiles::default();
+    assert!(!recent.whats_new_seen("0.2.0"));
+    recent.dismiss_whats_new("0.2.0");
+    assert!(recent.whats_new_seen("0.2.0"));
+    assert!(
+        !recent.whats_new_seen("0.2.0-beta.1"),
+        "a prerelease is its own version"
+    );
+    let mut storage = MemoryStorage::default();
+    recent.save(&mut storage);
+    assert!(RecentFiles::load(Some(&storage)).whats_new_seen("0.2.0"));
+    // Dismissing again moves it to the newest, not twice.
+    for i in 0..20 {
+        recent.dismiss_whats_new(&format!("1.0.{i}"));
+    }
+    recent.dismiss_whats_new("1.0.5");
+    assert_eq!(recent.seen_notes.len(), 16);
+    assert_eq!(recent.seen_notes.last().map(String::as_str), Some("1.0.5"));
+    assert_eq!(
+        recent.seen_notes.iter().filter(|v| *v == "1.0.5").count(),
+        1
+    );
+    assert!(!recent.whats_new_seen("0.2.0"), "the oldest went");
+    assert!(recent.whats_new_seen("1.0.19"));
+    // An old file without the list loads with none seen.
+    storage.set_string("recent_drawings", r#"{"items":[]}"#.to_owned());
+    assert!(!RecentFiles::load(Some(&storage)).whats_new_seen("1.0.19"));
+}
