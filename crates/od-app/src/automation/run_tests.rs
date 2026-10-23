@@ -183,11 +183,9 @@ fn only_commands_marked_for_the_user_to_finish_can_be_started() {
         code(&mut state, "no.such").code,
         ErrorCode::InvalidArguments
     );
-    // Needs objects to work on, and there are none.
-    assert_eq!(
-        code(&mut state, "modify.move").code,
-        ErrorCode::InvalidArguments
-    );
+    // An empty drawing does not block a modify command: it asks for objects.
+    assert!(start(&mut state, "modify.move").is_ok());
+    state.cancel();
     assert!(!state.command_running());
     assert!(!state.exit_requested);
 }

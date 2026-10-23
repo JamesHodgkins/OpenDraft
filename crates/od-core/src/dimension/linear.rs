@@ -58,6 +58,12 @@ fn frame(kind: &DimKind) -> Option<Frame> {
     Some(Frame { dir, q1, q2 })
 }
 
+/// The middle of the dimension line, where its grip sits.
+pub(super) fn line_middle(kind: &DimKind) -> Option<Point> {
+    let Frame { q1, q2, .. } = frame(kind)?;
+    Some(Point::new((q1.x + q2.x) / 2.0, (q1.y + q2.y) / 2.0))
+}
+
 /// Aligned: the distance between the points. Rotated: how far apart they
 /// are along the dimension line.
 pub(super) fn measurement(kind: &DimKind) -> Option<f64> {
