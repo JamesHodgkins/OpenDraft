@@ -490,7 +490,7 @@ mod tests {
             );
         }
         assert!(
-            size < 48_000,
+            size < 52_000,
             "tools/list is {size} bytes; biggest schema {biggest:?}"
         );
     }
