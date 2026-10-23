@@ -29,6 +29,7 @@ pub mod layout;
 pub mod leader;
 mod lengthen;
 pub mod linetype;
+pub mod loop_polyline;
 pub mod mleader;
 pub mod mtext;
 mod offset;

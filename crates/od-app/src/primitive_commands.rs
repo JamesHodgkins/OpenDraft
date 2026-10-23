@@ -1,8 +1,9 @@
 //! The commands for the remaining primitives of the Draw panel: Point (and
-//! its multiple form) and Donut.
+//! its multiple form), Donut, Construction Line, Ray and Boundary.
 
 use od_commands::Command;
 
+use crate::boundary_cmd::draw_boundary;
 use crate::donut_cmd::draw_donut;
 use crate::point_cmd::{draw_point, draw_points};
 use crate::state::AppState;
@@ -20,6 +21,7 @@ macro_rules! editor {
 /// The commands, for the command table.
 pub fn commands() -> Vec<Command<AppState>> {
     vec![
+        editor!("draw.boundary", "Boundary", "BOUNDARY", draw_boundary),
         editor!("draw.donut", "Donut", "DONUT", draw_donut),
         editor!("draw.ray", "Ray", "RAY", draw_ray),
         editor!("draw.xline", "Construction Line", "XLINE", draw_xline),

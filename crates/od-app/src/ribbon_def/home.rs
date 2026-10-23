@@ -451,7 +451,6 @@ mod tests {
     const NOT_BUILT: &[&str] = &[
         "draw.circle_3t",
         "draw.gradient",
-        "draw.boundary",
         "modify.blend",
         "annotate.text",
         "dim.dim",

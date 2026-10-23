@@ -49,6 +49,7 @@ pub const TABLE: &[(&str, AutomationPolicy, CommandEffect)] = &[
     // Drawing.
     ("draw.line", InteractiveInApp, Mutation),
     ("draw.polygon", InteractiveInApp, Mutation),
+    ("draw.boundary", InteractiveInApp, Mutation),
     ("draw.donut", InteractiveInApp, Mutation),
     ("draw.point", InteractiveInApp, Mutation),
     ("draw.ray", InteractiveInApp, Mutation),
