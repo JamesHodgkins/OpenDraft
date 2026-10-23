@@ -777,3 +777,5 @@ Recovering reads every drawing in the session, then deletes the session folder. 
 
 **Not done.** Arrow-key movement between cards and the context-menu key were not built: they need a roving-focus controller and an input spike, and Tab already reaches every action. Linux has not been run (only Windows). Templates (slice 6) and What's new (slice 8) remain.
 
+## Home page: smaller cards (done 23-10-2026)
+Cards are at least 220 px wide and as many go across as fit, up to four (`cards::columns`: one under 464 px of column width, two from 464, three from 688, four from 1120), so the usual 720 px column shows three, about 250 px each, instead of two at 350. This replaces the "two columns from 540 px" rule of slices 4b and 7. The stored 512 x 320 pictures are unchanged (they stay sharp on a high-DPI screen) and their textures are now mipmapped, so thin lines do not shimmer at the smaller size. `MIN_CARD` in `home_page/cards.rs` is the one number to change for bigger or smaller cards.

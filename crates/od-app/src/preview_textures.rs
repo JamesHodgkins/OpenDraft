@@ -120,7 +120,10 @@ impl PreviewTextures {
                     let texture = ctx.load_texture(
                         format!("preview-{}", id.0),
                         image,
-                        egui::TextureOptions::LINEAR,
+                        // Mipmapped: a card shows it at under half size, and thin lines
+                        // would shimmer if it were only filtered.
+                        egui::TextureOptions::LINEAR
+                            .with_mipmap_mode(Some(egui::TextureFilter::Linear)),
                     );
                     shown.insert(
                         id,
