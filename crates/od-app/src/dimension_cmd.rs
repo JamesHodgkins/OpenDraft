@@ -122,6 +122,16 @@ fn linear(ed: &mut Editor, aligned: bool) -> Result<(), Cancelled> {
         },
         Answer::Keyword(_) => return Err(Cancelled),
     };
+    place_linear(ed, style, (p1, p2), aligned)
+}
+
+/// The dimension line of a linear or aligned dimension between two origins.
+fn place_linear(
+    ed: &mut Editor,
+    style: DimStyle,
+    (p1, p2): (Point, Point),
+    aligned: bool,
+) -> Result<(), Cancelled> {
     if distance(p1, p2) < MIN_SIZE {
         ed.say("The extension line origins are the same point.");
         return Ok(());
@@ -178,6 +188,16 @@ fn radial(ed: &mut Editor, diameter: bool) -> Result<(), Cancelled> {
             _ => ed.say("Select an arc or a circle."),
         }
     };
+    place_radial(ed, style, (center, radius), diameter)
+}
+
+/// The text position of a radius or diameter dimension of a circle.
+fn place_radial(
+    ed: &mut Editor,
+    style: DimStyle,
+    (center, radius): (Point, f64),
+    diameter: bool,
+) -> Result<(), Cancelled> {
     let make: Make = Arc::new(move |at, tweaks| {
         let mut dimension = Dimension::radial_toward(center, radius, at, diameter, &style)?;
         dimension.text = tweaks.text.clone();
@@ -199,6 +219,28 @@ pub fn dim_radius(ed: &mut Editor) -> Result<(), Cancelled> {
 
 pub fn dim_diameter(ed: &mut Editor) -> Result<(), Cancelled> {
     radial(ed, true)
+}
+
+/// DIM: pick an object and get the fitting dimension: a radius for a circle or
+/// an arc, a linear dimension for a line or a straight segment. Enter starts
+/// a linear dimension from two points instead.
+pub fn dim_auto(ed: &mut Editor) -> Result<(), Cancelled> {
+    loop {
+        let Some((picked, entity)) = pick(ed, "Select object to dimension or <specify points>")?
+        else {
+            return linear(ed, false);
+        };
+        let style = style(ed)?;
+        match &entity {
+            Entity::Circle { center, radius } | Entity::Arc { center, radius, .. } => {
+                return place_radial(ed, style, (*center, radius.abs()), false);
+            }
+            _ => match object_ends(&entity, picked.at) {
+                Some(ends) => return place_linear(ed, style, ends, false),
+                None => ed.say("Select a line, a circle, an arc or a straight segment."),
+            },
+        }
+    }
 }
 
 /// DIMARC: pick an arc, then where the dimension arc goes.
@@ -280,6 +322,19 @@ mod tests {
         let id = state.session().document().objects()[index].id;
         state.answer_object(at, Some(id), false);
         state.settle_command();
+    }
+
+    #[test]
+    fn dim_on_a_circle_makes_a_radius_dimension() {
+        let circle = Entity::Circle {
+            center: p(0.0, 0.0),
+            radius: 5.0,
+        };
+        let mut state = started(&[circle], "DIM", dim_auto);
+        click(&mut state, 0, p(5.0, 0.0));
+        submit(&mut state, "8,0");
+        assert_eq!(dimensions(&state).len(), 1);
+        assert_eq!(dimensions(&state)[0].measurement(), Some(5.0));
     }
 
     #[test]

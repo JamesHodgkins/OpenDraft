@@ -152,13 +152,19 @@ impl Dimension {
         Some(out)
     }
 
-    /// The grips: each defining point, then the text.
+    /// The grips: each defining point, then the text. A linear dimension's
+    /// third grip sits in the middle of its dimension line, wherever that
+    /// line was first picked.
     pub fn grips(&self) -> Vec<Grip> {
         let mut grips: Vec<Grip> = self
             .points()
             .into_iter()
-            .map(|at| Grip {
-                at,
+            .enumerate()
+            .map(|(i, at)| Grip {
+                at: match (i, super::linear::line_middle(&self.kind)) {
+                    (2, Some(middle)) => middle,
+                    _ => at,
+                },
                 kind: GripKind::Stretch,
             })
             .collect();
@@ -220,6 +226,14 @@ mod tests {
 
     fn linear() -> Dimension {
         Dimension::aligned(p(0.0, 0.0), p(10.0, 0.0), p(0.0, 5.0), &DimStyle::default())
+    }
+
+    #[test]
+    fn the_dimension_line_grip_sits_in_the_middle_of_the_line() {
+        let d = Dimension::aligned(p(0.0, 0.0), p(10.0, 0.0), p(7.0, 5.0), &DimStyle::default());
+        assert_eq!(d.grips()[2].at, p(5.0, 5.0));
+        let moved = d.with_grip_moved(2, p(5.0, 8.0)).unwrap();
+        assert_eq!(moved.grips()[2].at, p(5.0, 8.0));
     }
 
     #[test]
