@@ -18,6 +18,8 @@ const VERSION: u64 = 1;
 pub const MAX_RECENT: usize = 10;
 /// How many of them may be pinned.
 pub const MAX_PINNED: usize = 5;
+/// How many dismissed "What's new" versions are remembered.
+const MAX_SEEN_NOTES: usize = 16;
 
 /// Identifies one entry for as long as it stays on the list.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -49,6 +51,8 @@ pub struct RecentFiles {
     items: Vec<RecentDrawing>,
     next_id: u64,
     pub view: RecentView,
+    /// Versions whose "What's new" note was dismissed, oldest first.
+    seen_notes: Vec<String>,
 }
 
 impl Default for RecentFiles {
@@ -57,6 +61,7 @@ impl Default for RecentFiles {
             items: Vec::new(),
             next_id: 1,
             view: RecentView::default(),
+            seen_notes: Vec::new(),
         }
     }
 }
@@ -72,6 +77,32 @@ impl RecentFiles {
 
     pub fn get(&self, id: RecentId) -> Option<&RecentDrawing> {
         self.items.iter().find(|i| i.id == id)
+    }
+
+    /// Whether the note for exactly `version` has been dismissed.
+    pub fn whats_new_seen(&self, version: &str) -> bool {
+        self.seen_notes.iter().any(|v| v == version)
+    }
+
+    /// Remember that the note for `version` was dismissed. Versions are
+    /// matched exactly, so a downgrade stays dismissed and a prerelease is
+    /// its own version.
+    pub fn dismiss_whats_new(&mut self, version: &str) {
+        self.seen_notes.retain(|v| v != version);
+        self.seen_notes.push(version.to_owned());
+        self.keep_recent_notes();
+    }
+
+    /// Only the `MAX_SEEN_NOTES` most recently seen are kept, each once.
+    fn keep_recent_notes(&mut self) {
+        let mut kept: Vec<String> = Vec::new();
+        for version in self.seen_notes.drain(..).rev() {
+            if !kept.contains(&version) && kept.len() < MAX_SEEN_NOTES {
+                kept.push(version);
+            }
+        }
+        kept.reverse();
+        self.seen_notes = kept;
     }
 
     pub fn pinned_count(&self) -> usize {
@@ -259,6 +290,7 @@ impl RecentFiles {
                 .collect(),
             next_id: count as u64 + 1,
             view: RecentView::default(),
+            seen_notes: Vec::new(),
         };
         recent.sort();
         recent
@@ -299,11 +331,22 @@ impl RecentFiles {
             Some("list") => RecentView::List,
             _ => RecentView::Grid,
         };
+        let seen_notes = value
+            .get("seen_whats_new_versions")
+            .and_then(Value::as_array)
+            .map(|a| {
+                a.iter()
+                    .filter_map(|v| v.as_str().map(str::to_owned))
+                    .collect()
+            })
+            .unwrap_or_default();
         let mut recent = Self {
             items,
             next_id,
             view,
+            seen_notes,
         };
+        recent.keep_recent_notes();
         recent.sort();
         recent
     }
@@ -329,6 +372,7 @@ impl RecentFiles {
             "version": VERSION,
             "next_id": self.next_id,
             "view": view,
+            "seen_whats_new_versions": self.seen_notes,
             "items": items,
         });
         storage.set_string(KEY, value.to_string());

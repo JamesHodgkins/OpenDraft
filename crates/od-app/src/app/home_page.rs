@@ -10,6 +10,7 @@ use od_ui::widgets;
 mod cards;
 mod controls;
 mod layout;
+mod news;
 mod recent;
 mod recovery;
 
@@ -18,6 +19,7 @@ use crate::home_scan::ScanRequest;
 use crate::recent::{RecentId, RecentView, MAX_PINNED};
 use crate::text::plural;
 use layout::{layout, Layout, COLUMN_GAP};
+use news::whats_new_section;
 use recent::{recent_section, row, RowText, Section};
 use recovery::recovery_section;
 
@@ -48,6 +50,7 @@ pub(super) enum Pick {
     RecoverSession(usize),
     DiscardSession(usize),
     DeferRecovery,
+    DismissWhatsNew,
     Show(usize),
 }
 
@@ -79,6 +82,16 @@ impl OpenDraftApp {
                         )
                     });
                 };
+                // Last on the page, and only until it is dismissed.
+                let news = crate::whats_new::current()
+                    .filter(|n| !self.state.recent.whats_new_seen(n.version));
+                let announce = |ui: &mut egui::Ui, pick: &mut Option<Pick>| {
+                    if let Some(note) = news {
+                        ui.push_id("home_whats_new", |ui| {
+                            whats_new_section(ui, theme, note, pick)
+                        });
+                    }
+                };
                 let recent = |ui: &mut egui::Ui, pick: &mut Option<Pick>| {
                     ui.push_id("home_recent", |ui| {
                         recent_section(
@@ -108,6 +121,7 @@ impl OpenDraftApp {
                                 recent(ui, &mut pick);
                                 ui.add_space(22.0);
                                 ui.push_id("home_keys", |ui| keys_section(ui, theme));
+                                announce(ui, &mut pick);
                             }
                             Layout::Wide { main, side, .. } => {
                                 ui.horizontal_top(|ui| {
@@ -123,6 +137,7 @@ impl OpenDraftApp {
                                             self.open_drawings_section(ui, &mut pick)
                                         });
                                         ui.push_id("home_keys", |ui| keys_section(ui, theme));
+                                        announce(ui, &mut pick);
                                     });
                                 });
                             }
@@ -217,6 +232,10 @@ impl OpenDraftApp {
             Some(Pick::RecoverSession(i)) => self.state.recover_session(i),
             Some(Pick::DiscardSession(i)) => self.state.discard_session(i),
             Some(Pick::DeferRecovery) => self.state.defer_recovery(),
+            Some(Pick::DismissWhatsNew) => self
+                .state
+                .recent
+                .dismiss_whats_new(env!("CARGO_PKG_VERSION")),
             Some(Pick::Copied) => self.state.message = "Path copied".to_owned(),
             Some(Pick::Show(i)) => self.state.show_document(i),
             None => {}

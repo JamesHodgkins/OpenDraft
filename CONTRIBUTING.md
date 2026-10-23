@@ -96,6 +96,10 @@ A maintainer will review your pull request and may ask for changes. Push further
 
 All contributors are expected to be respectful and considerate. See [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) for details.
 
+## Releasing
+
+Before tagging a release, decide what the Home page's "What's new" card says. `crates/od-app/src/whats_new.rs` holds one `Note` per version, keyed by the exact `CARGO_PKG_VERSION`: a short title and at most three plain-language changes users will notice (capabilities and workflow, not refactors or dependency updates). Add one when the release has changes worth announcing; leave it out when it does not, and the card simply does not show. The card's "View release notes" opens `https://github.com/JamesHodgkins/OpenDraft/releases/tag/v<version>`, so publish the release with that tag.
+
 ## Getting help
 
 If you have questions, open an issue on the GitHub repository.

@@ -89,3 +89,59 @@ fn focus_stays_with_a_drawing_when_pinning_moves_it() {
     press(&mut app, &ctx, Key::Enter, &mut time);
     assert_eq!(app.state.recent.pinned_count(), 0);
 }
+
+/// How many Tab stops Home has, found by tabbing until focus comes round.
+fn tab_cycle(app: &mut OpenDraftApp) -> usize {
+    let ctx = egui::Context::default();
+    let mut time = 0.0;
+    frame(app, &ctx, Vec::new(), time);
+    let mut seen = Vec::new();
+    for _ in 0..40 {
+        press(app, &ctx, Key::Tab, &mut time);
+        let focused = ctx.memory(|m| m.focused());
+        if let Some(at) = seen.iter().position(|f| *f == focused) {
+            return seen.len() - at;
+        }
+        seen.push(focused);
+    }
+    panic!("focus never came round");
+}
+
+fn plain_home(dismissed: bool) -> OpenDraftApp {
+    let mut app = app();
+    app.state.start_on_home();
+    if dismissed {
+        app.state
+            .recent
+            .dismiss_whats_new(env!("CARGO_PKG_VERSION"));
+    }
+    app
+}
+
+#[test]
+fn the_whats_new_note_is_two_tab_stops_that_dismiss_it_and_it_stays_dismissed() {
+    // It has a note for this version (see `whats_new.rs`); if a release leaves
+    // it out on purpose, there is nothing to test.
+    if crate::whats_new::current().is_none() {
+        return;
+    }
+    let with = tab_cycle(&mut plain_home(false));
+    let without = tab_cycle(&mut plain_home(true));
+    assert_eq!(with, without + 2, "View release notes and Dismiss");
+    // Enter on the last of them dismisses it; nothing else does.
+    let mut dismissing = Vec::new();
+    for stops in 1..=with {
+        let mut app = plain_home(false);
+        let ctx = egui::Context::default();
+        let mut time = 0.0;
+        frame(&mut app, &ctx, Vec::new(), time);
+        for _ in 0..stops {
+            press(&mut app, &ctx, Key::Tab, &mut time);
+        }
+        press(&mut app, &ctx, Key::Enter, &mut time);
+        if app.state.recent.whats_new_seen(env!("CARGO_PKG_VERSION")) {
+            dismissing.push(stops);
+        }
+    }
+    assert_eq!(dismissing.len(), 1, "{dismissing:?}");
+}
