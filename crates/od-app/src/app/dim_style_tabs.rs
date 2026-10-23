@@ -132,16 +132,27 @@ pub(super) fn symbols(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft) {
     });
     ui.add_space(8.0);
     widgets::group_box(ui, theme, "Center marks", |ui| {
-        let mut mark = usize::from(s.centre_mark > 0.0);
-        radios(ui, &["None", "Mark"], &mut mark);
-        if mark == 0 {
-            s.centre_mark = 0.0;
-        } else if s.centre_mark <= 0.0 {
-            s.centre_mark = 2.5;
+        let mut mark = match s.centre_mark {
+            m if m > 0.0 => 1,
+            m if m < 0.0 => 2,
+            _ => 0,
+        };
+        let before = mark;
+        radios(ui, &["None", "Mark", "Line"], &mut mark);
+        let size = s.centre_mark.abs();
+        match (mark, before) {
+            (0, _) => s.centre_mark = 0.0,
+            (m, b) if m != b => {
+                let size = if size > 0.0 { size } else { 2.5 };
+                s.centre_mark = if m == 1 { size } else { -size };
+            }
+            _ => {}
         }
-        ui.add_enabled_ui(mark == 1, |ui| {
+        ui.add_enabled_ui(mark != 0, |ui| {
             row(ui, theme, "Size:", |ui| {
-                length(ui, theme, &mut s.centre_mark)
+                let mut shown = s.centre_mark.abs();
+                length(ui, theme, &mut shown);
+                s.centre_mark = if mark == 2 { -shown } else { shown };
             });
         });
     });

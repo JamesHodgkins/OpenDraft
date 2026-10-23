@@ -26,6 +26,8 @@ mod dim_style_draft;
 mod dim_style_table;
 mod dim_vars;
 mod dimension_angular_cmd;
+mod dimension_centre_cmd;
+mod dimension_chain_cmd;
 mod dimension_cmd;
 mod dimension_commands;
 mod dimension_edit_cmd;

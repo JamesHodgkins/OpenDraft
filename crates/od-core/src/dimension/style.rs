@@ -99,6 +99,8 @@ pub struct DimStyle {
     pub angle_format: AngleFormat,
     /// `DIMADEC`: decimals of an angular dimension.
     pub angle_precision: u8,
+    /// `DIMDLI`: distance between the lines of baseline dimensions.
+    pub baseline_spacing: f64,
     /// `DIMARCSYM`: 0 symbol before the text, 1 above it, 2 none.
     pub arc_symbol: u8,
     /// `DIMTXSTY`: the text style the words are written in. Sizes are
@@ -139,6 +141,7 @@ impl Default for DimStyle {
             post: String::new(),
             angle_format: AngleFormat::DecimalDegrees,
             angle_precision: 0,
+            baseline_spacing: 3.75,
             arc_symbol: 0,
             text_style: TextStyleId::STANDARD,
         }
@@ -171,7 +174,12 @@ impl DimStyle {
             d.text_height
         };
         self.text_gap = size(self.text_gap, d.text_gap);
-        self.centre_mark = size(self.centre_mark, d.centre_mark);
+        self.centre_mark = if self.centre_mark.is_finite() {
+            self.centre_mark
+        } else {
+            d.centre_mark
+        };
+        self.baseline_spacing = size(self.baseline_spacing, d.baseline_spacing);
         self.round_to = size(self.round_to, 0.0);
         self.linear_factor = if self.linear_factor.is_finite() && self.linear_factor != 0.0 {
             self.linear_factor

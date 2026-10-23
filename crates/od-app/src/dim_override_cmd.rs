@@ -61,7 +61,8 @@ pub fn set_variable(style: &mut DimStyle, name: &str, value: &str) -> Result<(),
             })?
         }
         "DIMGAP" => style.text_gap = size()?,
-        "DIMCEN" => style.centre_mark = size()?,
+        "DIMCEN" => style.centre_mark = number()?,
+        "DIMDLI" => style.baseline_spacing = size()?,
         "DIMRND" => style.round_to = size()?,
         "DIMLFAC" => {
             style.linear_factor = number().and_then(|n| {
