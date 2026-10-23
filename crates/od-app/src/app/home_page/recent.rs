@@ -8,6 +8,7 @@ use od_ui::widgets;
 
 use super::cards::{self, Pictures};
 use super::controls::{entry_controls, BUTTON};
+use super::layout::bar;
 use super::Pick;
 use crate::home::size_text;
 use crate::home_scan::{FileState, RecentEntry};
@@ -30,13 +31,12 @@ pub(super) fn recent_section(ui: &mut egui::Ui, s: &Section, pick: &mut Option<P
     let unpinned = entries.iter().filter(|e| !e.pinned).count();
     let confirm_id = ui.id().with("confirm_clear");
     let confirming = ui.data(|d| d.get_temp::<bool>(confirm_id)).unwrap_or(false) && unpinned > 1;
-    ui.horizontal(|ui| {
-        widgets::section_header(ui, theme, "Recent drawings");
-        if unpinned == 0 {
-            return;
-        }
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            // Right to left: the view toggle sits at the far end.
+    bar(
+        ui,
+        |ui| {
+            widgets::section_header(ui, theme, "Recent drawings");
+        },
+        |ui| {
             let mut chosen = usize::from(s.view == RecentView::List);
             if widgets::tab_strip(ui, theme, &mut chosen, &["Grid", "List"]) {
                 *pick = Some(Pick::SetView(if chosen == 0 {
@@ -44,6 +44,9 @@ pub(super) fn recent_section(ui: &mut egui::Ui, s: &Section, pick: &mut Option<P
                 } else {
                     RecentView::List
                 }));
+            }
+            if unpinned == 0 {
+                return;
             }
             if confirming {
                 if widgets::secondary_button(ui, theme, "Cancel").clicked() {
@@ -67,8 +70,8 @@ pub(super) fn recent_section(ui: &mut egui::Ui, s: &Section, pick: &mut Option<P
                     *pick = Some(Pick::ClearUnpinned);
                 }
             }
-        });
-    });
+        },
+    );
     if entries.is_empty() {
         ui.label(
             egui::RichText::new("Drawings you open or save will appear here.")
@@ -201,7 +204,7 @@ pub(super) fn row(
         ui.painter().rect_stroke(
             rect,
             6.0,
-            egui::Stroke::new(2.0_f32, c.accent),
+            egui::Stroke::new(2.0_f32, c.accent_text),
             egui::StrokeKind::Inside,
         );
     }

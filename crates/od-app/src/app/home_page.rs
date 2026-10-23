@@ -9,6 +9,7 @@ use od_ui::widgets;
 
 mod cards;
 mod controls;
+mod layout;
 mod recent;
 mod recovery;
 
@@ -16,10 +17,9 @@ use super::OpenDraftApp;
 use crate::home_scan::ScanRequest;
 use crate::recent::{RecentId, RecentView, MAX_PINNED};
 use crate::text::plural;
+use layout::{layout, Layout, COLUMN_GAP};
 use recent::{recent_section, row, RowText, Section};
 use recovery::recovery_section;
-
-const PAGE_WIDTH: f32 = 720.0;
 
 /// Mode keys worth knowing: key, what it does.
 const KEYS: &[(&str, &str)] = &[
@@ -60,46 +60,80 @@ impl OpenDraftApp {
         let view = self.state.recent.view;
         let theme = &self.theme;
         let mut pick = None;
-        egui::ScrollArea::vertical()
+        let page = egui::ScrollArea::vertical()
             .auto_shrink(false)
             .show(ui, |ui| {
-                let side = ((ui.available_width() - PAGE_WIDTH) / 2.0).max(16.0);
-                ui.horizontal_top(|ui| {
-                    ui.add_space(side);
-                    ui.vertical(|ui| {
-                        ui.set_width(PAGE_WIDTH.min(ui.available_width() - side));
-                        ui.push_id("home_header", |ui| header_section(ui, theme, &mut pick));
-                        ui.push_id("home_recovery", |ui| {
-                            recovery_section(
-                                ui,
+                let shown = layout(ui.available_width());
+                let (margin, width) = match shown {
+                    Layout::Single { width, margin } => (margin, width),
+                    Layout::Wide { main, side, margin } => (margin, main + side + COLUMN_GAP),
+                };
+                let recovery = |ui: &mut egui::Ui, pick: &mut Option<Pick>| {
+                    ui.push_id("home_recovery", |ui| {
+                        recovery_section(
+                            ui,
+                            theme,
+                            &self.state.pending_recovery,
+                            &self.state.recovery_report,
+                            pick,
+                        )
+                    });
+                };
+                let recent = |ui: &mut egui::Ui, pick: &mut Option<Pick>| {
+                    ui.push_id("home_recent", |ui| {
+                        recent_section(
+                            ui,
+                            &Section {
                                 theme,
-                                &self.state.pending_recovery,
-                                &self.state.recovery_report,
-                                &mut pick,
-                            )
-                        });
-                        ui.push_id("home_open_now", |ui| {
-                            self.open_drawings_section(ui, &mut pick)
-                        });
-                        ui.push_id("home_recent", |ui| {
-                            recent_section(
-                                ui,
-                                &Section {
-                                    theme,
-                                    entries: &entries,
-                                    pinned_full,
-                                    pictures: &pictures,
-                                    view,
-                                },
-                                &mut pick,
-                            )
-                        });
-                        ui.add_space(22.0);
-                        ui.push_id("home_keys", |ui| keys_section(ui, theme));
+                                entries: &entries,
+                                pinned_full,
+                                pictures: &pictures,
+                                view,
+                            },
+                            pick,
+                        )
+                    });
+                };
+                ui.horizontal_top(|ui| {
+                    ui.add_space(margin);
+                    ui.vertical(|ui| {
+                        ui.set_width(width);
+                        ui.push_id("home_header", |ui| header_section(ui, theme, &mut pick));
+                        match shown {
+                            Layout::Single { .. } => {
+                                recovery(ui, &mut pick);
+                                ui.push_id("home_open_now", |ui| {
+                                    self.open_drawings_section(ui, &mut pick)
+                                });
+                                recent(ui, &mut pick);
+                                ui.add_space(22.0);
+                                ui.push_id("home_keys", |ui| keys_section(ui, theme));
+                            }
+                            Layout::Wide { main, side, .. } => {
+                                ui.horizontal_top(|ui| {
+                                    ui.vertical(|ui| {
+                                        ui.set_width(main);
+                                        recovery(ui, &mut pick);
+                                        recent(ui, &mut pick);
+                                    });
+                                    ui.add_space(COLUMN_GAP);
+                                    ui.vertical(|ui| {
+                                        ui.set_width(side);
+                                        ui.push_id("home_open_now", |ui| {
+                                            self.open_drawings_section(ui, &mut pick)
+                                        });
+                                        ui.push_id("home_keys", |ui| keys_section(ui, theme));
+                                    });
+                                });
+                            }
+                        }
                         ui.add_space(30.0);
                     });
                 });
             });
+        // For the layout tests: how wide the page really came out.
+        ui.ctx()
+            .data_mut(|d| d.insert_temp(egui::Id::new("home_content_width"), page.content_size.x));
         self.apply_home_pick(pick);
     }
 
@@ -220,7 +254,7 @@ fn header_section(ui: &mut egui::Ui, theme: &od_ui::Theme, pick: &mut Option<Pic
         .color(c.text_weak),
     );
     ui.add_space(18.0);
-    ui.horizontal(|ui| {
+    ui.horizontal_wrapped(|ui| {
         if widgets::primary_button(ui, theme, "New drawing").clicked() {
             *pick = Some(Pick::New);
         }
