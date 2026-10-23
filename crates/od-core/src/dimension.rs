@@ -9,6 +9,8 @@
 
 mod angular;
 mod arc_length;
+mod centre;
+mod chain;
 mod edit;
 mod fit;
 pub mod font;
@@ -21,6 +23,7 @@ mod text;
 
 use crate::{Bounds, Entity, Point};
 
+pub use centre::centre_segments;
 pub use pick::{auto_rotation, lines_angle_points, object_ends};
 pub use style::{Arrow, DimStyle};
 pub use text::{angle_text, expand_codes, measurement_text, DimText};

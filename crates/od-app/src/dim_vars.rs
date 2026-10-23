@@ -123,9 +123,16 @@ pub fn variables() -> Vec<SysVar<AppState>> {
             |s, v| change(s, |d| d.text_gap = real(v)),
         ),
         SysVar::real(
-            "DIMCEN",
-            "Size of the centre mark of radius and diameter dimensions; 0 for none",
+            "DIMDLI",
+            "Distance between the lines of baseline dimensions",
             (0.0, 1.0e9),
+            |s| Value::Real(s.dim_style().baseline_spacing),
+            |s, v| change(s, |d| d.baseline_spacing = real(v)),
+        ),
+        SysVar::real(
+            "DIMCEN",
+            "Size of the centre mark of circles and radial dimensions; negative for centrelines; 0 for none",
+            (-1.0e9, 1.0e9),
             |s| Value::Real(s.dim_style().centre_mark),
             |s, v| change(s, |d| d.centre_mark = real(v)),
         ),

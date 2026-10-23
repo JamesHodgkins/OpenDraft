@@ -58,6 +58,11 @@ fn frame(kind: &DimKind) -> Option<Frame> {
     Some(Frame { dir, q1, q2 })
 }
 
+/// The direction the dimension line runs.
+pub(super) fn line_direction(kind: &DimKind) -> Option<(f64, f64)> {
+    frame(kind).map(|f| f.dir)
+}
+
 /// The middle of the dimension line, where its grip sits.
 pub(super) fn line_middle(kind: &DimKind) -> Option<Point> {
     let Frame { q1, q2, .. } = frame(kind)?;

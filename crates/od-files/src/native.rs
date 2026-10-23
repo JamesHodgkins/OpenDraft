@@ -27,6 +27,7 @@ use crate::{Encoded, FileError, FileFormat, Loaded};
 
 mod block;
 mod dimension;
+mod dimension_style;
 mod entity;
 mod hatch;
 mod hatch_fill;

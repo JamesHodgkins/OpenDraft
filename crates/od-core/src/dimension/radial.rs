@@ -2,6 +2,7 @@
 
 use std::f64::consts::FRAC_PI_2;
 
+use super::centre::centre_segments;
 use super::font;
 use super::sketch::{along, direction, dist, outside_box, readable, sub, unit, Sketch};
 use super::{Arrow, Built, DimKind, Dimension};
@@ -109,10 +110,10 @@ pub(super) fn build(dim: &Dimension) -> Option<Built> {
     }
     // Centre mark.
     // Text centred on a diameter would sit on top of the mark.
-    if s.centre_mark > 0.0 && !(*diameter && text_in && has_text && dim.text_pos.is_none()) {
-        let m = s.centre_mark;
-        out.line(Point::new(c.x - m, c.y), Point::new(c.x + m, c.y));
-        out.line(Point::new(c.x, c.y - m), Point::new(c.x, c.y + m));
+    if !(*diameter && text_in && has_text && dim.text_pos.is_none()) {
+        for (a, b) in centre_segments(c, r, s.centre_mark) {
+            out.line(a, b);
+        }
     }
 
     let breaks = text_in && has_text && s.text_above == 0 && dim.text_pos.is_none();
