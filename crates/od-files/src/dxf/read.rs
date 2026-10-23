@@ -20,6 +20,7 @@ mod hatch;
 mod hatch_sources;
 #[cfg(test)]
 mod hatch_tests;
+mod infinite;
 mod layouts;
 mod leader;
 mod ltype;
@@ -288,6 +289,7 @@ impl Importer {
                 }
             }
             "LINE" | "CIRCLE" | "ARC" | "POINT" => self.basic(record),
+            "XLINE" | "RAY" => self.infinite_line(record),
             "ELLIPSE" => self.ellipse(record),
             "SPLINE" => self.spline(record),
             "HATCH" => self.hatch(record),

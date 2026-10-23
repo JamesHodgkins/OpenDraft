@@ -83,6 +83,12 @@ pub fn distance_to_entity(entity: &Entity, p: Point) -> f64 {
                 .fold(f64::INFINITY, f64::min)
         }
         Entity::Point { at } => distance(p, *at),
+        Entity::Xline { origin, direction } => {
+            od_core::infinite::distance_to(*origin, *direction, false, p)
+        }
+        Entity::Ray { origin, direction } => {
+            od_core::infinite::distance_to(*origin, *direction, true, p)
+        }
         Entity::Line { start, end } => distance_to_segment(p, *start, *end),
         Entity::Circle { center, radius } => (distance(p, *center) - radius.abs()).abs(),
         Entity::Arc {
@@ -312,6 +318,26 @@ mod tests {
             Some(EntityId(0))
         );
         assert_eq!(pick(&objs(&entities), Point::new(3.0, 2.0), 0.5), None);
+    }
+
+    #[test]
+    fn a_construction_line_is_hit_far_from_its_base_and_a_ray_only_ahead() {
+        let xline = Entity::Xline {
+            origin: Point::new(0.0, 0.0),
+            direction: Point::new(1.0, 0.0),
+        };
+        let ray = Entity::Ray {
+            origin: Point::new(0.0, 0.0),
+            direction: Point::new(1.0, 0.0),
+        };
+        let far_behind = Point::new(-1.0e5, 0.2);
+        assert!((distance_to_entity(&xline, far_behind) - 0.2).abs() < 1e-9);
+        assert!(distance_to_entity(&ray, far_behind) > 1.0e4);
+        let entities = [xline];
+        assert_eq!(
+            pick(&objs(&entities), Point::new(5.0e6, 0.1), 0.5),
+            Some(EntityId(0))
+        );
     }
 
     #[test]

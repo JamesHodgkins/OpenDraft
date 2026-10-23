@@ -6,6 +6,7 @@ use od_commands::Command;
 use crate::donut_cmd::draw_donut;
 use crate::point_cmd::{draw_point, draw_points};
 use crate::state::AppState;
+use crate::xline_cmd::{draw_ray, draw_xline};
 
 /// As `editor_command!` in `commands.rs`.
 macro_rules! editor {
@@ -20,6 +21,8 @@ macro_rules! editor {
 pub fn commands() -> Vec<Command<AppState>> {
     vec![
         editor!("draw.donut", "Donut", "DONUT", draw_donut),
+        editor!("draw.ray", "Ray", "RAY", draw_ray),
+        editor!("draw.xline", "Construction Line", "XLINE", draw_xline),
         editor!("draw.point", "Point", "POINT", draw_point),
         editor!(
             "draw.point_multiple",

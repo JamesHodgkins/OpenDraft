@@ -130,6 +130,8 @@ fn needs_r2000(document: &Document) -> bool {
                     | Entity::MText(_)
                     | Entity::MLeader(_)
                     | Entity::Leader(_)
+                    | Entity::Xline { .. }
+                    | Entity::Ray { .. }
             )
         })
 }
@@ -269,6 +271,12 @@ pub(super) fn write_r12(document: &Document) -> Result<Encoded, FileError> {
             Entity::Hatch(_) => {
                 return Err(FileError::Unsupported(
                     "R12 DXF cannot hold hatches; this drawing needs R2000".into(),
+                ))
+            }
+            Entity::Xline { .. } | Entity::Ray { .. } => {
+                return Err(FileError::Unsupported(
+                    "R12 DXF cannot hold construction lines or rays; this drawing needs R2000"
+                        .into(),
                 ))
             }
             Entity::Point { at } => {

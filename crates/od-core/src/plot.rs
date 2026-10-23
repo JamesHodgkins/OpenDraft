@@ -215,6 +215,11 @@ fn dashed_outlines(
     if let Entity::Point { at } = &object.entity {
         return point_outlines(document, *at, tolerance, view_height);
     }
+    // A long stretch of the line, solid; the window cuts it to size.
+    if let Some((origin, direction, ray)) = object.entity.infinite_line() {
+        let (a, b) = crate::infinite::segment(origin, direction, ray);
+        return Ok(vec![(vec![a, b], false)]);
+    }
     let Some((elements, scale)) = document
         .dash_pattern(object)
         .filter(|_| is_dashable(&object.entity))
@@ -531,6 +536,27 @@ mod tests {
         let (doc, id) = plotted(&[line((0.0, 4000.0), (10000.0, 4000.0))]);
         let cut = &plot_layout(&doc, id).unwrap().paths[0];
         assert!((cut.points[0].x - 50.0).abs() < 1e-9 && (cut.points[1].x - 150.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn construction_lines_and_rays_are_cut_to_the_viewport() {
+        let (doc, id) = plotted(&[
+            Entity::Xline {
+                origin: Point::new(0.0, 4000.0),
+                direction: Point::new(1.0, 0.0),
+            },
+            Entity::Ray {
+                origin: Point::new(5000.0, 4000.0),
+                direction: Point::new(0.0, 1.0),
+            },
+        ]);
+        let sheet = plot_layout(&doc, id).unwrap();
+        assert_eq!(sheet.paths.len(), 2);
+        // The window is 50..150 across and 60..140 up on the sheet.
+        let across = &sheet.paths[0].points;
+        assert!((across[0].x - 50.0).abs() < 1e-6 && (across[1].x - 150.0).abs() < 1e-6);
+        let up = &sheet.paths[1].points;
+        assert!((up[0].y - 100.0).abs() < 1e-6 && (up[1].y - 140.0).abs() < 1e-6);
     }
 
     #[test]

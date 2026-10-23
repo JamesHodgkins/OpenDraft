@@ -4,10 +4,11 @@
 
 use od_core::hatch::HatchFill;
 use od_core::mtext::MTextAttachment;
-use od_core::{Attr, Attributes, Bounds, Color, DimKind, Entity, LayoutId, Object, Point};
+use od_core::{Attr, Attributes, Color, DimKind, Entity, LayoutId, Object, Point};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+pub use crate::entity_bounds::BoundsDto;
 use crate::entity_leaders;
 use crate::limits::STRING_BYTES_MAX;
 use crate::WireId;
@@ -37,21 +38,6 @@ impl From<Point> for PointDto {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BoundsDto {
-    pub min: PointDto,
-    pub max: PointDto,
-}
-
-impl From<Bounds> for BoundsDto {
-    fn from(b: Bounds) -> Self {
-        Self {
-            min: b.min.into(),
-            max: b.max.into(),
-        }
-    }
-}
-
 /// The geometry of one entity, tagged by `type`. Angles are radians
 /// counter-clockwise. Kinds that are only summarised say so in their fields:
 /// a client must not write a summary back.
@@ -60,6 +46,16 @@ impl From<Bounds> for BoundsDto {
 pub enum GeometryDto {
     Point {
         at: PointDto,
+    },
+    /// A line with no ends; `direction` is a unit vector.
+    Xline {
+        origin: PointDto,
+        direction: PointDto,
+    },
+    /// A line with no far end; `direction` is a unit vector.
+    Ray {
+        origin: PointDto,
+        direction: PointDto,
     },
     Line {
         start: PointDto,
@@ -323,6 +319,14 @@ fn dimension_geometry(d: &od_core::Dimension) -> GeometryDto {
 pub fn geometry_dto(entity: &Entity) -> GeometryDto {
     match entity {
         Entity::Point { at } => GeometryDto::Point { at: (*at).into() },
+        Entity::Xline { origin, direction } => GeometryDto::Xline {
+            origin: (*origin).into(),
+            direction: (*direction).into(),
+        },
+        Entity::Ray { origin, direction } => GeometryDto::Ray {
+            origin: (*origin).into(),
+            direction: (*direction).into(),
+        },
         Entity::Line { start, end } => GeometryDto::Line {
             start: (*start).into(),
             end: (*end).into(),

@@ -33,6 +33,17 @@ impl Entity {
             | Entity::Insert(_)
             | Entity::Point { .. }
             | Entity::Hatch(_) => None,
+            Entity::Xline { origin, direction } | Entity::Ray { origin, direction } => {
+                // Which side `toward` is on; a point on the line has none.
+                let side =
+                    (toward.x - origin.x) * -direction.y + (toward.y - origin.y) * direction.x;
+                if side.abs() <= EPS {
+                    return None;
+                }
+                let shifted =
+                    crate::infinite::shifted(*origin, *direction, distance * side.signum());
+                Some(self.with_infinite_line(shifted, *direction))
+            }
             // The offset of an ellipse is not an ellipse; AutoCAD makes a
             // spline, which the drawing has no kind for yet.
             Entity::Ellipse(_) => None,
@@ -330,6 +341,20 @@ fn join(segments: &[Shifted], closed: bool) -> Vec<Point> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn a_construction_line_offsets_to_the_side_asked() {
+        use crate::{Entity, Point};
+        let line = Entity::Xline {
+            origin: Point::new(0.0, 0.0),
+            direction: Point::new(1.0, 0.0),
+        };
+        let up = line.offset(2.0, Point::new(50.0, 9.0)).unwrap();
+        assert_eq!(up.infinite_line().unwrap().0, Point::new(0.0, 2.0));
+        let down = line.offset(2.0, Point::new(50.0, -9.0)).unwrap();
+        assert_eq!(down.infinite_line().unwrap().0, Point::new(0.0, -2.0));
+        assert_eq!(line.offset(2.0, Point::new(50.0, 0.0)), None);
+    }
+
     use std::f64::consts::{FRAC_PI_2, PI};
 
     use super::*;

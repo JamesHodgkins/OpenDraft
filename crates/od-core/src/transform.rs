@@ -83,6 +83,9 @@ impl Entity {
             Entity::Point { at } => Entity::Point {
                 at: at.translated(dx, dy),
             },
+            Entity::Xline { .. } | Entity::Ray { .. } => {
+                self.remapped_line(|o, d| (o.translated(dx, dy), d))
+            }
             Entity::Hatch(h) => Entity::Hatch(Box::new(h.translated(dx, dy))),
             Entity::Ellipse(e) => Entity::Ellipse(e.translated(dx, dy)),
             Entity::Spline(s) => Entity::Spline(Box::new(s.translated(dx, dy))),
@@ -136,6 +139,9 @@ impl Entity {
             Entity::Point { at } => Entity::Point {
                 at: at.rotated(center, angle),
             },
+            Entity::Xline { .. } | Entity::Ray { .. } => self.remapped_line(|o, d| {
+                (o.rotated(center, angle), d.rotated(Point::default(), angle))
+            }),
             Entity::Hatch(h) => Entity::Hatch(Box::new(h.rotated(center, angle))),
             Entity::Ellipse(e) => Entity::Ellipse(e.rotated(center, angle)),
             Entity::Spline(s) => Entity::Spline(Box::new(s.rotated(center, angle))),
@@ -209,6 +215,12 @@ impl Entity {
             Entity::Point { at } => Entity::Point {
                 at: at.mirrored(a, b),
             },
+            Entity::Xline { .. } | Entity::Ray { .. } => self.remapped_line(|o, d| {
+                // The direction is reflected in the mirror line's direction.
+                let axis = crate::infinite::unit(Point::new(b.x - a.x, b.y - a.y));
+                let d = axis.map_or(d, |axis| crate::infinite::reflected(d, axis));
+                (o.mirrored(a, b), d)
+            }),
             Entity::Hatch(h) => Entity::Hatch(Box::new(h.mirrored(a, b))),
             Entity::Ellipse(e) => Entity::Ellipse(e.mirrored(a, b)),
             Entity::Spline(s) => Entity::Spline(Box::new(s.mirrored(a, b))),
@@ -297,6 +309,9 @@ impl Entity {
             Entity::Point { at } => Entity::Point {
                 at: at.scaled(base, factor),
             },
+            Entity::Xline { .. } | Entity::Ray { .. } => {
+                self.remapped_line(|o, d| (o.scaled(base, factor), d))
+            }
             Entity::Hatch(h) => Entity::Hatch(Box::new(h.scaled(base, factor))),
             Entity::Ellipse(e) => Entity::Ellipse(e.scaled(base, factor)),
             Entity::Spline(s) => Entity::Spline(Box::new(s.scaled(base, factor))),

@@ -61,6 +61,7 @@ impl Entity {
         match self {
             Entity::Insert(i) => vec![grip(i.insertion, Move)],
             Entity::Point { at } => vec![grip(*at, Move)],
+            Entity::Xline { origin, .. } | Entity::Ray { origin, .. } => vec![grip(*origin, Move)],
             Entity::Hatch(_) => {
                 let b = self.bounds();
                 vec![grip(mid(b.min, b.max), Move)]
@@ -148,9 +149,11 @@ impl Entity {
             Entity::Leader(l) => l
                 .with_grip_moved(index, to)
                 .map(|l| Entity::Leader(Box::new(l))),
-            Entity::Insert(_) | Entity::Hatch(_) | Entity::Point { .. } => {
-                Some(self.translated(dx, dy))
-            }
+            Entity::Insert(_)
+            | Entity::Hatch(_)
+            | Entity::Point { .. }
+            | Entity::Xline { .. }
+            | Entity::Ray { .. } => Some(self.translated(dx, dy)),
             Entity::Ellipse(e) => e.with_grip_moved(index, to).map(Entity::Ellipse),
             Entity::Spline(s) => s
                 .with_grip_moved(index, to)

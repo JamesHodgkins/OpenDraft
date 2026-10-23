@@ -38,7 +38,14 @@ impl Clipboard {
         let corner = drawing
             .objects()
             .iter()
-            .map(|o| o.entity.bounds().min)
+            .filter_map(|o| {
+                // A construction line or ray has no corner: its base point.
+                let b = o.entity.bounds();
+                match o.entity.infinite_line() {
+                    Some((origin, ..)) => Some(origin),
+                    None => b.is_finite().then_some(b.min),
+                }
+            })
             .reduce(|a, b| Point::new(a.x.min(b.x), a.y.min(b.y)))?;
         Some(Clipboard {
             drawing,

@@ -166,6 +166,8 @@ fn uneven(entity: &Entity, map: &Affine) -> Vec<Entity> {
             end: map.apply(*end),
         }],
         Entity::Point { at } => vec![Entity::Point { at: map.apply(*at) }],
+        // A block cannot hold these (the table refuses them).
+        Entity::Xline { .. } | Entity::Ray { .. } => Vec::new(),
         Entity::Circle { center, radius } => {
             curved(Ellipse::circular(*center, *radius, 0.0, 0.0), map)
         }

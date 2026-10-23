@@ -114,8 +114,12 @@ icons! {
     DRAW_POINT = '\u{e453}';
     DRAW_POLYGON = '\u{e0f6}';
     DRAW_POLYLINE = '\u{e38e}';
+    /// Lucide's arrow up and right: a line that leaves a point.
+    DRAW_RAY = '\u{e497}';
     DRAW_RECTANGLE = '\u{e16a}';
     DRAW_SPLINE = '\u{e38e}';
+    /// Lucide's slash: a line that runs on both ways.
+    DRAW_XLINE = '\u{e521}';
     DROPDOWN_ARROW = '\u{e071}';
     DYNAMIC_INPUT_LOCKED = '\u{e10e}';
     DYNAMIC_INPUT_OPTIONS = '\u{e071}';

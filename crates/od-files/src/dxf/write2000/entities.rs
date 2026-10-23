@@ -159,6 +159,13 @@ pub(super) fn write_object(
             head(out, h, "HATCH");
             super::hatch::hatch(out, hatch)?;
         }
+        Entity::Xline { origin, direction } | Entity::Ray { origin, direction } => {
+            let ray = matches!(object.entity, Entity::Ray { .. });
+            head(out, h, if ray { "RAY" } else { "XLINE" });
+            out.pair(100, if ray { "AcDbRay" } else { "AcDbXline" });
+            out.point3(10, finite(origin.x)?, finite(origin.y)?, 0.0);
+            out.point3(11, finite(direction.x)?, finite(direction.y)?, 0.0);
+        }
         Entity::Point { at } => {
             head(out, h, "POINT");
             out.pair(100, "AcDbPoint");

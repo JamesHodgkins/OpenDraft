@@ -5,6 +5,7 @@
 pub mod command_ops;
 pub mod convert;
 pub mod entity;
+mod entity_bounds;
 mod entity_leaders;
 pub mod envelope;
 pub mod error;
