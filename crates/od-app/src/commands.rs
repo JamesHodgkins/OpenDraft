@@ -112,6 +112,9 @@ fn all() -> Vec<Command<AppState>> {
         cmd("file.export_dxf", "Export DXF", |s| {
             s.export_dxf();
         }),
+        cmd("file.save_template", "Save as Template", |s| {
+            s.save_as_template();
+        }),
         cmd("file.plot", "Plot", |s| {
             s.plot_layout();
         })

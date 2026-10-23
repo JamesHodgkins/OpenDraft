@@ -37,6 +37,7 @@ const KEYS: &[(&str, &str)] = &[
 pub(super) enum Pick {
     New,
     Open,
+    Template,
     Recent(RecentId),
     Pin(RecentId),
     Unpin(RecentId),
@@ -120,6 +121,7 @@ impl OpenDraftApp {
                                 });
                                 recent(ui, &mut pick);
                                 ui.add_space(22.0);
+                                ui.push_id("home_start", |ui| start_section(ui, theme, &mut pick));
                                 ui.push_id("home_keys", |ui| keys_section(ui, theme));
                                 announce(ui, &mut pick);
                             }
@@ -136,6 +138,9 @@ impl OpenDraftApp {
                                         ui.push_id("home_open_now", |ui| {
                                             self.open_drawings_section(ui, &mut pick)
                                         });
+                                        ui.push_id("home_start", |ui| {
+                                            start_section(ui, theme, &mut pick)
+                                        });
                                         ui.push_id("home_keys", |ui| keys_section(ui, theme));
                                         announce(ui, &mut pick);
                                     });
@@ -149,7 +154,7 @@ impl OpenDraftApp {
         // For the layout tests: how wide the page really came out.
         ui.ctx()
             .data_mut(|d| d.insert_temp(egui::Id::new("home_content_width"), page.content_size.x));
-        self.apply_home_pick(pick);
+        self.apply_home_pick(ui.ctx(), pick);
     }
 
     /// Have the files behind the recent list looked at (on a worker), and
@@ -206,10 +211,11 @@ impl OpenDraftApp {
         ui.add_space(22.0);
     }
 
-    fn apply_home_pick(&mut self, pick: Option<Pick>) {
+    fn apply_home_pick(&mut self, ctx: &egui::Context, pick: Option<Pick>) {
         match pick {
             Some(Pick::New) => self.run("file.new"),
             Some(Pick::Open) => self.run("file.open"),
+            Some(Pick::Template) => self.templates.show(ctx, self.state.templates_dir.clone()),
             Some(Pick::Recent(id)) => self.state.open_recent_id(id),
             Some(Pick::Pin(id)) => {
                 if self.state.recent.pin(id).is_err() {
@@ -280,12 +286,41 @@ fn header_section(ui: &mut egui::Ui, theme: &od_ui::Theme, pick: &mut Option<Pic
         if widgets::secondary_button(ui, theme, "Open...").clicked() {
             *pick = Some(Pick::Open);
         }
+        if widgets::secondary_button(ui, theme, "Template...").clicked() {
+            *pick = Some(Pick::Template);
+        }
         ui.label(
             egui::RichText::new("or drop a .odx, .dxf or .dwg file on the window")
                 .color(c.text_weak),
         );
     });
     ui.add_space(26.0);
+}
+
+/// Two ways to begin: nothing, or from a template.
+fn start_section(ui: &mut egui::Ui, theme: &od_ui::Theme, pick: &mut Option<Pick>) {
+    widgets::section_header(ui, theme, "Start");
+    for (id, name, detail, choice) in [
+        ("blank", "Blank drawing", "Start from scratch", Pick::New),
+        (
+            "template",
+            "From template...",
+            "Starters, and your own templates",
+            Pick::Template,
+        ),
+    ] {
+        let text = RowText {
+            name,
+            detail,
+            right: "",
+            dim: false,
+            trailing: 0.0,
+        };
+        if row(ui, theme, id, &text).clicked() {
+            *pick = Some(choice);
+        }
+    }
+    ui.add_space(22.0);
 }
 
 fn keys_section(ui: &mut egui::Ui, theme: &od_ui::Theme) {

@@ -121,6 +121,7 @@ impl OpenDraftApp {
             ("Open...", "file.open"),
             ("Save", "file.save"),
             ("Save As...", "file.save_as"),
+            ("Save as Template...", "file.save_template"),
             ("Export DXF...", "file.export_dxf"),
             ("Plot layout...", "file.plot"),
         ];

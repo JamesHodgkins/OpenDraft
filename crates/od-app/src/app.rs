@@ -28,6 +28,7 @@ mod panels;
 mod power_select_dialog;
 mod settings_dialog;
 mod snap_menu;
+mod template_dialog;
 mod text_style_dialog;
 mod text_style_preview;
 mod units_dialog;
@@ -102,6 +103,7 @@ pub struct OpenDraftApp {
     /// What Home knows of the recent files, and the pictures it shows for them.
     home_scan: crate::home_scan::HomeScan,
     home_previews: crate::preview_textures::PreviewTextures,
+    templates: template_dialog::TemplateDialog,
 }
 
 impl OpenDraftApp {
@@ -119,6 +121,7 @@ impl OpenDraftApp {
         crate::icon_library::load(&mut state.cmdline);
         state.settings = settings;
         state.recent = recent;
+        state.templates_dir = eframe::storage_dir("OpenDraft").map(|d| d.join("templates"));
         let home_previews = crate::preview_textures::PreviewTextures::start(&mut state.previews);
         if open.is_empty() {
             state.start_on_home();
@@ -136,6 +139,7 @@ impl OpenDraftApp {
         shortcuts.sort_by_key(|(s, _)| std::cmp::Reverse(modifier_count(s)));
         Self {
             home_previews,
+            templates: Default::default(),
             theme,
             settings_draft: None,
             settings_tab: 0,
@@ -408,6 +412,7 @@ impl eframe::App for OpenDraftApp {
         self.context_menu(ctx);
         self.tool_windows(ctx);
         self.confirm_dialog(ctx);
+        self.template_dialog(ctx);
         self.consent_dialog(ctx);
         self.autosave_when_due(ctx);
         self.update_window_title(ctx);

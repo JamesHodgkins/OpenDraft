@@ -144,6 +144,8 @@ pub struct AppState {
     /// Where to ask for a Home-page picture after a drawing opens or saves;
     /// none in tests.
     pub previews: Option<crate::previews::PreviewHandle>,
+    /// Where the user's templates are kept.
+    pub templates_dir: Option<std::path::PathBuf>,
     pub(crate) picker: Box<dyn FilePicker>,
     /// A question about unsaved changes waiting for the user's answer.
     pub confirm: Option<Confirm>,
@@ -221,6 +223,7 @@ impl AppState {
             recent: RecentFiles::default(),
             locate: Vec::new(),
             previews: None,
+            templates_dir: None,
             picker: crate::files::default_picker(),
             confirm: None,
             exit_requested: false,
