@@ -1,4 +1,5 @@
-//! Keeping associative hatches in step with their boundary objects.
+//! Keeping associative hatches and dimensions in step with the objects they
+//! follow.
 //!
 //! After the edits of a transaction (or a single action) are applied, the
 //! hatches that follow an object that changed or went, or that were edited
@@ -6,6 +7,7 @@
 //! becomes one more edit in the same undo step, so undo restores the hatch
 //! before the object and redo changes the object before the hatch.
 
+use od_core::dimension::follow_associations;
 use od_core::hatch::{follow, Follow};
 use od_core::{Document, Entity, EntityId};
 
@@ -18,6 +20,21 @@ pub(crate) fn updates(doc: &Document, changes: &Changes) -> Vec<(EntityId, Entit
     let lookup = |id: EntityId| doc.get(id).cloned();
     let mut out = Vec::new();
     for object in doc.objects() {
+        if let Entity::Dimension(d) = &object.entity {
+            if d.assoc.is_empty() {
+                continue;
+            }
+            let dimension_edited = edited(&object.id);
+            if !dimension_edited && !d.assoc.iter().any(|a| touched(&a.target)) {
+                continue;
+            }
+            if let Some(next) =
+                follow_associations(d, &lookup, dimension_edited, &|id| touched(&id))
+            {
+                out.push((object.id, Entity::Dimension(Box::new(next))));
+            }
+            continue;
+        }
         let Entity::Hatch(h) = &object.entity else {
             continue;
         };
@@ -172,5 +189,75 @@ mod tests {
             vec![(hatch, Entity::Hatch(Box::new(h)))],
         ));
         assert!(the_hatch(&s, hatch).associative);
+    }
+
+    fn line(end: f64) -> Entity {
+        Entity::Line {
+            start: Point::new(0.0, 0.0),
+            end: Point::new(end, 0.0),
+        }
+    }
+
+    /// A line and an aligned dimension tied to its ends.
+    fn with_dimension() -> (Session, EntityId, EntityId) {
+        let mut s = Session::default();
+        s.perform(AddEntity::new(line(10.0)));
+        let target = s.document.objects()[0].id;
+        let d = od_core::Dimension::aligned(
+            Point::new(0.0, 0.0),
+            Point::new(10.0, 0.0),
+            Point::new(0.0, 5.0),
+            &od_core::DimStyle::default(),
+        )
+        .associated(&s.document);
+        assert_eq!(d.assoc.len(), 2);
+        s.perform(AddEntity::new(Entity::Dimension(Box::new(d))));
+        let dimension = s.document.objects()[1].id;
+        (s, target, dimension)
+    }
+
+    fn measured(s: &Session, id: EntityId) -> Option<f64> {
+        match s.document.get(id) {
+            Some(Entity::Dimension(d)) => d.measurement(),
+            _ => None,
+        }
+    }
+
+    #[test]
+    fn a_dimension_follows_its_object_in_the_same_undo_step() {
+        let (mut s, target, dimension) = with_dimension();
+        s.perform(ModifyEntities::new("Stretch", vec![(target, line(25.0))]));
+        assert_eq!(measured(&s, dimension), Some(25.0));
+        let step = s.undo().unwrap();
+        assert_eq!(step.name, "Stretch");
+        assert_eq!(measured(&s, dimension), Some(10.0));
+        s.redo();
+        assert_eq!(measured(&s, dimension), Some(25.0));
+    }
+
+    #[test]
+    fn it_follows_inside_a_transaction_and_lets_go_when_erased_or_moved_alone() {
+        let (mut s, target, dimension) = with_dimension();
+        s.transaction("Stretch", |tx| {
+            tx.modify(target, |_| line(12.0));
+            Ok::<_, ()>(())
+        })
+        .unwrap();
+        assert_eq!(measured(&s, dimension), Some(12.0));
+        // Moved on its own it lets go.
+        let moved = match s.document.get(dimension) {
+            Some(e) => e.translated(0.0, 9.0),
+            None => unreachable!(),
+        };
+        s.perform(ModifyEntities::new("Move", vec![(dimension, moved)]));
+        s.perform(ModifyEntities::new("Stretch", vec![(target, line(30.0))]));
+        assert_eq!(measured(&s, dimension), Some(12.0), "no longer follows");
+        // Erasing the object keeps the dimension.
+        let (mut s, target, dimension) = with_dimension();
+        s.perform(RemoveEntities::new(vec![target]));
+        assert_eq!(measured(&s, dimension), Some(10.0));
+        s.undo();
+        s.perform(ModifyEntities::new("Stretch", vec![(target, line(20.0))]));
+        assert_eq!(measured(&s, dimension), Some(20.0), "undo restored the tie");
     }
 }
