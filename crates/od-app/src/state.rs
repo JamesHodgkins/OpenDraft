@@ -136,6 +136,9 @@ pub struct AppState {
     pub recent: RecentFiles,
     /// Files picked to stand in for a missing recent entry, until they open.
     pub(crate) locate: Vec<(std::path::PathBuf, crate::recent::RecentId)>,
+    /// Where to ask for a Home-page picture after a drawing opens or saves;
+    /// none in tests.
+    pub previews: Option<crate::previews::PreviewHandle>,
     pub(crate) picker: Box<dyn FilePicker>,
     /// A question about unsaved changes waiting for the user's answer.
     pub confirm: Option<Confirm>,
@@ -210,6 +213,7 @@ impl AppState {
             next_doc_uid: 1,
             recent: RecentFiles::default(),
             locate: Vec::new(),
+            previews: None,
             picker: crate::files::default_picker(),
             confirm: None,
             exit_requested: false,

@@ -82,9 +82,73 @@ pub fn window(bounds: Bounds) -> Option<Bounds> {
     ))
 }
 
+/// Share of objects, at each end, that may be set aside as strays when
+/// working out what to show.
+const STRAYS: f64 = 0.02;
+/// Below this many objects, every one counts.
+const FEW: usize = 50;
+
+/// What to fit: the extents of the drawing's visible model-space objects,
+/// less strays. A drawing with something far from the rest (a stray point,
+/// a block left at the origin) would otherwise show as a speck in empty
+/// space; objects well outside the middle of the drawing's centres, by
+/// `STRAYS` at each end and as far again, are left out of the fit (they are
+/// still drawn, cut to the picture, if they reach into it).
+pub fn content_bounds(document: &Document) -> Option<Bounds> {
+    let all: Vec<Bounds> = document
+        .visible_in(None)
+        .map(|o| o.bounds())
+        .filter(|b| {
+            [b.min.x, b.min.y, b.max.x, b.max.y]
+                .iter()
+                .all(|v| v.is_finite())
+        })
+        .collect();
+    let union = |boxes: &[&Bounds]| {
+        boxes.iter().fold(None, |acc: Option<Bounds>, b| {
+            Some(acc.map_or(**b, |a| {
+                Bounds::from_points(
+                    Point::new(a.min.x.min(b.min.x), a.min.y.min(b.min.y)),
+                    Point::new(a.max.x.max(b.max.x), a.max.y.max(b.max.y)),
+                )
+            }))
+        })
+    };
+    let everything: Vec<&Bounds> = all.iter().collect();
+    if all.len() < FEW {
+        return union(&everything);
+    }
+    // The span of the middle of the centres, widened by its own length.
+    let spread = |centre: fn(&Bounds) -> f64| {
+        let mut values: Vec<f64> = all.iter().map(centre).collect();
+        values.sort_by(f64::total_cmp);
+        let at = |share: f64| values[((values.len() - 1) as f64 * share).round() as usize];
+        let (low, high) = (at(STRAYS), at(1.0 - STRAYS));
+        (low - (high - low), high + (high - low))
+    };
+    let (x_range, y_range) = (
+        spread(|b| (b.min.x + b.max.x) / 2.0),
+        spread(|b| (b.min.y + b.max.y) / 2.0),
+    );
+    let inside: Vec<&Bounds> = all
+        .iter()
+        .filter(|b| {
+            b.min.x >= x_range.0
+                && b.max.x <= x_range.1
+                && b.min.y >= y_range.0
+                && b.max.y <= y_range.1
+        })
+        .collect();
+    union(if inside.is_empty() {
+        &everything
+    } else {
+        &inside
+    })
+}
+
 /// The picture of `document`'s model space; a blank grid when it is empty.
 pub fn render(document: &Document) -> Result<Preview, PreviewError> {
-    let Some(bounds) = document.model_bounds() else {
+    let Some(bounds) = content_bounds(document) else {
         return Ok(blank());
     };
     let region = window(bounds).ok_or(PreviewError::Extents)?;

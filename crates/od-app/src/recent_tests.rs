@@ -270,3 +270,15 @@ fn more_than_five_stored_pins_keep_only_the_first_five() {
     assert_eq!(recent.pinned_count(), MAX_PINNED);
     assert_eq!(recent.items().len(), 7);
 }
+
+#[test]
+fn the_chosen_view_is_remembered_and_grid_is_the_default() {
+    let mut storage = MemoryStorage::default();
+    assert_eq!(RecentFiles::load(Some(&storage)).view, RecentView::Grid);
+    storage.set_string("recent_files", "a.odx".to_owned());
+    assert_eq!(RecentFiles::load(Some(&storage)).view, RecentView::Grid);
+    let mut recent = filled(&["a.odx"]);
+    recent.view = RecentView::List;
+    recent.save(&mut storage);
+    assert_eq!(RecentFiles::load(Some(&storage)).view, RecentView::List);
+}

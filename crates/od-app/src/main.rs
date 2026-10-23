@@ -89,6 +89,8 @@ mod polygon_cmd;
 mod polyline_arc;
 mod polyline_cmd;
 mod power_select;
+mod preview_textures;
+mod previews;
 mod primitive_commands;
 mod prompt_reply;
 mod properties;

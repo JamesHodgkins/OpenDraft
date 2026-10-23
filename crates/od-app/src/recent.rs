@@ -31,6 +31,14 @@ pub struct RecentDrawing {
     pub last_opened: SystemTime,
 }
 
+/// How Home lists the recent drawings.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RecentView {
+    #[default]
+    Grid,
+    List,
+}
+
 /// Pinning was refused: `MAX_PINNED` are pinned already.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PinLimit;
@@ -40,6 +48,7 @@ pub struct RecentFiles {
     /// Pinned first, then by `last_opened`, newest first.
     items: Vec<RecentDrawing>,
     next_id: u64,
+    pub view: RecentView,
 }
 
 impl Default for RecentFiles {
@@ -47,6 +56,7 @@ impl Default for RecentFiles {
         Self {
             items: Vec::new(),
             next_id: 1,
+            view: RecentView::default(),
         }
     }
 }
@@ -248,6 +258,7 @@ impl RecentFiles {
                 })
                 .collect(),
             next_id: count as u64 + 1,
+            view: RecentView::default(),
         };
         recent.sort();
         recent
@@ -284,7 +295,15 @@ impl RecentFiles {
                 item.pinned = pinned <= MAX_PINNED;
             }
         }
-        let mut recent = Self { items, next_id };
+        let view = match value.get("view").and_then(Value::as_str) {
+            Some("list") => RecentView::List,
+            _ => RecentView::Grid,
+        };
+        let mut recent = Self {
+            items,
+            next_id,
+            view,
+        };
         recent.sort();
         recent
     }
@@ -302,7 +321,16 @@ impl RecentFiles {
                 })
             })
             .collect();
-        let value = json!({ "version": VERSION, "next_id": self.next_id, "items": items });
+        let view = match self.view {
+            RecentView::Grid => "grid",
+            RecentView::List => "list",
+        };
+        let value = json!({
+            "version": VERSION,
+            "next_id": self.next_id,
+            "view": view,
+            "items": items,
+        });
         storage.set_string(KEY, value.to_string());
     }
 }

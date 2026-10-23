@@ -245,3 +245,41 @@ fn huge_extents_do_not_panic() {
     });
     let _ = render(&doc);
 }
+
+fn cluster(strays: &[(f64, f64)], count: usize) -> Document {
+    let mut doc = Document::default();
+    for i in 0..count {
+        let x = f64::from(i as u32 % 10) * 10.0;
+        let y = f64::from(i as u32 / 10) * 10.0;
+        doc.add(Entity::Circle {
+            center: pt(x, y),
+            radius: 3.0,
+        });
+    }
+    for (x, y) in strays {
+        doc.add(Entity::Circle {
+            center: pt(*x, *y),
+            radius: 1.0,
+        });
+    }
+    doc
+}
+
+#[test]
+fn a_stray_object_far_from_the_rest_does_not_shrink_the_drawing_to_a_speck() {
+    let doc = cluster(&[(5.0e8, 5.0e8)], 100);
+    let fit = content_bounds(&doc).unwrap();
+    assert!(fit.max.x < 200.0 && fit.max.y < 200.0, "{fit:?}");
+    assert!(fit.min.x > -50.0, "{fit:?}");
+    // The cluster, not the stray, fills the picture.
+    let preview = render(&doc).unwrap();
+    assert!(dark_pixels(&preview) > 500);
+}
+
+#[test]
+fn a_small_drawing_counts_every_object_whatever_their_spread() {
+    let doc = cluster(&[(5.0e8, 5.0e8)], 20);
+    let fit = content_bounds(&doc).unwrap();
+    assert!(fit.max.x > 4.0e8, "{fit:?}");
+    assert_eq!(content_bounds(&Document::default()), None);
+}

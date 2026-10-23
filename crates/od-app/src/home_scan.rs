@@ -31,6 +31,8 @@ pub enum FileState {
 pub struct RecentEntry {
     pub id: RecentId,
     pub path: PathBuf,
+    /// The real path, once the worker has worked it out.
+    pub resolved: Option<PathBuf>,
     pub pinned: bool,
     pub state: FileState,
     /// The uid of the open drawing that is this file.
@@ -194,6 +196,7 @@ impl HomeScan {
                 RecentEntry {
                     id: item.id,
                     path: item.path.clone(),
+                    resolved: found.and_then(|s| s.resolved.clone()),
                     pinned: item.pinned,
                     state: found.map_or(FileState::Pending, |s| s.state.clone()),
                     open_uid: found.and_then(|s| s.open_uid),
