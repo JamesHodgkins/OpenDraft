@@ -1,6 +1,6 @@
 //! The Home page: shown in place of the drawing and panels while the Home tab
 //! is selected. Start something, pick up a recent drawing, jump to an open
-//! one, and a reminder of the keys that save the most time.
+//! one, and what is new in this version.
 
 use std::path::{Path, PathBuf};
 
@@ -22,16 +22,6 @@ use layout::{layout, Layout, COLUMN_GAP};
 use news::whats_new_section;
 use recent::{recent_section, row, RowText, Section};
 use recovery::recovery_section;
-
-/// Mode keys worth knowing: key, what it does.
-const KEYS: &[(&str, &str)] = &[
-    ("F3", "Object snap on/off"),
-    ("F7", "Grid on/off"),
-    ("F8", "Ortho on/off"),
-    ("F12", "Dynamic input on/off"),
-    ("Ctrl+Z / Ctrl+Y", "Undo / redo"),
-    ("Enter, Space", "Repeat the last command"),
-];
 
 /// What the user chose on the page this frame.
 pub(super) enum Pick {
@@ -122,7 +112,6 @@ impl OpenDraftApp {
                                 recent(ui, &mut pick);
                                 ui.add_space(22.0);
                                 ui.push_id("home_start", |ui| start_section(ui, theme, &mut pick));
-                                ui.push_id("home_keys", |ui| keys_section(ui, theme));
                                 announce(ui, &mut pick);
                             }
                             Layout::Wide { main, side, .. } => {
@@ -141,7 +130,6 @@ impl OpenDraftApp {
                                         ui.push_id("home_start", |ui| {
                                             start_section(ui, theme, &mut pick)
                                         });
-                                        ui.push_id("home_keys", |ui| keys_section(ui, theme));
                                         announce(ui, &mut pick);
                                     });
                                 });
@@ -321,19 +309,4 @@ fn start_section(ui: &mut egui::Ui, theme: &od_ui::Theme, pick: &mut Option<Pick
         }
     }
     ui.add_space(22.0);
-}
-
-fn keys_section(ui: &mut egui::Ui, theme: &od_ui::Theme) {
-    let c = &theme.colors;
-    widgets::section_header(ui, theme, "Handy keys");
-    egui::Grid::new("grid")
-        .num_columns(2)
-        .spacing([24.0, 4.0])
-        .show(ui, |ui| {
-            for (key, what) in KEYS {
-                ui.label(egui::RichText::new(*key).strong().color(c.text));
-                ui.label(egui::RichText::new(*what).color(c.text_weak));
-                ui.end_row();
-            }
-        });
 }
