@@ -99,8 +99,8 @@ pub struct OpenDraftApp {
     /// `OD_AUTOMATION=1` turned the endpoint on for this run only (nothing
     /// is saved), for scripts and tests.
     automation_forced: bool,
-    /// The recent drawings as last found on disk, and when.
-    home_recent: Option<(std::time::Instant, Vec<crate::home::RecentEntry>)>,
+    /// What is known of the files behind the recent drawings.
+    home_scan: crate::home_scan::HomeScan,
 }
 
 impl OpenDraftApp {
@@ -160,7 +160,7 @@ impl OpenDraftApp {
             dynamic_keys: Vec::new(),
             automation: None,
             automation_forced: std::env::var_os("OD_AUTOMATION").is_some_and(|v| v == "1"),
-            home_recent: None,
+            home_scan: Default::default(),
         }
     }
 

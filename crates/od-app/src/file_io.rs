@@ -157,7 +157,7 @@ impl AppState {
         let loaded = match result {
             Ok(loaded) => loaded,
             Err(error) => {
-                self.recent.remove(path);
+                self.locate.retain(|(p, _)| p != path);
                 self.tell(format!("Could not open {}: {error}", path.display()));
                 return;
             }
@@ -169,6 +169,7 @@ impl AppState {
             .position(|d| d.path.as_deref().is_some_and(|p| same_file(p, path)))
         {
             self.active = i;
+            self.commit_recent(path);
             return;
         }
         self.abort_command();
@@ -183,7 +184,7 @@ impl AppState {
             let session = Session::recovered(loaded.document);
             let doc = self.install_document(title, session);
             doc.view.request_zoom_extents();
-            self.recent.add(path);
+            self.commit_recent(path);
             let left_out = if loaded.warnings.is_empty() {
                 ""
             } else {
@@ -203,7 +204,7 @@ impl AppState {
         let doc = self.install_document(title.clone(), session);
         doc.path = Some(path.to_owned());
         doc.view.request_zoom_extents();
-        self.recent.add(path);
+        self.commit_recent(path);
         self.message = format!("Opened {title}");
     }
 

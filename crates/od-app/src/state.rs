@@ -134,6 +134,8 @@ pub struct AppState {
     pub(crate) next_doc_number: usize,
     pub(crate) next_doc_uid: u64,
     pub recent: RecentFiles,
+    /// Files picked to stand in for a missing recent entry, until they open.
+    pub(crate) locate: Vec<(std::path::PathBuf, crate::recent::RecentId)>,
     pub(crate) picker: Box<dyn FilePicker>,
     /// A question about unsaved changes waiting for the user's answer.
     pub confirm: Option<Confirm>,
@@ -207,6 +209,7 @@ impl AppState {
             next_doc_number: 1,
             next_doc_uid: 1,
             recent: RecentFiles::default(),
+            locate: Vec::new(),
             picker: crate::files::default_picker(),
             confirm: None,
             exit_requested: false,
