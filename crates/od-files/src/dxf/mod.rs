@@ -5,6 +5,7 @@
 
 mod blocks;
 mod dimensions;
+mod dimstyle_codec;
 mod header;
 #[cfg(test)]
 mod linetype_tests;
@@ -57,8 +58,19 @@ impl FileFormat for DxfFormat {
             ));
         }
         if count > 0 {
+            encoded.notes.push(format!(
+                "{count} arc length, jogged or jog line dimension{} written as plain lines, arcs and multiline text: they have no DIMENSION to map onto yet.",
+                if count == 1 { " was" } else { "s were" }
+            ));
+        }
+        let real = flat
+            .objects()
+            .iter()
+            .filter(|o| matches!(&o.entity, od_core::Entity::Dimension(_)))
+            .count();
+        if real > 0 {
             encoded.notes.push(
-                "Dimensions were written as plain lines, arcs and multiline text.".to_owned(),
+                "Dimensions were written as DIMENSION entities with their pictures as anonymous blocks and their styles in the DIMSTYLE table; they have not been reopened in AutoCAD.".to_owned(),
             );
         }
         if flat

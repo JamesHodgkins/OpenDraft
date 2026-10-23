@@ -128,6 +128,7 @@ fn needs_r2000(document: &Document) -> bool {
                     | Entity::Spline(_)
                     | Entity::Hatch(_)
                     | Entity::MText(_)
+                    | Entity::Dimension(_)
                     | Entity::MLeader(_)
                     | Entity::Leader(_)
                     | Entity::Xline { .. }

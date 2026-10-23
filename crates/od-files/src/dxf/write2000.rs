@@ -13,6 +13,7 @@ use std::collections::{BTreeSet, HashMap};
 
 use od_core::{Attr, Color, Document, LayerId, Lineweight};
 
+mod dimension;
 mod entities;
 mod hatch;
 mod leader;
@@ -61,6 +62,10 @@ struct Ids {
     mleader_styles: Vec<u32>,
     /// The text a leader annotates, which a leader names by handle.
     annotations: HashMap<od_core::EntityId, u32>,
+    /// Each dimension's anonymous block name and block record.
+    dim_blocks: HashMap<od_core::EntityId, (String, u32)>,
+    /// One per dimension style, in table order.
+    dim_styles: Vec<u32>,
 }
 
 /// `*Paper_Space`, `*Paper_Space0`, `*Paper_Space1`... by tab position.
@@ -107,7 +112,12 @@ pub fn write(document: &Document) -> Result<Encoded, FileError> {
         mleader_dict: h.next(),
         mleader_styles: document.mleader_styles().iter().map(|_| h.next()).collect(),
         annotations: HashMap::new(),
+        dim_blocks: HashMap::new(),
+        dim_styles: document.dim_styles().iter().map(|_| h.next()).collect(),
     };
+    for (id, name) in dimension::block_names(document) {
+        ids.dim_blocks.insert(id, (name, h.next()));
+    }
     for id in leader::annotation_ids(document) {
         ids.annotations.insert(id, h.next());
     }
@@ -228,6 +238,21 @@ pub fn write(document: &Document) -> Result<Encoded, FileError> {
             block(&mut blocks, &mut h, &block_name(i), owner, &mut sheet)?;
         }
     }
+    for object in document
+        .objects()
+        .iter()
+        .filter(|o| dimension::is_written(&o.entity))
+    {
+        let Some((name, record)) = ids.dim_blocks.get(&object.id) else {
+            continue;
+        };
+        block(&mut blocks, &mut h, name, *record, |out, h| {
+            for piece in dimension::block_pieces(object) {
+                write_object(out, h, &ids, document, &piece, *record, false)?;
+            }
+            Ok(())
+        })?;
+    }
     blocks.end_section();
     entities.end_section();
 
@@ -343,7 +368,8 @@ fn block(
     out.pair(8, 0);
     out.pair(100, "AcDbBlockBegin");
     out.pair(2, name);
-    out.pair(70, 0);
+    // Dimension pictures are anonymous blocks.
+    out.pair(70, i32::from(name.starts_with("*D")));
     out.point3(10, 0.0, 0.0, 0.0);
     out.pair(3, name);
     out.pair(1, "");

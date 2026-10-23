@@ -244,9 +244,31 @@ pub fn dim_diameter(ed: &mut Editor) -> Result<(), Cancelled> {
 /// a linear dimension from two points instead.
 pub fn dim_auto(ed: &mut Editor) -> Result<(), Cancelled> {
     loop {
-        let Some((picked, entity)) = pick(ed, "Select object to dimension or <specify points>")?
-        else {
-            return linear(ed, false);
+        let options = Options::<Picked>::new("Select object to dimension or <specify points>")
+            .keyword("Angular", "A")
+            .keyword("Baseline", "B")
+            .keyword("Continue", "C")
+            .keyword("Ordinate", "O")
+            .keyword("aLign", "L")
+            .keyword("Space", "S")
+            .allow_empty();
+        let picked = match ed.ask_object(options)? {
+            Answer::Value(picked) => picked,
+            Answer::Keyword(k) => {
+                return match k.as_str() {
+                    "Angular" => crate::dimension_angular_cmd::dim_angular(ed),
+                    "Baseline" => crate::dimension_chain_cmd::dim_baseline(ed),
+                    "Continue" => crate::dimension_chain_cmd::dim_continue(ed),
+                    "Ordinate" => crate::dimension_ordinate_cmd::dim_ordinate(ed),
+                    "Space" => crate::dimension_space_cmd::dim_space(ed),
+                    _ => linear(ed, true),
+                };
+            }
+            Answer::Enter => return linear(ed, false),
+        };
+        let id = picked.id;
+        let Some(entity) = ed.read(move |doc| doc.get(id).cloned())? else {
+            continue;
         };
         let style = style(ed)?;
         match &entity {
@@ -377,6 +399,16 @@ mod tests {
         submit(&mut state, "8,0");
         assert_eq!(dimensions(&state).len(), 1);
         assert_eq!(dimensions(&state)[0].measurement(), Some(5.0));
+    }
+
+    #[test]
+    fn dims_keywords_start_the_other_dimension_commands() {
+        let mut state = started(&[], "DIM", dim_auto);
+        submit(&mut state, "o");
+        assert!(state.cmd_prompt().text.contains("feature location"));
+        let mut state = started(&[], "DIM", dim_auto);
+        submit(&mut state, "a");
+        assert!(state.cmd_prompt().text.contains("Select arc, circle, line"));
     }
 
     #[test]
