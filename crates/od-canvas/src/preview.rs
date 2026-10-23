@@ -3,7 +3,7 @@
 //! fixed picture and rasterised with one-pixel anti-aliased lines. The Home
 //! page keeps these as its recent-drawing previews.
 //!
-//! The picture is on black, like the drawing area: the plot's black (which is
+//! The picture is on dark grey, like the drawing area: the plot's black (which is
 //! what it makes of white and of the foreground colour) is drawn white, and
 //! other colours as they are. Every line is one pixel wide whatever its
 //! lineweight.
@@ -20,7 +20,8 @@ const MARGIN: f64 = 0.06;
 /// The plot works in millimetres, where its tolerance is 0.02: a sheet this
 /// wide is 20 pixels to the millimetre, so curves stay within half a pixel.
 const SHEET_WIDTH: f64 = 25.6;
-const PAPER: [u8; 3] = [0, 0, 0];
+/// What the picture is drawn on: a dark grey, a little lighter than the page.
+pub const BACKGROUND: [u8; 3] = [43, 43, 43];
 /// Subsamples per pixel row when filling.
 const SUBROWS: usize = 4;
 
@@ -158,7 +159,7 @@ pub fn render(document: &Document) -> Result<Preview, PreviewError> {
     Ok(render_sheet(&sheet))
 }
 
-/// The picture for an empty drawing: faint grid on black.
+/// The picture for an empty drawing: faint grid on dark grey.
 pub fn blank() -> Preview {
     let mut canvas = Canvas::new();
     for y in 0..HEIGHT {
@@ -166,8 +167,8 @@ pub fn blank() -> Preview {
             let major = x % 128 == 0 || y % 128 == 0;
             let minor = x % 32 == 0 || y % 32 == 0;
             let grey = match (major, minor) {
-                (true, _) => 52,
-                (_, true) => 30,
+                (true, _) => 78,
+                (_, true) => 58,
                 _ => continue,
             };
             canvas.blend(x as i64, y as i64, [grey; 3], 1.0);
@@ -176,7 +177,7 @@ pub fn blank() -> Preview {
     canvas.into_preview()
 }
 
-/// A plotted colour as it shows on black: the plot's black, and anything
+/// A plotted colour as it shows on the dark background: the plot's black, and anything
 /// else too dark to see, becomes white.
 fn on_black(rgb: [u8; 3]) -> [u8; 3] {
     if rgb.iter().all(|c| *c < 64) {
@@ -222,7 +223,7 @@ impl Canvas {
     fn new() -> Self {
         let mut rgba = Vec::with_capacity((WIDTH * HEIGHT * 4) as usize);
         for _ in 0..WIDTH * HEIGHT {
-            rgba.extend([PAPER[0], PAPER[1], PAPER[2], 255]);
+            rgba.extend([BACKGROUND[0], BACKGROUND[1], BACKGROUND[2], 255]);
         }
         Self { rgba }
     }
