@@ -230,6 +230,7 @@ Rules that follow:
   undoing back to the saved state clears the star. Closing a tab or the window
   asks Save / Don't Save / Cancel for each modified drawing, one at a time
   (`od-app/src/files.rs`; the dialog is `app/file_dialogs.rs`).
+- **Folders the user may move** are `locations::Location` (Templates, Recovery): the choice is an `Option<PathBuf>` field in `Settings` (none means the default, beside the saved settings), picked on Settings > Files, and read only through `Location::resolve`. New code never builds a path from `eframe::storage_dir`; a new movable folder is a variant in `Location`. Templates apply at once (`apply_settings` updates `AppState::templates_dir`); Recovery is read at start. Approved automation folders stay on the Automation page (a security grant, not a location).
 - **Autosave and recovery** (`od-app/src/recovery.rs`, `autosave.rs`): every
   few minutes (Settings > Files; default 2, can be off) each drawing with
   unsaved changes is written to this run's session folder under the app data

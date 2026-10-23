@@ -103,11 +103,20 @@ impl AppState {
         self.message = text;
     }
 
+    /// Where an Open, Save or Export dialog starts: the drawing's own
+    /// folder, else where the last drawing was opened or saved.
+    pub(crate) fn folder_for_dialogs(&self, path: Option<&Path>) -> Option<PathBuf> {
+        path.and_then(Path::parent)
+            .map(Path::to_owned)
+            .or_else(|| self.recent.last_folder())
+    }
+
     // ---- open ----
 
     /// Ask which drawing to open, and open it.
     pub fn open_dialog(&mut self) {
-        if let Some(path) = self.picker.open() {
+        let directory = self.recent.last_folder();
+        if let Some(path) = self.picker.open(directory.as_deref()) {
             self.open_path(&path);
         }
     }
@@ -203,10 +212,7 @@ impl AppState {
             None => (
                 "Save drawing as",
                 format!("{}.{}", doc.title, od_files::NATIVE_EXTENSION),
-                doc.path
-                    .as_deref()
-                    .and_then(Path::parent)
-                    .map(Path::to_owned),
+                self.folder_for_dialogs(doc.path.as_deref()),
             ),
         };
         let Some(chosen) = self.picker.save(
@@ -231,11 +237,7 @@ impl AppState {
     pub fn export_dxf(&mut self) -> bool {
         let doc = &self.docs[self.active];
         let suggested = format!("{}.dxf", doc.title);
-        let directory = doc
-            .path
-            .as_deref()
-            .and_then(Path::parent)
-            .map(Path::to_owned);
+        let directory = self.folder_for_dialogs(doc.path.as_deref());
         let Some(chosen) = self.picker.save(
             "Export DXF",
             &suggested,
@@ -409,6 +411,31 @@ mod tests {
             start: Point::new(0.0, 0.0),
             end: Point::new(5.0, 5.0),
         });
+    }
+
+    #[test]
+    fn dialogs_start_where_the_last_drawing_was_saved_until_a_drawing_has_its_own() {
+        let dir = Scratch::new("last-folder");
+        let (mut state, script) = state();
+        assert!(!state.save_active());
+        assert!(!state.export_dxf());
+        state.open_dialog();
+        assert_eq!(script.directories(), [None, None]);
+        assert_eq!(script.open_directories(), [None]);
+
+        draw(&mut state);
+        script.will_save_to(Some(dir.path("plan")));
+        state.save_active();
+        state.open_dialog();
+        assert_eq!(script.open_directories()[1], Some(dir.0.clone()));
+
+        state.new_document();
+        state.export_dxf();
+        assert_eq!(
+            script.directories()[3],
+            Some(dir.0.clone()),
+            "a new drawing starts where the last one went"
+        );
     }
 
     #[test]

@@ -83,7 +83,8 @@ impl AppState {
     /// Ask for a file to stand in for the recent drawing `id`. Nothing
     /// changes unless it opens; then it takes the entry's place.
     pub fn locate_recent(&mut self, id: RecentId) {
-        if let Some(path) = self.picker.open() {
+        let directory = self.recent.last_folder();
+        if let Some(path) = self.picker.open(directory.as_deref()) {
             self.locate.retain(|(_, old)| *old != id);
             self.locate.push((path.clone(), id));
             self.open_path(&path);

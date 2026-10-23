@@ -5,8 +5,9 @@ use od_ui::widgets;
 use od_ui::Theme;
 
 use super::OpenDraftApp;
+use crate::locations::Location;
 use crate::settings::Settings;
-use crate::settings_ui;
+use crate::settings_ui::{self, FolderRequest};
 
 #[derive(Clone, Copy)]
 enum DialogAction {
@@ -67,7 +68,7 @@ impl OpenDraftApp {
             .iter()
             .map(|c| (c.write, c.commands, c.files))
             .collect();
-        let mut add_folder = false;
+        let mut request = None;
         let page_height = (ctx.screen_rect().height() - 230.0).clamp(100.0, 390.0);
 
         widgets::dialog(ctx, &self.theme, "Settings", &mut open, 520.0, |ui| {
@@ -94,7 +95,7 @@ impl OpenDraftApp {
                                 i,
                                 &mut draft,
                                 &mut connections,
-                                &mut add_folder,
+                                &mut request,
                             );
                         });
                 },
@@ -134,8 +135,13 @@ impl OpenDraftApp {
                 }
             }
         }
-        if add_folder {
-            draft.approve_folder(&mut *self.state.picker);
+        if let Some(request) = request {
+            match request {
+                FolderRequest::Approve => draft.approve_folder(&mut *self.state.picker),
+                FolderRequest::Choose(location) => {
+                    draft.choose_folder(location, &mut *self.state.picker);
+                }
+            }
             // The list above was drawn before the folder came back.
             ctx.request_repaint();
         }
@@ -170,6 +176,7 @@ impl OpenDraftApp {
         if new.ui_scale_percent != self.state.settings.ui_scale_percent {
             ctx.set_zoom_factor(new.zoom_factor());
         }
+        self.state.templates_dir = Location::Templates.resolve(&new);
         self.state.settings = new;
     }
 }
