@@ -102,6 +102,8 @@ icons! {
     DRAW_CIRCLE_DIAMETER = '\u{e07a}';
     DRAW_CIRCLE_RADIUS = '\u{e07a}';
     DRAW_CIRCLE_TTR = '\u{e07a}';
+    /// Lucide's ellipsis: marks along a line.
+    DRAW_DIVIDE = '\u{e0ba}';
     /// Lucide's donut.
     DRAW_DONUT = '\u{e4c0}';
     /// Lucide has no ellipse; its egg is the nearest single oval outline.
@@ -110,6 +112,8 @@ icons! {
     /// A square with a diagonal: the nearest Lucide has to hatching.
     DRAW_HATCH = '\u{e177}';
     DRAW_LINE = '\u{e11f}';
+    /// Lucide's marks between two ends.
+    DRAW_MEASURE = '\u{e596}';
     /// Lucide's dot.
     DRAW_POINT = '\u{e453}';
     DRAW_POLYGON = '\u{e0f6}';
