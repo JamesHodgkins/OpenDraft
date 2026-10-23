@@ -38,12 +38,21 @@ pub fn page(
 }
 
 fn display(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
+    ui.columns(2, |cols| {
+        display_left(&mut cols[0], theme, draft);
+        display_right(&mut cols[1], theme, draft);
+    });
+}
+
+fn display_left(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
     widgets::group_box(ui, theme, "Color theme", |ui| {
         for palette in Palette::ALL {
             ui.radio_value(&mut draft.palette, palette, palette.label());
         }
     });
-    ui.add_space(6.0);
+}
+
+fn display_right(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
     widgets::group_box(ui, theme, "Mouse wheel", |ui| {
         let (min, max) = ZOOM_SPEED_RANGE;
         ui.horizontal(|ui| {
@@ -75,6 +84,13 @@ fn display(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
 }
 
 fn drafting(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
+    ui.columns(2, |cols| {
+        drafting_left(&mut cols[0], theme, draft);
+        drafting_right(&mut cols[1], theme, draft);
+    });
+}
+
+fn drafting_left(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
     dynamic_input(ui, theme, draft);
     ui.add_space(6.0);
     widgets::group_box(ui, theme, "Grid", |ui| {
@@ -95,30 +111,6 @@ fn drafting(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
     ui.add_space(6.0);
     sizes(ui, theme, draft);
     ui.add_space(6.0);
-    widgets::group_box(ui, theme, "Snap", |ui| {
-        ui.checkbox(&mut draft.snap.enabled, "Snap on");
-        ui.add_enabled_ui(draft.snap.enabled, |ui| {
-            ui.checkbox(&mut draft.snap.endpoint, "Endpoint");
-            ui.checkbox(&mut draft.snap.midpoint, "Midpoint");
-            ui.checkbox(&mut draft.snap.center, "Center");
-            ui.checkbox(&mut draft.snap.node, "Node");
-            ui.checkbox(&mut draft.snap.quadrant, "Quadrant");
-            ui.checkbox(&mut draft.snap.intersection, "Intersection");
-            ui.checkbox(
-                &mut draft.snap.apparent_intersection,
-                "Apparent Intersection",
-            );
-            ui.checkbox(&mut draft.snap.geometric_center, "Geometric Center");
-            ui.checkbox(&mut draft.snap.insertion, "Insertion");
-            ui.checkbox(&mut draft.snap.perpendicular, "Perpendicular");
-            ui.checkbox(&mut draft.snap.tangent, "Tangent");
-            ui.checkbox(&mut draft.snap.extension, "Extension");
-            ui.checkbox(&mut draft.snap.parallel, "Parallel");
-            ui.checkbox(&mut draft.snap.nearest, "Nearest");
-            ui.checkbox(&mut draft.snap.grid, "Grid");
-        });
-    });
-    ui.add_space(6.0);
     widgets::group_box(ui, theme, "AutoSnap", |ui| {
         ui.checkbox(&mut draft.snap.marker, "Marker");
         ui.checkbox(&mut draft.snap.tooltip, "Tooltip");
@@ -130,7 +122,47 @@ fn drafting(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
                 .color(theme.colors.text_weak),
         );
     });
+}
+
+fn drafting_right(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
+    widgets::group_box(ui, theme, "Snap", |ui| {
+        ui.checkbox(&mut draft.snap.enabled, "Snap on");
+        ui.add_enabled_ui(draft.snap.enabled, |ui| {
+            let snap = &mut draft.snap;
+            let mut modes = [
+                ("Endpoint", &mut snap.endpoint),
+                ("Midpoint", &mut snap.midpoint),
+                ("Center", &mut snap.center),
+                ("Node", &mut snap.node),
+                ("Quadrant", &mut snap.quadrant),
+                ("Intersection", &mut snap.intersection),
+                ("Apparent Intersection", &mut snap.apparent_intersection),
+                ("Geometric Center", &mut snap.geometric_center),
+                ("Insertion", &mut snap.insertion),
+                ("Perpendicular", &mut snap.perpendicular),
+                ("Tangent", &mut snap.tangent),
+                ("Extension", &mut snap.extension),
+                ("Parallel", &mut snap.parallel),
+                ("Nearest", &mut snap.nearest),
+                ("Grid", &mut snap.grid),
+            ];
+            let (first, second) = modes.split_at_mut(8);
+            ui.columns(2, |cols| {
+                for (column, half) in cols.iter_mut().zip([first, second]) {
+                    for (label, on) in half.iter_mut() {
+                        column.checkbox(on, *label);
+                    }
+                }
+            });
+        });
+    });
     ui.add_space(6.0);
+    ortho(ui, theme, draft);
+    ui.add_space(6.0);
+    crate::settings_tracking::tracking_group(ui, theme, draft);
+}
+
+fn ortho(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
     widgets::group_box(ui, theme, "Ortho", |ui| {
         if ui
             .checkbox(&mut draft.ortho.enabled, "Ortho on (F8)")
@@ -155,8 +187,6 @@ fn drafting(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
                 .color(theme.colors.text_weak),
         );
     });
-    ui.add_space(6.0);
-    crate::settings_tracking::tracking_group(ui, theme, draft);
 }
 
 /// Pick, snap and grip target sizes.
@@ -244,7 +274,11 @@ fn autosave_label(minutes: u32) -> String {
     }
 }
 
-/// One folder: its name, where it points now, and Browse / Default.
+/// Width of the name column of the folder rows.
+const NAME_WIDTH: f32 = 130.0;
+
+/// One folder on one row: its name, where it points now, then Browse and
+/// Default; the note sits beneath.
 fn location_row(
     ui: &mut egui::Ui,
     theme: &Theme,
@@ -252,7 +286,6 @@ fn location_row(
     location: Location,
     request: &mut Option<FolderRequest>,
 ) {
-    widgets::field_label(ui, theme, location.label());
     let (text, set) = match location.chosen(draft) {
         Some(folder) => (folder.display().to_string(), true),
         None => (
@@ -264,28 +297,37 @@ fn location_row(
         ),
     };
     ui.horizontal(|ui| {
-        let color = if set {
-            theme.colors.text
-        } else {
-            theme.colors.text_weak
-        };
-        ui.add(egui::Label::new(egui::RichText::new(text).color(color)).truncate());
-    });
-    ui.horizontal(|ui| {
-        if widgets::secondary_button(ui, theme, "Browse...").clicked() {
-            *request = Some(FolderRequest::Choose(location));
-        }
-        ui.add_enabled_ui(set, |ui| {
-            if widgets::secondary_button(ui, theme, "Default").clicked() {
-                location.set(draft, None);
+        ui.add_sized(
+            [NAME_WIDTH, ui.spacing().interact_size.y],
+            egui::Label::new(location.label()),
+        );
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            ui.add_enabled_ui(set, |ui| {
+                if widgets::secondary_button(ui, theme, "Default").clicked() {
+                    location.set(draft, None);
+                }
+            });
+            if widgets::secondary_button(ui, theme, "Browse...").clicked() {
+                *request = Some(FolderRequest::Choose(location));
             }
+            let color = if set {
+                theme.colors.text
+            } else {
+                theme.colors.text_weak
+            };
+            ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                ui.add(egui::Label::new(egui::RichText::new(text).color(color)).truncate());
+            });
         });
     });
-    ui.label(
-        egui::RichText::new(location.note())
-            .size(theme.font_size_small)
-            .color(theme.colors.text_weak),
-    );
+    ui.horizontal(|ui| {
+        ui.add_space(NAME_WIDTH + ui.spacing().item_spacing.x);
+        ui.label(
+            egui::RichText::new(location.note())
+                .size(theme.font_size_small)
+                .color(theme.colors.text_weak),
+        );
+    });
 }
 
 fn files(
