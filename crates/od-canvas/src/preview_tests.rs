@@ -69,9 +69,9 @@ fn an_empty_drawing_is_the_blank_grid() {
     let preview = render(&Document::default()).unwrap();
     assert_eq!((preview.width, preview.height), (WIDTH, HEIGHT));
     assert_eq!(preview, blank());
-    assert_eq!(pixel(&preview, 1, 1), [0, 0, 0]);
-    assert_eq!(pixel(&preview, 32, 1), [30, 30, 30]);
-    assert_eq!(pixel(&preview, 128, 1), [52, 52, 52]);
+    assert_eq!(pixel(&preview, 1, 1), BACKGROUND);
+    assert_eq!(pixel(&preview, 32, 1), [58, 58, 58]);
+    assert_eq!(pixel(&preview, 128, 1), [78, 78, 78]);
     assert_eq!(ink_pixels(&preview), 0);
 }
 
@@ -89,9 +89,9 @@ fn line_and_circle() -> Document {
 }
 
 // Fixture: a line from (0,0) to (100,50) and a circle of radius 20 at
-// (50,25), white on black, 512 x 320. Expected hash from the first accepted
+// (50,25), white on dark grey, 512 x 320. Expected hash from the first accepted
 // run; a change here is an intentional change of the renderer's output.
-const LINE_AND_CIRCLE: u64 = 2577612293854600616;
+const LINE_AND_CIRCLE: u64 = 16577411147898460981;
 
 #[test]
 fn a_line_and_a_circle_are_drawn_where_they_belong() {
@@ -129,7 +129,7 @@ fn dashed_line() -> Document {
 }
 
 // Fixture: two horizontal lines 200 long and 10 apart, the lower one DASHED.
-const DASHED: u64 = 14795757862774549061;
+const DASHED: u64 = 896490201118455621;
 
 #[test]
 fn a_dashed_line_has_gaps_where_a_continuous_one_has_none() {
@@ -144,7 +144,7 @@ fn a_dashed_line_has_gaps_where_a_continuous_one_has_none() {
 }
 
 // Fixture: a 200 x 100 px rectangle with a 60 x 40 px hole, filled non-zero.
-const FILL: u64 = 6927676734421998373;
+const FILL: u64 = 18261933202425481509;
 
 #[test]
 fn a_fill_covers_its_shape_not_its_hole_and_has_soft_edges() {
@@ -162,11 +162,11 @@ fn a_fill_covers_its_shape_not_its_hole_and_has_soft_edges() {
         notes: Vec::new(),
     };
     let preview = render_sheet(&sheet);
-    assert_eq!(pixel(&preview, 60, 60), [0, 0, 0], "outside, above");
+    assert_eq!(pixel(&preview, 60, 60), BACKGROUND, "outside, above");
     // The shape is x 40..240 px, rows 180..280; the hole x 100..160, rows 220..260.
     assert_eq!(pixel(&preview, 60, 200), [200, 0, 0], "inside the shape");
-    assert_eq!(pixel(&preview, 130, 240), [0, 0, 0], "in the hole");
-    assert_eq!(pixel(&preview, 20, 230), [0, 0, 0], "outside, left");
+    assert_eq!(pixel(&preview, 130, 240), BACKGROUND, "in the hole");
+    assert_eq!(pixel(&preview, 20, 230), BACKGROUND, "outside, left");
     let sheet_half = PlotSheet {
         fills: vec![PlotFill {
             contours: vec![vec![
@@ -184,8 +184,8 @@ fn a_fill_covers_its_shape_not_its_hole_and_has_soft_edges() {
     assert_eq!(pixel(&half, 0, 100), [255, 255, 255]);
     assert_eq!(pixel(&half, 1, 100), [255, 255, 255]);
     let edge = pixel(&half, 2, 100)[0];
-    assert!((120..=135).contains(&edge), "{edge}");
-    assert_eq!(pixel(&half, 3, 100), [0, 0, 0]);
+    assert!((140..=158).contains(&edge), "{edge}");
+    assert_eq!(pixel(&half, 3, 100), BACKGROUND);
     assert_eq!(hash(&preview), FILL);
 }
 
