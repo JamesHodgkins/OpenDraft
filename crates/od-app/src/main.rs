@@ -31,6 +31,7 @@ mod dimension_chain_cmd;
 mod dimension_cmd;
 mod dimension_commands;
 mod dimension_edit_cmd;
+mod dimension_ordinate_cmd;
 mod divide_cmd;
 mod dock;
 mod donut_cmd;

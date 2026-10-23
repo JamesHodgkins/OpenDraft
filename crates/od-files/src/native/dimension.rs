@@ -39,6 +39,11 @@ pub(super) enum DimKindDto {
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         leader: bool,
     },
+    Ordinate {
+        feature: PointDto,
+        leader_end: PointDto,
+        x_datum: bool,
+    },
     Angular {
         vertex: PointDto,
         p1: PointDto,
@@ -93,6 +98,15 @@ impl DimensionDto {
                 chord_point: point(*chord_point),
                 diameter: *diameter,
                 leader_length: *leader_length,
+            },
+            DimKind::Ordinate {
+                feature,
+                leader_end,
+                x_datum,
+            } => DimKindDto::Ordinate {
+                feature: point(*feature),
+                leader_end: point(*leader_end),
+                x_datum: *x_datum,
             },
             DimKind::Angular {
                 vertex,
@@ -166,6 +180,15 @@ impl DimensionDto {
                     leader_length: *leader_length,
                 }
             }
+            DimKindDto::Ordinate {
+                feature,
+                leader_end,
+                x_datum,
+            } => DimKind::Ordinate {
+                feature: pt(feature)?,
+                leader_end: pt(leader_end)?,
+                x_datum: *x_datum,
+            },
             DimKindDto::Angular {
                 vertex,
                 p1,
@@ -254,6 +277,7 @@ mod tests {
             Dimension::radius(p(0.0, 0.0), p(5.0, 0.0), &style),
             Dimension::diameter(p(0.0, 0.0), p(0.0, 5.0), &DimStyle::default()),
             Dimension::arc_length(p(0.0, 0.0), p(5.0, 0.0), p(0.0, 5.0), p(6.0, 6.0), &style),
+            Dimension::ordinate(p(3.0, 4.0), p(3.0, 9.0), true, &style),
             Dimension::angular(
                 p(0.0, 0.0),
                 p(5.0, 0.0),

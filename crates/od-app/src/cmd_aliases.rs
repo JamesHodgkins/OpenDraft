@@ -144,6 +144,8 @@ pub const ALIASES: &[(&str, &str, &str)] = &[
     ("DIMCONTINUE", "DIMCONTINUE", "dim.continue"),
     ("DCE", "DIMCENTER", "dim.centre"),
     ("DIMCENTER", "DIMCENTER", "dim.centre"),
+    ("DOR", "DIMORDINATE", "dim.ordinate"),
+    ("DIMORDINATE", "DIMORDINATE", "dim.ordinate"),
     ("DAN", "DIMANGULAR", "dim.angular"),
     ("DIMANGULAR", "DIMANGULAR", "dim.angular"),
     ("DAR", "DIMARC", "dim.arc"),
