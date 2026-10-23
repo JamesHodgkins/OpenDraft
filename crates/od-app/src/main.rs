@@ -7,6 +7,7 @@ mod automation;
 mod autosave;
 mod block_cmd;
 mod block_editor;
+mod boundary_cmd;
 mod break_cmd;
 mod circle;
 mod circle_arc_commands;

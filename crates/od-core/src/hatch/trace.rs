@@ -96,6 +96,7 @@ pub fn trace(entities: &[Entity], seed: Point, tolerance: f64) -> Result<Traced,
     let size = entities
         .iter()
         .map(|e| e.bounds())
+        .filter(crate::Bounds::is_finite)
         .reduce(|a, b| a.union(b))
         .map_or(1.0, |b| (b.max.x - b.min.x).hypot(b.max.y - b.min.y))
         .max(1e-9);

@@ -28,6 +28,8 @@ pub const ALIASES: &[(&str, &str, &str)] = &[
     ("TEXTEDIT", "TEXTEDIT", "annotate.mtedit"),
     ("ED", "TEXTEDIT", "annotate.mtedit"),
     ("REC", "RECTANGLE", "draw.rectangle"),
+    ("BO", "BOUNDARY", "draw.boundary"),
+    ("BOUNDARY", "BOUNDARY", "draw.boundary"),
     ("DO", "DONUT", "draw.donut"),
     ("DONUT", "DONUT", "draw.donut"),
     ("PO", "POINT", "draw.point"),
