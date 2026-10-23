@@ -125,6 +125,25 @@ fn annotate() -> Tab {
                         Item::new("dim.diameter", "Diameter", icons::DIM_DIAMETER),
                         Item::new("dim.arc", "Arc Length", icons::DIM_ARC),
                     ]),
+                    Column::Stack(vec![
+                        Item::new("dim.jogged", "Jogged", icons::DIM_JOGGED),
+                        Item::new("dim.ordinate", "Ordinate", icons::DIM_ORDINATE),
+                        Item::new("dim.centre", "Center Mark", icons::DIM_CENTRE),
+                    ]),
+                    Column::Stack(vec![
+                        Item::new("dim.baseline", "Baseline", icons::DIM_BASELINE),
+                        Item::new("dim.continue", "Continue", icons::DIM_CONTINUE),
+                        Item::new("dim.space", "Space", icons::DIM_SPACE),
+                    ]),
+                    Column::Stack(vec![
+                        Item::new("dim.edit", "Edit", icons::DIM_EDIT),
+                        Item::new("dim.textedit", "Text Edit", icons::DIM_TEXTEDIT),
+                        Item::new("dim.jogline", "Jog Line", icons::DIM_JOGLINE),
+                    ]),
+                    Column::Stack(vec![
+                        Item::new("dim.reassociate", "Reassociate", icons::DIM_REASSOCIATE),
+                        Item::new("dim.disassociate", "Disassociate", icons::DIM_DISASSOCIATE),
+                    ]),
                     Column::Large(Item::new("dim.style", "Dimension Style", icons::DIM_STYLE)),
                 ],
                 ..Default::default()
