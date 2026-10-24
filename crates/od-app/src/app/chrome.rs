@@ -7,6 +7,7 @@ use od_ui::menu;
 use od_ui::widgets;
 use od_ui::{document_tabs, DocumentTabEvent};
 
+use super::update_notice::update_notice;
 use super::{OpenDraftApp, Source, QUICK_ACCESS};
 use crate::text::plural;
 
@@ -60,6 +61,11 @@ impl OpenDraftApp {
     pub(super) fn title_bar(&mut self, ctx: &egui::Context) {
         let mut clicked = None;
         let mut recent = None;
+        let mut go_home = false;
+        let update_view = self.updates.view(
+            self.state.settings.update_checks,
+            crate::updates::now_secs(),
+        );
         egui::TopBottomPanel::top("title_bar")
             .frame(
                 egui::Frame::new()
@@ -101,7 +107,7 @@ impl OpenDraftApp {
                         }
                     }
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        ui.label("OpenDraft");
+                        go_home = update_notice(ui, &self.theme, &update_view);
                     });
                 });
             });
@@ -110,6 +116,9 @@ impl OpenDraftApp {
         }
         if let Some(i) = recent {
             self.state.open_recent(i);
+        }
+        if go_home {
+            self.state.show_home();
         }
     }
 

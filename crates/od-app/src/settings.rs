@@ -63,6 +63,9 @@ pub struct Settings {
     /// `locations.rs`).
     pub templates_dir: Option<std::path::PathBuf>,
     pub recovery_dir: Option<std::path::PathBuf>,
+    /// May the program ask GitHub, once a day, whether a newer version
+    /// exists? `None` until the user has answered (see `updates`).
+    pub update_checks: Option<bool>,
 }
 
 impl Default for Settings {
@@ -87,6 +90,7 @@ impl Default for Settings {
             automation_roots: Vec::new(),
             templates_dir: None,
             recovery_dir: None,
+            update_checks: None,
         }
     }
 }
@@ -335,6 +339,7 @@ mod tests {
             automation_roots: vec!["/tmp/a".into(), "C:\\Plans".into()],
             templates_dir: Some("D:\\Templates".into()),
             recovery_dir: Some("D:\\Recovery".into()),
+            update_checks: Some(true),
         };
         settings.save(&mut storage);
         assert_eq!(Settings::load(Some(&storage)), settings);

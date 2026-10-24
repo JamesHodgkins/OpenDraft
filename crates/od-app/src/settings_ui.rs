@@ -19,7 +19,7 @@ pub enum FolderRequest {
     Choose(Location),
 }
 
-pub const TABS: &[&str] = &["Display", "Drafting", "Files", "Automation"];
+pub const TABS: &[&str] = &["Display", "Drafting", "Files", "Automation", "Updates"];
 
 pub fn page(
     ui: &mut egui::Ui,
@@ -33,8 +33,36 @@ pub fn page(
         0 => display(ui, theme, draft),
         1 => drafting(ui, theme, draft),
         2 => files(ui, theme, draft, request),
-        _ => crate::automation::settings_page(ui, theme, draft, connections, request),
+        3 => crate::automation::settings_page(ui, theme, draft, connections, request),
+        _ => updates(ui, theme, draft),
     }
+}
+
+/// Whether the program may ask GitHub about newer versions: the same choice
+/// as the Updates card on Home. Nothing is sent until the box is ticked.
+fn updates(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
+    widgets::group_box(ui, theme, "Updates", |ui| {
+        let mut on = draft.update_checks == Some(true);
+        if ui
+            .checkbox(&mut on, "Check for new versions automatically")
+            .changed()
+        {
+            draft.update_checks = Some(on);
+        }
+        let note = match draft.update_checks {
+            None => "Not decided yet: nothing is sent until you tick this.",
+            Some(true) => "Once a day OpenDraft asks GitHub which versions have been released.",
+            Some(false) => "OpenDraft never contacts GitHub on its own.",
+        };
+        ui.label(egui::RichText::new(note).color(theme.colors.text_weak));
+        ui.add_space(6.0);
+        ui.label(
+            egui::RichText::new(
+                "The request carries OpenDraft's version number and, as any web request does,                  your internet address. No drawings or personal details are sent, and nothing                  is downloaded or installed: a newer version is only announced, and its                  release page opens when you click.",
+            )
+            .color(theme.colors.text_weak),
+        );
+    });
 }
 
 fn display(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
