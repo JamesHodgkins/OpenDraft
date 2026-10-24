@@ -34,3 +34,7 @@ png = "0.18.1"
 # The local date and time of an autosave on the Home page (MIT OR Apache-2.0;
 # already in the lock file).
 chrono = { version = "0.4.45", default-features = false, features = ["clock"] }
+
+[target.'cfg(windows)'.build-dependencies]
+# The program's icon and version information in the Windows exe (MIT).
+winresource = "0.1"
