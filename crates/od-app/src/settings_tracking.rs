@@ -19,15 +19,6 @@ const PATHS: [&str; 4] = [
 
 pub fn tracking_group(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
     widgets::group_box(ui, theme, "Tracking", |ui| {
-        ui.checkbox(&mut draft.tracking.otrack, "Object snap tracking on (F11)");
-        if ui
-            .checkbox(&mut draft.tracking.polar, "Polar tracking on (F10)")
-            .changed()
-            && draft.tracking.polar
-        {
-            // Ortho and polar tracking exclude each other, as in AutoCAD.
-            draft.ortho.enabled = false;
-        }
         ui.horizontal(|ui| {
             ui.label("Increment angle");
             egui::ComboBox::from_id_salt("polar_increment")

@@ -69,9 +69,13 @@ impl OpenDraftApp {
             .map(|c| (c.write, c.commands, c.files))
             .collect();
         let mut request = None;
-        let page_height = (ctx.screen_rect().height() - 230.0).clamp(100.0, 390.0);
+        let screen = ctx.screen_rect();
+        // Fixed, so the dialog does not change size between tabs: tall enough
+        // for Drafting, the longest page, and smaller on short screens.
+        let page_height = (screen.height() - 230.0).clamp(100.0, 560.0);
+        let width = (screen.width() - 80.0).clamp(360.0, 880.0);
 
-        widgets::dialog(ctx, &self.theme, "Settings", &mut open, 520.0, |ui| {
+        widgets::dialog(ctx, &self.theme, "Settings", &mut open, width, |ui| {
             ui.horizontal(|ui| {
                 ui.label(
                     egui::RichText::new("Current drawing:").color(self.theme.colors.text_weak),
