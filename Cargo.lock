@@ -2213,7 +2213,7 @@ dependencies = [
 
 [[package]]
 name = "od-api"
-version = "0.1.0-beta.1"
+version = "0.1.0"
 dependencies = [
  "od-core",
  "schemars",
@@ -2223,7 +2223,7 @@ dependencies = [
 
 [[package]]
 name = "od-app"
-version = "0.1.0-beta.1"
+version = "0.1.0"
 dependencies = [
  "arboard",
  "chrono",
@@ -2250,7 +2250,7 @@ dependencies = [
 
 [[package]]
 name = "od-canvas"
-version = "0.1.0-beta.1"
+version = "0.1.0"
 dependencies = [
  "egui",
  "lyon_tessellation",
@@ -2260,14 +2260,14 @@ dependencies = [
 
 [[package]]
 name = "od-commands"
-version = "0.1.0-beta.1"
+version = "0.1.0"
 dependencies = [
  "od-core",
 ]
 
 [[package]]
 name = "od-core"
-version = "0.1.0-beta.1"
+version = "0.1.0"
 dependencies = [
  "rstar",
  "rustybuzz",
@@ -2275,11 +2275,11 @@ dependencies = [
 
 [[package]]
 name = "od-dwg"
-version = "0.1.0-beta.1"
+version = "0.1.0"
 
 [[package]]
 name = "od-files"
-version = "0.1.0-beta.1"
+version = "0.1.0"
 dependencies = [
  "dxf",
  "od-core",
@@ -2290,7 +2290,7 @@ dependencies = [
 
 [[package]]
 name = "od-mcp"
-version = "0.1.0-beta.1"
+version = "0.1.0"
 dependencies = [
  "interprocess",
  "od-api",
@@ -2303,7 +2303,7 @@ dependencies = [
 
 [[package]]
 name = "od-ui"
-version = "0.1.0-beta.1"
+version = "0.1.0"
 dependencies = [
  "eframe",
  "egui",
