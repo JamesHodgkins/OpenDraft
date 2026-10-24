@@ -98,6 +98,18 @@ All contributors are expected to be respectful and considerate. See [CODE_OF_CON
 
 ## Releasing
 
+A release is a version tag on `main`. Stable releases are `vX.Y.Z`; a version with a suffix (`v0.2.0-beta.1`) is published as a prerelease. A published release and its files are never changed: a mistake is fixed by a new version.
+
+1. Set `version` in the root `Cargo.toml` to the release version and merge that to `main` through a pull request.
+2. Decide the "What's new" note (below).
+3. Tag that commit and push the tag: `git tag v0.2.0 && git push origin v0.2.0`.
+4. The `release` workflow then checks that the tag is `v` plus the `Cargo.toml` version and that the commit is on `main`, runs formatting, clippy and the tests on Windows and Linux, builds both packages, and publishes one release holding the Windows zip, the Linux tarball and `SHA256SUMS`. The release is created as a draft and made public only once every file is attached, so a failed run leaves nothing visible; push the fix and re-run it (a leftover draft for the tag is replaced, a published release is refused).
+5. Open the release page and check the files and the generated notes.
+
+Running the workflow by hand from the Actions tab builds and tests the packages without publishing anything.
+
+The Linux package is built on Ubuntu 22.04 and has not been run extensively; call it experimental in the notes.
+
 Before tagging a release, decide what the Home page's "What's new" card says. `crates/od-app/src/whats_new.rs` holds one `Note` per version, keyed by the exact `CARGO_PKG_VERSION`: a short title and at most three plain-language changes users will notice (capabilities and workflow, not refactors or dependency updates). Add one when the release has changes worth announcing; leave it out when it does not, and the card simply does not show. The card's "View release notes" opens `https://github.com/JamesHodgkins/OpenDraft/releases/tag/v<version>`, so publish the release with that tag.
 
 ## Getting help
