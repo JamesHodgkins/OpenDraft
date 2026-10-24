@@ -9,6 +9,7 @@ mod block_cmd;
 mod block_editor;
 mod boundary_cmd;
 mod break_cmd;
+mod build_info;
 mod circle;
 mod circle_arc_commands;
 mod clipboard;
