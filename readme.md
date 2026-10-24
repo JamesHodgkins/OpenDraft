@@ -121,7 +121,7 @@ cd OpenDraft-<version>-linux
 ./opendraft
 ```
 
-Tested on Linux Mint with the 0.1.0-beta.1 build: it started and ran with nothing extra installed. Other distributions are untested, and reports are welcome. The Linux build is made in CI on Ubuntu 22.04. If it does not start, a desktop library may be missing (Debian/Ubuntu: `sudo apt-get install -y libxkbcommon0 libwayland-client0 libx11-6 libxcb1 libgl1`).
+Tested on Linux Mint with 0.1.0: it started and ran with nothing extra installed. Other distributions are untested, and reports are welcome. The Linux build is made in CI on Ubuntu 22.04. If it does not start, a desktop library may be missing (Debian/Ubuntu: `sudo apt-get install -y libxkbcommon0 libwayland-client0 libx11-6 libxcb1 libgl1`).
 
 ### Check your download
 
