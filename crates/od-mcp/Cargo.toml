@@ -3,6 +3,7 @@ name = "od-mcp"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+publish = false
 description = "MCP server for OpenDraft: talks MCP on stdio and the running app over a local socket"
 
 [[bin]]

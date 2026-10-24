@@ -221,7 +221,7 @@ Email: jhodgkins@proton.me
 
 ## 📜 License
 
-OpenDraft is licensed under the GNU General Public License v3.0 (GPL-3.0). The full text is in the [LICENSE](./LICENSE) file.
+OpenDraft is licensed under the GNU General Public License v3.0 (GPL-3.0). The full text is in the [LICENSE](./LICENSE) file. Each download also contains `THIRD-PARTY-LICENSES.txt`, the notices for the libraries, fonts and icons OpenDraft includes.
 
 ## 🙏 Acknowledgments
 
