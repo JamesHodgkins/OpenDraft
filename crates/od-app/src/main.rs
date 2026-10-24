@@ -94,6 +94,7 @@ mod power_select;
 mod preview_textures;
 mod previews;
 mod primitive_commands;
+mod profile;
 mod prompt_reply;
 mod properties;
 mod properties_ui;
@@ -144,8 +145,9 @@ fn app_icon() -> Option<egui::IconData> {
 }
 
 fn main() -> eframe::Result {
+    profile::seed_beta_from_release();
     let mut viewport = egui::ViewportBuilder::default()
-        .with_title("OpenDraft")
+        .with_title(profile::name())
         .with_inner_size([1280.0, 800.0])
         .with_min_inner_size([640.0, 400.0]);
     viewport = window_memory::WindowMemory::load().apply(viewport);
@@ -162,7 +164,7 @@ fn main() -> eframe::Result {
     };
 
     eframe::run_native(
-        "OpenDraft",
+        profile::name(),
         options,
         Box::new(|cc| {
             let settings = settings::Settings::load(cc.storage);

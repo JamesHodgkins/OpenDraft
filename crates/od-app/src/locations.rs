@@ -5,6 +5,7 @@
 
 use std::path::PathBuf;
 
+use crate::profile::app_data;
 use crate::settings::Settings;
 
 /// A folder the user can point somewhere else.
@@ -64,11 +65,6 @@ impl Location {
             .cloned()
             .or_else(|| self.default_folder())
     }
-}
-
-/// The folder beside the saved settings, which holds the other defaults.
-pub fn app_data() -> Option<PathBuf> {
-    eframe::storage_dir("OpenDraft")
 }
 
 #[cfg(test)]

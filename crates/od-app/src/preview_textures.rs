@@ -52,7 +52,7 @@ impl PreviewTextures {
     /// leave its handle in `slot` for the file code to use. With no settings
     /// folder there are no previews.
     pub fn start(slot: &mut Option<PreviewHandle>) -> Self {
-        match eframe::storage_dir("OpenDraft") {
+        match crate::profile::app_data() {
             Some(dir) => {
                 let (handle, results) = crate::previews::start(dir.join("previews"));
                 *slot = Some(handle.clone());
