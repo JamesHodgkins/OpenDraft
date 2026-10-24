@@ -29,9 +29,7 @@
   Type <code>L</code>, press Enter, click two points. A familiar ribbon, a real command line and short aliases, in one small native executable.
 </p>
 
-<!-- Add a screenshot or short GIF here, e.g.:
-<p align="center"><img src="./docs/screenshot.png" alt="OpenDraft main window" width="900"></p>
--->
+<p align="center"><img src="./docs/screenshot.png" alt="OpenDraft: a drawing with the ribbon, Properties panel, command line and Layers panel" width="850"></p>
 
 ## ⚡ Try it in 30 seconds
 
