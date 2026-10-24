@@ -1,13 +1,15 @@
 name: ci
 on: [push, pull_request]
-env:
-  RUSTFLAGS: -D warnings
 jobs:
   check:
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    env:
+      # An environment RUSTFLAGS replaces .cargo/config.toml, so the Windows
+      # static-runtime flag is repeated here (see that file).
+      RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-D warnings -C target-feature=+crt-static' || '-D warnings' }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable

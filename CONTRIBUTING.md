@@ -68,6 +68,8 @@ The main conventions (the full list is in ARCHITECTURE.md):
 
 ## 6. Test your changes
 
+The Windows build links the C runtime into the program (`.cargo/config.toml`). Setting `RUSTFLAGS` yourself replaces that file's flags, so include `-C target-feature=+crt-static` if you do, or the exe will need the Visual C++ Redistributable.
+
 CI runs these on Windows and Linux, with warnings as errors. Run them before you push:
 
 ```bash
