@@ -15,8 +15,6 @@ permissions:
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
-env:
-  RUSTFLAGS: -D warnings
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -60,6 +58,8 @@ jobs:
       matrix:
         os: [windows-latest, ubuntu-22.04]
     runs-on: ${{ matrix.os }}
+    env:
+      RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-D warnings -C target-feature=+crt-static' || '-D warnings' }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -81,6 +81,11 @@ jobs:
         # systems with an older glibc than the newest runner has.
         os: [windows-latest, ubuntu-22.04]
     runs-on: ${{ matrix.os }}
+    env:
+      # The Windows programs carry their C runtime, so they run without the
+      # Visual C++ Redistributable (an environment RUSTFLAGS replaces
+      # .cargo/config.toml, hence the repeat).
+      RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-D warnings -C target-feature=+crt-static' || '-D warnings' }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -91,6 +96,16 @@ jobs:
       - name: Package
         shell: bash
         run: bash scripts/package.sh
+      - name: The Windows programs do not need the Visual C++ runtime
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          for exe in target/release/opendraft.exe target/release/opendraft-mcp.exe; do
+            if grep -aqi 'vcruntime140' "$exe"; then
+              echo "::error::$exe imports vcruntime140.dll: the static runtime flag was not applied"
+              exit 1
+            fi
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: OpenDraft-${{ runner.os }}
