@@ -1,7 +1,8 @@
 //! The "What's new" note on the Home page: a few plain-language changes for
 //! one release, written into the program, shown once until dismissed. It is
-//! local only: nothing is fetched, and the release page is opened only when
-//! the user asks.
+//! local only: nothing is fetched for it, and the release page is opened only
+//! when the user asks. (Telling the user a newer version exists is separate,
+//! and off until they allow it: see `updates`.)
 //!
 //! The release maintainer adds an entry for a release with changes worth
 //! announcing (capabilities and workflow, not refactors or dependency updates)
