@@ -302,7 +302,7 @@ fn header_section(ui: &mut egui::Ui, theme: &od_ui::Theme) {
     ui.label(
         egui::RichText::new(format!(
             "2D drafting  \u{b7}  version {}",
-            env!("CARGO_PKG_VERSION")
+            crate::build_info::display()
         ))
         .color(c.text_weak),
     );
