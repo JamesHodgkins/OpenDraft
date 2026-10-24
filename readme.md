@@ -102,7 +102,7 @@ Download the latest build from the [Releases page](https://github.com/JamesHodgk
 | System | File |
 |---|---|
 | Windows 10 or 11 (64-bit) | `OpenDraft-<version>-windows.zip` |
-| Linux (64-bit, experimental) | `OpenDraft-<version>-linux.tar.gz` |
+| Linux (64-bit) | `OpenDraft-<version>-linux.tar.gz` |
 
 Each release also has a `SHA256SUMS` file to check your download against.
 
@@ -113,7 +113,7 @@ Each release also has a `SHA256SUMS` file to check your download against.
 3. **Windows may warn about an unknown publisher.** OpenDraft is not code-signed yet, so SmartScreen can show "Windows protected your PC". If you trust the download (see "Check your download" below), choose **More info**, then **Run anyway**.
 4. Only the older 0.1.0-beta.1 download needs the Microsoft [Visual C++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe); later releases carry what they need. If Windows says `VCRUNTIME140.dll` is missing, you have that beta: use a newer release.
 
-### Linux (experimental)
+### Linux
 
 ```bash
 tar -xzf OpenDraft-<version>-linux.tar.gz
@@ -121,7 +121,7 @@ cd OpenDraft-<version>-linux
 ./opendraft
 ```
 
-It needs the usual desktop libraries (Debian/Ubuntu: `sudo apt-get install -y libxkbcommon0 libwayland-client0 libx11-6 libxcb1 libgl1`). The Linux build is made in CI on Ubuntu 22.04 and has not yet been run on many systems. Reports are welcome.
+Tested on Linux Mint with the 0.1.0-beta.1 build: it started and ran with nothing extra installed. Other distributions are untested, and reports are welcome. The Linux build is made in CI on Ubuntu 22.04. If it does not start, a desktop library may be missing (Debian/Ubuntu: `sudo apt-get install -y libxkbcommon0 libwayland-client0 libx11-6 libxcb1 libgl1`).
 
 ### Check your download
 
@@ -208,7 +208,7 @@ Work follows the standard 2D drafting command set; `ui_plan.md` has the detailed
 - The rest of dimensions (associativity, a styles table, real DXF dimensions), block attributes, ByBlock and dynamic blocks
 - Linetypes from `.lin` files, hatch gap tolerance and gradients
 - DWG export, PDF and SVG export
-- A first proper run on Linux
+- Wider Linux testing (one distribution so far)
 - Plugin system for third-party commands
 
 ## 🤝 Contributing
