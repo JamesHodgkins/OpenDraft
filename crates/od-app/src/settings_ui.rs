@@ -50,6 +50,10 @@ fn display_left(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
             ui.radio_value(&mut draft.palette, palette, palette.label());
         }
     });
+    ui.add_space(6.0);
+    crosshair(ui, theme, draft);
+    ui.add_space(6.0);
+    sizes(ui, theme, draft);
 }
 
 fn display_right(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
@@ -107,8 +111,6 @@ fn drafting_left(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
     });
     ui.add_space(6.0);
     ortho(ui, theme, draft);
-    ui.add_space(6.0);
-    crosshair(ui, theme, draft);
 }
 
 fn drafting_right(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
@@ -125,8 +127,6 @@ fn drafting_right(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
                 .color(theme.colors.text_weak),
         );
     });
-    ui.add_space(6.0);
-    sizes(ui, theme, draft);
 }
 
 fn ortho(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
@@ -199,27 +199,6 @@ fn dynamic_input(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
             &mut dynamic.dynamic_prompts,
             "Show command prompting near crosshairs",
         );
-        ui.horizontal(|ui| {
-            ui.radio_value(&mut dynamic.pointer_absolute, false, "Relative coordinates");
-            ui.radio_value(&mut dynamic.pointer_absolute, true, "Absolute coordinates");
-        });
-        ui.horizontal(|ui| {
-            ui.radio_value(&mut dynamic.pointer_cartesian, false, "Polar format");
-            ui.radio_value(&mut dynamic.pointer_cartesian, true, "Cartesian format");
-        });
-        egui::ComboBox::from_id_salt("dynamic_pointer_visibility")
-            .selected_text(
-                ["After typing", "At point prompts", "Always"]
-                    [usize::from(dynamic.pointer_visibility.min(2))],
-            )
-            .show_ui(ui, |ui| {
-                for (value, label) in ["After typing", "At point prompts", "Always"]
-                    .iter()
-                    .enumerate()
-                {
-                    ui.selectable_value(&mut dynamic.pointer_visibility, value as u8, *label);
-                }
-            });
     });
 }
 
