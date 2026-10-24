@@ -65,6 +65,7 @@ The main conventions (the full list is in ARCHITECTURE.md):
 - **No `unwrap`, `todo!`, `dbg!` or prints in production code**, and `unsafe` is forbidden.
 - Match the style, naming and comment density of the code around you, and avoid unnecessary abstractions.
 - A new entity kind in the `.odx` format must bump the format version.
+- **A new dependency's licence must be on the list in `deny.toml`** (and the same list in `about.toml`). OpenDraft is GPL-3.0-or-later and ships its dependencies' notices in `THIRD-PARTY-LICENSES.txt`; CI runs `cargo deny check licenses` and makes that file, so a licence that is not on the list fails the build. To see it locally: `cargo install cargo-deny cargo-about --locked` (cargo-about also needs `--features cli`), then `cargo deny check licenses` and `bash scripts/third_party.sh out.txt`. A font or icon file that is not a Rust crate needs its licence file beside it and a line in `scripts/third_party.sh`.
 
 ## 6. Test your changes
 

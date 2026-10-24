@@ -93,6 +93,10 @@ jobs:
       - name: Linux system libraries
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libwayland-dev libx11-dev libxcb1-dev libgl1-mesa-dev
+      - name: Licence tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-about
       - name: Package
         shell: bash
         run: bash scripts/package.sh
