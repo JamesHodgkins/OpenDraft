@@ -31,6 +31,7 @@ mod snap_menu;
 mod text_style_dialog;
 mod text_style_preview;
 mod units_dialog;
+mod update_notice;
 
 use eframe::egui;
 use egui_dock::DockState;
@@ -104,6 +105,8 @@ pub struct OpenDraftApp {
     home_scan: crate::home_scan::HomeScan,
     home_previews: crate::preview_textures::PreviewTextures,
     templates: home_page::TemplateList,
+    /// Whether a newer version exists, once the user has allowed asking.
+    updates: crate::updates::Updates,
 }
 
 impl OpenDraftApp {
@@ -112,6 +115,7 @@ impl OpenDraftApp {
         settings: Settings,
         dock: DockState<PanelTab>,
         recent: RecentFiles,
+        updates: crate::updates::Updates,
         open: Vec<std::path::PathBuf>,
     ) -> Self {
         crate::system_fonts::start_scan();
@@ -138,6 +142,7 @@ impl OpenDraftApp {
             .collect();
         shortcuts.sort_by_key(|(s, _)| std::cmp::Reverse(modifier_count(s)));
         Self {
+            updates,
             home_previews,
             templates: Default::default(),
             theme,
@@ -397,6 +402,7 @@ impl eframe::App for OpenDraftApp {
             self.io_waker_set = true;
         }
         self.state.poll_io();
+        self.tick_updates(ctx);
         self.state.pump_command();
         self.update_automation(ctx);
         self.state.sync_mtext_editor();
@@ -428,6 +434,7 @@ impl eframe::App for OpenDraftApp {
 
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         self.state.settings.save(storage);
+        self.updates.save(storage);
         crate::corner_memory::save(storage);
         crate::rect_memory::save(storage);
         crate::spline_memory::save(storage);
