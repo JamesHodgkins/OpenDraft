@@ -94,12 +94,9 @@ fn drafting_left(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
     dynamic_input(ui, theme, draft);
     ui.add_space(6.0);
     widgets::group_box(ui, theme, "Grid", |ui| {
-        ui.checkbox(&mut draft.show_grid, "Display grid");
-        ui.add_enabled_ui(draft.show_grid, |ui| {
-            ui.horizontal(|ui| {
-                ui.label("Grid spacing");
-                widgets::number_field(ui, theme, &mut draft.grid_spacing, "mm", 0.5);
-            });
+        ui.horizontal(|ui| {
+            ui.label("Grid spacing");
+            widgets::number_field(ui, theme, &mut draft.grid_spacing, "mm", 0.5);
         });
         let (min, max) = GRID_SPACING_RANGE;
         ui.label(
@@ -109,7 +106,13 @@ fn drafting_left(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
         );
     });
     ui.add_space(6.0);
-    sizes(ui, theme, draft);
+    ortho(ui, theme, draft);
+    ui.add_space(6.0);
+    crosshair(ui, theme, draft);
+}
+
+fn drafting_right(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
+    crate::settings_tracking::tracking_group(ui, theme, draft);
     ui.add_space(6.0);
     widgets::group_box(ui, theme, "AutoSnap", |ui| {
         ui.checkbox(&mut draft.snap.marker, "Marker");
@@ -122,55 +125,12 @@ fn drafting_left(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
                 .color(theme.colors.text_weak),
         );
     });
-}
-
-fn drafting_right(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
-    widgets::group_box(ui, theme, "Snap", |ui| {
-        ui.checkbox(&mut draft.snap.enabled, "Snap on");
-        ui.add_enabled_ui(draft.snap.enabled, |ui| {
-            let snap = &mut draft.snap;
-            let mut modes = [
-                ("Endpoint", &mut snap.endpoint),
-                ("Midpoint", &mut snap.midpoint),
-                ("Center", &mut snap.center),
-                ("Node", &mut snap.node),
-                ("Quadrant", &mut snap.quadrant),
-                ("Intersection", &mut snap.intersection),
-                ("Apparent Intersection", &mut snap.apparent_intersection),
-                ("Geometric Center", &mut snap.geometric_center),
-                ("Insertion", &mut snap.insertion),
-                ("Perpendicular", &mut snap.perpendicular),
-                ("Tangent", &mut snap.tangent),
-                ("Extension", &mut snap.extension),
-                ("Parallel", &mut snap.parallel),
-                ("Nearest", &mut snap.nearest),
-                ("Grid", &mut snap.grid),
-            ];
-            let (first, second) = modes.split_at_mut(8);
-            ui.columns(2, |cols| {
-                for (column, half) in cols.iter_mut().zip([first, second]) {
-                    for (label, on) in half.iter_mut() {
-                        column.checkbox(on, *label);
-                    }
-                }
-            });
-        });
-    });
     ui.add_space(6.0);
-    ortho(ui, theme, draft);
-    ui.add_space(6.0);
-    crate::settings_tracking::tracking_group(ui, theme, draft);
+    sizes(ui, theme, draft);
 }
 
 fn ortho(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
     widgets::group_box(ui, theme, "Ortho", |ui| {
-        if ui
-            .checkbox(&mut draft.ortho.enabled, "Ortho on (F8)")
-            .changed()
-            && draft.ortho.enabled
-        {
-            draft.tracking.polar = false;
-        }
         ui.radio_value(
             &mut draft.ortho.strict,
             false,
@@ -189,8 +149,7 @@ fn ortho(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
     });
 }
 
-/// Pick, snap and grip target sizes.
-fn sizes(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
+fn crosshair(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
     widgets::group_box(ui, theme, "Crosshair", |ui| {
         let (min, max) = CROSSHAIR_SIZE_RANGE;
         ui.horizontal(|ui| {
@@ -205,7 +164,10 @@ fn sizes(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
             ui.color_edit_button_srgb(rgb);
         }
     });
-    ui.add_space(6.0);
+}
+
+/// Pick, snap and grip target sizes.
+fn sizes(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
     widgets::group_box(ui, theme, "Sizes", |ui| {
         for (label, value, (min, max)) in [
             ("Pick size", &mut draft.pick_size, PICK_SIZE_RANGE),
@@ -227,10 +189,6 @@ fn sizes(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
 fn dynamic_input(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
     widgets::group_box(ui, theme, "Dynamic Input", |ui| {
         let dynamic = &mut draft.dynamic_input;
-        let mut enabled = dynamic.enabled();
-        if ui.checkbox(&mut enabled, "Dynamic Input").changed() {
-            dynamic.toggle();
-        }
         let sign = if dynamic.enabled() { 1 } else { -1 };
         let mut pointer = dynamic.dynmode.abs() & 1 != 0;
         let mut dimensions = dynamic.dynmode.abs() & 2 != 0;
