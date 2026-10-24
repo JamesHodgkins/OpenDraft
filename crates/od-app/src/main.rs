@@ -126,6 +126,7 @@ mod text_memory;
 mod text_style_draft;
 mod units_state;
 mod units_vars;
+mod updates;
 mod whats_new;
 mod window_memory;
 mod xline_cmd;
@@ -178,12 +179,13 @@ fn main() -> eframe::Result {
             cc.egui_ctx.set_zoom_factor(settings.zoom_factor());
             let dock = dock::load(cc.storage);
             let recent = recent::RecentFiles::load(cc.storage);
+            let updates = updates::Updates::new(updates::Updates::load(cc.storage));
             // Drawings named on the command line (or handed over by a file
             // association) open at start.
             let open: Vec<std::path::PathBuf> =
                 std::env::args_os().skip(1).map(Into::into).collect();
             Ok(Box::new(app::OpenDraftApp::new(
-                theme, settings, dock, recent, open,
+                theme, settings, dock, recent, updates, open,
             )))
         }),
     )

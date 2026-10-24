@@ -14,6 +14,7 @@ mod news;
 mod recent;
 mod recovery;
 mod start;
+mod updates;
 
 use super::OpenDraftApp;
 use crate::home_scan::ScanRequest;
@@ -25,6 +26,7 @@ use recent::{recent_section, row, RowText, Section};
 use recovery::recovery_section;
 use start::start_section;
 pub(super) use start::TemplateList;
+use updates::updates_section;
 
 /// What the user chose on the page this frame.
 pub(super) enum Pick {
@@ -49,6 +51,13 @@ pub(super) enum Pick {
     DeferRecovery,
     DismissWhatsNew,
     Show(usize),
+    /// Yes or no to asking GitHub whether a newer version exists.
+    UpdatesAllow(bool),
+    UpdatesCheckNow,
+    UpdatesRemind,
+    UpdatesSkip(semver::Version),
+    /// Open that version's release page.
+    UpdatesView(semver::Version),
 }
 
 impl OpenDraftApp {
@@ -60,6 +69,8 @@ impl OpenDraftApp {
         let pictures = self.home_previews.update(ui.ctx(), &entries);
         let view = self.state.recent.view;
         let theme = &self.theme;
+        let now = crate::updates::now_secs();
+        let update_view = self.updates.view(self.state.settings.update_checks, now);
         let mut pick = None;
         let page = egui::ScrollArea::vertical()
             .auto_shrink(false)
@@ -89,6 +100,11 @@ impl OpenDraftApp {
                             whats_new_section(ui, theme, note, pick)
                         });
                     }
+                };
+                let updates_card = |ui: &mut egui::Ui, pick: &mut Option<Pick>| {
+                    ui.push_id("home_updates", |ui| {
+                        updates_section(ui, theme, &update_view, now, pick)
+                    });
                 };
                 let start = |ui: &mut egui::Ui, pick: &mut Option<Pick>| {
                     ui.push_id("home_start", |ui| {
@@ -130,6 +146,7 @@ impl OpenDraftApp {
                                 });
                                 recent(ui, &mut pick);
                                 ui.add_space(22.0);
+                                updates_card(ui, &mut pick);
                                 announce(ui, &mut pick);
                             }
                             Layout::Wide { main, side, .. } => {
@@ -146,6 +163,7 @@ impl OpenDraftApp {
                                         ui.push_id("home_open_now", |ui| {
                                             self.open_drawings_section(ui, &mut pick)
                                         });
+                                        updates_card(ui, &mut pick);
                                         announce(ui, &mut pick);
                                     });
                                 });
@@ -260,6 +278,15 @@ impl OpenDraftApp {
                 .dismiss_whats_new(env!("CARGO_PKG_VERSION")),
             Some(Pick::Copied) => self.state.message = "Path copied".to_owned(),
             Some(Pick::Show(i)) => self.state.show_document(i),
+            Some(Pick::UpdatesAllow(on)) => self.state.settings.update_checks = Some(on),
+            Some(Pick::UpdatesCheckNow) => self.updates.check_now(),
+            Some(Pick::UpdatesRemind) => self.updates.remind_later(crate::updates::now_secs()),
+            Some(Pick::UpdatesSkip(version)) => self.updates.skip(&version),
+            Some(Pick::UpdatesView(version)) => {
+                // The address is built from the version, not read from the reply.
+                let page = crate::updates::release_page(&version);
+                ctx.open_url(egui::OpenUrl::new_tab(page));
+            }
             None => {}
         }
     }
