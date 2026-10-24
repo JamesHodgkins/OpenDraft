@@ -111,7 +111,7 @@ Each release also has a `SHA256SUMS` file to check your download against.
 1. Extract the zip to a folder of your choice. There is nothing to install.
 2. Run `opendraft.exe`. The folder also holds `opendraft-mcp.exe` (for [AI assistants](#-ai-assistants-experimental)); keep the two together.
 3. **Windows may warn about an unknown publisher.** OpenDraft is not code-signed yet, so SmartScreen can show "Windows protected your PC". If you trust the download (see "Check your download" below), choose **More info**, then **Run anyway**.
-4. The 0.1.0-beta.1 build needs the Microsoft [Visual C++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe), which most machines already have. If Windows says `VCRUNTIME140.dll` is missing, install it.
+4. Only the older 0.1.0-beta.1 download needs the Microsoft [Visual C++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe); later releases carry what they need. If Windows says `VCRUNTIME140.dll` is missing, you have that beta: use a newer release.
 
 ### Linux (experimental)
 
