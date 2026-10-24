@@ -97,6 +97,62 @@ If that looks familiar, you are home.
 
 ## 🚀 Getting started
 
+Download the latest build from the [Releases page](https://github.com/JamesHodgkins/OpenDraft/releases). A release marked **Pre-release** is a beta.
+
+| System | File |
+|---|---|
+| Windows 10 or 11 (64-bit) | `OpenDraft-<version>-windows.zip` |
+| Linux (64-bit, experimental) | `OpenDraft-<version>-linux.tar.gz` |
+
+Each release also has a `SHA256SUMS` file to check your download against.
+
+### Windows
+
+1. Extract the zip to a folder of your choice. There is nothing to install.
+2. Run `opendraft.exe`. The folder also holds `opendraft-mcp.exe` (for [AI assistants](#-ai-assistants-experimental)); keep the two together.
+3. **Windows may warn about an unknown publisher.** OpenDraft is not code-signed yet, so SmartScreen can show "Windows protected your PC". If you trust the download (see "Check your download" below), choose **More info**, then **Run anyway**.
+4. The 0.1.0-beta.1 build needs the Microsoft [Visual C++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe), which most machines already have. If Windows says `VCRUNTIME140.dll` is missing, install it.
+
+### Linux (experimental)
+
+```bash
+tar -xzf OpenDraft-<version>-linux.tar.gz
+cd OpenDraft-<version>-linux
+./opendraft
+```
+
+It needs the usual desktop libraries (Debian/Ubuntu: `sudo apt-get install -y libxkbcommon0 libwayland-client0 libx11-6 libxcb1 libgl1`). The Linux build is made in CI on Ubuntu 22.04 and has not yet been run on many systems. Reports are welcome.
+
+### Check your download
+
+Compare the file's SHA-256 with the one in `SHA256SUMS`:
+
+```powershell
+Get-FileHash .\OpenDraft-<version>-windows.zip -Algorithm SHA256   # Windows
+```
+
+```bash
+sha256sum -c SHA256SUMS --ignore-missing                          # Linux
+```
+
+### First steps
+
+Start a drawing with `L` (Line), `C` (Circle), `REC` (Rectangle) or `PL` (Polyline), then modify it with `M` (Move), `TR` (Trim), `O` (Offset) or `F` (Fillet). Press `F8` for ortho and `F3` for object snaps.
+
+Prefer to build it yourself? See [Build from source](#build-from-source).
+
+## 🤖 AI assistants (experimental)
+
+OpenDraft can let an AI assistant that speaks the [Model Context Protocol](https://modelcontextprotocol.io) read your open drawings, measure them, draw in them and help with files. It is off by default and read-only until you allow more, every change is one Undo step, and files stay inside folders you approve. The download includes the `opendraft-mcp` program next to `opendraft` (or [build it from source](#build-from-source)); turn it on in Settings > Automation and see [docs/mcp.md](./docs/mcp.md) for setup, what it can do and troubleshooting.
+
+## 🔒 Privacy
+
+OpenDraft makes no network requests unless you allow it. The one thing it can do is check for new versions: on the Home page, or in Settings > Updates, you choose whether it may ask GitHub once a day which versions have been released. The request carries OpenDraft's version number and, as any web request does, your internet address; no drawings or personal details are sent. Nothing is downloaded or installed: a newer version is announced and its release page opens only when you click. Choose "Don't check" (or untick the setting) and it never contacts GitHub on its own. The AI assistant feature (above) is local and separate.
+
+## 🛠️ Development
+
+### Build from source
+
 You need a recent stable [Rust toolchain](https://rustup.rs/).
 
 ```bash
@@ -105,25 +161,17 @@ cd OpenDraft
 cargo run --release -p od-app
 ```
 
-The binary is called `opendraft`. Start a drawing with `L` (Line), `C` (Circle), `REC` (Rectangle) or `PL` (Polyline), then modify it with `M` (Move), `TR` (Trim), `O` (Offset) or `F` (Fillet). Press `F8` for ortho and `F3` for object snaps.
+The binary is called `opendraft`. To build the AI assistant program too: `cargo build --release -p od-app -p od-mcp` (both end up in `target/release`).
 
-On Linux you also need the usual windowing libraries first (Debian/Ubuntu):
+On Linux you also need the windowing development libraries first (Debian/Ubuntu):
 
 ```bash
 sudo apt-get install -y libxkbcommon-dev libwayland-dev libx11-dev libxcb1-dev libgl1-mesa-dev
 ```
 
-> Linux builds are compiled in CI, but the app has not yet been run there extensively. Reports are welcome.
+A debug build keeps its settings apart from an installed release (see [CONTRIBUTING.md](./CONTRIBUTING.md)).
 
-## 🤖 AI assistants (experimental)
-
-OpenDraft can let an AI assistant that speaks the [Model Context Protocol](https://modelcontextprotocol.io) read your open drawings, measure them, draw in them and help with files. It is off by default and read-only until you allow more, every change is one Undo step, and files stay inside folders you approve. Build `opendraft-mcp` with the app (`cargo build --release -p od-app -p od-mcp`), turn it on in Settings > Automation and see [docs/mcp.md](./docs/mcp.md) for setup, what it can do and troubleshooting.
-
-## 🔒 Privacy
-
-OpenDraft makes no network requests unless you allow it. The one thing it can do is check for new versions: on the Home page, or in Settings > Updates, you choose whether it may ask GitHub once a day which versions have been released. The request carries OpenDraft's version number and, as any web request does, your internet address; no drawings or personal details are sent. Nothing is downloaded or installed: a newer version is announced and its release page opens only when you click. Choose "Don't check" (or untick the setting) and it never contacts GitHub on its own. The AI assistant feature (above) is local and separate.
-
-## 🛠️ Development
+### Checks
 
 CI runs formatting, clippy and the tests on Windows and Linux. To run the same checks locally:
 
