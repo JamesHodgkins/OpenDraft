@@ -380,15 +380,14 @@ impl OpenDraftApp {
         clicked
     }
 
-    /// "name* - OpenDraft", following the active drawing.
+    /// "name* - OpenDraft", following the active drawing; a debug build or
+    /// beta says so (`OpenDraft Dev`).
     pub(super) fn update_window_title(&mut self, ctx: &egui::Context) {
+        let app = crate::profile::name();
         let title = if self.state.home {
-            "Home - OpenDraft".to_owned()
+            format!("Home - {app}")
         } else {
-            format!(
-                "{} - OpenDraft",
-                self.state.docs[self.state.active].tab_title()
-            )
+            format!("{} - {app}", self.state.docs[self.state.active].tab_title())
         };
         if title != self.window_title {
             ctx.send_viewport_cmd(egui::ViewportCommand::Title(title.clone()));
