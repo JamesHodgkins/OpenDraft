@@ -3,6 +3,7 @@ name = "od-dwg"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+publish = false
 description = "A safe, dependency-free reader for AutoCAD DWG files (AC1024, AC1027, AC1032)."
 
 [lints]
