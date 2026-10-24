@@ -16,7 +16,7 @@ OpenDraft does all the work and applies every change itself, through the same un
 
 ## Set it up
 
-1. **Get both programs.** A release has `opendraft` and `opendraft-mcp` in the same folder. From source: `cargo build --release -p od-app -p od-mcp` (both end up in `target/release`).
+1. **Get both programs.** A release has `opendraft` and `opendraft-mcp` in the same folder. From source: `cargo build --release -p od-app -p od-mcp` (both end up in `target/release`). If `opendraft-mcp` is somewhere else, set `OD_MCP` to its path before starting OpenDraft so Settings shows the right configuration.
 2. **Turn it on.** In OpenDraft open Settings (type `OP` on the command line), go to **Automation**, tick **Let AI assistants work with the open drawings**, and press OK. The page shows the path of `opendraft-mcp` and a **Copy MCP config** button.
 3. **Tell your assistant about it** (next section), then restart the assistant.
 4. **Choose what it may do.** When the assistant connects it appears under **Connections** with three switches, all off:

@@ -5,6 +5,10 @@
 //! icon with no file, or a file that cannot be read, is drawn from the Lucide
 //! font as before.
 //!
+//! The same drawings are built into the program, so an install with no icon
+//! folder, or a folder missing some files, still shows every icon; a file in
+//! the folder replaces the built-in drawing of that name.
+//!
 //! A drawing is either plain or coloured. A plain one (all its colours are
 //! grey or white, as Lucide's are) counts only for where it is opaque, and is
 //! painted in the colour asked for, so it follows the theme and dims when
@@ -35,10 +39,19 @@ struct IconSet {
 
 static SET: OnceLock<IconSet> = OnceLock::new();
 
+include!(concat!(env!("OUT_DIR"), "/embedded_icons.rs"));
+
+/// The drawing built into the program for a file name.
+fn embedded(name: &str) -> Option<&'static [u8]> {
+    let at = EMBEDDED.binary_search_by_key(&name, |(n, _)| n).ok()?;
+    Some(EMBEDDED[at].1)
+}
+
 /// What [`load`] found.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Loaded {
-    pub folder: PathBuf,
+    /// The folder whose files replace the built-in drawings, if there is one.
+    pub folder: Option<PathBuf>,
     /// How many icons have a drawing.
     pub count: usize,
     /// Files there that could not be used, with why.
@@ -51,9 +64,9 @@ pub fn file_name(constant: &str) -> String {
     format!("{}.svg", constant.to_ascii_lowercase().replace('_', "-"))
 }
 
-/// Read the drawings in `folder`; the first call wins, as the app reads them
-/// once when it starts.
-pub fn load(folder: &Path) -> Loaded {
+/// Read the drawings: those in `folder` where it has one, else the built-in
+/// ones. The first call wins, as the app reads them once when it starts.
+pub fn load(folder: Option<&Path>) -> Loaded {
     let (files, loaded) = read(folder);
     let _ = SET.set(IconSet {
         files,
@@ -62,32 +75,42 @@ pub fn load(folder: &Path) -> Loaded {
     loaded
 }
 
-fn read(folder: &Path) -> (HashMap<char, Drawing>, Loaded) {
+fn read(folder: Option<&Path>) -> (HashMap<char, Drawing>, Loaded) {
     let mut loaded = Loaded {
-        folder: folder.to_owned(),
+        folder: folder.map(Path::to_owned),
         ..Loaded::default()
     };
     let mut files = HashMap::new();
     for (constant, icon) in crate::icons::ALL {
         let name = file_name(constant);
-        let data = match std::fs::read(folder.join(&name)) {
-            Ok(data) => data,
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => continue,
-            Err(e) => {
-                loaded.failed.push((name, e.to_string()));
-                continue;
+        let mut found = None;
+        if let Some(folder) = folder {
+            match std::fs::read(folder.join(&name)) {
+                Ok(data) => match drawing(data) {
+                    Ok(d) => found = Some(d),
+                    Err(why) => loaded.failed.push((name.clone(), why)),
+                },
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+                Err(e) => loaded.failed.push((name.clone(), e.to_string())),
             }
-        };
-        match render(&data, 32) {
-            Ok(pixmap) => {
-                let coloured = is_coloured(&pixmap);
-                files.insert(*icon, Drawing { data, coloured });
-                loaded.count += 1;
-            }
-            Err(why) => loaded.failed.push((name, why)),
+        }
+        // A missing or unusable file in the folder leaves the built-in one.
+        let found = found.or_else(|| embedded(&name).and_then(|d| drawing(d.to_vec()).ok()));
+        if let Some(d) = found {
+            files.insert(*icon, d);
+            loaded.count += 1;
         }
     }
     (files, loaded)
+}
+
+/// A usable drawing from an SVG file's bytes.
+fn drawing(data: Vec<u8>) -> Result<Drawing, String> {
+    let pixmap = render(&data, 32)?;
+    Ok(Drawing {
+        coloured: is_coloured(&pixmap),
+        data,
+    })
 }
 
 /// How far apart the strongest and weakest of a pixel's colour channels are
@@ -412,7 +435,7 @@ mod tests {
                 assert!(names.contains(&file), "{file} is not an icon in icons.rs");
             }
         }
-        let (_, loaded) = read(&folder);
+        let (_, loaded) = read(Some(&folder));
         assert_eq!(loaded.count, names.len());
         assert!(loaded.failed.is_empty(), "{:?}", loaded.failed);
     }
@@ -450,17 +473,42 @@ mod tests {
     }
 
     #[test]
-    fn the_folder_is_read_by_name_and_bad_files_are_reported() {
+    fn a_file_in_the_folder_replaces_the_built_in_drawing_and_a_bad_one_is_reported() {
         let folder = std::env::temp_dir().join(format!("od_icons_{}", std::process::id()));
         std::fs::create_dir_all(&folder).unwrap();
         std::fs::write(folder.join("draw-circle-radius.svg"), RING).unwrap();
         std::fs::write(folder.join("draw-rectangle.svg"), "not a drawing").unwrap();
         std::fs::write(folder.join("unknown-name.svg"), RING).unwrap();
-        let (files, loaded) = read(&folder);
+        let (files, loaded) = read(Some(&folder));
         std::fs::remove_dir_all(&folder).unwrap();
-        assert_eq!(loaded.count, 1);
-        assert!(files.contains_key(&crate::icons::DRAW_CIRCLE_RADIUS));
+        assert_eq!(loaded.count, crate::icons::ALL.len());
+        assert_eq!(
+            files[&crate::icons::DRAW_CIRCLE_RADIUS].data,
+            RING.as_bytes()
+        );
+        let rectangle = &files[&crate::icons::DRAW_RECTANGLE].data;
+        assert_ne!(
+            rectangle.as_slice(),
+            b"not a drawing",
+            "the built-in one stays"
+        );
         assert_eq!(loaded.failed.len(), 1);
         assert_eq!(loaded.failed[0].0, "draw-rectangle.svg");
+    }
+
+    #[test]
+    fn with_no_folder_every_icon_has_its_built_in_drawing() {
+        let (files, loaded) = read(None);
+        assert_eq!(loaded.count, crate::icons::ALL.len());
+        assert_eq!(files.len(), crate::icons::ALL.len());
+        assert!(loaded.failed.is_empty(), "{:?}", loaded.failed);
+        assert_eq!(loaded.folder, None);
+    }
+
+    #[test]
+    fn the_built_in_table_is_sorted_for_lookup() {
+        assert!(EMBEDDED.windows(2).all(|w| w[0].0 < w[1].0));
+        assert!(embedded("draw-line.svg").is_some());
+        assert!(embedded("nothing.svg").is_none());
     }
 }
