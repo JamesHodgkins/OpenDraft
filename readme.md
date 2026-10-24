@@ -1,7 +1,7 @@
 <div align="center">
 
-<img src="./docs/branding/od_logo.png#gh-light-mode-only" alt="OpenDraft" width="420">
-<img src="./docs/branding/od_logo_reverse.png#gh-dark-mode-only" alt="OpenDraft" width="420">
+<img src="./docs/branding/od_logo.svg#gh-light-mode-only" alt="OpenDraft" width="420">
+<img src="./docs/branding/od_logo_reverse.svg#gh-dark-mode-only" alt="OpenDraft" width="420">
 
 **A fast, free, open-source 2D CAD application written in Rust.**
 
