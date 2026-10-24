@@ -119,6 +119,10 @@ sudo apt-get install -y libxkbcommon-dev libwayland-dev libx11-dev libxcb1-dev l
 
 OpenDraft can let an AI assistant that speaks the [Model Context Protocol](https://modelcontextprotocol.io) read your open drawings, measure them, draw in them and help with files. It is off by default and read-only until you allow more, every change is one Undo step, and files stay inside folders you approve. Build `opendraft-mcp` with the app (`cargo build --release -p od-app -p od-mcp`), turn it on in Settings > Automation and see [docs/mcp.md](./docs/mcp.md) for setup, what it can do and troubleshooting.
 
+## 🔒 Privacy
+
+OpenDraft makes no network requests unless you allow it. The one thing it can do is check for new versions: on the Home page, or in Settings > Updates, you choose whether it may ask GitHub once a day which versions have been released. The request carries OpenDraft's version number and, as any web request does, your internet address; no drawings or personal details are sent. Nothing is downloaded or installed: a newer version is announced and its release page opens only when you click. Choose "Don't check" (or untick the setting) and it never contacts GitHub on its own. The AI assistant feature (above) is local and separate.
+
 ## 🛠️ Development
 
 CI runs formatting, clippy and the tests on Windows and Linux. To run the same checks locally:
