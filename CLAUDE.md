@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-OpenDraft: a 2D-only CAD app in Rust on egui/eframe, with an AutoCAD-2020-style ribbon, dockable panels and a command line. Windows and Linux are both targets (Linux has been run only on Linux Mint, with the 0.1.0-beta.1 tarball, on 24-10-2026). Licence GPL-3.0-or-later. Repo: https://github.com/JamesHodgkins/OpenDraft, branch `main`.
+OpenDraft: a 2D-only CAD app in Rust on egui/eframe, with an AutoCAD-2020-style ribbon, dockable panels and a command line. Windows and Linux are both targets (Linux has been run only on Linux Mint, with the 0.1.0-beta.1 and 0.1.0 tarballs, on 24-10-2026). Licence GPL-3.0-or-later. Repo: https://github.com/JamesHodgkins/OpenDraft, branch `main`.
 
 ## Read first
 - `ARCHITECTURE.md`: the rules new code follows (crates, commands, Editor, files, geometry). Authoritative.
