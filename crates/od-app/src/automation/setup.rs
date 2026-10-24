@@ -15,9 +15,16 @@ pub fn sidecar_beside(app: &Path) -> Option<PathBuf> {
     candidate.is_file().then_some(candidate)
 }
 
-/// The sidecar beside the running app.
+/// Names the sidecar when it is not beside the app (an unusual install).
+const SIDECAR_ENV: &str = "OD_MCP";
+
+/// The sidecar `OD_MCP` names if it is a file, else the one beside the
+/// running app.
 pub fn sidecar_path() -> Option<PathBuf> {
-    sidecar_beside(&std::env::current_exe().ok()?)
+    let named = std::env::var_os(SIDECAR_ENV)
+        .map(PathBuf::from)
+        .filter(|p| p.is_file());
+    named.or_else(|| sidecar_beside(&std::env::current_exe().ok()?))
 }
 
 /// The `mcpServers` entry most MCP hosts (Claude Desktop, Cursor and others)

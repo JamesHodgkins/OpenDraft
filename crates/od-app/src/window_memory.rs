@@ -31,7 +31,7 @@ static CURRENT: Mutex<WindowMemory> = Mutex::new(WindowMemory {
 });
 
 fn path() -> Option<PathBuf> {
-    Some(eframe::storage_dir("OpenDraft")?.join(FILE))
+    Some(crate::profile::app_data()?.join(FILE))
 }
 
 impl WindowMemory {
