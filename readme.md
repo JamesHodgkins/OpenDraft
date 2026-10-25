@@ -221,7 +221,7 @@ Contributions are welcome, from bug reports to whole commands. Every command is 
 
 Use the [issue tracker](https://github.com/JamesHodgkins/OpenDraft/issues) for bug reports and feature requests.
 
-Email: jhodgkins@proton.me
+Email: contact@openengineering.uk
 
 ## 📜 License
 
