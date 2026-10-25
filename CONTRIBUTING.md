@@ -29,7 +29,7 @@ Run the application:
 cargo run -p od-app
 ```
 
-A debug build keeps its settings, recent files and recovery copies in its own `OpenDraft Dev` folder, apart from an installed release's; `cargo run --release -p od-app` uses the release's. Set `OPENDRAFT_PROFILE=<name>` to use another separate set (for example for a test run).
+A debug build on Windows keeps its console window so you can see output; a release build is a windowed program and records panics in `crash.log` in its data folder instead (see ARCHITECTURE.md, "Windows window and crash log"). A debug build keeps its settings, recent files and recovery copies in its own `OpenDraft Dev` folder, apart from an installed release's; `cargo run --release -p od-app` uses the release's. Set `OPENDRAFT_PROFILE=<name>` to use another separate set (for example for a test run).
 
 A debug build never checks for new versions. To try the update notice, serve a releases list locally (a JSON array like GitHub's `/releases`, with `tag_name`, `draft`, `prerelease` and `assets[].name` such as `OpenDraft-0.2.0-windows.zip`) and set `OD_UPDATES_URL=http://127.0.0.1:<port>/releases`; that also lets a debug build check. Click "Check automatically" on the Home page's Updates card.
 
