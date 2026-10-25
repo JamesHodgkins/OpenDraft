@@ -4,7 +4,7 @@
 use od_core::dimension::Arrow;
 use od_core::hatch::HatchStyle;
 use od_core::mleader::MLeaderLineType;
-use od_core::units::{format_angle, format_length, parse_angle, parse_length};
+use od_core::units::{format_angle, format_area, format_length, parse_angle, parse_length};
 use od_core::{AngleFormat, Units};
 
 use super::Field;
@@ -89,7 +89,7 @@ pub fn format(units: &Units, unit: Unit, value: f64) -> String {
     match unit {
         Unit::Length => format_length(units, value),
         Unit::Angle => format_angle(units, value.to_radians()),
-        Unit::Area => format!("{value:.p$}", p = usize::from(units.length_precision)),
+        Unit::Area => format_area(units, value),
         Unit::Count => format!("{value:.0}"),
         Unit::Factor => format!("{value:.p$}", p = usize::from(units.length_precision)),
         Unit::Flag if value != 0.0 => "Yes".to_owned(),

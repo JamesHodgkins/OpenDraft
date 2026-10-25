@@ -12,7 +12,7 @@ mod parse;
 
 use std::f64::consts::TAU;
 
-pub use format::{format_angle, format_length, format_point};
+pub use format::{format_angle, format_area, format_length, format_point};
 pub use parse::{parse_angle, parse_length};
 
 /// Most digits (or fraction steps) of precision AutoCAD allows.
