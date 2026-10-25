@@ -1,0 +1,83 @@
+name: Feature request
+description: Suggest an improvement or new capability for OpenDraft
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement. Please search the existing issues and review the roadmap in the README before filing a new request.
+
+        For larger changes, this issue is the place to agree on an approach before implementation begins. If you are not sure an idea is ready for a request, you can float it first in the [Ideas discussions](https://github.com/JamesHodgkins/OpenDraft/discussions/categories/ideas).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe the drafting task or workflow that is difficult today. Focus on the need rather than only the proposed implementation.
+      placeholder: "When I am trying to ..., I cannot easily ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Explain how you would like OpenDraft to behave, including commands or UI interactions where relevant.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Drawing commands
+        - Modify commands
+        - Annotation and dimensions
+        - Blocks and layouts
+        - Canvas, selection, and snapping
+        - User interface
+        - ODX, DXF, or DWG files
+        - Plotting or export
+        - Automation and MCP
+        - Installation and packaging
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Example workflow
+      description: Give a short, concrete example showing how the feature would be used.
+      placeholder: |
+        1. Run ...
+        2. Select ...
+        3. OpenDraft ...
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe any workarounds or alternative designs you have tried or considered.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add sketches, screenshots, examples from established CAD workflows, or related issues if useful.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched the existing issues and did not find this request already proposed.
+          required: true
+        - label: I checked the README roadmap for related planned work.
+          required: false
+        - label: I am willing to help implement this feature.
+          required: false
