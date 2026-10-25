@@ -57,6 +57,8 @@ publisher = "OpenDraft project"
 # The .deb's Maintainer field.
 authors = ["OpenDraft project <contact@openengineering.uk>"]
 description = "OpenDraft, a 2D CAD program"
+# The longer text `apt show` displays.
+long-description = """OpenDraft is a free, open-source 2D CAD program with a ribbon, a command line and the familiar drafting commands. It reads DXF and DWG files and keeps its own .odx format. This package also installs opendraft-mcp, which lets an AI assistant work with open drawings (off until you turn it on in Settings)."""
 homepage = "https://github.com/JamesHodgkins/OpenDraft"
 license-file = "../../LICENSE"
 out-dir = "../../dist/packager"
