@@ -20,6 +20,14 @@ pub struct Note {
 
 const NOTES: &[Note] = &[
     Note {
+        version: "0.1.3",
+        title: "A cleaner Windows start, and crash records",
+        changes: &[
+            "Windows no longer opens a console window beside OpenDraft.",
+            "Crashes are recorded in crash.log, in OpenDraft's data folder.",
+        ],
+    },
+    Note {
         version: "0.1.2",
         title: "OpenDraft for Linux, installed properly",
         changes: &[
