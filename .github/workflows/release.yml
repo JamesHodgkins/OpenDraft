@@ -110,12 +110,23 @@ jobs:
               exit 1
             fi
           done
+      - name: Windows installer (MSI)
+        # A version with a suffix (a beta) gets none: an MSI's version is numeric only.
+        if: runner.os == 'Windows' && !contains(needs.verify.outputs.version, '-')
+        shell: bash
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          cargo install cargo-packager --locked
+          cargo packager --release -f wix
+          cp "dist/packager/opendraft_${VERSION}_x64_en-US.msi" "dist/OpenDraft-${VERSION}-windows-x64.msi"
       - uses: actions/upload-artifact@v4
         with:
           name: OpenDraft-${{ runner.os }}
           path: |
             dist/*.zip
             dist/*.tar.gz
+            dist/*.msi
           if-no-files-found: error
   publish:
     if: startsWith(github.ref, 'refs/tags/')
@@ -132,7 +143,10 @@ jobs:
           merge-multiple: true
       - name: Checksums
         working-directory: dist
-        run: sha256sum *.zip *.tar.gz > SHA256SUMS
+        shell: bash
+        run: |
+          shopt -s nullglob
+          sha256sum *.zip *.tar.gz *.msi > SHA256SUMS
       - name: Publish the release
         shell: bash
         env:
@@ -154,6 +168,8 @@ jobs:
           esac
           flags=(--draft --verify-tag --generate-notes)
           if [ "$PRERELEASE" = "true" ]; then flags+=(--prerelease); fi
-          gh release create "$TAG" "${flags[@]}" dist/*.zip dist/*.tar.gz dist/SHA256SUMS
+          shopt -s nullglob
+          files=(dist/*.zip dist/*.tar.gz dist/*.msi dist/SHA256SUMS)
+          gh release create "$TAG" "${flags[@]}" "${files[@]}"
           # Every package is attached; only now does the release become visible.
           gh release edit "$TAG" --draft=false

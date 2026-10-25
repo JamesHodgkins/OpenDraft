@@ -113,6 +113,8 @@ A release is a version tag on `main`. Stable releases are `vX.Y.Z`; a version wi
 4. The `release` workflow then checks that the tag is `v` plus the `Cargo.toml` version and that the commit is on `main`, runs formatting, clippy and the tests on Windows and Linux, builds both packages, and publishes one release holding the Windows zip, the Linux tarball and `SHA256SUMS`. The release is created as a draft and made public only once every file is attached, so a failed run leaves nothing visible; push the fix and re-run it (a leftover draft for the tag is replaced, a published release is refused).
 5. Open the release page and check the files and the generated notes.
 
+A release that is not a prerelease also gets a Windows installer, `OpenDraft-<version>-windows-x64.msi`, built by `cargo packager` from `installer/windows/main.wxs` and the `[package.metadata.packager]` settings in `crates/od-app/Cargo.toml` (an MSI's version is numeric only, so a `-beta` tag gets the zip and tarball only). It installs per user, takes its version from Cargo, and upgrades older installs in place. **Do not change its `identifier` (`uk.openengineering.opendraft`)**: Windows Installer's upgrade code is derived from it, so a new one would leave the old version installed beside the new one. To try it locally: `cargo install cargo-packager --locked`, `cargo build --release -p od-app -p od-mcp`, then `cargo packager --release -f wix` (the file lands in `dist/packager`).
+
 Running the workflow by hand from the Actions tab builds and tests the packages without publishing anything.
 
 The Linux package is built on Ubuntu 22.04 and has not been run extensively; call it experimental in the notes.

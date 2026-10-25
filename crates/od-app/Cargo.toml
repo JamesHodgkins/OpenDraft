@@ -45,3 +45,26 @@ semver = "1"
 [target.'cfg(windows)'.build-dependencies]
 # The program's icon and version information in the Windows exe (MIT).
 winresource = "0.1"
+
+# The Windows installer (`cargo packager --release -f wix` after
+# `cargo build --release -p od-app -p od-mcp`; see installer/windows/main.wxs).
+# The version is this package's, so the installer cannot disagree with the
+# program; an MSI takes numeric versions only, so prerelease tags get none.
+[package.metadata.packager]
+product-name = "OpenDraft"
+identifier = "uk.openengineering.opendraft"
+publisher = "OpenDraft project"
+description = "OpenDraft, a 2D CAD program"
+homepage = "https://github.com/JamesHodgkins/OpenDraft"
+license-file = "../../LICENSE"
+out-dir = "../../dist/packager"
+binaries-dir = "../../target/release"
+icons = ["../../assets/app.ico"]
+formats = ["wix"]
+binaries = [
+    { path = "opendraft", main = true },
+    { path = "opendraft-mcp" },
+]
+
+[package.metadata.packager.wix]
+template = "../../installer/windows/main.wxs"
