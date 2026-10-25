@@ -20,6 +20,13 @@ pub struct Note {
 
 const NOTES: &[Note] = &[
     Note {
+        version: "0.1.2",
+        title: "OpenDraft for Linux, installed properly",
+        changes: &[
+            "Linux now has a .deb (Debian, Ubuntu, Mint) and an AppImage, with a menu entry.",
+        ],
+    },
+    Note {
         version: "0.1.1",
         title: "A tidier status bar and a Windows installer",
         changes: &[
