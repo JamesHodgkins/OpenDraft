@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Ask a question or get help
-    url: https://github.com/JamesHodgkins/OpenDraft#-feedback-and-support
-    about: For questions and help using OpenDraft rather than a bug or a feature request. The contact address is in the README.
+    url: https://github.com/JamesHodgkins/OpenDraft/discussions/categories/q-a
+    about: For questions and help using OpenDraft rather than a bug or a feature request.
   - name: Report a security problem privately
     url: https://github.com/JamesHodgkins/OpenDraft/security/policy
     about: Issues are public. Report a vulnerability, such as a crash from a malicious drawing file, by the route described in the security policy.

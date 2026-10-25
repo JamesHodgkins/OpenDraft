@@ -9,7 +9,7 @@ body:
       value: |
         Thanks for suggesting an improvement. Please search the existing issues and review the roadmap in the README before filing a new request.
 
-        For larger changes, this issue is the place to agree on an approach before implementation begins.
+        For larger changes, this issue is the place to agree on an approach before implementation begins. If you are not sure an idea is ready for a request, you can float it first in the [Ideas discussions](https://github.com/JamesHodgkins/OpenDraft/discussions/categories/ideas).
 
   - type: textarea
     id: problem

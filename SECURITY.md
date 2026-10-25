@@ -6,7 +6,7 @@ OpenDraft is a young, one-maintainer project. Reports are read and answered on a
 
 Please do **not** open a public issue for a security problem.
 
-- Use GitHub's private reporting: open the repository's **Security** tab and choose **Report a vulnerability**. (If that button is not there, use the email below.)
+- Use GitHub's private reporting: open the repository's **Security** tab and choose **Report a vulnerability**. Only you and the maintainer can see it.
 - Or email **contact@openengineering.uk** with "OpenDraft security" in the subject.
 
 Please include the version (shown under the title on the Home page), your operating system, and what you found. If a drawing file triggers it, send the smallest file that does, and say which format it is (`.odx`, `.dxf` or `.dwg`). Remove any private information from it first.
