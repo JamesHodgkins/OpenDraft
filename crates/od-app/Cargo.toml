@@ -68,3 +68,5 @@ binaries = [
 
 [package.metadata.packager.wix]
 template = "../../installer/windows/main.wxs"
+banner-path = "../../installer/windows/banner.bmp"
+dialog-image-path = "../../installer/windows/dialog.bmp"
