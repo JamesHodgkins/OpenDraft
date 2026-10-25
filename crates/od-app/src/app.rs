@@ -28,6 +28,7 @@ mod panels;
 mod power_select_dialog;
 mod settings_dialog;
 mod snap_menu;
+mod status_toggles;
 mod text_style_dialog;
 mod text_style_preview;
 mod units_dialog;

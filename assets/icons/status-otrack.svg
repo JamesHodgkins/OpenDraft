@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:affinity="https://www.affinity.studio/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
+    <g transform="matrix(1,0,0,1,-444,-814)">
+        <rect id="status-otrack" x="444" y="814" width="64" height="64" style="fill:none;"/>
+        <g id="status-otrack1" affinity:id="status-otrack">
+            <g transform="matrix(15.289341,0,0,20.44036,-3428.983395,-16427.85008)">
+                <path d="M256.322,844.106L254.1,845.769L254.097,845.769" style="fill:none;stroke:rgb(243,243,243);stroke-width:0.12px;"/>
+            </g>
+            <g transform="matrix(1,0,0,0.668392,-5,273.855167)">
+                <path d="M495.017,832.064L495.017,864.979" style="fill:none;stroke:rgb(243,243,243);stroke-width:2.45px;stroke-dasharray:2.449,4.899,0,0,0,0;"/>
+            </g>
+            <g transform="matrix(0,-1,0.668625,0,-96.313642,1354.996099)">
+                <path d="M495.017,832.065L495.017,864.979" style="fill:none;stroke:rgb(243,243,243);stroke-width:2.45px;stroke-dasharray:2.449,4.898,0,0,0,0;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,78.017097,34.962693)">
+                <g transform="matrix(1.002594,0,0,1.002496,32.026769,-0.997141)">
+                    <rect x="374.003" y="819" width="9.975" height="9.975" style="fill:none;stroke:rgb(243,243,243);stroke-width:2.08px;"/>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
