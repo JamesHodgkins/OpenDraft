@@ -18,15 +18,25 @@ pub struct Note {
     pub changes: &'static [&'static str],
 }
 
-const NOTES: &[Note] = &[Note {
-    version: "0.1.0",
-    title: "A Home page to start from",
-    changes: &[
-        "Recent drawings show a picture of the drawing, and can be pinned.",
-        "Drawings saved before a crash are offered back on Home.",
-        "Dimensions, leaders and PEDIT for editing polylines.",
-    ],
-}];
+const NOTES: &[Note] = &[
+    Note {
+        version: "0.1.1",
+        title: "A tidier status bar and a Windows installer",
+        changes: &[
+            "The status bar has icon buttons in AutoCAD's order; right-click Object Snap to choose its modes.",
+            "Windows has an installer as well as the zip: it installs for your user, with no administrator rights.",
+        ],
+    },
+    Note {
+        version: "0.1.0",
+        title: "A Home page to start from",
+        changes: &[
+            "Recent drawings show a picture of the drawing, and can be pinned.",
+            "Drawings saved before a crash are offered back on Home.",
+            "Dimensions, leaders and PEDIT for editing polylines.",
+        ],
+    },
+];
 
 /// Where a release's notes are, opened only on a click.
 const RELEASES: &str = "https://github.com/JamesHodgkins/OpenDraft/releases/tag/v";
