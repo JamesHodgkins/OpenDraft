@@ -90,6 +90,18 @@ mime-type = "application/x-opendraft-drawing"
 description = "OpenDraft drawing"
 name = "OpenDraft.Drawing"
 
+# The AppImage must bring the libraries winit opens at run time that a plain desktop
+# might lack (found on the build machine under /usr/lib*, so CI installs them first).
+# The core window system and the graphics libraries stay the system's.
+[package.metadata.packager.appimage]
+libs = [
+    "libxkbcommon.so.0",
+    "libxkbcommon-x11.so.0",
+    "libXcursor.so.1",
+    "libXi.so.6",
+    "libX11-xcb.so.1",
+]
+
 [package.metadata.packager.deb]
 package-name = "opendraft"
 # Built on Ubuntu 22.04 (glibc 2.35). The window toolkit opens these at run time

@@ -138,6 +138,8 @@ jobs:
           # The AppImage tools are AppImages themselves; run them without FUSE.
           APPIMAGE_EXTRACT_AND_RUN: '1'
         run: |
+          # The AppImage bundles these from the build machine (appimage `libs` in Cargo.toml).
+          sudo apt-get install -y --no-install-recommends libxkbcommon0 libxkbcommon-x11-0 libxcursor1 libxi6 libx11-xcb1
           cargo packager --release -f deb,appimage
           ls -la dist/packager
           cp dist/packager/*.deb "dist/OpenDraft-${VERSION}-linux-amd64.deb"
@@ -150,20 +152,13 @@ jobs:
           VERSION: ${{ needs.verify.outputs.version }}
         run: |
           docker run --rm -v "$PWD/dist:/dist:ro" -v "$PWD/scripts:/scripts:ro" ubuntu:22.04             bash /scripts/test_deb.sh "/dist/OpenDraft-${VERSION}-linux-amd64.deb"
-      - name: The AppImage starts
+      - name: The AppImage starts on a bare Ubuntu 22.04, bringing its own libraries
         if: runner.os == 'Linux' && !contains(needs.verify.outputs.version, '-')
         shell: bash
         env:
           VERSION: ${{ needs.verify.outputs.version }}
-          APPIMAGE_EXTRACT_AND_RUN: '1'
-          LIBGL_ALWAYS_SOFTWARE: '1'
-          OPENDRAFT_PROFILE: ci-smoke
         run: |
-          sudo apt-get install -y --no-install-recommends xvfb xauth libgl1-mesa-dri
-          set +e
-          timeout 20 xvfb-run -a "dist/OpenDraft-${VERSION}-linux-x86_64.AppImage"
-          code=$?
-          if [ "$code" != 124 ]; then echo "::error::the AppImage exited with code $code instead of staying open"; exit 1; fi
+          docker run --rm -v "$PWD/dist:/dist:ro" -v "$PWD/scripts:/scripts:ro" ubuntu:22.04             bash /scripts/test_appimage.sh "/dist/OpenDraft-${VERSION}-linux-x86_64.AppImage"
       - uses: actions/upload-artifact@v4
         with:
           name: OpenDraft-${{ runner.os }}
