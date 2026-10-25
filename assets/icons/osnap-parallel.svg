@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:affinity="https://www.affinity.studio/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
+    <g transform="matrix(1,0,0,1,-962,-888)">
+        <rect id="osnap-parallel" x="962" y="888" width="64" height="64" style="fill:none;"/>
+        <g id="osnap-parallel1" affinity:id="osnap-parallel">
+            <g transform="matrix(0.912946,0.087058,0.087058,0.912938,10.433836,-2.433957)">
+                <path d="M1017.003,896.99L971,942.995" style="fill:none;stroke:rgb(243,243,243);stroke-width:2px;stroke-dasharray:2,4,0,0,0,0;"/>
+            </g>
+            <g transform="matrix(0.912951,0.087054,0.087054,0.912942,2.433711,-10.433833)">
+                <path d="M1017.003,896.99L971,942.995" style="fill:none;stroke:rgb(243,243,243);stroke-width:2px;"/>
+            </g>
+        </g>
+    </g>
+</svg>

@@ -20,42 +20,6 @@ enum MenuChoice {
     Recent(usize),
 }
 
-/// Status bar toggles, left to right: label, command id, tooltip.
-const MODE_TOGGLES: &[(&str, &str, &str)] = &[
-    ("GRID", "view.grid", "Show grid (F7)"),
-    ("SNAP", "view.snap", "Snap on/off (F3)"),
-    ("END", "view.snap_endpoint", "Endpoint snap"),
-    ("MID", "view.snap_midpoint", "Midpoint snap"),
-    ("CEN", "view.snap_center", "Center snap"),
-    ("QUA", "view.snap_quadrant", "Quadrant snap"),
-    ("INT", "view.snap_intersection", "Intersection snap"),
-    ("NEA", "view.snap_nearest", "Nearest snap"),
-    ("GSNAP", "view.snap_grid", "Snap to grid"),
-    ("ORTHO", "view.ortho", "Ortho (F8)"),
-    ("POLAR", "view.polar", "Polar tracking (F10)"),
-    ("OTRACK", "view.otrack", "Object snap tracking (F11)"),
-    ("DYN", "view.dynamic_input", "Dynamic Input (F12)"),
-];
-
-/// The running object snaps in the SNAP button's menu, as AutoCAD lists them.
-const SNAP_MENU: &[(&str, &str)] = &[
-    ("Endpoint", "view.snap_endpoint"),
-    ("Midpoint", "view.snap_midpoint"),
-    ("Center", "view.snap_center"),
-    ("Node", "view.snap_node"),
-    ("Quadrant", "view.snap_quadrant"),
-    ("Intersection", "view.snap_intersection"),
-    ("Apparent Intersection", "view.snap_apparent_intersection"),
-    ("Geometric Center", "view.snap_geometric_center"),
-    ("Insertion", "view.snap_insertion"),
-    ("Perpendicular", "view.snap_perpendicular"),
-    ("Tangent", "view.snap_tangent"),
-    ("Extension", "view.snap_extension"),
-    ("Parallel", "view.snap_parallel"),
-    ("Nearest", "view.snap_nearest"),
-    ("Snap to grid", "view.snap_grid"),
-];
-
 impl OpenDraftApp {
     /// App menu button, quick access toolbar and title.
     pub(super) fn title_bar(&mut self, ctx: &egui::Context) {
@@ -327,66 +291,6 @@ impl OpenDraftApp {
                 ui.label(egui::RichText::new(text).color(self.theme.colors.text_weak));
             },
         );
-    }
-
-    /// Mode toggles, lit when on (like AutoCAD's status bar); dimmed while
-    /// the command is disabled. Returns the command clicked. The layout adds
-    /// right to left, so the table is walked in reverse.
-    fn mode_toggles(&mut self, ui: &mut egui::Ui) -> Option<&'static str> {
-        let colors = &self.theme.colors;
-        let mut clicked = None;
-        ui.spacing_mut().item_spacing.x = 9.0;
-        for &(label, command, tip) in MODE_TOGGLES.iter().rev() {
-            let color = if !self.registry.is_enabled(command, &self.state) {
-                colors.text_disabled
-            } else if self.registry.is_checked(command, &self.state) {
-                colors.accent_text
-            } else {
-                colors.text_weak
-            };
-            let response = ui
-                .add(
-                    egui::Label::new(
-                        egui::RichText::new(label)
-                            .size(self.theme.font_size_small)
-                            .strong()
-                            .color(color),
-                    )
-                    .sense(egui::Sense::click()),
-                )
-                .on_hover_text(tip)
-                .on_hover_cursor(egui::CursorIcon::PointingHand);
-            if response.clicked() {
-                clicked = Some(command);
-            }
-            if command == "view.dynamic_input" {
-                response.context_menu(|ui| {
-                    if ui.button("Dynamic Input Settings...").clicked() {
-                        self.settings_tab = 1;
-                        self.state.show_settings = true;
-                        ui.close_menu();
-                    }
-                });
-            }
-            if command == "view.snap" {
-                response.context_menu(|ui| {
-                    for (label, id) in SNAP_MENU {
-                        let mut on = self.registry.is_checked(id, &self.state);
-                        if ui.checkbox(&mut on, *label).clicked() {
-                            clicked = Some(*id);
-                        }
-                    }
-                    ui.separator();
-                    if ui.button("Snap Settings...").clicked() {
-                        self.settings_tab = 1;
-                        self.state.show_settings = true;
-                        ui.close_menu();
-                    }
-                });
-                ui.separator();
-            }
-        }
-        clicked
     }
 
     /// "name* - OpenDraft", following the active drawing; a debug build or

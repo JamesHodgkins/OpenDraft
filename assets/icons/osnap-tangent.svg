@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:affinity="https://www.affinity.studio/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
+    <g transform="matrix(1,0,0,1,-740,-888)">
+        <rect id="osnap-tangent" x="740" y="888" width="64" height="64" style="fill:none;"/>
+        <clipPath id="_clip1">
+            <rect id="osnap-tangent1" affinity:id="osnap-tangent" x="740" y="888" width="64" height="64"/>
+        </clipPath>
+        <g clip-path="url(#_clip1)">
+            <g transform="matrix(0.739167,0.538678,0.538678,0.739079,234.370094,223.16501)">
+                <path d="M9.006,943L55.003,897" style="fill:none;stroke:rgb(243,243,243);stroke-width:1.57px;"/>
+            </g>
+            <g transform="matrix(0.7389,0.538944,0.538944,0.738813,252.899474,204.636396)">
+                <path d="M9.006,943L55.003,897" style="fill:none;stroke:rgb(243,243,243);stroke-width:1.57px;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,708.974843,14.005452)">
+                <rect x="51.007" y="894" width="5.99" height="5.99" style="fill:none;stroke:rgb(0,199,154);stroke-width:2px;"/>
+            </g>
+            <g transform="matrix(1.027969,0,0,1.027554,-22.235404,-25.983897)">
+                <path d="M769.47,906.227C771.515,905.471 773.726,905.059 776.032,905.059C786.502,905.059 795.003,913.56 795.003,924.03C795.003,934.5 786.502,943.001 776.032,943.001C765.562,943.001 757.061,934.5 757.061,924.03C757.061,921.726 757.473,919.517 758.227,917.473" style="fill:none;stroke:rgb(243,243,243);stroke-width:1.95px;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,739.997354,-0.005657)">
+                <g transform="matrix(0.834594,0.443243,0.443243,0.834522,-342.494199,152.054521)">
+                    <path d="M9.006,943L55.003,897" style="fill:none;stroke:black;stroke-width:1.57px;"/>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

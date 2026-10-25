@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:affinity="https://www.affinity.studio/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
+    <g transform="matrix(1,0,0,1,-222,-814)">
+        <rect id="status-polar" x="222" y="814" width="64" height="64" style="fill:none;"/>
+        <g id="status-polar1" affinity:id="status-polar">
+            <g transform="matrix(0.83867,0,0,0.832592,41.933087,141.644916)">
+                <ellipse cx="252.82" cy="845.979" rx="23.847" ry="24.021" style="fill:none;stroke:rgb(243,243,243);stroke-width:2.49px;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,0.03407,-0)">
+                <path d="M273.792,826.177L253.969,846L253.966,846L282,846" style="fill:none;stroke:rgb(243,243,243);stroke-width:2.08px;"/>
+            </g>
+        </g>
+    </g>
+</svg>
