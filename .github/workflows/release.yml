@@ -97,6 +97,17 @@ jobs:
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-about
+      - name: Installer tool (cargo-packager, pinned; cached so it is built once)
+        # Only for plain versions: a -beta tag gets no installers (their versions are numeric).
+        if: ${{ !contains(needs.verify.outputs.version, '-') }}
+        id: packager
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/cargo-packager*
+          key: cargo-packager-0.11.8-${{ runner.os }}
+      - name: Build cargo-packager
+        if: ${{ !contains(needs.verify.outputs.version, '-') && steps.packager.outputs.cache-hit != 'true' }}
+        run: cargo install cargo-packager --locked --version 0.11.8
       - name: Package
         shell: bash
         run: bash scripts/package.sh
@@ -117,9 +128,37 @@ jobs:
         env:
           VERSION: ${{ needs.verify.outputs.version }}
         run: |
-          cargo install cargo-packager --locked
           cargo packager --release -f wix
           cp "dist/packager/opendraft_${VERSION}_x64_en-US.msi" "dist/OpenDraft-${VERSION}-windows-x64.msi"
+      - name: Linux packages (.deb and AppImage)
+        if: runner.os == 'Linux' && !contains(needs.verify.outputs.version, '-')
+        shell: bash
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+          # The AppImage tools are AppImages themselves; run them without FUSE.
+          APPIMAGE_EXTRACT_AND_RUN: '1'
+        run: |
+          # The AppImage bundles these from the build machine (appimage `libs` in Cargo.toml).
+          sudo apt-get install -y --no-install-recommends libxkbcommon0 libxkbcommon-x11-0 libxcursor1 libxi6 libx11-xcb1
+          cargo packager --release -f deb,appimage
+          ls -la dist/packager
+          cp dist/packager/*.deb "dist/OpenDraft-${VERSION}-linux-amd64.deb"
+          cp dist/packager/*.AppImage "dist/OpenDraft-${VERSION}-linux-x86_64.AppImage"
+          chmod +x "dist/OpenDraft-${VERSION}-linux-x86_64.AppImage"
+      - name: The .deb installs, starts and removes cleanly on a bare Ubuntu 22.04
+        if: runner.os == 'Linux' && !contains(needs.verify.outputs.version, '-')
+        shell: bash
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          docker run --rm -v "$PWD/dist:/dist:ro" -v "$PWD/scripts:/scripts:ro" ubuntu:22.04             bash /scripts/test_deb.sh "/dist/OpenDraft-${VERSION}-linux-amd64.deb"
+      - name: The AppImage starts on a bare Ubuntu 22.04, bringing its own libraries
+        if: runner.os == 'Linux' && !contains(needs.verify.outputs.version, '-')
+        shell: bash
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          docker run --rm -v "$PWD/dist:/dist:ro" -v "$PWD/scripts:/scripts:ro" ubuntu:22.04             bash /scripts/test_appimage.sh "/dist/OpenDraft-${VERSION}-linux-x86_64.AppImage"
       - uses: actions/upload-artifact@v4
         with:
           name: OpenDraft-${{ runner.os }}
@@ -127,6 +166,8 @@ jobs:
             dist/*.zip
             dist/*.tar.gz
             dist/*.msi
+            dist/*.deb
+            dist/*.AppImage
           if-no-files-found: error
   publish:
     if: startsWith(github.ref, 'refs/tags/')
@@ -146,7 +187,7 @@ jobs:
         shell: bash
         run: |
           shopt -s nullglob
-          sha256sum *.zip *.tar.gz *.msi > SHA256SUMS
+          sha256sum *.zip *.tar.gz *.msi *.deb *.AppImage > SHA256SUMS
       - name: Publish the release
         shell: bash
         env:
@@ -169,7 +210,7 @@ jobs:
           flags=(--draft --verify-tag --generate-notes)
           if [ "$PRERELEASE" = "true" ]; then flags+=(--prerelease); fi
           shopt -s nullglob
-          files=(dist/*.zip dist/*.tar.gz dist/*.msi dist/SHA256SUMS)
+          files=(dist/*.zip dist/*.tar.gz dist/*.msi dist/*.deb dist/*.AppImage dist/SHA256SUMS)
           gh release create "$TAG" "${flags[@]}" "${files[@]}"
           # Every package is attached; only now does the release become visible.
           gh release edit "$TAG" --draft=false

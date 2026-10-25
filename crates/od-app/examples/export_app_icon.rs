@@ -1,12 +1,15 @@
 //! Draws `assets/badge_logo.svg` at the sizes Windows asks for and writes them
 //! as `assets/app.ico` (PNG pictures in an ICO file), which `build.rs` embeds
-//! in the Windows program. Run it again when the badge changes:
-//! `cargo run -p od-app --example export_app_icon`.
+//! in the Windows program, and as one PNG per size in `assets/app-icons/`,
+//! which the Linux packages install as the application icon. Run it again when
+//! the badge changes: `cargo run -p od-app --example export_app_icon`.
 
 use std::io::Write;
 use std::path::Path;
 
 const SIZES: [u32; 7] = [16, 24, 32, 48, 64, 128, 256];
+/// The sizes of the icon theme the Linux packages install (`hicolor`).
+const LINUX_SIZES: [u32; 6] = [16, 32, 48, 64, 128, 256];
 
 fn png(rgba: &[u8], side: u32) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
     let mut out = Vec::new();
@@ -40,6 +43,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     for picture in &pictures {
         file.extend_from_slice(picture);
+    }
+    let folder = assets.join("app-icons");
+    std::fs::create_dir_all(&folder)?;
+    for side in LINUX_SIZES {
+        let rgba = od_ui::icon_set::rgba(&svg, side)?;
+        std::fs::write(folder.join(format!("{side}x{side}.png")), png(&rgba, side)?)?;
     }
     let target = assets.join("app.ico");
     std::fs::write(&target, &file)?;

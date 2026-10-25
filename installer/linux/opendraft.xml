@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tells the desktop what an .odx file is, so a file manager shows it as an OpenDraft drawing and
+     opens it with OpenDraft. Installed to /usr/share/mime/packages by the .deb. -->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-opendraft-drawing">
+    <comment>OpenDraft drawing</comment>
+    <glob pattern="*.odx"/>
+  </mime-type>
+</mime-info>
