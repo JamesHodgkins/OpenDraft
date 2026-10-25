@@ -99,7 +99,7 @@ fn it_initialises_and_lists_read_only_tools() {
     let mut sidecar = Sidecar::start(&dir, &[]);
     let init = sidecar.initialise();
     let info = &init["result"]["serverInfo"];
-    assert_eq!(info["name"], "io.github.jameshodgkins.opendraft");
+    assert_eq!(info["name"], "uk.openengineering.opendraft");
     assert!(
         init["result"]["capabilities"]["tools"].is_object(),
         "{init}"
