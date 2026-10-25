@@ -28,6 +28,13 @@ cat /usr/share/applications/opendraft.desktop
 update-mime-database /usr/share/mime
 grep -F 'application/x-opendraft-drawing:*.odx' /usr/share/mime/globs2
 
+# Every library the program is linked against must be found (the ones it opens at
+# run time are covered by starting it below).
+if ldd /usr/bin/opendraft | grep "not found"; then
+  echo "opendraft is linked against a library the package does not bring"
+  exit 1
+fi
+
 # Does it start, and keep running? `timeout` ends it with 124 if it is still open.
 export LIBGL_ALWAYS_SOFTWARE=1 OPENDRAFT_PROFILE=ci-smoke
 set +e
@@ -40,6 +47,6 @@ if [ "$code" != 124 ]; then
 fi
 
 # And is it removed cleanly?
-apt-get remove -y opendraft || apt-get remove -y "$(dpkg-deb -f "$deb" Package)"
+apt-get remove -y "$(dpkg-deb -f "$deb" Package)"
 test ! -e /usr/bin/opendraft
 echo "the .deb installs, starts and removes cleanly"

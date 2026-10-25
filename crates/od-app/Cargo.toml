@@ -54,6 +54,8 @@ winresource = "0.1"
 product-name = "OpenDraft"
 identifier = "uk.openengineering.opendraft"
 publisher = "OpenDraft project"
+# The .deb's Maintainer field.
+authors = ["OpenDraft project <contact@openengineering.uk>"]
 description = "OpenDraft, a 2D CAD program"
 homepage = "https://github.com/JamesHodgkins/OpenDraft"
 license-file = "../../LICENSE"
@@ -89,8 +91,26 @@ description = "OpenDraft drawing"
 name = "OpenDraft.Drawing"
 
 [package.metadata.packager.deb]
-# Built on Ubuntu 22.04 (glibc 2.35). The window libraries are opened at run time,
-# so the package manager is told about them here.
-depends = ["libc6 (>= 2.35)", "libgl1", "libxkbcommon0", "libx11-6", "libxcb1"]
+package-name = "opendraft"
+# Built on Ubuntu 22.04 (glibc 2.35). The window toolkit opens these at run time
+# (winit: libX11, libXcursor, libX11-xcb, libXi, libxkbcommon and its X11 part, and
+# the Wayland libraries; the graphics: libGL and libEGL), so a package manager that
+# reads only the program's linked libraries would miss them: they are listed here.
+# scripts/test_deb.sh checks the list on a bare Ubuntu in CI.
+depends = [
+    "libc6 (>= 2.35)",
+    "libgl1",
+    "libegl1",
+    "libx11-6",
+    "libx11-xcb1",
+    "libxcb1",
+    "libxcursor1",
+    "libxi6",
+    "libxkbcommon0",
+    "libxkbcommon-x11-0",
+    "libwayland-client0",
+    "libwayland-cursor0",
+    "libwayland-egl1",
+]
 desktop-template = "../../installer/linux/opendraft.desktop"
 files = { "../../installer/linux/opendraft.xml" = "usr/share/mime/packages/opendraft.xml" }
