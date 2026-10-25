@@ -1,3 +1,10 @@
+// A Windows release build is a windowed program: without this, double-clicking it
+// opens a console window beside it, and closing that window ends the app. A debug
+// build keeps its console. (`opendraft-mcp` stays a console program: it talks over
+// standard input and output.) Panics are recorded in `crash.log` instead; see
+// `crash_log`.
+#![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
+
 mod app;
 mod arc_cmd;
 mod array_cmd;
@@ -21,6 +28,7 @@ mod commands;
 mod coordinates;
 mod corner_memory;
 mod corners;
+mod crash_log;
 mod dialogs;
 mod dim_override_cmd;
 mod dim_style_draft;
@@ -147,6 +155,7 @@ fn app_icon() -> Option<egui::IconData> {
 
 fn main() -> eframe::Result {
     profile::seed_beta_from_release();
+    crash_log::install();
     let mut viewport = egui::ViewportBuilder::default()
         .with_title(profile::name())
         .with_app_id(profile::app_id())
