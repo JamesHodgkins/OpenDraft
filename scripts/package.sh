@@ -24,7 +24,9 @@ cp LICENSE "dist/${name}/LICENSE"
 cp readme.md "dist/${name}/README.md"
 cp docs/mcp.md "dist/${name}/MCP.md"
 cp -r assets/icons "dist/${name}/icons"
-bash scripts/third_party.sh "dist/${name}/THIRD-PARTY-LICENSES.txt"
+# Also left in dist/ for the Windows installer, which reads it from there.
+bash scripts/third_party.sh "dist/THIRD-PARTY-LICENSES.txt"
+cp dist/THIRD-PARTY-LICENSES.txt "dist/${name}/THIRD-PARTY-LICENSES.txt"
 
 rm -f "dist/${name}.zip" "dist/${name}.tar.gz"
 if [ "$os" = windows ]; then
