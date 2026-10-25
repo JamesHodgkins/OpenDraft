@@ -100,7 +100,7 @@ Download the latest build from the [Releases page](https://github.com/JamesHodgk
 | System | File |
 |---|---|
 | Windows 10 or 11 (64-bit) | `OpenDraft-<version>-windows-x64.msi` (installer, from 0.1.1) or `OpenDraft-<version>-windows.zip` (portable) |
-| Linux (64-bit) | `OpenDraft-<version>-linux.tar.gz` |
+| Linux (64-bit) | `OpenDraft-<version>-linux-amd64.deb` (Debian, Ubuntu, Mint; from 0.1.2), `OpenDraft-<version>-linux-x86_64.AppImage` (any distribution; from 0.1.2) or `OpenDraft-<version>-linux.tar.gz` |
 
 Each release also has a `SHA256SUMS` file to check your download against.
 
@@ -116,6 +116,16 @@ Each release also has a `SHA256SUMS` file to check your download against.
 4. Only the older 0.1.0-beta.1 download needs the Microsoft [Visual C++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe); later releases carry what they need. If Windows says `VCRUNTIME140.dll` is missing, you have that beta: use a newer release.
 
 ### Linux
+
+**Debian, Ubuntu and Linux Mint** (releases from 0.1.2): install the `.deb`, which adds OpenDraft to the applications menu and makes `.odx` files open in it:
+
+```bash
+sudo apt install ./OpenDraft-<version>-linux-amd64.deb
+```
+
+Remove it with `sudo apt remove opendraft`. **Any other distribution:** download the `.AppImage`, make it executable (`chmod +x OpenDraft-*.AppImage`) and run it. An AppImage unpacks itself to a different temporary folder each time, so use the `.deb` or the tarball if you want to set up an [AI assistant](#-ai-assistants-experimental), which needs a fixed path to `opendraft-mcp`.
+
+**Tarball:** extract and run.
 
 ```bash
 tar -xzf OpenDraft-<version>-linux.tar.gz

@@ -59,7 +59,15 @@ homepage = "https://github.com/JamesHodgkins/OpenDraft"
 license-file = "../../LICENSE"
 out-dir = "../../dist/packager"
 binaries-dir = "../../target/release"
-icons = ["../../assets/app.ico"]
+icons = [
+    "../../assets/app.ico",
+    "../../assets/app-icons/16x16.png",
+    "../../assets/app-icons/32x32.png",
+    "../../assets/app-icons/48x48.png",
+    "../../assets/app-icons/64x64.png",
+    "../../assets/app-icons/128x128.png",
+    "../../assets/app-icons/256x256.png",
+]
 formats = ["wix"]
 binaries = [
     { path = "opendraft", main = true },
@@ -70,3 +78,19 @@ binaries = [
 template = "../../installer/windows/main.wxs"
 banner-path = "../../installer/windows/banner.bmp"
 dialog-image-path = "../../installer/windows/dialog.bmp"
+
+# Linux: `cargo packager --release -f deb,appimage` (see installer/linux). The file
+# type is what the desktop entry's MimeType lists; the .deb also installs the
+# shared-mime-info file that says *.odx is that type.
+[[package.metadata.packager.file-associations]]
+extensions = ["odx"]
+mime-type = "application/x-opendraft-drawing"
+description = "OpenDraft drawing"
+name = "OpenDraft.Drawing"
+
+[package.metadata.packager.deb]
+# Built on Ubuntu 22.04 (glibc 2.35). The window libraries are opened at run time,
+# so the package manager is told about them here.
+depends = ["libc6 (>= 2.35)", "libgl1", "libxkbcommon0", "libx11-6", "libxcb1"]
+desktop-template = "../../installer/linux/opendraft.desktop"
+files = { "../../installer/linux/opendraft.xml" = "usr/share/mime/packages/opendraft.xml" }

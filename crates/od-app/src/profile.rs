@@ -56,6 +56,17 @@ pub fn name() -> &'static str {
     })
 }
 
+/// The window's application id, which a Linux desktop matches against the menu
+/// entry (`opendraft.desktop`, `StartupWMClass=opendraft`) to give the window
+/// its icon and group it: the profile name in lower case, with `-` for spaces.
+pub fn app_id() -> String {
+    id_of(name())
+}
+
+fn id_of(name: &str) -> String {
+    name.to_ascii_lowercase().replace(' ', "-")
+}
+
 /// The profile's folder, which holds the saved settings and the defaults for
 /// the other folders.
 pub fn app_data() -> Option<PathBuf> {
@@ -102,6 +113,13 @@ mod tests {
         assert_eq!(name_for("0.3.0-dev", false, None), "OpenDraft Dev");
         assert_eq!(name_for("0.2.0", true, None), "OpenDraft Dev");
         assert_eq!(name_for("0.2.0-beta.1", true, None), "OpenDraft Dev");
+    }
+
+    #[test]
+    fn the_window_id_is_the_name_in_lower_case() {
+        assert_eq!(id_of("OpenDraft"), "opendraft");
+        assert_eq!(id_of("OpenDraft Dev"), "opendraft-dev");
+        assert_eq!(id_of("OpenDraft Test 1"), "opendraft-test-1");
     }
 
     #[test]
