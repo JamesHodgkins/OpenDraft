@@ -110,7 +110,7 @@ body:
     id: crash
     attributes:
       label: If OpenDraft crashed or would not start (optional)
-      description: From version 0.1.3 OpenDraft records crashes in a file called crash.log (Windows - the folder %APPDATA%\OpenDraft\data; Linux - ~/.local/share/opendraft). If it exists, paste its newest report here. On Linux you can also start OpenDraft from a terminal and paste what it prints (`opendraft` if you installed the .deb, `./opendraft` in the folder of the extracted tarball, or the AppImage file itself). Otherwise say whether a window appeared and what any error message said, and if it offered to recover a drawing the next time you started it, mention that.
+      description: From version 0.1.3 OpenDraft records crashes in a file called crash.log (Windows - the folder %APPDATA%\OpenDraft\data; Linux - ~/.local/share/opendraft; from version 0.1.4 the Crash log item in the app menu shows it). If it exists, paste its newest report here. On Linux you can also start OpenDraft from a terminal and paste what it prints (`opendraft` if you installed the .deb, `./opendraft` in the folder of the extracted tarball, or the AppImage file itself). Otherwise say whether a window appeared and what any error message said, and if it offered to recover a drawing the next time you started it, mention that.
       render: text
 
   - type: textarea

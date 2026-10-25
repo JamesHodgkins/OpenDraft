@@ -428,6 +428,9 @@ fn all() -> Vec<Command<AppState>> {
         cmd("manage.settings", "Settings", |s| s.show_settings = true)
             .transparent()
             .global(),
+        cmd("manage.crash_log", "Crash log", AppState::show_crash_log)
+            .transparent()
+            .global(),
     ]
 }
 

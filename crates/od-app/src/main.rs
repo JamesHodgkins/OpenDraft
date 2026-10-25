@@ -110,6 +110,7 @@ mod recent;
 mod recovery;
 mod rect_memory;
 mod rectangle;
+mod reveal;
 mod ribbon_def;
 mod ribbon_slots;
 mod scale_rotate;

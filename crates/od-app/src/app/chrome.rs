@@ -124,6 +124,7 @@ impl OpenDraftApp {
             for (label, id) in [
                 ("Units", "format.units"),
                 ("Settings", "manage.settings"),
+                ("Crash log", "manage.crash_log"),
                 ("Exit", "file.exit"),
             ] {
                 if menu::menu_row(ui, theme, label, false) {

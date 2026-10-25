@@ -2,7 +2,7 @@
 //! is selected. Start something, pick up a recent drawing, jump to an open
 //! one, and what is new in this version.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use eframe::egui;
 use od_ui::widgets;
@@ -244,7 +244,7 @@ impl OpenDraftApp {
             Some(Pick::OpenTemplatesFolder) => {
                 if let Some(folder) = self.state.templates_dir.clone() {
                     let _ = std::fs::create_dir_all(&folder);
-                    if let Err(error) = open_folder(&folder) {
+                    if let Err(error) = crate::reveal::open_folder(&folder) {
                         self.state
                             .tell(format!("Could not open {}: {error}", folder.display()));
                     }
@@ -260,7 +260,7 @@ impl OpenDraftApp {
             Some(Pick::Forget(id)) => self.state.recent.remove(id),
             Some(Pick::Locate(id)) => self.state.locate_recent(id),
             Some(Pick::ShowInFolder(path)) => {
-                if let Err(error) = show_in_folder(&path) {
+                if let Err(error) = crate::reveal::show_in_folder(&path) {
                     self.state
                         .tell(format!("Could not show {}: {error}", path.display()));
                 }
@@ -290,31 +290,6 @@ impl OpenDraftApp {
             None => {}
         }
     }
-}
-
-/// Open `folder` in the system's file manager.
-fn open_folder(folder: &Path) -> std::io::Result<()> {
-    #[cfg(windows)]
-    let program = "explorer";
-    #[cfg(not(windows))]
-    let program = "xdg-open";
-    std::process::Command::new(program)
-        .arg(folder)
-        .spawn()
-        .map(|_| ())
-}
-
-/// Reveal `path` in the system's file manager.
-fn show_in_folder(path: &Path) -> std::io::Result<()> {
-    #[cfg(windows)]
-    let child = std::process::Command::new("explorer")
-        .arg(format!("/select,{}", path.display()))
-        .spawn();
-    #[cfg(not(windows))]
-    let child = std::process::Command::new("xdg-open")
-        .arg(path.parent().unwrap_or(path))
-        .spawn();
-    child.map(|_| ())
 }
 
 /// The title, the version, and how to open a file by dropping it.
