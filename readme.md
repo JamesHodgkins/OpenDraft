@@ -229,7 +229,7 @@ Contributions are welcome, from bug reports to whole commands. Every command is 
 
 ## 💬 Feedback and support
 
-Use the [issue tracker](https://github.com/JamesHodgkins/OpenDraft/issues) for bug reports and feature requests.
+Use the [issue tracker](https://github.com/JamesHodgkins/OpenDraft/issues) for bug reports and feature requests (there are forms for both). For a question, email the address below. For a security problem, do not open an issue: see the [security policy](./SECURITY.md).
 
 Email: contact@openengineering.uk
 
