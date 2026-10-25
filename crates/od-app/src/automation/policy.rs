@@ -146,6 +146,7 @@ pub const TABLE: &[(&str, AutomationPolicy, CommandEffect)] = &[
     ("dim.style", Denied, Lifecycle),
     ("annotate.mleaderstyle", Denied, Lifecycle),
     ("manage.settings", Denied, Lifecycle),
+    ("manage.crash_log", Denied, Ui),
     // Layers: the layer batch tool does these with checks.
     ("layer.properties", Denied, Ui),
     ("layer.hide", Denied, Mutation),

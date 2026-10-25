@@ -50,6 +50,7 @@ pub const ALIASES: &[(&str, &str, &str)] = &[
     ("ORTHO", "ORTHO", "view.ortho"),
     ("DYN", "DYN", "view.dynamic_input"),
     ("OP", "OPTIONS", "manage.settings"),
+    ("CRASHLOG", "CRASHLOG", "manage.crash_log"),
     ("NEW", "NEW", "file.new"),
     ("OPEN", "OPEN", "file.open"),
     ("SAVE", "SAVE", "file.save"),

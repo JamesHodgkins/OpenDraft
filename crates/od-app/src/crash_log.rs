@@ -94,6 +94,31 @@ fn install_at(path: PathBuf) {
     }));
 }
 
+/// What to tell the user, and what to reveal, for the Crash log command.
+/// `Err` is the message when there is nothing to show.
+fn to_reveal(log: Option<&Path>) -> Result<&Path, &'static str> {
+    match log {
+        Some(path) if path.is_file() => Ok(path),
+        Some(_) => Err("No crash log: OpenDraft has not recorded a crash"),
+        None => Err("This profile has no data folder, so no crash log is kept"),
+    }
+}
+
+impl crate::state::AppState {
+    /// Show `crash.log` in the file manager, or say there is none.
+    pub fn show_crash_log(&mut self) {
+        let path = path();
+        match to_reveal(path.as_deref()) {
+            Ok(log) => {
+                if let Err(error) = crate::reveal::show_in_folder(log) {
+                    self.tell(format!("Could not show {}: {error}", log.display()));
+                }
+            }
+            Err(message) => self.tell(message.to_owned()),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -175,6 +200,18 @@ mod tests {
         assert!(text.contains("a deliberate test panic"), "{text}");
         assert!(text.contains("thread crash-test"), "{text}");
         assert!(text.contains(" OpenDraft "), "{text}");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn crash_log_command_needs_an_existing_file() {
+        let dir = std::env::temp_dir().join(format!("od_crash_cmd_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let log = dir.join(FILE);
+        assert!(to_reveal(Some(&log)).is_err(), "no file yet");
+        assert!(to_reveal(None).is_err());
+        std::fs::write(&log, "x").unwrap();
+        assert_eq!(to_reveal(Some(&log)), Ok(log.as_path()));
         let _ = std::fs::remove_dir_all(&dir);
     }
 }
