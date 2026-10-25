@@ -125,6 +125,6 @@ Before tagging a release, decide what the Home page's "What's new" card says. `c
 
 ## Getting help
 
-If you have questions, open an issue on the GitHub repository.
+If you have a question, ask it in [Discussions](https://github.com/JamesHodgkins/OpenDraft/discussions) (Q&A). Bugs and feature requests have [issue forms](https://github.com/JamesHodgkins/OpenDraft/issues/new/choose), and security problems go through the [security policy](./SECURITY.md).
 
 Thank you for contributing to OpenDraft!

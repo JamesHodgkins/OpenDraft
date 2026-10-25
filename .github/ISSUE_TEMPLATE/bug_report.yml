@@ -110,7 +110,7 @@ body:
     id: crash
     attributes:
       label: If OpenDraft crashed or would not start (optional)
-      description: On Linux, run `opendraft` from a terminal and paste what it prints. On Windows, say whether a window appeared and what any error message said. If it offered to recover a drawing the next time you started it, mention that.
+      description: On Linux, start OpenDraft from a terminal and paste what it prints (`opendraft` if you installed the .deb, `./opendraft` in the folder of the extracted tarball, or the AppImage file itself). On Windows, say whether a window appeared and what any error message said. If it offered to recover a drawing the next time you started it, mention that.
       render: text
 
   - type: textarea

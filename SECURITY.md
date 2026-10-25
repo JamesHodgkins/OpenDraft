@@ -11,7 +11,7 @@ Please do **not** open a public issue for a security problem.
 
 Please include the version (shown under the title on the Home page), your operating system, and what you found. If a drawing file triggers it, send the smallest file that does, and say which format it is (`.odx`, `.dxf` or `.dwg`). Remove any private information from it first.
 
-You will get a reply to say the report arrived. Once a fix is released, the report can be made public, and you will be credited if you wish. Please give the fix a reasonable chance to reach users before you publish details.
+You should get a reply to say the report arrived; if you hear nothing after about a week, please send the email too. Once a fix is released, the report can be made public, and you will be credited if you wish. Please give the fix a reasonable chance to reach users before you publish details.
 
 ## What is in scope
 
