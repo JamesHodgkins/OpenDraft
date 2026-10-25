@@ -26,6 +26,16 @@ pub fn format_length(units: &Units, value: f64) -> String {
     }
 }
 
+/// An area as a plain number at the drawing's length precision: `12.5000`
+/// (square units, whatever the length format is).
+pub fn format_area(units: &Units, value: f64) -> String {
+    if !value.is_finite() {
+        return value.to_string();
+    }
+    let p = usize::from(units.length_precision.min(MAX_PRECISION));
+    unsigned_zero(format!("{value:.p$}"))
+}
+
 /// A point as `x,y`.
 pub fn format_point(units: &Units, point: Point) -> String {
     format!(

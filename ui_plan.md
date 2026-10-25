@@ -852,3 +852,12 @@ Snagging after slices 6 and 8. **Start** is now the first thing on the page afte
 ## Status bar: icons (done 24-10-2026)
 
 The status bar toggles are icons in AutoCAD's order (`app/status_toggles.rs`): grid display, grid snap, ortho, polar, object snap, object snap tracking, and a gear. Right-clicking the object snap button lists the fourteen modes, each with its `osnap-*` icon and a tick when on; the gear opens Dynamic Input and Drafting Settings. The END/MID/CEN/QUA/INT/NEA words are gone from the bar (they are in the menu). `status-iso` is drawn and registered but has no button: there is no isometric mode yet. Not checked in the running app.
+
+## Measuring: DIST and AREA (done 25-10-2026)
+`inquiry.distance` (DI, DIST) and `inquiry.area` (AA, AREA) are the first two items of the Utilities > Measure dropdown; Radius, Angle and Volume stay on the not-built list (`ribbon_def/home.rs`). They change nothing in the drawing and answer on the command line, in the drawing's units (`measure_cmd.rs`). The maths is pure and tested in `od-core/src/measure.rs`: `Entity::measured` (length, closed or not, area), `corners` (area and perimeter of corner points) and `separation` (distance, angle, offsets).
+
+**DIST:** first point, second point (a rubber band and live distance/angle boxes), then `Distance = 5.0000, Angle in XY Plane = 53` and `Delta X = 3.0000, Delta Y = 4.0000`. The Multiple points option adds up a path: each step and the running total, Undo to take back a point, Enter for `Total distance`. No Z (the drawing is 2D), and no DISTANCE system variable yet.
+
+**AREA:** corner points (a ghost of the shape) with Enter for the total, or Object. Add area and Subtract area keep a running total across shapes (`Total area = ...`, eXit to leave). Objects: circle, rectangle, closed or open polyline (arcs included; an open one is closed by a straight line for the area, and reports `Length`), ellipse, spline. A line or an arc reports only its length and says it encloses no area. Areas are plain numbers at the length precision (`format_area`, now also used by the Properties panel).
+
+**Not done:** Radius, Angle and the MEASUREGEOM wrapper (`MEA`), hatch and region areas, hatch/object selection by area (the AREA Object option picks one object only), the DISTANCE, AREA and PERIMETER system variables, Arc and Length options in Distance Multiple points, and area units such as square feet from feet-and-inches drawings. Not yet tried by hand in the app: the tests drive the commands with `AppState`.

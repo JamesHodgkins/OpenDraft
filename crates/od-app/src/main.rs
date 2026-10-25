@@ -79,6 +79,7 @@ mod linetype_ui;
 mod linetype_vars;
 mod locations;
 mod match_props;
+mod measure_cmd;
 mod mleader_cmd;
 mod mleader_style_table;
 mod modify;

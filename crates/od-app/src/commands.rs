@@ -24,6 +24,7 @@ use crate::layout_cmd::{layout_command, mview, vplayer, vpscale};
 use crate::leader_cmd::draw_leader;
 use crate::lengthen::lengthen_objects;
 use crate::match_props::match_properties;
+use crate::measure_cmd::{measure_area, measure_distance};
 use crate::mleader_cmd::draw_mleader;
 use crate::modify::{copy_objects, mirror_objects, move_objects};
 use crate::mtext::{draw_mtext, edit_mtext_object};
@@ -177,6 +178,8 @@ fn all() -> Vec<Command<AppState>> {
         editor_command!("modify.trim", "Trim", trim_objects),
         editor_command!("modify.extend", "Extend", extend_objects),
         editor_command!("modify.lengthen", "Lengthen", lengthen_objects),
+        editor_command!("inquiry.distance", "Distance", "DIST", measure_distance),
+        editor_command!("inquiry.area", "Area", "AREA", measure_area),
         editor_command!("modify.offset", "Offset", offset_objects),
         editor_command!("modify.join", "Join", join_objects),
         editor_command!("modify.pedit", "Edit Polyline", "PEDIT", pedit_objects),
