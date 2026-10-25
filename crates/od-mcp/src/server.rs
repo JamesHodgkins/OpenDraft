@@ -13,7 +13,9 @@ use serde_json::Value;
 use crate::client::Client;
 use crate::tools;
 
-pub const SERVER_NAME: &str = "io.github.jameshodgkins.opendraft";
+/// The program's identifier: the reverse of the project's domain, the same one
+/// the Windows installer uses.
+pub const SERVER_NAME: &str = "uk.openengineering.opendraft";
 
 const INSTRUCTIONS: &str = concat!(
     "Works with the drawings open in a running OpenDraft. A connection can only read until the user ticks Allow changes, Allow commands or Allow files for it in OpenDraft, so a scope_denied error means ask the user, not retry. ",

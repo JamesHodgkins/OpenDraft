@@ -99,12 +99,16 @@ Download the latest build from the [Releases page](https://github.com/JamesHodgk
 
 | System | File |
 |---|---|
-| Windows 10 or 11 (64-bit) | `OpenDraft-<version>-windows.zip` |
+| Windows 10 or 11 (64-bit) | `OpenDraft-<version>-windows-x64.msi` (installer, from 0.1.1) or `OpenDraft-<version>-windows.zip` (portable) |
 | Linux (64-bit) | `OpenDraft-<version>-linux.tar.gz` |
 
 Each release also has a `SHA256SUMS` file to check your download against.
 
 ### Windows
+
+**Installer** (releases from 0.1.1): run the `.msi`. It installs for your user only, so it needs no administrator rights, adds OpenDraft to the Start menu and makes `.odx` files open in OpenDraft. Installing a newer version upgrades in place, and you remove it under Settings > Apps.
+
+**Portable zip:**
 
 1. Extract the zip to a folder of your choice. There is nothing to install.
 2. Run `opendraft.exe`. The folder also holds `opendraft-mcp.exe` (for [AI assistants](#-ai-assistants-experimental)); keep the two together.
@@ -217,7 +221,7 @@ Contributions are welcome, from bug reports to whole commands. Every command is 
 
 Use the [issue tracker](https://github.com/JamesHodgkins/OpenDraft/issues) for bug reports and feature requests.
 
-Email: jhodgkins@proton.me
+Email: contact@openengineering.uk
 
 ## 📜 License
 
