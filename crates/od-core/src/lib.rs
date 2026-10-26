@@ -49,6 +49,7 @@ pub mod point_style;
 mod polycorner;
 pub mod polygon;
 pub mod polyline;
+pub mod purge;
 pub mod rect;
 mod spatial_index;
 pub mod spline;

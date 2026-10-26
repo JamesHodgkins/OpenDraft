@@ -10,6 +10,7 @@ impl AppState {
             || self.show_point_style
             || self.power_select.open
             || self.overkill_draft.is_some()
+            || self.purge.open
             || self.show_linetypes
             || self.show_text_styles
             || self.show_dim_style

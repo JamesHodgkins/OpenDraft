@@ -9,7 +9,7 @@ use od_commands::{Command, Registry, RemoveEntities};
 
 use crate::array_cmd::{array_objects, array_polar, array_rect};
 use crate::array_path::array_path;
-use crate::block_cmd::{define_block, purge_blocks};
+use crate::block_cmd::define_block;
 use crate::break_cmd::break_object;
 use crate::corners::{chamfer_objects, fillet_objects};
 use crate::draw::draw_line;
@@ -33,6 +33,7 @@ use crate::overkill_cmd::overkill_objects;
 use crate::pedit_cmd::pedit_objects;
 use crate::polygon_cmd::draw_polygon;
 use crate::polyline_cmd::draw_polyline;
+use crate::purge_cmd::purge_all;
 use crate::rectangle::draw_rectangle;
 use crate::scale_rotate::{rotate_objects, scale_objects};
 use crate::selection::{crossing_polygon, fence, window_polygon};
@@ -211,7 +212,8 @@ fn all() -> Vec<Command<AppState>> {
         ),
         editor_command!("block.create", "Create Block", "BLOCK", define_block),
         editor_command!("block.insert", "Insert Block", "INSERT", insert_block),
-        editor_command!("block.purge", "Purge", "PURGE", purge_blocks),
+        cmd("block.purge", "Purge", |s| s.open_purge()),
+        editor_command!("block.purge_all", "Purge All", "-PURGE", purge_all),
         // The Block Editor (`block_editor.rs`).
         cmd("block.edit", "Edit Block", |s| s.bedit())
             .when(|s| !s.in_block_editor() && !s.session().document().blocks().is_empty())

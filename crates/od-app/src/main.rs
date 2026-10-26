@@ -108,6 +108,7 @@ mod profile;
 mod prompt_reply;
 mod properties;
 mod properties_ui;
+mod purge_cmd;
 mod recent;
 mod recovery;
 mod rect_memory;

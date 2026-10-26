@@ -2,7 +2,9 @@ use od_core::Point;
 
 use super::*;
 use crate::explode::explode_objects;
+use crate::purge_cmd::purge_items;
 use crate::state::AppState;
+use od_core::purge::{purgeable, unused_blocks, Item};
 
 fn p(x: f64, y: f64) -> Point {
     Point::new(x, y)
@@ -25,6 +27,18 @@ fn block_all(state: &mut AppState, answers: &[&str]) {
     state.start_command("BLOCK", define_block);
     state.settle_command();
     submit_all(state, answers);
+}
+
+/// PURGE, ticking only the blocks.
+fn purge_blocks(ed: &mut od_commands::Editor) -> Result<(), Cancelled> {
+    let wanted = ed.read(|doc| {
+        purgeable(doc)
+            .into_iter()
+            .map(|p| p.item)
+            .filter(|i| matches!(i, Item::Block(_)))
+            .collect::<Vec<_>>()
+    })?;
+    purge_items(ed, wanted)
 }
 
 fn said(state: &AppState, text: &str) -> bool {
@@ -117,7 +131,7 @@ fn exploding_a_reference_gives_back_its_objects_and_purge_removes_the_block() {
     block_all(&mut state, &["Tick", "0,0"]);
     state.start_command("PURGE", purge_blocks);
     state.settle_command();
-    assert!(said(&state, "No unreferenced blocks found."));
+    assert_eq!(state.session().document().blocks().len(), 1);
 
     state.select_all();
     state.start_command("Explode", explode_objects);
