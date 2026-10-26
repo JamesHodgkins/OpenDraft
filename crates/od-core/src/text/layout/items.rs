@@ -228,9 +228,11 @@ impl Builder<'_> {
                     dx: f64::from(pos.x_offset) * across,
                     dy: f64::from(pos.y_offset) * scale,
                 });
-                cluster.advance += f64::from(pos.x_advance) * across * s.tracking;
+                cluster.advance += f64::from(pos.x_advance) * across;
                 i += 1;
             }
+            // Tracking adds its space once, however many glyphs make the cluster.
+            cluster.advance = (cluster.advance + s.tracking_extra()).max(0.0);
             let at = starts.partition_point(|&v| v <= start);
             let end = starts.get(at).copied().unwrap_or(text.len());
             let piece = text.get(start..end).unwrap_or("");
@@ -275,7 +277,7 @@ impl Builder<'_> {
                 dx: pen + f64::from(pos.x_offset) * across,
                 dy: f64::from(pos.y_offset) * scale * size,
             });
-            pen += f64::from(pos.x_advance) * across * s.tracking;
+            pen += (f64::from(pos.x_advance) * across + s.tracking_extra() * size).max(0.0);
         }
         (glyphs, pen)
     }
