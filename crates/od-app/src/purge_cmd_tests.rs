@@ -179,3 +179,36 @@ fn the_command_line_without_verifying_takes_one_level_and_all_takes_names_only()
     answer(&mut state, &["Z", "N"]);
     assert!(state.session().document().objects().is_empty());
 }
+
+#[test]
+fn the_dialog_opens_with_nothing_ticked_and_keeps_ticks_when_it_refreshes() {
+    let mut state = AppState::new();
+    state.open_purge();
+    assert!(!state.purge.items.is_empty());
+    assert!(state.purge.items.iter().all(|(_, on)| !on));
+    assert!(
+        !state.purge.blocked.is_empty(),
+        "layer 0 stays, with a reason"
+    );
+    state.purge.items[0].1 = true;
+    let ticked = state.purge.items[0].0.item.clone();
+    state.refresh_purge();
+    let again = state.purge.items.iter().find(|(p, _)| p.item == ticked);
+    assert!(again.is_some_and(|(_, on)| *on));
+    assert_eq!(state.purge.items.iter().filter(|(_, on)| *on).count(), 1);
+}
+
+#[test]
+fn a_block_has_a_picture_and_an_unknown_one_does_not() {
+    let mut state = AppState::new();
+    state.add_entity(line(0.0, 5.0));
+    state.select_all();
+    state.start_command("BLOCK", crate::block_cmd::define_block);
+    state.settle_command();
+    answer(&mut state, &["Tick", "0,0"]);
+    let doc = state.session().document();
+    let id = doc.blocks()[0].id;
+    let picture = block_picture(doc, id);
+    assert!(picture.is_some_and(|p| p.width > 0 && p.height > 0));
+    assert!(block_picture(doc, od_core::BlockId(9_999)).is_none());
+}
