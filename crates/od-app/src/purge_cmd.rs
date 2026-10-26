@@ -5,7 +5,7 @@
 
 use od_commands::{Action, Cancelled, Editor, Options};
 use od_core::purge::{blocked, purgeable, unnamed, Blocked, Category, Item, Purgeable};
-use od_core::Document;
+use od_core::{BlockId, Document};
 
 use crate::purge_delete::delete_actions;
 use crate::text::plural;
@@ -29,6 +29,9 @@ pub struct Dialog {
     pub blocked: Vec<Blocked>,
     /// The row of `blocked` that is open.
     pub detail: Option<usize>,
+    /// The item picked in the tree, and its picture when it has one.
+    pub selected: Option<Item>,
+    pub preview: Option<(Item, eframe::egui::TextureHandle)>,
     /// How many zero-length objects and empty texts there are.
     pub zero_length: usize,
     pub empty_text: usize,
@@ -37,7 +40,7 @@ pub struct Dialog {
 }
 
 impl crate::state::AppState {
-    /// Open the Purge dialog on what can go now, all of it ticked.
+    /// Open the Purge dialog on what can go now, nothing ticked.
     pub fn open_purge(&mut self) {
         self.purge.items.clear();
         self.refresh_purge();
@@ -54,19 +57,31 @@ impl crate::state::AppState {
         self.purge.items = found
             .into_iter()
             .map(|p| {
-                let ticked = old
-                    .iter()
-                    .find(|(o, _)| o.item == p.item)
-                    .is_none_or(|o| o.1);
+                let ticked = old.iter().any(|(o, on)| o.item == p.item && *on);
                 (p, ticked)
             })
             .collect();
         self.purge.blocked = blocked;
         self.purge.detail = None;
+        self.purge.selected = None;
+        self.purge.preview = None;
         self.purge.zero_length = loose.zero_length.len();
         self.purge.empty_text = loose.empty_text.len();
         self.purge.stale = false;
     }
+}
+
+/// A picture of what a block draws, or `None` when it is empty or too
+/// detailed to draw.
+pub fn block_picture(doc: &Document, id: BlockId) -> Option<od_canvas::preview::Preview> {
+    let block = doc.block(id)?;
+    let mut copy = doc.clone();
+    let ids: Vec<_> = copy.objects().iter().map(|o| o.id).collect();
+    copy.remove_many(&ids);
+    for part in &block.entities {
+        copy.add_with(part.entity.clone(), part.attrs.clone());
+    }
+    od_canvas::preview::render(&copy).ok()
 }
 
 /// What was deleted, one line for each, then the total.
