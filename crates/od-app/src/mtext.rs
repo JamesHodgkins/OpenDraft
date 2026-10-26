@@ -1,7 +1,9 @@
 //! MTEXT: a box dragged out with two corners, then the in-place editor for
 //! the text. MTEDIT opens the editor on a text already in the drawing.
 
-use od_commands::{Answer, Cancelled, Editor, NumberOptions, Options, Picked, PointOptions};
+use od_commands::{
+    Answer, Cancelled, DynamicDimensions, Editor, NumberOptions, Options, Picked, PointOptions,
+};
 use od_core::mtext::{place_in_corners, MTextAttachment};
 use od_core::{Entity, MText, Point};
 
@@ -66,6 +68,7 @@ pub fn draw_mtext(ed: &mut Editor) -> Result<(), Cancelled> {
         let options = PointOptions::new(format!("Specify opposite corner or (height {height})"))
             .base(first)
             .corner()
+            .dimensions(DynamicDimensions::Cartesian)
             .keyword("Height", "H")
             .keyword("Justify", "J")
             .keyword("Rotation", "R")
