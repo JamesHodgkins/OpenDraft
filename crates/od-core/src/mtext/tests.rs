@@ -234,7 +234,7 @@ fn grips_move_the_text_and_set_the_width() {
     let mut t = text("abc");
     t.reference_width = 10.0;
     let grips = t.grips();
-    assert_eq!(grips.len(), 2);
+    assert_eq!(grips.len(), 4, "move, right, bottom and corner");
     let moved = t.with_grip_moved(0, p(15.0, 25.0)).unwrap();
     assert!(near(moved.insertion, p(15.0, 25.0)));
     assert_eq!(moved.reference_width, 10.0);
@@ -251,7 +251,7 @@ fn grips_move_the_text_and_set_the_width() {
         t.with_grip_moved(1, p(grips[1].at.x - 10.0, 0.0)).is_none(),
         "no width left"
     );
-    assert!(t.with_grip_moved(2, p(0.0, 0.0)).is_none());
+    assert!(t.with_grip_moved(4, p(0.0, 0.0)).is_none());
 
     // The left edge stays put when the text is attached on the right.
     t.attachment = MTextAttachment::TopRight;
@@ -312,4 +312,48 @@ fn scaling_text_scales_its_indents_and_tab_stops() {
     assert_eq!(t.scale_refusal(), None);
     let big = t.scaled(p(0.0, 0.0), 2.0);
     assert_eq!(big.contents, r"\pxi-8,l8,t4,12;item");
+}
+
+#[test]
+fn a_set_box_height_is_the_frame_and_the_grips_resize_it() {
+    let mut t = text("one");
+    t.reference_width = 20.0;
+    let line = t.extent().1;
+    t.reference_height = 30.0;
+    assert_eq!(
+        t.extent(),
+        (20.0, 30.0),
+        "the box is as set, taller than its text"
+    );
+    let frame = t.frame();
+    assert!(near(frame[2], p(30.0, -10.0)) && near(frame[0], p(10.0, 20.0)));
+    assert!(
+        t.contains(p(15.0, -5.0)),
+        "empty space in the box is inside it"
+    );
+    let grips = t.grips();
+    assert_eq!(grips.len(), 4);
+    assert!(near(grips[2].at, p(20.0, -10.0)), "bottom middle");
+    assert!(near(grips[3].at, p(30.0, -10.0)), "corner");
+    // The bottom grip changes only the height; the top left stays.
+    let taller = t.with_grip_moved(2, p(20.0, -20.0)).unwrap();
+    assert_eq!(
+        (taller.reference_width, taller.reference_height),
+        (20.0, 40.0)
+    );
+    assert!(near(taller.insertion, t.insertion));
+    // The corner changes both; no box is shorter than its text.
+    let both = t.with_grip_moved(3, p(35.0, 20.0 - line / 2.0)).unwrap();
+    assert_eq!(both.reference_width, 25.0);
+    assert!((both.extent().1 - line).abs() < 1e-9);
+    // A bottom-attached box moves its insertion with the bottom edge.
+    let mut low = t.clone();
+    low.attachment = MTextAttachment::BottomLeft;
+    let moved = low
+        .with_grip_moved(2, p(20.0, low.grips()[2].at.y - 10.0))
+        .unwrap();
+    assert!(
+        (moved.frame()[2].y - (low.frame()[2].y - 10.0)).abs() < 1e-9,
+        "the bottom edge goes where it is dragged"
+    );
 }

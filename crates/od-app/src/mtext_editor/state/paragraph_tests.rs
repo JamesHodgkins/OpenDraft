@@ -165,4 +165,7 @@ fn the_box_keeps_the_height_it_was_dragged_to_as_the_text_changes() {
     // It cannot be dragged shorter than the text.
     e.set_box_height(0.0);
     assert!(e.box_height() > 0.0);
+    e.set_box_height(line * 3.0);
+    assert_eq!(e.text().reference_height, line * 3.0, "kept in the text");
+    assert!(e.is_changed(), "so accepting saves it");
 }

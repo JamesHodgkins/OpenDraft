@@ -19,7 +19,7 @@ const CAPACITY: usize = 512;
 #[derive(PartialEq, Eq, Hash)]
 struct Key {
     contents: String,
-    numbers: [u64; 6],
+    numbers: [u64; 7],
     codes: [u8; 3],
     font: FontDescriptor,
 }
@@ -31,6 +31,7 @@ impl Key {
             numbers: [
                 text.nominal_height.to_bits(),
                 text.reference_width.to_bits(),
+                text.reference_height.to_bits(),
                 text.line_spacing.factor.to_bits(),
                 style.width_factor.to_bits(),
                 style.oblique_radians.to_bits(),

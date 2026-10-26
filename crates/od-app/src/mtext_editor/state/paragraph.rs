@@ -49,15 +49,17 @@ impl MTextEditor {
         true
     }
 
-    /// The box's height: as dragged, or as tall as the text if that is more.
+    /// The box's height: as set, or as tall as the text if that is more.
     pub fn box_height(&self) -> f64 {
-        self.box_height.max(self.layout.frame_height)
+        self.layout.frame_height
     }
 
-    /// Set the height the box keeps (the grips' drag).
+    /// Set the height the box keeps (the grips' drag). It is part of the
+    /// text, so it is the same box in the drawing, and is not in the history.
     pub fn set_box_height(&mut self, height: f64) {
-        if height.is_finite() {
-            self.box_height = height.max(0.0);
+        if height.is_finite() && height >= 0.0 {
+            self.working.reference_height = height;
+            self.layout = self.working.layout(&self.style);
         }
     }
 

@@ -48,6 +48,13 @@ fn box_outline(first: Point, at: Point, rotation: f64, width: Option<f64>) -> En
     }
 }
 
+/// How tall the dragged box is, measured along the text's up direction.
+fn drag_height(first: Point, second: Point, rotation: f64) -> f64 {
+    let (sin, cos) = rotation.sin_cos();
+    let (dx, dy) = (second.x - first.x, second.y - first.y);
+    (-dx * sin + dy * cos).abs()
+}
+
 /// MTEXT: the first corner, the opposite corner (with Height, Justify,
 /// Rotation and Width options), then the text. Enter on an empty line adds
 /// nothing.
@@ -107,6 +114,7 @@ pub fn draw_mtext(ed: &mut Editor) -> Result<(), Cancelled> {
     text.direction = Point::new(rotation.cos(), rotation.sin());
     text.attachment = attachment;
     text.reference_width = width.unwrap_or(drag_width);
+    text.reference_height = drag_height(first, second, rotation);
     match ed.edit_mtext(text)? {
         Some(text) if !text.contents.trim().is_empty() => {
             add(ed, Entity::MText(Box::new(text)), "Multiline Text")
@@ -225,12 +233,14 @@ mod tests {
         assert_eq!(opened.contents, "", "a new text starts empty");
         assert_eq!((opened.insertion.x, opened.insertion.y), (10.0, 50.0));
         assert_eq!(opened.reference_width, 40.0);
+        assert_eq!(opened.reference_height, 30.0, "the dragged box is kept");
         type_and_close(&mut state, "Hello\nworld", Outcome::Accept);
         assert!(!state.command_running() && !state.mtext_editing());
         let found = texts(&state);
         assert_eq!(found.len(), 1);
         assert_eq!(found[0].contents, "Hello\\Pworld");
         assert_eq!(found[0].nominal_height, 2.5);
+        assert_eq!(found[0].reference_height, 30.0);
         state.undo();
         assert!(texts(&state).is_empty(), "one undo step");
     }
