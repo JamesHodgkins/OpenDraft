@@ -134,6 +134,7 @@ impl OpenDraftApp {
                         ui.set_width(LEFT - 20.0);
                         egui::ScrollArea::vertical()
                             .id_salt("purge_tree")
+                            .auto_shrink([false, false])
                             .max_height(PANE)
                             .min_scrolled_height(PANE)
                             .show(ui, |ui| match dialog.tab {
