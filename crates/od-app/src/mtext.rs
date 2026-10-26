@@ -1,9 +1,7 @@
 //! MTEXT: a box dragged out with two corners, then the in-place editor for
 //! the text. MTEDIT opens the editor on a text already in the drawing.
 
-use od_commands::{
-    Answer, Cancelled, DynamicDimensions, Editor, NumberOptions, Options, Picked, PointOptions,
-};
+use od_commands::{Answer, Cancelled, Editor, NumberOptions, Options, Picked, PointOptions};
 use od_core::mtext::{place_in_corners, MTextAttachment};
 use od_core::{Entity, MText, Point};
 
@@ -66,15 +64,12 @@ pub fn draw_mtext(ed: &mut Editor) -> Result<(), Cancelled> {
     let (mut rotation, mut width) = (0.0, None);
     let second = loop {
         let options = PointOptions::new(format!("Specify opposite corner or (height {height})"))
-            .base(first)
-            .corner()
-            .dimensions(DynamicDimensions::Cartesian)
             .keyword("Height", "H")
             .keyword("Justify", "J")
             .keyword("Rotation", "R")
             .keyword("Width", "W")
             .ghost(move |at| vec![box_outline(first, at, rotation, width)]);
-        match ed.ask_point(options)? {
+        match ed.ask_corner(first, options)? {
             Answer::Value(at) => break at,
             Answer::Keyword(k) => match k.as_str() {
                 "Height" => {
@@ -247,6 +242,22 @@ mod tests {
         assert_eq!(found[0].reference_height, 30.0);
         state.undo();
         assert!(texts(&state).is_empty(), "one undo step");
+    }
+
+    #[test]
+    fn the_opposite_corner_is_a_corner_prompt_with_no_rubber_band() {
+        let _turn = take_turn_for_tests();
+        let mut state = AppState::new();
+        start(&mut state, draw_mtext);
+        submit(&mut state, &["10,50"]);
+        let ask = state.waiting().expect("asks for the opposite corner");
+        assert_eq!(ask.base, Some(Point::new(10.0, 50.0)));
+        assert!(!ask.rubber_band, "no line to the pointer");
+        assert_eq!(
+            ask.dynamic_dimensions,
+            od_commands::DynamicDimensions::Cartesian
+        );
+        assert!(ask.ghost.is_some(), "the box outline follows the pointer");
     }
 
     #[test]

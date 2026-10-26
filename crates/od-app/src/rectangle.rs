@@ -1,9 +1,7 @@
 //! RECTANGLE: two opposite corners, or a size and then which way it lies, at
 //! any angle, with square, rounded or bevelled corners and a line width.
 
-use od_commands::{
-    Answer, Cancelled, DynamicDimensions, Editor, NumberOptions, Options, PointOptions,
-};
+use od_commands::{Answer, Cancelled, Editor, NumberOptions, Options, PointOptions};
 use od_core::rect::{outline, Corners};
 use od_core::{Entity, Point};
 
@@ -153,9 +151,6 @@ pub fn draw_rectangle(ed: &mut Editor) -> Result<(), Cancelled> {
     let (mut angle, mut size): (f64, Option<Size>) = (0.0, None);
     let (dx, dy) = loop {
         let options = PointOptions::new("Specify other corner point")
-            .dimensions(DynamicDimensions::Cartesian)
-            .base(first)
-            .corner()
             .keyword("Area", "A")
             .keyword("Dimensions", "D")
             .keyword("Rotation", "R")
@@ -163,7 +158,7 @@ pub fn draw_rectangle(ed: &mut Editor) -> Result<(), Cancelled> {
                 let (dx, dy) = extent(first, angle, size, at);
                 vec![outline(first, angle, dx, dy, style, width)]
             });
-        match ed.ask_point(options)? {
+        match ed.ask_corner(first, options)? {
             Answer::Value(at) => {
                 let (dx, dy) = extent(first, angle, size, at);
                 if dx.abs() > MIN_SIZE && dy.abs() > MIN_SIZE {

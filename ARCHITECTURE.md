@@ -306,6 +306,7 @@ uses it or, if nothing is selected, asks the user to select objects.
 When a prompt has keywords (`Options::keyword("Undo", "U")`) or a bare Enter
 means something, use `ask_point`, `ask_distance`, `ask_angle`, `ask_number` or
 `ask_string`, which return an `Answer`: `Value`, `Keyword(label)` or `Enter`.
+The corner of a box (rectangle, text box) uses `ask_corner(base, options)` or `get_corner`: AutoCAD's `getcorner`, with no rubber band, X and Y readouts and an outline.
 An option menu that ends on Enter uses `ask_keyword` (`Some(label)` or `None`):
 typed letters match its keywords, which `ask_string` would take as text.
 Leave the keyword list out of the message; the prompt line adds it.

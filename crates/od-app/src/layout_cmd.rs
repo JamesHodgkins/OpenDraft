@@ -248,11 +248,7 @@ fn resolve_layers(doc: &od_core::Document, names: &str) -> Result<Vec<LayerId>, 
 /// MVIEW: two corners make a viewport on the sheet showing the whole drawing.
 pub fn mview(ed: &mut Editor, layout: LayoutId) -> Result<(), Cancelled> {
     let a = ed.get_point(PointOptions::new("Specify first corner of viewport"))?;
-    let b = ed.get_point(
-        PointOptions::new("Specify opposite corner")
-            .base(a)
-            .ghost(move |at| vec![Entity::Rectangle { min: a, max: at }]),
-    )?;
+    let b = ed.get_corner(a, "Specify opposite corner")?;
     let (width, height) = ((b.x - a.x).abs(), (b.y - a.y).abs());
     if width < 1e-6 || height < 1e-6 {
         ed.say("The viewport needs some size.");

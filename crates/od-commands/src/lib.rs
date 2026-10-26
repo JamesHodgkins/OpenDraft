@@ -8,6 +8,7 @@ mod action;
 mod associations;
 mod block_action;
 mod changes;
+mod corner;
 mod dim_style_action;
 mod dim_styles_action;
 mod editor;
