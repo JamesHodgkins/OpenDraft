@@ -7,7 +7,7 @@ use od_core::purge::{Category, Item};
 use od_ui::widgets;
 
 use super::OpenDraftApp;
-use crate::purge_cmd::{purge_all, purge_items};
+use crate::purge_cmd::{purge_run, Purge};
 
 const WIDTH: f32 = 420.0;
 
@@ -16,10 +16,14 @@ impl OpenDraftApp {
         if !self.state.purge.open {
             return;
         }
-        if self.state.purge.stale && !self.state.command_running() {
+        // While a purge runs (and may be asking about each item on the
+        // command line) the dialog steps aside.
+        if self.state.command_running() {
+            return;
+        }
+        if self.state.purge.stale {
             self.state.refresh_purge();
         }
-        let busy = self.state.command_running();
         let mut dialog = std::mem::take(&mut self.state.purge);
         let (mut open, mut purge, mut all, mut close) = (true, false, false, false);
         let theme = &self.theme;
@@ -57,16 +61,17 @@ impl OpenDraftApp {
                             });
                     }
                 });
+            ui.add_space(6.0);
+            ui.checkbox(&mut dialog.confirm, "Confirm each item to be purged");
+            ui.checkbox(&mut dialog.nested, "Purge nested items");
             ui.add_space(10.0);
             let any = dialog.items.iter().any(|(_, on)| *on);
             ui.horizontal(|ui| {
-                ui.add_enabled_ui(!busy, |ui| {
-                    ui.add_enabled_ui(any, |ui| {
-                        purge = widgets::primary_button(ui, theme, "Purge").clicked();
-                    });
-                    ui.add_enabled_ui(!dialog.items.is_empty(), |ui| {
-                        all = widgets::secondary_button(ui, theme, "Purge All").clicked();
-                    });
+                ui.add_enabled_ui(any, |ui| {
+                    purge = widgets::primary_button(ui, theme, "Purge").clicked();
+                });
+                ui.add_enabled_ui(!dialog.items.is_empty(), |ui| {
+                    all = widgets::secondary_button(ui, theme, "Purge All").clicked();
                 });
                 close = widgets::secondary_button(ui, theme, "Close").clicked();
             });
@@ -79,11 +84,31 @@ impl OpenDraftApp {
                 .filter(|(_, on)| *on)
                 .map(|(p, _)| p.item.clone())
                 .collect();
-            self.state
-                .start_command("PURGE", move |ed| purge_items(ed, wanted));
+            let (nested, confirm) = (dialog.nested, dialog.confirm);
+            let only = Some(wanted);
+            self.state.start_command("PURGE", move |ed| {
+                purge_run(
+                    ed,
+                    Purge {
+                        only,
+                        nested,
+                        confirm,
+                    },
+                )
+            });
             dialog.stale = true;
         } else if all {
-            self.state.start_command("-PURGE", purge_all);
+            let (nested, confirm) = (dialog.nested, dialog.confirm);
+            self.state.start_command("PURGE", move |ed| {
+                purge_run(
+                    ed,
+                    Purge {
+                        only: None,
+                        nested,
+                        confirm,
+                    },
+                )
+            });
             dialog.stale = true;
         }
         dialog.open = open;

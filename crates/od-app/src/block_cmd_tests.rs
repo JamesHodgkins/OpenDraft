@@ -2,7 +2,7 @@ use od_core::Point;
 
 use super::*;
 use crate::explode::explode_objects;
-use crate::purge_cmd::purge_items;
+use crate::purge_cmd::{purge_run, Purge};
 use crate::state::AppState;
 use od_core::purge::{purgeable, unused_blocks, Item};
 
@@ -29,8 +29,8 @@ fn block_all(state: &mut AppState, answers: &[&str]) {
     submit_all(state, answers);
 }
 
-/// PURGE, ticking only the blocks.
-fn purge_blocks(ed: &mut od_commands::Editor) -> Result<(), Cancelled> {
+/// PURGE, ticking only the blocks, with or without what that frees.
+fn purge_blocks_with(ed: &mut od_commands::Editor, nested: bool) -> Result<(), Cancelled> {
     let wanted = ed.read(|doc| {
         purgeable(doc)
             .into_iter()
@@ -38,7 +38,23 @@ fn purge_blocks(ed: &mut od_commands::Editor) -> Result<(), Cancelled> {
             .filter(|i| matches!(i, Item::Block(_)))
             .collect::<Vec<_>>()
     })?;
-    purge_items(ed, wanted)
+    let only = Some(wanted);
+    purge_run(
+        ed,
+        Purge {
+            only,
+            nested,
+            confirm: false,
+        },
+    )
+}
+
+fn purge_blocks(ed: &mut od_commands::Editor) -> Result<(), Cancelled> {
+    purge_blocks_with(ed, false)
+}
+
+fn purge_blocks_and_nested(ed: &mut od_commands::Editor) -> Result<(), Cancelled> {
+    purge_blocks_with(ed, true)
 }
 
 fn said(state: &AppState, text: &str) -> bool {
@@ -164,4 +180,59 @@ fn purge_follows_blocks_used_only_inside_unused_ones() {
         .map(|b| b.name.clone())
         .collect();
     assert_eq!(names, ["Inner", "Outer"]);
+}
+
+/// A drawing whose one block holds the only object on a new layer, with no
+/// reference to the block left.
+fn block_alone_on_a_layer() -> AppState {
+    let mut state = AppState::new();
+    let id = state.session().document().layers().len() as u64 + 100;
+    let layer = od_core::LayerId(id);
+    state.perform(od_commands::AddLayer::new(od_core::Layer::new(
+        layer, "Spare",
+    )));
+    let attrs = od_core::Attributes::on_layer(layer);
+    state.perform(od_commands::AddCopies::new(
+        "Add",
+        vec![(line(p(0.0, 0.0), p(1.0, 0.0)), attrs)],
+    ));
+    block_all(&mut state, &["Tick", "0,0"]);
+    let ids: Vec<_> = state
+        .session()
+        .document()
+        .objects()
+        .iter()
+        .map(|o| o.id)
+        .collect();
+    state.perform(od_commands::RemoveEntities::new(ids));
+    state
+}
+
+#[test]
+fn purging_blocks_takes_what_only_they_used_when_nested_items_are_on() {
+    let mut state = block_alone_on_a_layer();
+    state.start_command("PURGE", purge_blocks);
+    state.settle_command();
+    let doc = state.session().document();
+    assert!(doc.blocks().is_empty());
+    assert!(doc.layers().iter().any(|l| l.name == "Spare"), "not nested");
+
+    let mut state = block_alone_on_a_layer();
+    state.start_command("PURGE", purge_blocks_and_nested);
+    state.settle_command();
+    let doc = state.session().document();
+    assert!(doc.blocks().is_empty());
+    assert!(!doc.layers().iter().any(|l| l.name == "Spare"), "nested");
+    state.undo();
+    assert_eq!(
+        state.session().document().blocks().len(),
+        1,
+        "one undo step"
+    );
+    assert!(state
+        .session()
+        .document()
+        .layers()
+        .iter()
+        .any(|l| l.name == "Spare"));
 }

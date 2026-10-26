@@ -4,21 +4,37 @@
 //! that frees more. Each is one undo step.
 
 use od_commands::{
-    Cancelled, Editor, RemoveLayer, SetBlocks, SetDimStyles, SetLinetypes, SetMLeaderStyles,
-    SetTextStyles, Transaction,
+    Action, Cancelled, Editor, Options, RemoveEntities, RemoveLayer, SetBlocks, SetDimStyles,
+    SetLinetypes, SetMLeaderStyles, SetTextStyles,
 };
 use od_core::purge::{purgeable, Category, Item, Purgeable};
+use od_core::Document;
 
 use crate::text::plural;
 
 /// The Purge dialog while it is open.
-#[derive(Default)]
 pub struct Dialog {
     pub open: bool,
+    /// Ask about each item first.
+    pub confirm: bool,
+    /// Go on to what deleting the items frees.
+    pub nested: bool,
     /// What can go, and which of it is ticked.
     pub items: Vec<(Purgeable, bool)>,
     /// A purge was started: list again once it is done.
     pub stale: bool,
+}
+
+impl Default for Dialog {
+    fn default() -> Self {
+        Dialog {
+            open: false,
+            confirm: false,
+            nested: true,
+            items: Vec::new(),
+            stale: false,
+        }
+    }
 }
 
 impl crate::state::AppState {
@@ -46,14 +62,10 @@ impl crate::state::AppState {
     }
 }
 
-/// An edit worked out while the drawing was borrowed, made once it is not.
-type Step = Box<dyn FnOnce(&mut Transaction)>;
-
-/// Delete `items` now, as part of `tx`.
-fn delete(tx: &mut Transaction, items: &[Item]) {
-    let doc = tx.document();
+/// The edits that delete `items` from `doc`, worked out from it.
+fn delete_actions(doc: &Document, items: &[Item]) -> Vec<Box<dyn Action>> {
     let has = |f: &dyn Fn(&Item) -> bool| items.iter().any(f);
-    let mut actions: Vec<Step> = Vec::new();
+    let mut actions: Vec<Box<dyn Action>> = Vec::new();
     if has(&|i| matches!(i, Item::Block(_))) {
         let kept = doc
             .blocks()
@@ -61,9 +73,7 @@ fn delete(tx: &mut Transaction, items: &[Item]) {
             .filter(|b| !items.contains(&Item::Block(b.id)))
             .cloned()
             .collect();
-        actions.push(Box::new(move |tx| {
-            tx.perform(SetBlocks::new("Purge", kept))
-        }));
+        actions.push(Box::new(SetBlocks::new("Purge", kept)));
     }
     if has(&|i| matches!(i, Item::DimStyle(_))) {
         let kept = doc
@@ -73,14 +83,16 @@ fn delete(tx: &mut Transaction, items: &[Item]) {
             .cloned()
             .collect();
         let current = doc.dim_style().clone();
-        actions.push(Box::new(move |tx| {
-            tx.perform(SetDimStyles::new("Purge", kept, current, Vec::new()))
-        }));
+        actions.push(Box::new(SetDimStyles::new(
+            "Purge",
+            kept,
+            current,
+            Vec::new(),
+        )));
     }
     for item in items {
         if let Item::Layer(id) = item {
-            let id = *id;
-            actions.push(Box::new(move |tx| tx.perform(RemoveLayer::new(id))));
+            actions.push(Box::new(RemoveLayer::new(*id)));
         }
     }
     if has(&|i| matches!(i, Item::Linetype(_))) {
@@ -93,10 +105,7 @@ fn delete(tx: &mut Transaction, items: &[Item]) {
                 }
             }
         }
-        let scale = doc.linetype_scale();
-        actions.push(Box::new(move |tx| {
-            tx.perform(SetLinetypes::new(table, scale))
-        }));
+        actions.push(Box::new(SetLinetypes::new(table, doc.linetype_scale())));
     }
     if has(&|i| matches!(i, Item::MLeaderStyle(_))) {
         let kept = doc
@@ -106,15 +115,13 @@ fn delete(tx: &mut Transaction, items: &[Item]) {
             .cloned()
             .collect();
         let (current, next) = (doc.current_mleader_style(), doc.next_mleader_style_id());
-        actions.push(Box::new(move |tx| {
-            tx.perform(SetMLeaderStyles::new(
-                "Purge",
-                kept,
-                current,
-                next,
-                Vec::new(),
-            ))
-        }));
+        actions.push(Box::new(SetMLeaderStyles::new(
+            "Purge",
+            kept,
+            current,
+            next,
+            Vec::new(),
+        )));
     }
     if has(&|i| matches!(i, Item::TextStyle(_))) {
         let kept = doc
@@ -124,9 +131,7 @@ fn delete(tx: &mut Transaction, items: &[Item]) {
             .cloned()
             .collect();
         let (current, next) = (doc.current_text_style(), doc.next_text_style_id());
-        actions.push(Box::new(move |tx| {
-            tx.perform(SetTextStyles::new(kept, current, next))
-        }));
+        actions.push(Box::new(SetTextStyles::new(kept, current, next)));
     }
     let mut objects = Vec::new();
     for item in items {
@@ -135,11 +140,9 @@ fn delete(tx: &mut Transaction, items: &[Item]) {
         }
     }
     if !objects.is_empty() {
-        actions.push(Box::new(move |tx| tx.remove(objects)));
+        actions.push(Box::new(RemoveEntities::new(objects)));
     }
-    for action in actions {
-        action(tx);
-    }
+    actions
 }
 
 /// What was deleted, one line for each, then the total.
@@ -160,44 +163,100 @@ fn report(ed: &Editor, gone: &[Purgeable]) {
     ed.say(format!("{} purged.", plural(gone.len(), "item")));
 }
 
-/// -PURGE: delete everything unused, and what that frees in turn.
-pub fn purge_all(ed: &mut Editor) -> Result<(), Cancelled> {
-    if ed.read(|doc| purgeable(doc).is_empty())? {
+/// What a purge may do: which items (all when `None`), whether to go on to
+/// what deleting them frees, and whether to ask about each one first.
+#[derive(Clone, Default)]
+pub struct Purge {
+    pub only: Option<Vec<Item>>,
+    pub nested: bool,
+    pub confirm: bool,
+}
+
+/// Ask about one item: Yes, No, or All (yes to this and the rest).
+fn confirmed(ed: &Editor, p: &Purgeable, all: &mut bool) -> Result<bool, Cancelled> {
+    if *all {
+        return Ok(true);
+    }
+    let what = p.item.category().title();
+    let options = Options::<String>::new(format!("Purge {what} \"{}\"? [Yes/No/All]", p.name))
+        .keyword("Yes", "Y")
+        .keyword("No", "N")
+        .keyword("All", "A")
+        .default("Yes".to_owned());
+    Ok(match ed.ask_keyword(options)?.as_deref() {
+        Some("No") => false,
+        Some("All") => {
+            *all = true;
+            true
+        }
+        _ => true,
+    })
+}
+
+/// PURGE and -PURGE: delete what `purge` says. The questions come first and
+/// change nothing; then everything is deleted as one undo step. With nested
+/// items, each round is worked out on a copy of the drawing to find what
+/// deleting it frees.
+pub fn purge_run(ed: &mut Editor, purge: Purge) -> Result<(), Cancelled> {
+    let mut sim = ed.read(|doc| doc.clone())?;
+    let mut found = purgeable(&sim);
+    let mut seen: Vec<Item> = found.iter().map(|p| p.item.clone()).collect();
+    if let Some(only) = &purge.only {
+        found.retain(|p| only.contains(&p.item));
+    }
+    let (mut rounds, mut all) = (Vec::<Vec<Purgeable>>::new(), false);
+    while !found.is_empty() {
+        let mut accepted = Vec::new();
+        for p in found {
+            if !purge.confirm || confirmed(ed, &p, &mut all)? {
+                accepted.push(p);
+            }
+        }
+        if accepted.is_empty() {
+            break;
+        }
+        let items: Vec<Item> = accepted.iter().map(|p| p.item.clone()).collect();
+        for mut action in delete_actions(&sim, &items) {
+            action.apply(&mut sim);
+        }
+        rounds.push(accepted);
+        if !purge.nested || rounds.len() >= 16 {
+            break;
+        }
+        found = purgeable(&sim)
+            .into_iter()
+            .filter(|p| !seen.contains(&p.item))
+            .collect();
+        seen.extend(found.iter().map(|p| p.item.clone()));
+    }
+    if rounds.is_empty() {
         ed.say("Nothing to purge.");
         return Ok(());
     }
-    let gone = ed.transaction("Purge", |tx| {
-        let mut gone = Vec::new();
-        // Each pass can free what the one before still held; stop at a
-        // pass that finds nothing (or a safe number of them).
-        for _ in 0..16 {
-            let found = purgeable(tx.document());
-            if found.is_empty() {
-                break;
+    let replay = rounds.clone();
+    ed.transaction("Purge", move |tx| {
+        for round in &replay {
+            let items: Vec<Item> = round.iter().map(|p| p.item.clone()).collect();
+            for action in delete_actions(tx.document(), &items) {
+                tx.perform(action);
             }
-            let items: Vec<Item> = found.iter().map(|p| p.item.clone()).collect();
-            delete(tx, &items);
-            gone.extend(found);
         }
-        Ok(gone)
+        Ok(())
     })?;
-    report(ed, &gone);
+    report(ed, &rounds.concat());
     Ok(())
 }
 
-/// Delete just the items the dialog had ticked (those still purgeable).
-pub fn purge_items(ed: &mut Editor, wanted: Vec<Item>) -> Result<(), Cancelled> {
-    let gone = ed.transaction("Purge", move |tx| {
-        let found: Vec<Purgeable> = purgeable(tx.document())
-            .into_iter()
-            .filter(|p| wanted.contains(&p.item))
-            .collect();
-        let items: Vec<Item> = found.iter().map(|p| p.item.clone()).collect();
-        delete(tx, &items);
-        Ok(found)
-    })?;
-    report(ed, &gone);
-    Ok(())
+/// -PURGE: delete everything unused, and what that frees in turn.
+pub fn purge_all(ed: &mut Editor) -> Result<(), Cancelled> {
+    purge_run(
+        ed,
+        Purge {
+            only: None,
+            nested: true,
+            confirm: false,
+        },
+    )
 }
 
 #[cfg(test)]

@@ -59,7 +59,15 @@ fn purging_chosen_items_leaves_the_rest() {
     let mut state = AppState::new();
     state.add_entity(line(1.0, 1.0));
     state.start_command("PURGE", |ed| {
-        purge_items(ed, vec![Item::Linetype("DOT".to_owned())])
+        let only = Some(vec![Item::Linetype("DOT".to_owned())]);
+        purge_run(
+            ed,
+            Purge {
+                only,
+                nested: false,
+                confirm: false,
+            },
+        )
     });
     state.settle_command();
     let doc = state.session().document();
@@ -69,5 +77,57 @@ fn purging_chosen_items_leaves_the_rest() {
         doc.objects().len(),
         1,
         "the zero-length line was not ticked"
+    );
+}
+
+#[test]
+fn confirming_each_item_deletes_only_those_answered_yes() {
+    let mut state = AppState::new();
+    state.start_command("PURGE", |ed| {
+        let only = Some(vec![
+            Item::Linetype("DASHED".to_owned()),
+            Item::Linetype("DOT".to_owned()),
+            Item::Linetype("HIDDEN".to_owned()),
+        ]);
+        purge_run(
+            ed,
+            Purge {
+                only,
+                nested: false,
+                confirm: true,
+            },
+        )
+    });
+    state.settle_command();
+    for answer in ["Y", "N", "A"] {
+        state.cmd_submit(answer);
+        state.settle_command();
+    }
+    let doc = state.session().document();
+    assert!(doc.linetypes().named("DASHED").is_none());
+    assert!(doc.linetypes().named("DOT").is_some(), "answered No");
+    assert!(doc.linetypes().named("HIDDEN").is_none(), "All");
+    assert!(doc.linetypes().named("CENTER").is_some(), "not offered");
+}
+
+#[test]
+fn escape_while_confirming_changes_nothing() {
+    let mut state = AppState::new();
+    let before = state.session().document().linetypes().records().len();
+    state.start_command("PURGE", |ed| {
+        purge_run(
+            ed,
+            Purge {
+                only: None,
+                nested: true,
+                confirm: true,
+            },
+        )
+    });
+    state.settle_command();
+    state.cancel_command();
+    assert_eq!(
+        state.session().document().linetypes().records().len(),
+        before
     );
 }
