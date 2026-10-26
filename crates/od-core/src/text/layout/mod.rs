@@ -286,3 +286,5 @@ mod paragraph_tests;
 mod stroke_tests;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tracking_tests;

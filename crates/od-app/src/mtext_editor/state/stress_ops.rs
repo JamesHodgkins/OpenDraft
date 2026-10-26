@@ -109,6 +109,55 @@ pub(super) fn hostile_contents(rng: &mut Rng, pieces: usize) -> String {
     (0..pieces).map(|_| *rng.pick(FRAGMENTS)).collect()
 }
 
+/// Contents full of formatting groups, well formed, for selections to cut.
+pub(super) fn grouped_contents(rng: &mut Rng, pieces: usize) -> String {
+    fn group(rng: &mut Rng, depth: usize) -> String {
+        let controls = [
+            "\\T1.5;",
+            "\\T0.8;",
+            "\\W2;",
+            "\\W0.6;",
+            "\\H3;",
+            "\\C1;",
+            "\\L",
+            "\\O",
+            "\\K",
+            "\\Q10;",
+            "\\fArial|b1|i0;",
+        ];
+        let mut out = String::from("{");
+        for _ in 0..1 + rng.below(2) {
+            out.push_str(rng.pick(&controls));
+        }
+        for _ in 0..1 + rng.below(3) {
+            if depth < 3 && rng.chance(25) {
+                out.push_str(&group(rng, depth + 1));
+            } else {
+                out.push_str(rng.pick(&["ab", "cde", "xy z", "12", "w "]));
+            }
+        }
+        out.push('}');
+        out
+    }
+    (0..pieces)
+        .map(|_| {
+            if rng.chance(55) {
+                group(rng, 0)
+            } else {
+                (*rng.pick(&["plain ", "text", "  ", "\\P", "k"])).to_owned()
+            }
+        })
+        .collect()
+}
+
+/// What a session starts from.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) enum Start {
+    Empty,
+    Hostile,
+    Grouped,
+}
+
 #[derive(Clone, Debug)]
 pub(super) enum Op {
     Insert(String),

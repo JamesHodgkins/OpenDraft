@@ -275,3 +275,58 @@ fn the_highlight_keeps_the_last_letter_while_the_format_is_dragged() {
         assert_eq!(to, e.layout().carets.len() - 1, "tracking {t}");
     }
 }
+
+/// Select the bytes `from..to` of the contents.
+fn select_bytes(e: &mut MTextEditor, from: usize, to: usize) {
+    let at = |source| Pos {
+        source,
+        upstream: false,
+    };
+    e.anchor = at(from);
+    e.active = at(to);
+}
+
+#[test]
+fn spacing_and_width_on_a_selection_that_cuts_a_group_are_not_refused() {
+    let mut e = editor("hello world");
+    select_bytes(&mut e, 1, 5);
+    let tracking = CharEdit {
+        tracking: Some(2.0),
+        ..CharEdit::default()
+    };
+    assert!(e.set_format(tracking, 0.0));
+    assert_eq!(e.contents(), "h{\\T2;ello} world");
+    // From inside the spaced text to past its end: half a group.
+    select_bytes(&mut e, 8, 13);
+    let width = |v| CharEdit {
+        width: Some(v),
+        ..CharEdit::default()
+    };
+    assert!(
+        e.adjust_format(width(2.0), 1.0),
+        "{:?}",
+        e.notice.as_deref()
+    );
+    assert_eq!(e.notice.as_deref(), None);
+    assert_eq!(e.contents(), "h{\\T2;el{\\W2;lo}}{\\W2; w}orld");
+    // Dragging the value on goes on landing without nesting deeper.
+    let braces = e.contents().matches('{').count();
+    for step in 3..8 {
+        assert!(e.adjust_format(width(step as f64), 1.1));
+        assert_eq!(e.contents().matches('{').count(), braces);
+    }
+    assert!(e.undo());
+    assert_eq!(
+        e.contents(),
+        "h{\\T2;ello} world",
+        "one undo step for the drag"
+    );
+    // Typing over a selection that cuts a group keeps the groups balanced.
+    select_bytes(&mut e, 8, 13);
+    assert!(e.insert("X", 2.0));
+    let (open, close) = (
+        e.contents().matches('{').count(),
+        e.contents().matches('}').count(),
+    );
+    assert_eq!(open, close);
+}

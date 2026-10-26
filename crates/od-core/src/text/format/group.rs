@@ -57,6 +57,46 @@ fn one_group(parsed: &ParsedMText, range: &Range<usize>) -> Option<Range<usize>>
     None
 }
 
+/// The stretches of `range` an edit applies to when `range` cuts groups:
+/// what is left of it between the braces (and the controls that open the
+/// groups) in `cut`, leaving out stretches with no text in them.
+pub(super) fn pieces(
+    parsed: &ParsedMText,
+    range: &Range<usize>,
+    cut: &[Range<usize>],
+) -> Vec<Range<usize>> {
+    let mut out = Vec::new();
+    let mut from = range.start;
+    for gap in cut.iter().map(Some).chain([None]) {
+        let to = gap.map_or(range.end, |g| g.start);
+        if from < to && has_text(parsed, &(from..to)) {
+            out.push(from..to);
+        }
+        if let Some(g) = gap {
+            from = g.end;
+        }
+    }
+    out
+}
+
+/// Whether anything is shown in `range` (text can be cut part way through).
+fn has_text(parsed: &ParsedMText, range: &Range<usize>) -> bool {
+    parsed.nodes.iter().any(|n| {
+        n.source.start < range.end
+            && n.source.end > range.start
+            && matches!(
+                n.kind,
+                NodeKind::Text
+                    | NodeKind::Tab
+                    | NodeKind::EscapedChar
+                    | NodeKind::NonBreakingSpace
+                    | NodeKind::Unicode(_)
+                    | NodeKind::Stack
+                    | NodeKind::Field
+            )
+    })
+}
+
 /// Whether `edit` sets what `format` sets, so the control can go.
 pub(super) fn superseded(edit: &CharEdit, format: &Format) -> bool {
     match format {

@@ -188,7 +188,6 @@ fn edits_that_would_break_the_text_are_refused() {
     let refused = |src: &str, range: Range<usize>, edit: CharEdit| {
         apply_char_edit(src, range, &edit, FAMILY).unwrap_err()
     };
-    assert_eq!(refused("a{b}c", 2..5, u), EditRefusal::SplitsGroup);
     assert_eq!(refused("a\\H2.5;b", 0..4, u), EditRefusal::BadRange);
     assert_eq!(refused("a\\pxi;b", 0..7, u), EditRefusal::Protected);
     assert_eq!(refused("ab", 0..9, u), EditRefusal::BadRange);

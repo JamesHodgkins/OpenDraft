@@ -35,7 +35,20 @@ fn apply(value: Scalar, current: f64) -> f64 {
     }
 }
 
+/// How far one step of tracking moves each character on, as a share of the
+/// text height: AutoCAD adds `(tracking - 1)` of this after every character
+/// (letters and spaces alike, so wide and narrow ones are spaced evenly),
+/// where 1.0 is normal. Measured from AutoCAD's own output for Arial: 0.44 of
+/// the font size, which is 0.6145 of the cap height.
+pub const TRACKING_PER_HEIGHT: f64 = 0.6145;
+
 impl CharState {
+    /// The extra space after each character that tracking makes (negative
+    /// below 1.0), in drawing units.
+    pub fn tracking_extra(&self) -> f64 {
+        (self.tracking - 1.0) * TRACKING_PER_HEIGHT * self.height
+    }
+
     /// Plain text of `height`.
     pub fn plain(height: f64) -> Self {
         Self {

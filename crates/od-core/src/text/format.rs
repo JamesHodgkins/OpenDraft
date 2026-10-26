@@ -9,13 +9,13 @@
 use std::ops::Range;
 
 use super::charstate::CharState;
-use super::edit::{check, EditRefusal};
+use super::edit::{check, dangling, EditRefusal};
 use super::fontctl::{font_control, font_parts, FontFlags};
 use super::layout::TextColor;
 use super::limits::TextLimits;
 use super::parse::{parse_with, Format, NodeKind, ParsedMText};
 use super::stroke_outline::{MAX_WEIGHT, MIN_WEIGHT};
-use group::{inside_groups, superseded};
+use group::{inside_groups, pieces, superseded};
 
 /// A value shared by everything selected, or not.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -295,7 +295,48 @@ fn font_control_for(
 
 /// Apply `edit` to the text in `range`. `family` names the font that bold
 /// and italic are written for when the text has no font control of its own.
+/// A range that cuts groups takes the edit stretch by stretch, so each part
+/// keeps the group it is in.
 pub fn apply_char_edit(
+    contents: &str,
+    range: Range<usize>,
+    edit: &CharEdit,
+    family: &str,
+) -> Result<Formatted, EditRefusal> {
+    if edit.is_empty() || range.start >= range.end || !edit.valid() {
+        return apply_in_one_group(contents, range, edit, family);
+    }
+    let parsed = parse_with(contents, TextLimits::default()).map_err(|_| EditRefusal::TooLarge)?;
+    let peeled = inside_groups(&parsed, &range);
+    let cut = dangling(&parsed, &peeled);
+    if peeled.start >= peeled.end || cut.is_empty() {
+        return apply_in_one_group(contents, range, edit, family);
+    }
+    let stretches = pieces(&parsed, &peeled, &cut);
+    let Some(last) = stretches.last() else {
+        // Only braces and controls: nothing to format.
+        return Ok(Formatted {
+            contents: contents.to_owned(),
+            range,
+        });
+    };
+    let (mut text, mut grown, mut start) = (contents.to_owned(), 0isize, last.start);
+    // From the end, so the stretches before it stay where they are.
+    for stretch in stretches.iter().rev() {
+        let done = apply_in_one_group(&text, stretch.clone(), edit, family)?;
+        grown += done.contents.len() as isize - text.len() as isize;
+        start = done.range.start;
+        text = done.contents;
+    }
+    let end = (peeled.end as isize + grown).max(start as isize) as usize;
+    Ok(Formatted {
+        contents: text,
+        range: start..end,
+    })
+}
+
+/// [`apply_char_edit`] for a range that holds whole groups only.
+fn apply_in_one_group(
     contents: &str,
     range: Range<usize>,
     edit: &CharEdit,
@@ -392,6 +433,8 @@ pub fn apply_char_edit(
 
 mod group;
 
+#[cfg(test)]
+mod group_tests;
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
