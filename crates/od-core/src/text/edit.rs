@@ -121,7 +121,43 @@ pub(super) fn check(
     Ok(())
 }
 
+/// The `{`, the controls that open it, or the `}` of every group in `range`
+/// whose other end is outside it: what a selection that cuts a group would
+/// have to take with it. In order.
+pub(super) fn dangling(parsed: &ParsedMText, range: &Range<usize>) -> Vec<Range<usize>> {
+    let inside: Vec<&super::parse::Node> = parsed
+        .nodes
+        .iter()
+        .filter(|n| n.source.start >= range.start && n.source.end <= range.end)
+        .collect();
+    let mut open: Vec<usize> = Vec::new();
+    let mut out: Vec<Range<usize>> = Vec::new();
+    for (i, node) in inside.iter().enumerate() {
+        match node.kind {
+            NodeKind::Push => open.push(i),
+            NodeKind::Pop if open.pop().is_none() => out.push(node.source.clone()),
+            _ => {}
+        }
+    }
+    for i in open {
+        // The group's own controls follow its brace.
+        let mut end = inside[i].source.end;
+        for node in &inside[i + 1..] {
+            if node.source.start != end || !matches!(node.kind, NodeKind::Format(_)) {
+                break;
+            }
+            end = node.source.end;
+        }
+        out.push(inside[i].source.start..end);
+    }
+    out.sort_by_key(|r| r.start);
+    out
+}
+
 /// Replace `range` of `contents` with `inserted` (plain text, escaped here).
+/// When the range cuts a group (holds one brace but not its partner) the
+/// text goes and the brace and the group's controls stay, so the groups
+/// still balance.
 pub fn replace_text(
     contents: &str,
     range: Range<usize>,
@@ -129,15 +165,23 @@ pub fn replace_text(
 ) -> Result<Edited, EditRefusal> {
     let limits = TextLimits::default();
     let parsed = parse_with(contents, limits).map_err(|_| EditRefusal::TooLarge)?;
-    check(&parsed, contents, &range)?;
+    let kept = match check(&parsed, contents, &range) {
+        Ok(()) => Vec::new(),
+        Err(EditRefusal::SplitsGroup) => dangling(&parsed, &range),
+        Err(why) => return Err(why),
+    };
     let escaped = escape_for_contents(inserted);
-    let new_len = contents.len() - range.len() + escaped.len();
+    let kept_len: usize = kept.iter().map(|r| r.len()).sum();
+    let new_len = contents.len() - range.len() + kept_len + escaped.len();
     if new_len > limits.max_content_bytes {
         return Err(EditRefusal::TooLarge);
     }
     let mut out = String::with_capacity(new_len);
     out.push_str(&contents[..range.start]);
     out.push_str(&escaped);
+    for piece in &kept {
+        out.push_str(&contents[piece.clone()]);
+    }
     out.push_str(&contents[range.end..]);
     // The result must still be readable (node and paragraph limits).
     parse_with(&out, limits).map_err(|_| EditRefusal::TooLarge)?;
@@ -270,14 +314,13 @@ mod tests {
     fn a_group_must_be_removed_whole_or_not_at_all() {
         let src = "a{\\L b}c";
         assert_eq!(replace_text(src, 1..7, "").unwrap().contents, "ac");
-        assert_eq!(
-            replace_text(src, 0..2, "").unwrap_err(),
-            EditRefusal::SplitsGroup
-        );
-        assert_eq!(
-            replace_text(src, 5..8, "").unwrap_err(),
-            EditRefusal::SplitsGroup
-        );
+        // Cutting into it takes the text and leaves the braces, so it still
+        // balances.
+        assert_eq!(replace_text(src, 0..2, "").unwrap().contents, "{\\L b}c");
+        assert_eq!(replace_text(src, 5..8, "").unwrap().contents, "a{\\L }");
+        let typed = replace_text(src, 5..8, "xy").unwrap();
+        assert_eq!(typed.contents, "a{\\L xy}");
+        assert_eq!(typed.caret, 7);
         assert!(
             replace_text(src, 4..6, "").is_ok(),
             "inside the group is fine"

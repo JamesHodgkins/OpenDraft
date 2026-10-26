@@ -58,7 +58,11 @@ pub fn split_stack(payload: &str) -> StackParts {
 pub fn toggle_stack(contents: &str, range: Range<usize>) -> Result<Formatted, EditRefusal> {
     let limits = TextLimits::default();
     let parsed = parse_with(contents, limits).map_err(|_| EditRefusal::TooLarge)?;
-    check(&parsed, contents, &range)?;
+    // Text with half a group in it cannot be stacked, and says so.
+    check(&parsed, contents, &range).map_err(|why| match why {
+        EditRefusal::SplitsGroup => EditRefusal::CannotStack,
+        other => other,
+    })?;
     if range.start >= range.end {
         return Err(EditRefusal::NoDivider);
     }
