@@ -9,6 +9,13 @@ use super::OpenDraftApp;
 
 const WIDTH: f32 = 400.0;
 
+/// A row AutoCAD has that OpenDraft cannot act on yet: shown, switched off.
+fn unavailable(ui: &mut egui::Ui, label: &str) {
+    let mut off = false;
+    ui.add_enabled(false, egui::Checkbox::new(&mut off, label))
+        .on_disabled_hover_text("OpenDraft does not have this yet.");
+}
+
 impl OpenDraftApp {
     pub(super) fn overkill_window(&mut self, ctx: &egui::Context) {
         let wanted = self
@@ -52,10 +59,16 @@ impl OpenDraftApp {
                         .num_columns(2)
                         .show(ui, |ui| {
                             ui.checkbox(&mut ignore.color, "Color");
+                            unavailable(ui, "Thickness");
+                            ui.end_row();
                             ui.checkbox(&mut ignore.layer, "Layer");
+                            unavailable(ui, "Transparency");
                             ui.end_row();
                             ui.checkbox(&mut ignore.linetype, "Linetype");
+                            unavailable(ui, "Plot style");
+                            ui.end_row();
                             ui.checkbox(&mut ignore.linetype_scale, "Linetype scale");
+                            unavailable(ui, "Material");
                             ui.end_row();
                             ui.checkbox(&mut ignore.lineweight, "Lineweight");
                             ui.end_row();
@@ -67,6 +80,10 @@ impl OpenDraftApp {
                         &mut draft.optimize_polylines,
                         "Optimize segments within polylines",
                     );
+                    ui.indent("overkill_polyline", |ui| {
+                        unavailable(ui, "Ignore polyline segment widths");
+                        unavailable(ui, "Do not break polylines");
+                    });
                     ui.checkbox(
                         &mut draft.overlapping,
                         "Combine co-linear objects that partially overlap",
@@ -74,6 +91,10 @@ impl OpenDraftApp {
                     ui.checkbox(
                         &mut draft.end_to_end,
                         "Combine co-linear objects when aligned end to end",
+                    );
+                    ui.checkbox(
+                        &mut draft.maintain_associative,
+                        "Maintain associative objects",
                     );
                 });
                 ui.add_space(10.0);
