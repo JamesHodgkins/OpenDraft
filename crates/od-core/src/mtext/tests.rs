@@ -357,3 +357,16 @@ fn a_set_box_height_is_the_frame_and_the_grips_resize_it() {
         "the bottom edge goes where it is dragged"
     );
 }
+
+#[test]
+fn only_the_text_is_picked_not_the_empty_rest_of_a_bigger_box() {
+    let mut t = text("one");
+    t.reference_width = 20.0;
+    t.reference_height = 30.0;
+    let [a, b, c, _] = t.text_frame();
+    assert!(near(a, p(10.0, 20.0)), "the same top left corner");
+    assert!(b.x < 30.0 && c.y > -10.0, "smaller than the box");
+    assert!(t.text_contains(p(10.5, 19.0)));
+    assert!(!t.text_contains(p(25.0, -5.0)), "empty space in the box");
+    assert!(t.contains(p(25.0, -5.0)), "though it is inside the box");
+}

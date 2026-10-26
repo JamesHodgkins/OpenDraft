@@ -82,6 +82,31 @@ impl MText {
         ]
     }
 
+    /// The corners of the area the text itself fills, top left first: what a
+    /// click picks. The rest of a taller or wider box is empty and is left to
+    /// whatever is drawn in it.
+    pub fn text_frame(&self) -> [Point; 4] {
+        let layout = self.layout(&TextStyle::standard());
+        let (width, height) = (layout.actual_width, layout.actual_height);
+        let (left, top) = self.offsets(layout.frame_width, layout.frame_height);
+        let (right, bottom) = (left + width, top - height);
+        [
+            self.at(left, top),
+            self.at(right, top),
+            self.at(right, bottom),
+            self.at(left, bottom),
+        ]
+    }
+
+    /// Whether `p` lies on the area the text fills (its edges count).
+    pub fn text_contains(&self, p: Point) -> bool {
+        let [a, b, c, _] = self.text_frame();
+        let (ux, uy) = self.unit_direction();
+        let along = |q: Point| q.x * ux + q.y * uy;
+        let up = |q: Point| -q.x * uy + q.y * ux;
+        (along(a)..=along(b)).contains(&along(p)) && (up(c)..=up(a)).contains(&up(p))
+    }
+
     /// Whether `p` lies inside the frame (its edges count).
     pub fn contains(&self, p: Point) -> bool {
         let (ux, uy) = self.unit_direction();

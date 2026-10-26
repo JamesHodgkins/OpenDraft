@@ -74,10 +74,11 @@ pub fn distance_to_entity(entity: &Entity, p: Point) -> f64 {
             .iter()
             .map(|piece| distance_to_entity(piece, p))
             .fold(f64::INFINITY, f64::min),
-        // Anywhere in the box stands for the glyphs until there are any.
-        Entity::MText(m) if m.contains(p) => 0.0,
+        // The area the text fills stands for the glyphs; empty space in a
+        // bigger box is not picked, so what is drawn there still can be.
+        Entity::MText(m) if m.text_contains(p) => 0.0,
         Entity::MText(m) => {
-            let corners = m.frame();
+            let corners = m.text_frame();
             (0..4)
                 .map(|i| distance_to_segment(p, corners[i], corners[(i + 1) % 4]))
                 .fold(f64::INFINITY, f64::min)
