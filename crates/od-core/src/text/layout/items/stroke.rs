@@ -88,7 +88,7 @@ impl Builder<'_> {
                 .and_then(|i| Some((i, look.font.glyph(i)?)))
             {
                 Some((slot, glyph)) => {
-                    cluster.advance = glyph.advance * across * s.tracking;
+                    cluster.advance = (glyph.advance * across + s.tracking_extra()).max(0.0);
                     if !glyph.strokes.is_empty() {
                         cluster.glyphs.push(ShapedGlyph {
                             id: slot,
@@ -121,11 +121,11 @@ impl Builder<'_> {
         cluster.scale_y = scale;
         cluster.weight = 0;
         cluster.slant = 0.0;
-        cluster.advance = f64::from(
+        let plain = f64::from(
             hb.glyph_hor_advance(rustybuzz::ttf_parser::GlyphId(id))
                 .unwrap_or(0),
-        ) * across
-            * s.tracking;
+        ) * across;
+        cluster.advance = (plain + s.tracking_extra()).max(0.0);
         if !cluster.space {
             cluster.glyphs.push(ShapedGlyph {
                 id,
@@ -167,7 +167,7 @@ impl Builder<'_> {
                     dy: 0.0,
                 });
             }
-            pen += glyph.advance * across * s.tracking;
+            pen += (glyph.advance * across + s.tracking_extra() * size).max(0.0);
         }
         (glyphs, pen)
     }
