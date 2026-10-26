@@ -7,7 +7,7 @@ use std::panic::{catch_unwind, AssertUnwindSafe};
 use od_core::text::{layout_text, parse};
 use od_core::TextStyle;
 
-use super::stress_ops::{apply, hostile_contents, random_op, Op, Rng};
+use super::stress_ops::{apply, grouped_contents, hostile_contents, random_op, Op, Rng, Start};
 use super::tests::editor_wrapped;
 use super::*;
 
@@ -79,12 +79,12 @@ pub(super) fn check(e: &MTextEditor) -> Result<(), String> {
 }
 
 /// One session: `ops` random operations on contents made from `seed`.
-pub(super) fn session(seed: u64, ops: usize, hostile: bool) -> Result<(), String> {
+pub(super) fn session(seed: u64, ops: usize, kind: Start) -> Result<(), String> {
     let mut rng = Rng::new(seed);
-    let start = if hostile {
-        hostile_contents(&mut rng, rng_pieces(seed))
-    } else {
-        String::new()
+    let start = match kind {
+        Start::Hostile => hostile_contents(&mut rng, rng_pieces(seed)),
+        Start::Grouped => grouped_contents(&mut rng, rng_pieces(seed)),
+        Start::Empty => String::new(),
     };
     let width = if rng.chance(60) {
         5.0 + rng.unit() * 60.0
@@ -101,9 +101,20 @@ pub(super) fn session(seed: u64, ops: usize, hostile: bool) -> Result<(), String
         let op = random_op(&mut rng);
         now += rng.unit() * 0.9;
         trace.push(op.clone());
+        let (pre_range, pre_contents) = (e.selected_range(), e.contents().to_owned());
         let ran = catch_unwind(AssertUnwindSafe(|| {
             apply(&mut e, &op, now);
             check(&e)?;
+            // A selection that holds half a group is formatted and edited
+            // part by part; it must never be refused for that.
+            if e.notice
+                .as_deref()
+                .is_some_and(|n| n.contains("splits a formatting group"))
+            {
+                return Err(format!(
+                    "refused as splitting a group: selection {pre_range:?} of {pre_contents:?}"
+                ));
+            }
             if probe {
                 // One step back and forth must land where it started.
                 let here = (e.contents().to_owned(), e.text().reference_width);
@@ -216,17 +227,17 @@ pub(super) fn env(name: &str, default: u64) -> u64 {
         .unwrap_or(default)
 }
 
-pub(super) fn run_many(seeds: u64, ops: usize, hostile: bool) {
+pub(super) fn run_many(seeds: u64, ops: usize, kind: Start) {
     if let Ok(one) = std::env::var("STRESS_SEED") {
         let seed = one.parse().expect("STRESS_SEED is a number");
-        if let Err(why) = session(seed, ops, hostile) {
+        if let Err(why) = session(seed, ops, kind) {
             panic!("seed {seed}: {why}");
         }
         return;
     }
     let mut failures = Vec::new();
     for seed in 0..seeds {
-        if let Err(why) = session(seed, ops, hostile) {
+        if let Err(why) = session(seed, ops, kind) {
             failures.push(format!("seed {seed}: {why}"));
             if failures.len() >= 3 {
                 break;

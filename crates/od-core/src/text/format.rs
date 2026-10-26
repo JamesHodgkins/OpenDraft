@@ -434,6 +434,8 @@ fn apply_in_one_group(
 mod group;
 
 #[cfg(test)]
+mod group_tests;
+#[cfg(test)]
 mod tests;
 #[cfg(test)]
 mod weight_tests;

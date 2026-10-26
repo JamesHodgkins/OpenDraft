@@ -17,7 +17,7 @@ use std::time::Instant;
 use od_core::text::{plain_text_of, CharEdit, ListKind};
 use od_core::{MText, Point, TextStyleId};
 
-use super::stress_ops::{hostile_contents, random_op, Op, Rng};
+use super::stress_ops::{hostile_contents, random_op, Op, Rng, Start};
 use super::stress_session::{check, env, run_many};
 use super::tests::editor_wrapped;
 use super::*;
@@ -27,28 +27,38 @@ fn stress_random_sessions_from_empty_text_keep_every_invariant() {
     run_many(
         env("STRESS_SEEDS", 8),
         env("STRESS_OPS", 100) as usize,
-        false,
+        Start::Empty,
+    );
+}
+
+#[test]
+fn stress_sessions_on_text_full_of_groups_never_refuse_a_cut_group() {
+    run_many(
+        env("STRESS_SEEDS", 12),
+        env("STRESS_OPS", 120) as usize,
+        Start::Grouped,
     );
 }
 
 #[test]
 fn stress_random_sessions_from_hostile_contents_keep_every_invariant() {
-    run_many(env("STRESS_SEEDS", 8), env("STRESS_OPS", 80) as usize, true);
+    run_many(
+        env("STRESS_SEEDS", 8),
+        env("STRESS_OPS", 80) as usize,
+        Start::Hostile,
+    );
 }
 
 #[test]
 #[ignore = "long: run with --ignored"]
 fn stress_long_random_sessions() {
-    run_many(
-        env("STRESS_SEEDS", 400),
-        env("STRESS_OPS", 1500) as usize,
-        false,
-    );
-    run_many(
-        env("STRESS_SEEDS", 400),
-        env("STRESS_OPS", 1500) as usize,
-        true,
-    );
+    for kind in [Start::Empty, Start::Hostile, Start::Grouped] {
+        run_many(
+            env("STRESS_SEEDS", 400),
+            env("STRESS_OPS", 1500) as usize,
+            kind,
+        );
+    }
 }
 
 /// Plain typing against a model: what the editor shows is what was typed.
