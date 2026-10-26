@@ -49,6 +49,18 @@ impl MTextEditor {
         true
     }
 
+    /// The box's height: as dragged, or as tall as the text if that is more.
+    pub fn box_height(&self) -> f64 {
+        self.box_height.max(self.layout.frame_height)
+    }
+
+    /// Set the height the box keeps (the grips' drag).
+    pub fn set_box_height(&mut self, height: f64) {
+        if height.is_finite() {
+            self.box_height = height.max(0.0);
+        }
+    }
+
     /// Enter in a list item: the next item, or the end of the list from an
     /// empty one. `None` when the caret is not in a list, so the break is an
     /// ordinary one.

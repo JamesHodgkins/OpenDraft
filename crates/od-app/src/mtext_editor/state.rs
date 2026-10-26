@@ -63,6 +63,9 @@ pub struct MTextEditor {
     /// When the caret last moved or text last changed (seconds), so it shows
     /// solid for a moment after.
     pub active_since: f64,
+    /// The height the box was dragged to; the box is never shorter than its
+    /// text. Not part of the text, so it is not in the history.
+    box_height: f64,
 }
 
 impl MTextEditor {
@@ -87,6 +90,7 @@ impl MTextEditor {
             pending: CharEdit::default(),
             open_group: None,
             active_since: 0.0,
+            box_height: 0.0,
         }
     }
 

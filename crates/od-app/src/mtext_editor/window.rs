@@ -19,13 +19,16 @@ const BLINK_SECONDS: f64 = 0.5;
 const PADDING: f64 = 0.3;
 
 /// The corners of the padded box round the text, on screen.
-fn box_corners(text: &MText, layout: &TextLayout, camera: &Camera, canvas: Rect) -> Vec<Pos2> {
+fn box_corners(
+    text: &MText,
+    layout: &TextLayout,
+    height: f64,
+    camera: &Camera,
+    canvas: Rect,
+) -> Vec<Pos2> {
     let pad = PADDING * text.nominal_height;
     // A word wider than the wrapping width runs past it, and stays editable.
-    let (w, h) = (
-        layout.frame_width.max(layout.actual_width),
-        layout.frame_height,
-    );
+    let (w, h) = (layout.frame_width.max(layout.actual_width), height);
     [
         (-pad, pad),
         (w + pad, pad),
@@ -52,9 +55,17 @@ pub fn show(
     let now = ctx.input(|i| i.time);
 
     // Keyboard and pointer first, so what is painted is the new state.
+    let pad = PADDING * editor.text().nominal_height;
+    let on_grip = super::box_handles::interact(&ctx, editor, camera, canvas, pad, now);
     let bounds = {
         let (text, layout) = (editor.text(), editor.layout());
-        Rect::from_points(&box_corners(text, layout, camera, canvas))
+        Rect::from_points(&box_corners(
+            text,
+            layout,
+            editor.box_height(),
+            camera,
+            canvas,
+        ))
     };
     let id = egui::Id::new("mtext_editor");
     let response = ui.interact(bounds, id, Sense::click_and_drag());
@@ -77,10 +88,11 @@ pub fn show(
     });
     let pressed = ctx.input(|i| i.pointer.primary_pressed());
     let shift = ctx.input(|i| i.modifiers.shift);
-    if response.hovered() {
+    if response.hovered() && !on_grip {
         ctx.set_cursor_icon(egui::CursorIcon::Text);
     }
-    if let Some(pos) = ctx.pointer_interact_pos() {
+    let pointer = ctx.pointer_interact_pos().filter(|_| !on_grip);
+    if let Some(pos) = pointer {
         let (x, y) = {
             let (text, layout) = (editor.text(), editor.layout());
             text.layout_point(layout, camera.screen_to_world(pos, canvas))
@@ -113,7 +125,6 @@ pub fn show(
     // The ruler works on the paragraph before the draft is painted.
     let ruler = {
         let (text, layout) = (editor.text().clone(), editor.layout().clone());
-        let pad = PADDING * text.nominal_height;
         let to = |x: f64, y: f64| camera.world_to_screen(text.world_point(&layout, x, y), canvas);
         super::ruler::show(
             ui,
@@ -136,10 +147,11 @@ pub fn show(
     let bg = style.background.lerp_to_gamma(fg, 0.1);
     let painter = ui.painter_at(canvas);
     painter.add(Shape::convex_polygon(
-        box_corners(&text, &layout, camera, canvas),
+        box_corners(&text, &layout, editor.box_height(), camera, canvas),
         bg,
         Stroke::new(1.0_f32, style.selected),
     ));
+    super::box_handles::paint(&painter, editor, camera, canvas, pad, style.selected);
     let (from, to) = editor.selection();
     let highlight = style.selected.gamma_multiply(0.45);
     for r in layout.selection_rects(from, to) {
@@ -202,6 +214,7 @@ pub fn show(
     if pressed {
         if let Some(pos) = ctx.pointer_interact_pos() {
             if canvas.contains(pos)
+                && !on_grip
                 && !bounds.contains(pos)
                 && !tools.contains(pos)
                 && !ruler.contains(pos)

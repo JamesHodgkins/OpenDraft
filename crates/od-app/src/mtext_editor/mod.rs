@@ -3,6 +3,7 @@
 //! operations and paints the result over the drawing.
 
 mod app_state;
+mod box_handles;
 mod history;
 mod input;
 mod paragraph_dialog;
