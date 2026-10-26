@@ -1,6 +1,6 @@
 use std::sync::mpsc::{channel, Receiver, Sender};
 
-use od_core::{Document, EntityId, MText, Point};
+use od_core::{overkill, Document, EntityId, MText, Point};
 
 use crate::prompt::{
     Answer, Cancelled, Hint, NumberOrPoint, Options, Picked, Prompt, Reply, Wants,
@@ -348,6 +348,21 @@ impl Editor {
         match self.ask(prompt)? {
             Reply::MText(text) => Ok(Some(*text)),
             Reply::Enter => Ok(None),
+            _ => Err(Cancelled),
+        }
+    }
+
+    /// Open the OVERKILL dialog on `settings` and wait for OK. Cancel is
+    /// `Err(Cancelled)`.
+    pub fn ask_overkill(
+        &self,
+        settings: overkill::Settings,
+    ) -> Result<overkill::Settings, Cancelled> {
+        let options = Options::<()>::new("Object Comparison Settings");
+        let mut prompt = Prompt::new(Wants::OverkillDialog, &options, None);
+        prompt.overkill = Some(settings);
+        match self.ask(prompt)? {
+            Reply::Overkill(settings) => Ok(settings),
             _ => Err(Cancelled),
         }
     }

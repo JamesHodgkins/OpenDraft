@@ -105,7 +105,11 @@ pub(crate) fn typed_reply_with_mode(
             _ => None,
         },
         Wants::Text => Some(Ok(Reply::Text(text.to_owned()))),
-        Wants::Keyword | Wants::Selection | Wants::Object | Wants::MTextEditor => None,
+        Wants::Keyword
+        | Wants::Selection
+        | Wants::Object
+        | Wants::MTextEditor
+        | Wants::OverkillDialog => None,
     };
     answer.or_else(|| keyword_reply(ask, text))
 }

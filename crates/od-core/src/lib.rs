@@ -39,6 +39,7 @@ pub mod mtext;
 mod offset;
 pub mod ortho;
 pub mod outline;
+pub mod overkill;
 pub mod pedit;
 pub mod plot;
 mod plot_hatch;
