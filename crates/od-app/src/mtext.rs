@@ -48,6 +48,13 @@ fn box_outline(first: Point, at: Point, rotation: f64, width: Option<f64>) -> En
     }
 }
 
+/// How tall the dragged box is, measured along the text's up direction.
+fn drag_height(first: Point, second: Point, rotation: f64) -> f64 {
+    let (sin, cos) = rotation.sin_cos();
+    let (dx, dy) = (second.x - first.x, second.y - first.y);
+    (-dx * sin + dy * cos).abs()
+}
+
 /// MTEXT: the first corner, the opposite corner (with Height, Justify,
 /// Rotation and Width options), then the text. Enter on an empty line adds
 /// nothing.
@@ -57,13 +64,12 @@ pub fn draw_mtext(ed: &mut Editor) -> Result<(), Cancelled> {
     let (mut rotation, mut width) = (0.0, None);
     let second = loop {
         let options = PointOptions::new(format!("Specify opposite corner or (height {height})"))
-            .base(first)
             .keyword("Height", "H")
             .keyword("Justify", "J")
             .keyword("Rotation", "R")
             .keyword("Width", "W")
             .ghost(move |at| vec![box_outline(first, at, rotation, width)]);
-        match ed.ask_point(options)? {
+        match ed.ask_corner(first, options)? {
             Answer::Value(at) => break at,
             Answer::Keyword(k) => match k.as_str() {
                 "Height" => {
@@ -107,6 +113,7 @@ pub fn draw_mtext(ed: &mut Editor) -> Result<(), Cancelled> {
     text.direction = Point::new(rotation.cos(), rotation.sin());
     text.attachment = attachment;
     text.reference_width = width.unwrap_or(drag_width);
+    text.reference_height = drag_height(first, second, rotation);
     match ed.edit_mtext(text)? {
         Some(text) if !text.contents.trim().is_empty() => {
             add(ed, Entity::MText(Box::new(text)), "Multiline Text")
@@ -225,14 +232,32 @@ mod tests {
         assert_eq!(opened.contents, "", "a new text starts empty");
         assert_eq!((opened.insertion.x, opened.insertion.y), (10.0, 50.0));
         assert_eq!(opened.reference_width, 40.0);
+        assert_eq!(opened.reference_height, 30.0, "the dragged box is kept");
         type_and_close(&mut state, "Hello\nworld", Outcome::Accept);
         assert!(!state.command_running() && !state.mtext_editing());
         let found = texts(&state);
         assert_eq!(found.len(), 1);
         assert_eq!(found[0].contents, "Hello\\Pworld");
         assert_eq!(found[0].nominal_height, 2.5);
+        assert_eq!(found[0].reference_height, 30.0);
         state.undo();
         assert!(texts(&state).is_empty(), "one undo step");
+    }
+
+    #[test]
+    fn the_opposite_corner_is_a_corner_prompt_with_no_rubber_band() {
+        let _turn = take_turn_for_tests();
+        let mut state = AppState::new();
+        start(&mut state, draw_mtext);
+        submit(&mut state, &["10,50"]);
+        let ask = state.waiting().expect("asks for the opposite corner");
+        assert_eq!(ask.base, Some(Point::new(10.0, 50.0)));
+        assert!(!ask.rubber_band, "no line to the pointer");
+        assert_eq!(
+            ask.dynamic_dimensions,
+            od_commands::DynamicDimensions::Cartesian
+        );
+        assert!(ask.ghost.is_some(), "the box outline follows the pointer");
     }
 
     #[test]

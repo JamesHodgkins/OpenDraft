@@ -1031,6 +1031,7 @@ mod tests {
         let rich = MText {
             direction: Point::new(0.0, 2.0),
             reference_width: 40.0,
+            reference_height: 30.0,
             attachment: MTextAttachment::MiddleRight,
             flow: MTextFlow::ByStyle,
             style: notes,

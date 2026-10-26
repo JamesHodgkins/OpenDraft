@@ -82,6 +82,31 @@ impl MText {
         ]
     }
 
+    /// The corners of the area the text itself fills, top left first: what a
+    /// click picks. The rest of a taller or wider box is empty and is left to
+    /// whatever is drawn in it.
+    pub fn text_frame(&self) -> [Point; 4] {
+        let layout = self.layout(&TextStyle::standard());
+        let (width, height) = (layout.actual_width, layout.actual_height);
+        let (left, top) = self.offsets(layout.frame_width, layout.frame_height);
+        let (right, bottom) = (left + width, top - height);
+        [
+            self.at(left, top),
+            self.at(right, top),
+            self.at(right, bottom),
+            self.at(left, bottom),
+        ]
+    }
+
+    /// Whether `p` lies on the area the text fills (its edges count).
+    pub fn text_contains(&self, p: Point) -> bool {
+        let [a, b, c, _] = self.text_frame();
+        let (ux, uy) = self.unit_direction();
+        let along = |q: Point| q.x * ux + q.y * uy;
+        let up = |q: Point| -q.x * uy + q.y * ux;
+        (along(a)..=along(b)).contains(&along(p)) && (up(c)..=up(a)).contains(&up(p))
+    }
+
     /// Whether `p` lies inside the frame (its edges count).
     pub fn contains(&self, p: Point) -> bool {
         let (ux, uy) = self.unit_direction();
@@ -120,16 +145,20 @@ impl MText {
         if self.reference_width > 0.0 {
             let (width, height) = self.extent();
             let (left, top) = self.offsets(width, height);
-            grips.push(Grip {
-                at: self.at(left + width, top - height / 2.0),
+            let stretch = |across: f64, up: f64| Grip {
+                at: self.at(across, up),
                 kind: GripKind::Stretch,
-            });
+            };
+            grips.push(stretch(left + width, top - height / 2.0));
+            grips.push(stretch(left + width / 2.0, top - height));
+            grips.push(stretch(left + width, top - height));
         }
         grips
     }
 
-    /// The text with grip `index` dragged to `to`. The width grip moves the
-    /// right edge and keeps the left one where it is.
+    /// The text with grip `index` dragged to `to`. The right grip sets the
+    /// width, the bottom one the box height and the corner both, each moving
+    /// its edge and keeping the opposite one where it is.
     pub fn with_grip_moved(&self, index: usize, to: Point) -> Option<MText> {
         let grips = self.grips();
         let from = grips.get(index)?.at;
@@ -141,17 +170,35 @@ impl MText {
             return Some(self.translated(dx, dy));
         }
         let (ux, uy) = self.unit_direction();
-        let (old_width, height) = self.extent();
-        let width = old_width + dx * ux + dy * uy;
-        if !(width.is_finite() && width > 1e-9) {
+        let (along, up) = (dx * ux + dy * uy, -dx * uy + dy * ux);
+        let (old_width, old_height) = self.extent();
+        let width = if index == 2 {
+            old_width
+        } else {
+            old_width + along
+        };
+        let height = if index == 1 {
+            old_height
+        } else {
+            old_height - up
+        };
+        if !(width.is_finite() && width > 1e-9 && height.is_finite()) {
             return None;
         }
-        let (old_left, _) = self.offsets(old_width, height);
-        let (new_left, _) = self.offsets(width, height);
-        let shift = old_left - new_left;
         let mut moved = self.clone();
         moved.reference_width = width;
-        moved.insertion = Point::new(self.insertion.x + shift * ux, self.insertion.y + shift * uy);
+        if index != 1 {
+            moved.reference_height = height.max(0.0);
+        }
+        // The layout decides how tall the box really is (never under its text).
+        let new_height = moved.extent().1;
+        let (old_left, old_top) = self.offsets(old_width, old_height);
+        let (new_left, new_top) = self.offsets(width, new_height);
+        let (shift, rise) = (old_left - new_left, old_top - new_top);
+        moved.insertion = Point::new(
+            self.insertion.x + shift * ux - rise * uy,
+            self.insertion.y + shift * uy + rise * ux,
+        );
         Some(moved)
     }
 }

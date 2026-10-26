@@ -85,7 +85,9 @@ impl View {
                 self.camera.world_to_screen(base, rect),
                 self.camera.world_to_screen(to, rect),
             );
-            painter.line_segment([from, to], Stroke::new(1.0_f32, style.snap));
+            if prompt.rubber_band {
+                painter.line_segment([from, to], Stroke::new(1.0_f32, style.snap));
+            }
             painter.circle_filled(from, 3.0, style.snap);
         }
     }

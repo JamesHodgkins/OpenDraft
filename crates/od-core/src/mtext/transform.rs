@@ -30,6 +30,7 @@ impl MText {
             insertion: self.insertion.scaled(base, factor),
             nominal_height: self.nominal_height * factor,
             reference_width: self.reference_width * factor,
+            reference_height: self.reference_height * factor,
             contents: scaled_contents(&self.contents, factor),
             columns: MTextColumns {
                 width: columns.width * factor,

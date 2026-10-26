@@ -274,6 +274,9 @@ pub(super) struct MTextDto {
     /// Where lines wrap; absent for no wrapping.
     #[serde(default, skip_serializing_if = "is_zero")]
     width: f64,
+    /// How tall the box is when taller than its text; absent for as tall as it.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    box_height: f64,
     /// DXF code 1 to 9.
     #[serde(default = "one_code")]
     attachment: u8,
@@ -324,6 +327,7 @@ impl MTextDto {
             direction: point(m.direction),
             height: m.nominal_height,
             width: m.reference_width,
+            box_height: m.reference_height,
             attachment: m.attachment.code(),
             flow: m.flow.code(),
             style: m.style.0,
@@ -385,6 +389,7 @@ impl MTextDto {
             direction: from_point(self.direction)?,
             nominal_height: self.height,
             reference_width: self.width,
+            reference_height: self.box_height,
             attachment,
             flow,
             style: TextStyleId(self.style),

@@ -2,7 +2,7 @@
 
 use od_core::text::ParagraphEdit;
 
-use super::tests::{caret_at, editor};
+use super::tests::{caret_at, editor, editor_wrapped};
 
 fn left(v: f64) -> ParagraphEdit {
     ParagraphEdit {
@@ -146,4 +146,26 @@ fn a_list_is_made_toggled_and_undone_in_one_step_each() {
     assert!(e.undo());
     assert_eq!(e.contents(), r"one\Ptwo");
     assert!(!e.set_list(None, 2.0), "already not a list");
+}
+
+#[test]
+fn the_box_keeps_the_height_it_was_dragged_to_as_the_text_changes() {
+    let mut e = editor_wrapped("one", 40.0);
+    let line = e.box_height();
+    assert!(line > 0.0);
+    e.set_box_height(line * 4.0);
+    assert_eq!(e.box_height(), line * 4.0);
+    // Typing and deleting leave it alone.
+    e.insert("x", 0.0);
+    assert_eq!(e.box_height(), line * 4.0);
+    e.select_all();
+    e.insert("", 1.0);
+    e.set_box_height(f64::NAN);
+    assert_eq!(e.box_height(), line * 4.0);
+    // It cannot be dragged shorter than the text.
+    e.set_box_height(0.0);
+    assert!(e.box_height() > 0.0);
+    e.set_box_height(line * 3.0);
+    assert_eq!(e.text().reference_height, line * 3.0, "kept in the text");
+    assert!(e.is_changed(), "so accepting saves it");
 }

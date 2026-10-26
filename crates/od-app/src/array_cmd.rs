@@ -257,7 +257,7 @@ fn change_grid(ed: &Editor, grid: Grid, option: &str) -> Result<Grid, Cancelled>
             match ed.ask_distance(options)? {
                 Answer::Keyword(_) => {
                     let a = ed.get_point("Specify first corner")?;
-                    let b = ed.get_point(PointOptions::new("Specify other corner").base(a))?;
+                    let b = ed.get_corner(a, "Specify other corner")?;
                     (g.column_spacing, g.row_spacing) = (b.x - a.x, b.y - a.y);
                 }
                 Answer::Value(d) => {

@@ -186,6 +186,10 @@ pub struct MText {
     pub nominal_height: f64,
     /// Where lines wrap; 0 turns wrapping off.
     pub reference_width: f64,
+    /// How tall the box is when it is taller than its text (the editor's
+    /// grip drag, or a box dragged out with two corners); 0 for as tall as
+    /// the text. The text is the same box in the drawing and in the editor.
+    pub reference_height: f64,
     pub attachment: MTextAttachment,
     pub flow: MTextFlow,
     pub style: TextStyleId,
@@ -231,6 +235,7 @@ impl MText {
             direction: Point::new(1.0, 0.0),
             nominal_height: height,
             reference_width: 0.0,
+            reference_height: 0.0,
             attachment: MTextAttachment::TopLeft,
             flow: MTextFlow::LeftToRight,
             style,
@@ -264,6 +269,10 @@ impl MText {
         finite("the width", self.reference_width)?;
         if self.reference_width < 0.0 {
             return Err(MTextError::OutOfRange("the width"));
+        }
+        finite("the box height", self.reference_height)?;
+        if self.reference_height < 0.0 {
+            return Err(MTextError::OutOfRange("the box height"));
         }
         finite("the line spacing", self.line_spacing.factor)?;
         if !(0.25..=4.0).contains(&self.line_spacing.factor) {

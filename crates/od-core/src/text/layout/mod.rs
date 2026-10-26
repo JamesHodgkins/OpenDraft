@@ -272,7 +272,7 @@ pub fn layout_text(text: &MText, style: &TextStyle) -> TextLayout {
         Some(width) => width,
         None => layout.actual_width.max(EMPTY_WIDTH * cx.params.height),
     };
-    layout.frame_height = layout.actual_height;
+    layout.frame_height = layout.actual_height.max(text.reference_height);
     layout
 }
 
