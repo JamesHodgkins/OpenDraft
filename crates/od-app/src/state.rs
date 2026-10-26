@@ -116,6 +116,7 @@ pub struct AppState {
     /// The Power Select dialog.
     pub power_select: crate::power_select::Dialog,
     /// The OVERKILL dialog while it is open: the settings as edited.
+    pub purge: crate::purge_cmd::Dialog,
     pub overkill_draft: Option<od_core::overkill::Settings>,
     /// The Linetype Manager is open.
     pub show_linetypes: bool,
@@ -209,6 +210,7 @@ impl AppState {
             show_point_style: false,
             point_style_draft: None,
             power_select: Default::default(),
+            purge: Default::default(),
             overkill_draft: None,
             show_linetypes: false,
             show_text_styles: false,

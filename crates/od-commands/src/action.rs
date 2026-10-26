@@ -16,6 +16,21 @@ pub trait Action {
     fn changes(&self) -> Changes;
 }
 
+impl Action for Box<dyn Action> {
+    fn name(&self) -> String {
+        (**self).name()
+    }
+    fn apply(&mut self, doc: &mut Document) {
+        (**self).apply(doc);
+    }
+    fn revert(&mut self, doc: &mut Document) {
+        (**self).revert(doc);
+    }
+    fn changes(&self) -> Changes {
+        (**self).changes()
+    }
+}
+
 /// Append an entity to the drawing, on the current layer and in the space
 /// being edited. It gets its id, layer and space the first time the action
 /// runs and keeps them through undo and redo.

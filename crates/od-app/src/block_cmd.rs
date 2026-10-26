@@ -1,8 +1,5 @@
-//! BLOCK: make a block definition from objects, and PURGE for blocks no
-//! longer used. The block table's rules (names, redefinition, nesting) are
+//! BLOCK: make a block definition from objects. The block table's rules (names, redefinition, nesting) are
 //! in `od_core::block`; INSERT is in `insert_cmd.rs`.
-
-use std::sync::Arc;
 
 use od_commands::{Answer, Cancelled, Editor, ModifyEntities, Options, RemoveEntities, SetBlocks};
 use od_core::block::block_name_problem;
@@ -126,61 +123,6 @@ pub fn define_block(ed: &mut Editor) -> Result<(), Cancelled> {
         }
         Err(why) => ed.say(why),
     }
-    Ok(())
-}
-
-/// The blocks nothing uses, after removing others that only they used:
-/// what PURGE deletes, in table order.
-pub(crate) fn unused_blocks(doc: &Document) -> Vec<Arc<BlockDef>> {
-    let mut kept: Vec<Arc<BlockDef>> = doc.blocks().to_vec();
-    loop {
-        let used = |id: BlockId| {
-            !doc.block_references(id).is_empty()
-                || kept
-                    .iter()
-                    .any(|b| b.id != id && b.nested_blocks().any(|n| n == id))
-        };
-        let before = kept.len();
-        let next: Vec<_> = kept.iter().filter(|b| used(b.id)).cloned().collect();
-        kept = next;
-        if kept.len() == before {
-            break;
-        }
-    }
-    doc.blocks()
-        .iter()
-        .filter(|b| !kept.iter().any(|k| k.id == b.id))
-        .cloned()
-        .collect()
-}
-
-/// PURGE (blocks only for now): delete every block definition that nothing
-/// inserts, including blocks only used inside other unused blocks. One undo
-/// step.
-pub fn purge_blocks(ed: &mut Editor) -> Result<(), Cancelled> {
-    let (gone, kept) = ed.read(|doc| {
-        let gone = unused_blocks(doc);
-        let kept: Vec<_> = doc
-            .blocks()
-            .iter()
-            .filter(|b| !gone.iter().any(|g| g.id == b.id))
-            .cloned()
-            .collect();
-        (gone, kept)
-    })?;
-    if gone.is_empty() {
-        ed.say("No unreferenced blocks found.");
-        return Ok(());
-    }
-    for block in &gone {
-        ed.say(format!("Deleting block \"{}\".", block.name));
-    }
-    let count = gone.len();
-    ed.transaction("Purge", move |tx| {
-        tx.perform(SetBlocks::new("Purge", kept));
-        Ok(())
-    })?;
-    ed.say(format!("{} deleted.", plural(count, "block")));
     Ok(())
 }
 
