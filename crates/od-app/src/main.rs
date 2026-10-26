@@ -88,6 +88,7 @@ mod mtext_editor;
 mod object_styles;
 mod offset;
 mod once_input;
+mod overkill_cmd;
 mod pedit_cmd;
 mod pedit_join;
 mod pedit_memory;
