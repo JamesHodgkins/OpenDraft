@@ -113,6 +113,8 @@ pub struct PointPrompt {
     pub base: Option<Point>,
     pub ghost: Option<Ghost>,
     pub ghost_style: GhostStyle,
+    /// Draw a line from the base to the pointer.
+    pub rubber_band: bool,
     /// Marks that keep one size on the screen; given the drawing units a
     /// screen point spans.
     pub marker: Option<Arc<dyn Fn(f64) -> Vec<Entity> + Send + Sync>>,

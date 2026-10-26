@@ -77,6 +77,8 @@ pub struct Options<T> {
     /// Live preview shown while choosing a point.
     pub ghost: Option<Ghost>,
     pub ghost_style: GhostStyle,
+    /// Draw a line from `base` to the pointer (the default).
+    pub rubber_band: bool,
     /// Marks drawn at a fixed size on the screen, whatever the zoom.
     pub marker: Option<Marker>,
     /// For a selection prompt: Enter with nothing selected is an answer (an
@@ -101,6 +103,7 @@ impl<T> Options<T> {
             base: None,
             ghost: None,
             ghost_style: GhostStyle::Normal,
+            rubber_band: true,
             marker: None,
             allow_empty: false,
             pick_locked: false,
@@ -121,6 +124,13 @@ impl<T> Options<T> {
     /// Measure from `base`: shows a rubber band and lets `@x,y` be relative.
     pub fn base(mut self, base: Point) -> Self {
         self.base = Some(base);
+        self
+    }
+
+    /// Take the corner of a box: the base still anchors relative input and
+    /// the dimensions, but no line is drawn to the pointer.
+    pub fn corner(mut self) -> Self {
+        self.rubber_band = false;
         self
     }
 
@@ -226,6 +236,7 @@ pub struct Prompt {
     pub base: Option<Point>,
     pub ghost: Option<Ghost>,
     pub ghost_style: GhostStyle,
+    pub rubber_band: bool,
     pub marker: Option<Marker>,
     /// Enter alone is accepted (a default exists); the UI may show it.
     pub default_hint: Option<Hint>,
@@ -249,6 +260,7 @@ impl Prompt {
             base: options.base,
             ghost: options.ghost.clone(),
             ghost_style: options.ghost_style,
+            rubber_band: options.rubber_band,
             marker: options.marker.clone(),
             default_hint: hint,
             allow_empty: options.allow_empty,

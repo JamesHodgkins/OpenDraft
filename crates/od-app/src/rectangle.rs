@@ -155,6 +155,7 @@ pub fn draw_rectangle(ed: &mut Editor) -> Result<(), Cancelled> {
         let options = PointOptions::new("Specify other corner point")
             .dimensions(DynamicDimensions::Cartesian)
             .base(first)
+            .corner()
             .keyword("Area", "A")
             .keyword("Dimensions", "D")
             .keyword("Rotation", "R")

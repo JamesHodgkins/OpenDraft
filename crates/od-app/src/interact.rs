@@ -378,6 +378,7 @@ fn canvas_prompt(ask: &Ask) -> Option<PointPrompt> {
     let takes_points = ask.wants == Wants::Object || takes_clicked_points(ask);
     takes_points.then(|| PointPrompt {
         base: ask.base,
+        rubber_band: ask.rubber_band,
         pick: ask.wants == Wants::Object,
         pick_locked: ask.pick_locked,
         ghost: ask.ghost.clone(),
@@ -412,6 +413,7 @@ mod tests {
             base,
             ghost: None,
             ghost_style: GhostStyle::Normal,
+            rubber_band: true,
             marker: None,
             default_hint: None,
             mtext: None,

@@ -65,6 +65,7 @@ pub fn draw_mtext(ed: &mut Editor) -> Result<(), Cancelled> {
     let second = loop {
         let options = PointOptions::new(format!("Specify opposite corner or (height {height})"))
             .base(first)
+            .corner()
             .keyword("Height", "H")
             .keyword("Justify", "J")
             .keyword("Rotation", "R")
