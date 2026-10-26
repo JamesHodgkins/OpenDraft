@@ -125,6 +125,7 @@ pub const ALIASES: &[(&str, &str, &str)] = &[
     ("O", "OFFSET", "modify.offset"),
     ("J", "JOIN", "modify.join"),
     ("OVERKILL", "OVERKILL", "modify.overkill"),
+    ("-OVERKILL", "-OVERKILL", "modify.overkill_line"),
     ("PE", "PEDIT", "modify.pedit"),
     ("PEDIT", "PEDIT", "modify.pedit"),
     ("F", "FILLET", "modify.fillet"),
