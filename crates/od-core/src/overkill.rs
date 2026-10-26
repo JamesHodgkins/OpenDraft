@@ -7,12 +7,27 @@ use std::f64::consts::TAU;
 
 use crate::{arc, bulge, Entity, Point};
 
+/// Properties that may differ between two objects that are still compared.
+/// The caller applies these when it groups the objects.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Ignore {
+    pub layer: bool,
+    pub color: bool,
+    pub linetype: bool,
+    pub linetype_scale: bool,
+    pub lineweight: bool,
+}
+
 /// What OVERKILL may do beyond removing exact duplicates and objects lying
 /// wholly on top of another.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Settings {
     /// How far apart two numbers may be and still count as equal.
     pub tolerance: f64,
+    pub ignore: Ignore,
+    /// Drop repeated vertices and the middle vertex of straight runs in
+    /// polylines.
+    pub optimize_polylines: bool,
     /// Merge objects that overlap only in part into one that spans both.
     pub overlapping: bool,
     /// Merge objects that touch end to end into one.
@@ -23,6 +38,8 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             tolerance: 1e-6,
+            ignore: Ignore::default(),
+            optimize_polylines: true,
             overlapping: true,
             end_to_end: true,
         }
@@ -42,6 +59,13 @@ pub struct Outcome {
 /// group are compared (the caller groups by layer, colour and so on).
 pub fn overkill(items: &[(Entity, usize)], settings: &Settings) -> Outcome {
     let mut now: Vec<Entity> = items.iter().map(|(e, _)| e.clone()).collect();
+    if settings.optimize_polylines {
+        for e in &mut now {
+            if let Some(better) = optimized(e, settings.tolerance) {
+                *e = better;
+            }
+        }
+    }
     let mut gone = vec![false; items.len()];
     for i in 0..items.len() {
         if gone[i] {
@@ -74,6 +98,85 @@ pub fn overkill(items: &[(Entity, usize)], settings: &Settings) -> Outcome {
         .collect();
     let removed = (0..items.len()).filter(|&i| gone[i]).collect();
     Outcome { changed, removed }
+}
+
+/// A polyline vertex with the segment that leaves it.
+struct Vertex {
+    at: Point,
+    bulge: f64,
+    width: (f64, f64),
+}
+
+/// The polyline without repeated vertices or the middle vertices of straight
+/// runs; `None` when there is nothing to take out or `entity` is not one.
+fn optimized(entity: &Entity, tol: f64) -> Option<Entity> {
+    let Entity::Polyline {
+        points,
+        closed,
+        bulges,
+        widths,
+    } = entity
+    else {
+        return None;
+    };
+    let n = points.len();
+    let mut verts: Vec<Vertex> = (0..n)
+        .map(|i| Vertex {
+            at: points[i],
+            bulge: bulge::at(bulges, i),
+            width: widths.get(i).copied().unwrap_or((0.0, 0.0)),
+        })
+        .collect();
+    let least = if *closed { 3 } else { 2 };
+    let mut changed = false;
+    let mut i = 0;
+    while i < verts.len() && verts.len() > least {
+        let len = verts.len();
+        let next = (i + 1) % len;
+        let prev = (i + len - 1) % len;
+        let has_next = *closed || i + 1 < len;
+        let has_prev = *closed || i > 0;
+        let zero = has_next && near(verts[i].at, verts[next].at, tol);
+        let straight = has_next
+            && has_prev
+            && widths.is_empty()
+            && verts[prev].bulge == 0.0
+            && verts[i].bulge == 0.0
+            && on_the_way(verts[prev].at, verts[i].at, verts[next].at, tol);
+        if zero || straight {
+            verts.remove(i);
+            changed = true;
+            i = i.saturating_sub(1);
+        } else {
+            i += 1;
+        }
+    }
+    changed.then(|| Entity::Polyline {
+        points: verts.iter().map(|v| v.at).collect(),
+        closed: *closed,
+        bulges: if bulges.is_empty() {
+            Vec::new()
+        } else {
+            verts.iter().map(|v| v.bulge).collect()
+        },
+        widths: if widths.is_empty() {
+            Vec::new()
+        } else {
+            verts.iter().map(|v| v.width).collect()
+        },
+    })
+}
+
+/// Whether `b` lies on the straight way from `a` to `c`.
+fn on_the_way(a: Point, b: Point, c: Point, tol: f64) -> bool {
+    let (dx, dy) = (c.x - a.x, c.y - a.y);
+    let len = dx.hypot(dy);
+    if len <= tol {
+        return false;
+    }
+    let off = ((b.x - a.x) * dy - (b.y - a.y) * dx).abs() / len;
+    let along = ((b.x - a.x) * dx + (b.y - a.y) * dy) / len;
+    off <= tol && along > 0.0 && along < len
 }
 
 fn near(a: Point, b: Point, tol: f64) -> bool {
@@ -322,6 +425,69 @@ mod tests {
             start,
             end,
         }
+    }
+
+    fn polyline(points: &[(f64, f64)], closed: bool) -> Entity {
+        Entity::Polyline {
+            points: points.iter().map(|p| Point::new(p.0, p.1)).collect(),
+            closed,
+            bulges: Vec::new(),
+            widths: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn straight_runs_and_repeated_vertices_come_out_of_a_polyline() {
+        let messy = polyline(
+            &[(0.0, 0.0), (2.0, 0.0), (2.0, 0.0), (5.0, 0.0), (5.0, 4.0)],
+            false,
+        );
+        let out = run(&[messy], &Settings::default());
+        assert_eq!(
+            out.changed,
+            vec![(0, polyline(&[(0.0, 0.0), (5.0, 0.0), (5.0, 4.0)], false))]
+        );
+        let square = polyline(
+            &[(0.0, 0.0), (3.0, 0.0), (6.0, 0.0), (6.0, 6.0), (0.0, 6.0)],
+            true,
+        );
+        let out = run(&[square], &Settings::default());
+        assert!(matches!(&out.changed[0].1, Entity::Polyline { points, .. } if points.len() == 4));
+    }
+
+    #[test]
+    fn a_polyline_keeps_its_corners_curves_and_widths_and_can_be_left_alone() {
+        let bent = polyline(&[(0.0, 0.0), (2.0, 0.0), (2.0, 2.0)], false);
+        let curved = Entity::Polyline {
+            points: vec![
+                Point::new(0.0, 0.0),
+                Point::new(2.0, 0.0),
+                Point::new(4.0, 0.0),
+            ],
+            closed: false,
+            bulges: vec![0.0, 0.5, 0.0],
+            widths: Vec::new(),
+        };
+        let wide = Entity::Polyline {
+            points: vec![
+                Point::new(0.0, 0.0),
+                Point::new(2.0, 0.0),
+                Point::new(4.0, 0.0),
+            ],
+            closed: false,
+            bulges: Vec::new(),
+            widths: vec![(0.1, 0.1); 3],
+        };
+        assert_eq!(
+            run(&[bent, curved, wide], &Settings::default()),
+            Outcome::default()
+        );
+        let straight = polyline(&[(0.0, 0.0), (2.0, 0.0), (4.0, 0.0)], false);
+        let off = Settings {
+            optimize_polylines: false,
+            ..Settings::default()
+        };
+        assert_eq!(run(&[straight], &off), Outcome::default());
     }
 
     fn run(items: &[Entity], settings: &Settings) -> Outcome {

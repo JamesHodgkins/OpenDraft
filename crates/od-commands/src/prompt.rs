@@ -4,7 +4,7 @@
 use std::fmt;
 use std::sync::Arc;
 
-use od_core::{Entity, EntityId, MText, Point};
+use od_core::{overkill, Entity, EntityId, MText, Point};
 
 /// The user cancelled (Esc), or the command was abandoned. Commands pass it up
 /// with `?`; a cancelled transaction leaves no trace in the drawing.
@@ -200,6 +200,9 @@ pub enum Wants {
     /// The text in [`Prompt::mtext`] edited in place; the answer is the
     /// edited text.
     MTextEditor,
+    /// The OVERKILL settings dialog, opened on [`Prompt::overkill`]; the
+    /// answer is the settings it was closed with.
+    OverkillDialog,
 }
 
 /// The default a prompt offers, left as a value so the UI can write it in the
@@ -232,6 +235,8 @@ pub struct Prompt {
     pub pick_locked: bool,
     /// For [`Wants::MTextEditor`]: the text to edit.
     pub mtext: Option<Box<MText>>,
+    /// For [`Wants::OverkillDialog`]: the settings to start from.
+    pub overkill: Option<overkill::Settings>,
 }
 
 impl Prompt {
@@ -249,6 +254,7 @@ impl Prompt {
             allow_empty: options.allow_empty,
             pick_locked: options.pick_locked,
             mtext: None,
+            overkill: None,
         }
     }
 }
@@ -261,6 +267,8 @@ pub enum Reply {
     Text(String),
     /// The text the editor was closed with.
     MText(Box<MText>),
+    /// The settings the OVERKILL dialog was closed with.
+    Overkill(overkill::Settings),
     /// The label of a chosen keyword.
     Keyword(String),
     Selection(Vec<EntityId>),

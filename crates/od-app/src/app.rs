@@ -23,6 +23,7 @@ mod linetype_dialog;
 mod mleader_manager;
 mod mleader_style_dialog;
 mod mleader_style_tabs;
+mod overkill_dialog;
 mod page_setup_dialog;
 mod panels;
 mod power_select_dialog;
