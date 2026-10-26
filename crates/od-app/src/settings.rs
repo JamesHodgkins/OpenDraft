@@ -143,6 +143,7 @@ impl Settings {
         };
         crate::pedit_memory::load(Some(storage));
         crate::purge_memory::load(Some(storage));
+        crate::overkill_memory::load(Some(storage));
         let settings = match storage.get_string(KEY) {
             Some(text) => Self::from_json(&text),
             None => Self::default(),
@@ -179,6 +180,7 @@ impl Settings {
         // such folder must not cost the user every other setting.
         crate::pedit_memory::save(storage);
         crate::purge_memory::save(storage);
+        crate::overkill_memory::save(storage);
         let mut saved = self.clone();
         saved.automation_roots.retain(|p| p.to_str().is_some());
         for folder in [&mut saved.templates_dir, &mut saved.recovery_dir] {
