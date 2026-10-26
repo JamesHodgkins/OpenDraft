@@ -1,52 +1,55 @@
 //! PURGE: delete what the drawing no longer uses. PURGE opens the dialog
-//! (`app/purge_dialog.rs`), which lists `od_core::purge::purgeable` and
-//! deletes the ticked items; `-PURGE` deletes everything, repeating while
-//! that frees more. Each is one undo step.
+//! (`app/purge_dialog.rs`), which lists `od_core::purge::purgeable`, says
+//! why the rest stays, and deletes what is ticked; `-PURGE` asks on the
+//! command line (`purge_line.rs`). Both come here, and each is one undo step.
 
-use od_commands::{
-    Action, Cancelled, Editor, Options, RemoveEntities, RemoveLayer, SetBlocks, SetDimStyles,
-    SetLinetypes, SetMLeaderStyles, SetTextStyles,
-};
-use od_core::purge::{purgeable, Category, Item, Purgeable};
+use od_commands::{Action, Cancelled, Editor, Options};
+use od_core::purge::{blocked, purgeable, unnamed, Blocked, Category, Item, Purgeable};
 use od_core::Document;
 
+use crate::purge_delete::delete_actions;
 use crate::text::plural;
 
-/// The Purge dialog while it is open.
-pub struct Dialog {
-    pub open: bool,
-    /// Ask about each item first.
-    pub confirm: bool,
-    /// Go on to what deleting the items frees.
-    pub nested: bool,
-    /// What can go, and which of it is ticked.
-    pub items: Vec<(Purgeable, bool)>,
-    /// A purge was started: list again once it is done.
-    pub stale: bool,
+/// Which page of the dialog shows.
+#[derive(Clone, Copy, Default, PartialEq)]
+pub enum Tab {
+    #[default]
+    Purgeable,
+    NonPurgeable,
 }
 
-impl Default for Dialog {
-    fn default() -> Self {
-        Dialog {
-            open: false,
-            confirm: false,
-            nested: true,
-            items: Vec::new(),
-            stale: false,
-        }
-    }
+/// The Purge dialog while it is open.
+#[derive(Default)]
+pub struct Dialog {
+    pub open: bool,
+    pub tab: Tab,
+    /// What can go, and which of it is ticked.
+    pub items: Vec<(Purgeable, bool)>,
+    /// What stays, and why.
+    pub blocked: Vec<Blocked>,
+    /// The row of `blocked` that is open.
+    pub detail: Option<usize>,
+    /// How many zero-length objects and empty texts there are.
+    pub zero_length: usize,
+    pub empty_text: usize,
+    /// A purge was started: list again once it is done.
+    pub stale: bool,
 }
 
 impl crate::state::AppState {
     /// Open the Purge dialog on what can go now, all of it ticked.
     pub fn open_purge(&mut self) {
+        self.purge.items.clear();
         self.refresh_purge();
         self.purge.open = true;
     }
 
-    /// List what can go again, keeping the ticks of what is still there.
+    /// List what can go and what stays again, keeping the ticks of what is
+    /// still there.
     pub fn refresh_purge(&mut self) {
-        let found = purgeable(self.session().document());
+        let doc = self.session().document();
+        let (found, blocked) = (purgeable(doc), blocked(doc));
+        let loose = unnamed(doc);
         let old = std::mem::take(&mut self.purge.items);
         self.purge.items = found
             .into_iter()
@@ -58,91 +61,12 @@ impl crate::state::AppState {
                 (p, ticked)
             })
             .collect();
+        self.purge.blocked = blocked;
+        self.purge.detail = None;
+        self.purge.zero_length = loose.zero_length.len();
+        self.purge.empty_text = loose.empty_text.len();
         self.purge.stale = false;
     }
-}
-
-/// The edits that delete `items` from `doc`, worked out from it.
-fn delete_actions(doc: &Document, items: &[Item]) -> Vec<Box<dyn Action>> {
-    let has = |f: &dyn Fn(&Item) -> bool| items.iter().any(f);
-    let mut actions: Vec<Box<dyn Action>> = Vec::new();
-    if has(&|i| matches!(i, Item::Block(_))) {
-        let kept = doc
-            .blocks()
-            .iter()
-            .filter(|b| !items.contains(&Item::Block(b.id)))
-            .cloned()
-            .collect();
-        actions.push(Box::new(SetBlocks::new("Purge", kept)));
-    }
-    if has(&|i| matches!(i, Item::DimStyle(_))) {
-        let kept = doc
-            .dim_styles()
-            .iter()
-            .filter(|s| !items.contains(&Item::DimStyle(s.name.clone())))
-            .cloned()
-            .collect();
-        let current = doc.dim_style().clone();
-        actions.push(Box::new(SetDimStyles::new(
-            "Purge",
-            kept,
-            current,
-            Vec::new(),
-        )));
-    }
-    for item in items {
-        if let Item::Layer(id) = item {
-            actions.push(Box::new(RemoveLayer::new(*id)));
-        }
-    }
-    if has(&|i| matches!(i, Item::Linetype(_))) {
-        let mut table = doc.linetypes().clone();
-        for item in items {
-            if let Item::Linetype(name) = item {
-                if let Some(id) = table.named(name).map(|r| r.id) {
-                    // Special records are never offered; ignore a refusal.
-                    let _ = table.remove(id);
-                }
-            }
-        }
-        actions.push(Box::new(SetLinetypes::new(table, doc.linetype_scale())));
-    }
-    if has(&|i| matches!(i, Item::MLeaderStyle(_))) {
-        let kept = doc
-            .mleader_styles()
-            .iter()
-            .filter(|s| !items.contains(&Item::MLeaderStyle(s.name.clone())))
-            .cloned()
-            .collect();
-        let (current, next) = (doc.current_mleader_style(), doc.next_mleader_style_id());
-        actions.push(Box::new(SetMLeaderStyles::new(
-            "Purge",
-            kept,
-            current,
-            next,
-            Vec::new(),
-        )));
-    }
-    if has(&|i| matches!(i, Item::TextStyle(_))) {
-        let kept = doc
-            .text_styles()
-            .iter()
-            .filter(|s| !items.contains(&Item::TextStyle(s.id)))
-            .cloned()
-            .collect();
-        let (current, next) = (doc.current_text_style(), doc.next_text_style_id());
-        actions.push(Box::new(SetTextStyles::new(kept, current, next)));
-    }
-    let mut objects = Vec::new();
-    for item in items {
-        if let Item::ZeroLength(ids) | Item::EmptyText(ids) = item {
-            objects.extend(ids.iter().copied());
-        }
-    }
-    if !objects.is_empty() {
-        actions.push(Box::new(RemoveEntities::new(objects)));
-    }
-    actions
 }
 
 /// What was deleted, one line for each, then the total.
@@ -163,13 +87,16 @@ fn report(ed: &Editor, gone: &[Purgeable]) {
     ed.say(format!("{} purged.", plural(gone.len(), "item")));
 }
 
-/// What a purge may do: which items (all when `None`), whether to go on to
-/// what deleting them frees, and whether to ask about each one first.
+/// What a purge may do: which named items (all when `None`), whether to
+/// go on to what deleting them frees, whether to ask about each one first,
+/// and which unnamed objects to delete too.
 #[derive(Clone, Default)]
 pub struct Purge {
     pub only: Option<Vec<Item>>,
     pub nested: bool,
     pub confirm: bool,
+    pub zero_length: bool,
+    pub empty_text: bool,
 }
 
 /// Ask about one item: Yes, No, or All (yes to this and the rest).
@@ -193,17 +120,42 @@ fn confirmed(ed: &Editor, p: &Purgeable, all: &mut bool) -> Result<bool, Cancell
     })
 }
 
-/// PURGE and -PURGE: delete what `purge` says. The questions come first and
-/// change nothing; then everything is deleted as one undo step. With nested
-/// items, each round is worked out on a copy of the drawing to find what
-/// deleting it frees.
-pub fn purge_run(ed: &mut Editor, purge: Purge) -> Result<(), Cancelled> {
-    let mut sim = ed.read(|doc| doc.clone())?;
-    let mut found = purgeable(&sim);
-    let mut seen: Vec<Item> = found.iter().map(|p| p.item.clone()).collect();
+/// The first round: the named items asked for and the unnamed objects
+/// switched on.
+fn first_round(doc: &Document, purge: &Purge) -> Vec<Purgeable> {
+    let mut found = purgeable(doc);
     if let Some(only) = &purge.only {
         found.retain(|p| only.contains(&p.item));
     }
+    let loose = unnamed(doc);
+    let count = |n: usize| format!("{n} object{}", if n == 1 { "" } else { "s" });
+    if purge.zero_length && !loose.zero_length.is_empty() {
+        let name = count(loose.zero_length.len());
+        let item = Item::ZeroLength(loose.zero_length);
+        found.push(Purgeable { item, name });
+    }
+    if purge.empty_text && !loose.empty_text.is_empty() {
+        let name = count(loose.empty_text.len());
+        let item = Item::EmptyText(loose.empty_text);
+        found.push(Purgeable { item, name });
+    }
+    found
+}
+
+/// PURGE and -PURGE: delete what `purge` says. The questions come first and
+/// change nothing; then everything is deleted as one undo step. With nested
+/// items, each round is worked out on a copy of the drawing to find what
+/// deleting it frees; every round deletes something, so it ends.
+pub fn purge_run(ed: &mut Editor, purge: Purge) -> Result<(), Cancelled> {
+    let mut sim = ed.read(|doc| doc.clone())?;
+    if let Err(why) = sim.validate() {
+        ed.say(format!(
+            "PURGE refused: the drawing has an error ({why:?})."
+        ));
+        return Ok(());
+    }
+    let mut seen: Vec<Item> = purgeable(&sim).into_iter().map(|p| p.item).collect();
+    let mut found = first_round(&sim, &purge);
     let (mut rounds, mut all) = (Vec::<Vec<Purgeable>>::new(), false);
     while !found.is_empty() {
         let mut accepted = Vec::new();
@@ -220,7 +172,7 @@ pub fn purge_run(ed: &mut Editor, purge: Purge) -> Result<(), Cancelled> {
             action.apply(&mut sim);
         }
         rounds.push(accepted);
-        if !purge.nested || rounds.len() >= 16 {
+        if !purge.nested {
             break;
         }
         found = purgeable(&sim)
@@ -245,18 +197,6 @@ pub fn purge_run(ed: &mut Editor, purge: Purge) -> Result<(), Cancelled> {
     })?;
     report(ed, &rounds.concat());
     Ok(())
-}
-
-/// -PURGE: delete everything unused, and what that frees in turn.
-pub fn purge_all(ed: &mut Editor) -> Result<(), Cancelled> {
-    purge_run(
-        ed,
-        Purge {
-            only: None,
-            nested: true,
-            confirm: false,
-        },
-    )
 }
 
 #[cfg(test)]

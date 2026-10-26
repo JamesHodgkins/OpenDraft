@@ -33,7 +33,7 @@ use crate::overkill_cmd::overkill_objects;
 use crate::pedit_cmd::pedit_objects;
 use crate::polygon_cmd::draw_polygon;
 use crate::polyline_cmd::draw_polyline;
-use crate::purge_cmd::purge_all;
+use crate::purge_line::purge_prompt;
 use crate::rectangle::draw_rectangle;
 use crate::scale_rotate::{rotate_objects, scale_objects};
 use crate::selection::{crossing_polygon, fence, window_polygon};
@@ -213,7 +213,12 @@ fn all() -> Vec<Command<AppState>> {
         editor_command!("block.create", "Create Block", "BLOCK", define_block),
         editor_command!("block.insert", "Insert Block", "INSERT", insert_block),
         cmd("block.purge", "Purge", |s| s.open_purge()),
-        editor_command!("block.purge_all", "Purge All", "-PURGE", purge_all),
+        editor_command!(
+            "block.purge_all",
+            "Purge (command line)",
+            "-PURGE",
+            purge_prompt
+        ),
         // The Block Editor (`block_editor.rs`).
         cmd("block.edit", "Edit Block", |s| s.bedit())
             .when(|s| !s.in_block_editor() && !s.session().document().blocks().is_empty())

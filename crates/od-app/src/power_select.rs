@@ -274,6 +274,13 @@ pub fn value_is_usable(units: &Units, draft: &Draft) -> bool {
     }
 }
 
+/// Whether `text` fits `pattern`, where `*` matches any run and `?` any
+/// one character, ignoring case.
+pub(crate) fn wildcard_match(pattern: &str, text: &str) -> bool {
+    let (p, t): (Vec<char>, Vec<char>) = (pattern.chars().collect(), text.chars().collect());
+    wildcard(&p, &t)
+}
+
 /// `*` matches any run and `?` any one character, ignoring case.
 fn wildcard(pattern: &[char], text: &[char]) -> bool {
     // Remember the last `*` and how much text it has taken so far; a later

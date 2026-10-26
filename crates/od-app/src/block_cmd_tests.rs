@@ -44,7 +44,7 @@ fn purge_blocks_with(ed: &mut od_commands::Editor, nested: bool) -> Result<(), C
         Purge {
             only,
             nested,
-            confirm: false,
+            ..Purge::default()
         },
     )
 }
