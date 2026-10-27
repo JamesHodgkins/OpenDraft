@@ -208,7 +208,7 @@ pub fn show(
     let (chosen, tools) =
         super::toolbar::show(&ctx, theme, editor, styles, bounds.union(ruler), canvas);
     outcome = outcome.or(chosen);
-    let dialog = super::paragraph_dialog::show(&ctx, theme, editor, tools, now);
+    let dialog = super::paragraph_dialog::show(&ctx, theme, editor, now);
 
     // A click on the drawing outside the box and the toolbar accepts.
     if pressed {
