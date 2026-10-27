@@ -151,20 +151,35 @@ pub fn paint_text(
     {
         return;
     }
+    // Only lines that reach the screen are built: zoomed in on a long text,
+    // that is a few lines, not all of them.
+    let view = rect.intersect(painter.clip_rect()).expand(2.0);
+    let across = layout.frame_width.max(layout.actual_width);
     let mut mesh = Mesh::default();
-    for glyph in &layout.glyphs {
-        let (bucket, weight) = glyph_detail(glyph.face, glyph.weight, camera.zoom * glyph.scale_y);
-        let shape = triangles(glyph.face, glyph.id, weight, bucket);
-        let base = mesh.vertices.len() as u32;
-        let tint = color(glyph.color);
-        for v in &shape.vertices {
-            let (x, y) = glyph.place(f64::from(v[0]), f64::from(v[1]));
-            mesh.colored_vertex(to_screen(x, y), tint);
+    for line in &layout.lines {
+        let reach = 2.0 * line.height;
+        let (lo, hi) = (line.baseline - reach, line.baseline + reach);
+        if !reaches(view, &to_screen, (-reach, across + reach), (lo, hi)) {
+            continue;
         }
-        mesh.indices.extend(shape.indices.iter().map(|i| base + i));
+        for glyph in layout.glyphs.get(line.glyphs.clone()).unwrap_or(&[]) {
+            let (bucket, weight) =
+                glyph_detail(glyph.face, glyph.weight, camera.zoom * glyph.scale_y);
+            let shape = triangles(glyph.face, glyph.id, weight, bucket);
+            let base = mesh.vertices.len() as u32;
+            let tint = color(glyph.color);
+            for v in &shape.vertices {
+                let (x, y) = glyph.place(f64::from(v[0]), f64::from(v[1]));
+                mesh.colored_vertex(to_screen(x, y), tint);
+            }
+            mesh.indices.extend(shape.indices.iter().map(|i| base + i));
+        }
     }
     for d in &layout.decorations {
         let half = d.thickness / 2.0;
+        if !reaches(view, &to_screen, (d.x0, d.x1), (d.y - half, d.y + half)) {
+            continue;
+        }
         let base = mesh.vertices.len() as u32;
         let tint = color(d.color);
         let corners = [
@@ -182,6 +197,22 @@ pub fn paint_text(
     if !mesh.is_empty() {
         painter.add(Shape::mesh(mesh));
     }
+}
+
+/// Whether the layout-space box `xs` by `ys` reaches `view` on the screen.
+fn reaches(
+    view: Rect,
+    to_screen: &dyn Fn(f64, f64) -> Pos2,
+    xs: (f64, f64),
+    ys: (f64, f64),
+) -> bool {
+    let corners = [
+        to_screen(xs.0, ys.0),
+        to_screen(xs.1, ys.0),
+        to_screen(xs.1, ys.1),
+        to_screen(xs.0, ys.1),
+    ];
+    Rect::from_points(&corners).intersects(view)
 }
 
 /// A glyph's tessellation bucket and pen weight at `per_unit` pixels per font unit.

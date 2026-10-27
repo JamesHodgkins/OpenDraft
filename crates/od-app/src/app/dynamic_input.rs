@@ -78,6 +78,7 @@ impl AppState {
                 allow_empty: false,
                 pick_locked: false,
                 mtext: None,
+                mtext_of: None,
                 overkill: None,
                 dynamic_dimensions: DynamicDimensions::None,
             })
@@ -102,6 +103,7 @@ impl AppState {
             allow_empty: false,
             pick_locked: false,
             mtext: None,
+            mtext_of: None,
             overkill: None,
             dynamic_dimensions: DynamicDimensions::None,
         })

@@ -417,6 +417,7 @@ mod tests {
             marker: None,
             default_hint: None,
             mtext: None,
+            mtext_of: None,
             overkill: None,
             allow_empty: false,
             pick_locked: false,

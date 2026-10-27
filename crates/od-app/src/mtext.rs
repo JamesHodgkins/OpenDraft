@@ -155,7 +155,7 @@ pub fn edit_mtext_object(ed: &mut Editor) -> Result<(), Cancelled> {
             _ => None,
         })?
         .ok_or(Cancelled)?;
-    let Some(edited) = ed.edit_mtext(original.clone())? else {
+    let Some(edited) = ed.edit_mtext_entity(id, original.clone())? else {
         return Ok(());
     };
     if edited == original {
@@ -350,6 +350,25 @@ mod tests {
         assert_eq!(texts(&state)[0].contents, "Hello there");
         state.undo();
         assert_eq!(texts(&state)[0].contents, "Hello");
+    }
+
+    #[test]
+    fn mtedit_names_the_text_it_replaces_and_a_new_text_names_none() {
+        let mut state = state_with_text("Hello");
+        let id = state.session().document().objects()[0].id;
+        state.select_all();
+        start(&mut state, edit_mtext_object);
+        opened_with(&mut state);
+        let active = state.active;
+        let editor = state.docs[active].mtext_editor.as_ref().expect("open");
+        assert_eq!(editor.replaces, Some(id), "the drawing leaves it out");
+        type_and_close(&mut state, "", Outcome::Cancel);
+
+        start(&mut state, draw_mtext);
+        submit(&mut state, &["0,0", "10,10"]);
+        opened_with(&mut state);
+        let editor = state.docs[active].mtext_editor.as_ref().expect("open");
+        assert_eq!(editor.replaces, None, "a new text replaces nothing");
     }
 
     #[test]

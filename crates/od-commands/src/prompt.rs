@@ -246,6 +246,9 @@ pub struct Prompt {
     pub pick_locked: bool,
     /// For [`Wants::MTextEditor`]: the text to edit.
     pub mtext: Option<Box<MText>>,
+    /// For [`Wants::MTextEditor`]: the text object being edited, if there is
+    /// one, so the drawing can leave it out while its draft is shown.
+    pub mtext_of: Option<EntityId>,
     /// For [`Wants::OverkillDialog`]: the settings to start from.
     pub overkill: Option<overkill::Settings>,
 }
@@ -266,6 +269,7 @@ impl Prompt {
             allow_empty: options.allow_empty,
             pick_locked: options.pick_locked,
             mtext: None,
+            mtext_of: None,
             overkill: None,
         }
     }

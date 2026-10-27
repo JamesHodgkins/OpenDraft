@@ -342,9 +342,20 @@ impl Editor {
     /// as it was accepted; `None` is the editor closed with nothing to keep.
     /// Esc is `Err(Cancelled)`, like any prompt.
     pub fn edit_mtext(&self, text: MText) -> Result<Option<MText>, Cancelled> {
+        self.edit_mtext_of(None, text)
+    }
+
+    /// [`Self::edit_mtext`] on the text object `id`, which the drawing then
+    /// leaves out while the editor shows its draft.
+    pub fn edit_mtext_entity(&self, id: EntityId, text: MText) -> Result<Option<MText>, Cancelled> {
+        self.edit_mtext_of(Some(id), text)
+    }
+
+    fn edit_mtext_of(&self, of: Option<EntityId>, text: MText) -> Result<Option<MText>, Cancelled> {
         let options = Options::<()>::new("Edit text");
         let mut prompt = Prompt::new(Wants::MTextEditor, &options, None);
         prompt.mtext = Some(Box::new(text));
+        prompt.mtext_of = of;
         match self.ask(prompt)? {
             Reply::MText(text) => Ok(Some(*text)),
             Reply::Enter => Ok(None),

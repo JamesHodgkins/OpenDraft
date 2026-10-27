@@ -322,6 +322,9 @@ impl View {
             if sized && on_screen < MIN_DRAW_PX && !selection.contains(id) {
                 continue;
             }
+            if self.hidden == Some(*id) {
+                continue;
+            }
             if let Entity::MText(text) = entity {
                 let (selected, hovered) = (selection.contains(id), hover == Some(*id));
                 self.paint_mtext(
