@@ -1,10 +1,12 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 13.444 26" width="13.444" height="26">
-  <title>U+0026 </title>
-  <g id="guides" style="fill:none;stroke:#09f;stroke-width:0.05px">
-    <path d="M0,3.84 L13.444,3.84"/>
-    <path d="M0,8.936 L13.444,8.936"/>
-    <path d="M0,19.118 L13.444,19.118"/>
-  </g>
-  <path d="M11.611,18.982 C11.611,18.982 7.33,12.927 6.003,11.076 C4.906,9.546 4.475,8.391 4.475,7.148 C4.475,4.085 8.948,4.085 8.948,7.148 C8.948,8.287 8.32,9.012 7.332,9.577 C6.737,9.917 5.649,10.539 5.017,10.899 C0.221,13.639 1.243,19.115 5.341,19.115 C8.588,19.115 10.593,15.914 11.568,13.784" style="fill:none;stroke:#f00;stroke-width:0.1px;stroke-linecap:round;stroke-linejoin:round"/>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 14 26" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:affinity="https://www.affinity.studio/" style="fill-rule:evenodd;clip-rule:evenodd;">
+    <g id="guides">
+        <path d="M0,3.84L13.444,3.84" style="fill:none;fill-rule:nonzero;stroke:rgb(0,153,255);stroke-width:0.05px;"/>
+        <path d="M0,8.936L13.444,8.936" style="fill:none;fill-rule:nonzero;stroke:rgb(0,153,255);stroke-width:0.05px;"/>
+        <path d="M0,19.118L13.444,19.118" style="fill:none;fill-rule:nonzero;stroke:rgb(0,153,255);stroke-width:0.05px;"/>
+    </g>
+    <g transform="matrix(1.070859,0,0,1.070859,-0.476023,-1.354469)">
+        <path d="M11.611,18.982C11.611,18.982 7.33,12.927 6.003,11.076C4.906,9.546 4.475,8.391 4.475,7.148C4.475,4.085 8.948,4.085 8.948,7.148C8.948,8.287 8.32,9.012 7.332,9.577C6.737,9.917 5.649,10.539 5.017,10.899C0.221,13.639 1.243,19.115 5.341,19.115C8.588,19.115 10.593,15.914 11.568,13.784" style="fill:none;fill-rule:nonzero;stroke:rgb(255,0,0);stroke-width:0.1px;stroke-linecap:round;stroke-linejoin:round;"/>
+    </g>
 </svg>
