@@ -155,6 +155,8 @@ impl View {
             }
             if response.dragged_by(PointerButton::Middle) {
                 self.camera.pan_by_pixels(response.drag_delta());
+            } else {
+                self.pan_through_editor(ui, rect);
             }
         }
         let pointer = ui

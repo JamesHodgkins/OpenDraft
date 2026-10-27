@@ -3,7 +3,7 @@
 
 use std::sync::Arc;
 
-use egui::Rect;
+use egui::{Pos2, Rect};
 use od_core::{EntityId, Point};
 
 use super::{PointPrompt, Request, View, STEP_ZOOM};
@@ -25,6 +25,29 @@ impl View {
     /// covers the drawing but the view should stay navigable).
     pub fn set_wheel_through_exclusions(&mut self, through: bool) {
         self.wheel_through = through;
+    }
+
+    /// With an editor over the drawing, its own area takes the drag from
+    /// the canvas, so a middle drag that began on the drawing or the editor
+    /// (not a toolbar or dialog above it) pans from the raw pointer.
+    pub(super) fn pan_through_editor(&mut self, ui: &egui::Ui, rect: Rect) {
+        if !self.wheel_through {
+            return;
+        }
+        let ctx = ui.ctx();
+        let (origin, delta) = ui.input(|i| {
+            let origin = i.pointer.middle_down().then(|| i.pointer.press_origin());
+            (origin.flatten(), i.pointer.delta())
+        });
+        let over_drawing = |p: Pos2| {
+            rect.contains(p)
+                && ctx
+                    .layer_id_at(p)
+                    .is_none_or(|l| l.order == egui::Order::Background)
+        };
+        if origin.is_some_and(over_drawing) {
+            self.camera.pan_by_pixels(delta);
+        }
     }
     /// Make the canvas collect a point for a running command (`Some`), or
     /// stop doing so (`None`).

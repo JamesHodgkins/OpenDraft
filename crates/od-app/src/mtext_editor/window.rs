@@ -106,7 +106,7 @@ pub fn show(
             // must not move the caret when it is clicked.
             editor.place_at(x, y, shift);
             editor.active_since = now;
-        } else if response.dragged() {
+        } else if response.dragged_by(egui::PointerButton::Primary) {
             editor.place_at(x, y, true);
         }
     }
