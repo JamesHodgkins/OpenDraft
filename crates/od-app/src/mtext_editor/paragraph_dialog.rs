@@ -4,8 +4,8 @@
 //! applies them as one `ParagraphEdit` (one undo step) and Cancel drops them.
 //!
 //! Only what the text format is known to carry is live: left tab stops,
-//! first line and hanging indent, and left, centre, right and justified
-//! alignment. The rest of AutoCAD's dialog is drawn greyed out until there
+//! first line and hanging indent, left, centre, right and justified
+//! alignment, space before and after, and a line-spacing multiple. The rest of AutoCAD's dialog is drawn greyed out until there
 //! are AutoCAD-made samples of its controls (see `ui_plan.md`, slice 13).
 
 mod draft;
@@ -67,11 +67,11 @@ pub fn show(
             ui.horizontal_top(|ui| {
                 ui.vertical(|ui| {
                     ui.set_width(LEFT_COLUMN);
-                    spacing_group(ui, theme);
+                    spacing_group(ui, theme, &mut draft);
                 });
                 ui.add_space(4.0);
                 ui.vertical(|ui| {
-                    line_spacing_group(ui, theme);
+                    line_spacing_group(ui, theme, &mut draft);
                 });
             });
         });
@@ -245,8 +245,10 @@ fn alignment_group(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft) {
     draft.align_on = on;
 }
 
-fn spacing_group(ui: &mut egui::Ui, theme: &Theme) {
-    check_group(ui, theme, "Paragraph Spacing", &mut false, false, |ui| {
+fn spacing_group(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft) {
+    let mut on = draft.spacing_on;
+    let (before, after) = (&mut draft.before, &mut draft.after);
+    check_group(ui, theme, "Paragraph Spacing", &mut on, true, |ui| {
         egui::Grid::new("mtext_spacing")
             .num_columns(2)
             .spacing([16.0, 4.0])
@@ -254,41 +256,40 @@ fn spacing_group(ui: &mut egui::Ui, theme: &Theme) {
                 field_label(ui, theme, "Before:");
                 field_label(ui, theme, "After:");
                 ui.end_row();
-                number_field_width(ui, theme, &mut 0.0, "", 0.1, FIELD);
-                number_field_width(ui, theme, &mut 0.0, "", 0.1, FIELD);
+                position(ui, theme, before);
+                position(ui, theme, after);
                 ui.end_row();
             });
     });
+    draft.spacing_on = on;
 }
 
-fn line_spacing_group(ui: &mut egui::Ui, theme: &Theme) {
-    check_group(
-        ui,
-        theme,
-        "Paragraph Line Spacing",
-        &mut false,
-        false,
-        |ui| {
-            egui::Grid::new("mtext_line_spacing")
-                .num_columns(2)
-                .spacing([16.0, 4.0])
-                .show(ui, |ui| {
-                    field_label(ui, theme, "Line Spacing:");
-                    field_label(ui, theme, "At:");
-                    ui.end_row();
-                    dropdown(
-                        ui,
-                        theme,
-                        "mtext_line_spacing_kind",
-                        "Multiple",
-                        80.0,
-                        |_| {},
-                    );
-                    number_field_width(ui, theme, &mut 1.0, "x", 0.1, 60.0);
-                    ui.end_row();
-                });
-        },
-    );
+fn line_spacing_group(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft) {
+    let mut on = draft.line_on;
+    let multiple = &mut draft.multiple;
+    check_group(ui, theme, "Paragraph Line Spacing", &mut on, true, |ui| {
+        egui::Grid::new("mtext_line_spacing")
+            .num_columns(2)
+            .spacing([16.0, 4.0])
+            .show(ui, |ui| {
+                field_label(ui, theme, "Line Spacing:");
+                field_label(ui, theme, "At:");
+                ui.end_row();
+                dropdown(
+                    ui,
+                    theme,
+                    "mtext_line_spacing_kind",
+                    "Multiple",
+                    80.0,
+                    |_| {},
+                );
+                if number_field_width(ui, theme, multiple, "x", 0.1, 60.0).changed() {
+                    *multiple = multiple.clamp(0.25, 4.0);
+                }
+                ui.end_row();
+            });
+    });
+    draft.line_on = on;
 }
 
 #[cfg(test)]

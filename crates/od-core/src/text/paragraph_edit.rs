@@ -22,6 +22,10 @@ pub struct ParagraphEdit {
     pub alignment: Option<ParagraphAlignment>,
     /// The tab stops, replacing the paragraph's own.
     pub tabs: Option<Vec<f64>>,
+    pub space_before: Option<f64>,
+    pub space_after: Option<f64>,
+    /// `Some(None)` drops the paragraph's own multiple.
+    pub line_spacing: Option<Option<f64>>,
 }
 
 impl ParagraphEdit {
@@ -32,6 +36,9 @@ impl ParagraphEdit {
             left_indent: Some(style.left_indent),
             alignment: Some(style.alignment),
             tabs: Some(style.tabs.iter().map(|t| t.offset).collect()),
+            space_before: Some(style.space_before),
+            space_after: Some(style.space_after),
+            line_spacing: Some(style.line_spacing),
         }
     }
 
@@ -52,6 +59,23 @@ impl ParagraphEdit {
         }
         if let Some(alignment) = self.alignment {
             style.alignment = alignment;
+        }
+        for (new, old) in [
+            (self.space_before, &mut style.space_before),
+            (self.space_after, &mut style.space_after),
+        ] {
+            if let Some(v) = new {
+                if !ok(v) || v < 0.0 {
+                    return Err(EditRefusal::BadValue);
+                }
+                *old = v;
+            }
+        }
+        if let Some(multiple) = self.line_spacing {
+            if multiple.is_some_and(|v| !(0.25..=4.0).contains(&v)) {
+                return Err(EditRefusal::BadValue);
+            }
+            style.line_spacing = multiple;
         }
         if let Some(tabs) = &self.tabs {
             if tabs.len() > MAX_TABS || tabs.iter().any(|t| !ok(*t) || *t < 0.0) {

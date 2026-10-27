@@ -28,6 +28,13 @@ pub struct Draft {
     pub align_on: bool,
     /// One of left, centre, right, justified.
     pub alignment: ParagraphAlignment,
+    /// "Paragraph Spacing" is ticked.
+    pub spacing_on: bool,
+    pub before: f64,
+    pub after: f64,
+    /// "Paragraph Line Spacing" is ticked; only the Multiple kind is known.
+    pub line_on: bool,
+    pub multiple: f64,
 }
 
 impl Draft {
@@ -49,6 +56,11 @@ impl Draft {
             } else {
                 ParagraphAlignment::Left
             },
+            spacing_on: style.space_before != 0.0 || style.space_after != 0.0,
+            before: style.space_before,
+            after: style.space_after,
+            line_on: style.line_spacing.is_some(),
+            multiple: style.line_spacing.unwrap_or(1.0),
         }
     }
 
@@ -63,6 +75,9 @@ impl Draft {
                 ParagraphAlignment::Default
             }),
             tabs: Some(self.tabs.clone()),
+            space_before: Some(if self.spacing_on { self.before } else { 0.0 }),
+            space_after: Some(if self.spacing_on { self.after } else { 0.0 }),
+            line_spacing: Some(self.line_on.then_some(self.multiple)),
         }
     }
 
@@ -183,6 +198,25 @@ mod tests {
         let d = Draft::of(&right);
         assert!(d.align_on);
         assert_eq!(d.alignment, ParagraphAlignment::Right);
+    }
+
+    #[test]
+    fn spacing_is_written_when_ticked_and_dropped_when_not() {
+        // The strings AutoCAD wrote in private_material/text-test1.dxf.
+        let contents = "\\pxb1,a1.5,sm1.1;text";
+        let view = paragraph_view_in(contents, 0);
+        let mut d = Draft::of(&view.style);
+        assert!(d.spacing_on && d.line_on);
+        assert_eq!((d.before, d.after, d.multiple), (1.0, 1.5, 1.1));
+        let same = apply_paragraph_edit(contents, 0..0, &d.edit()).unwrap();
+        assert_eq!(same.contents, contents);
+        d.after = 3.0;
+        d.line_on = false;
+        let done = apply_paragraph_edit(contents, 0..0, &d.edit()).unwrap();
+        assert_eq!(done.contents, "\\pxb1,a3;text");
+        d.spacing_on = false;
+        let done = apply_paragraph_edit(contents, 0..0, &d.edit()).unwrap();
+        assert_eq!(done.contents, "text");
     }
 
     #[test]

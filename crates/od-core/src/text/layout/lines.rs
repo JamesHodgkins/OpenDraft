@@ -3,6 +3,7 @@
 use std::ops::Range;
 
 use super::items::{CharState, Elem};
+use super::spacing::{gap_above, spacing_of, Spacing};
 use super::{
     CaretStop, Context, Decoration, DecorationKind, LaidOutLine, PositionedGlyph, TextLayout,
     DEFAULT_TAB, LINE_PITCH,
@@ -28,6 +29,9 @@ struct Span {
     /// The line ends its paragraph (a break, or the end of the text), so
     /// justifying leaves it alone.
     ends_paragraph: bool,
+    /// The line is the first of its paragraph.
+    starts_paragraph: bool,
+    spacing: Spacing,
 }
 
 fn next_stop(x: f64, tab: f64) -> f64 {
@@ -99,6 +103,8 @@ fn break_lines(elems: &[Elem], wrap: Option<f64>, tab: f64) -> Vec<Span> {
                     tabs: tabs.clone(),
                     align: alignment_of(style),
                     ends_paragraph: true,
+                    starts_paragraph: first,
+                    spacing: spacing_of(style),
                 });
                 style = paragraph_at(elems, i + 1, style);
                 first = true;
@@ -127,6 +133,8 @@ fn break_lines(elems: &[Elem], wrap: Option<f64>, tab: f64) -> Vec<Span> {
                         tabs: tabs.clone(),
                         align: alignment_of(style),
                         ends_paragraph: false,
+                        starts_paragraph: first,
+                        spacing: spacing_of(style),
                     });
                     first = false;
                     (start, i, last_break) = (end, end, None);
@@ -149,6 +157,8 @@ fn break_lines(elems: &[Elem], wrap: Option<f64>, tab: f64) -> Vec<Span> {
         tabs,
         align: alignment_of(style),
         ends_paragraph: true,
+        starts_paragraph: first,
+        spacing: spacing_of(style),
     });
     spans
 }
@@ -193,14 +203,20 @@ pub(super) fn place(
             .map(|s| states[s].height)
             .fold(0.0, f64::max);
         let height = if height > 0.0 { height } else { p.height };
-        baseline -= if k == 0 {
-            height
-        } else {
-            match p.spacing_style {
-                LineSpacingStyle::AtLeast => p.spacing_factor * LINE_PITCH * height,
-                LineSpacingStyle::Exact => p.spacing_factor * LINE_PITCH * p.height,
-            }
-        };
+        let factor = span.spacing.factor.unwrap_or(p.spacing_factor);
+        let above = k
+            .checked_sub(1)
+            .map(|j| (spans[j].ends_paragraph, spans[j].spacing));
+        let gap = gap_above(above, span.starts_paragraph, span.spacing);
+        baseline -= gap
+            + if k == 0 {
+                height
+            } else {
+                match p.spacing_style {
+                    LineSpacingStyle::AtLeast => factor * LINE_PITCH * height,
+                    LineSpacingStyle::Exact => factor * LINE_PITCH * p.height,
+                }
+            };
         last_height = height;
 
         let first_glyph = out.glyphs.len();

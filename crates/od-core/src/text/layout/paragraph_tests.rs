@@ -122,3 +122,43 @@ fn a_paragraph_control_where_a_line_wraps_leaves_every_caret_inside_the_text() {
         }
     }
 }
+
+/// The baseline of each line.
+fn baselines(layout: &TextLayout) -> Vec<f64> {
+    layout.lines.iter().map(|l| l.baseline).collect()
+}
+
+#[test]
+fn space_before_and_after_open_a_gap_between_paragraphs_only() {
+    // From private_material/text-test1.dxf: `\pxb1,a1.5,sm1.1;` (before 1,
+    // after 1.5, multiple 1.1). The multiple alone sets the pitch inside a
+    // paragraph, so compare against it rather than a font measurement.
+    let plain = baselines(&sample("one\\Ptwo\\Pthree", 0.0));
+    let spaced = baselines(&sample("\\pxb1,a1.5;one\\Ptwo\\Pthree", 0.0));
+    assert_eq!(spaced.len(), 3);
+    // The paragraph control holds for those after it, so every paragraph
+    // has 1.5 after and 1 before; the first line of the text gets none.
+    assert!(near(spaced[0], plain[0]));
+    assert!(near(spaced[1] - spaced[0], plain[1] - plain[0] - 2.5));
+    assert!(near(spaced[2] - spaced[1], plain[2] - plain[1] - 2.5));
+}
+
+#[test]
+fn space_after_alone_is_not_added_inside_a_paragraph() {
+    // `\pxa3;`: only the break between paragraphs grows; a wrapped line does not.
+    let plain = baselines(&sample("aaa bbb\\Pcc", 3.5));
+    let spaced = baselines(&sample("\\pxa3;aaa bbb\\Pcc", 3.5));
+    assert_eq!(plain.len(), 3);
+    assert!(near(spaced[1] - spaced[0], plain[1] - plain[0]));
+    assert!(near(spaced[2] - spaced[1], plain[2] - plain[1] - 3.0));
+}
+
+#[test]
+fn a_line_spacing_multiple_replaces_the_texts_inside_its_paragraph() {
+    let one = baselines(&sample("a\\Pb\\Pc", 0.0));
+    let wide = baselines(&sample("\\pxsm2;a\\Pb\\Pc", 0.0));
+    let pitch = one[0] - one[1];
+    assert!(pitch > 0.0);
+    assert!(near(wide[0] - wide[1], 2.0 * pitch));
+    assert!(near(wide[1] - wide[2], 2.0 * pitch));
+}

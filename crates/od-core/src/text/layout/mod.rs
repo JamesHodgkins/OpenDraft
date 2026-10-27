@@ -6,13 +6,14 @@
 //! block: the origin is its top-left corner before the attachment is
 //! applied, x runs along the text, y runs up (so lines sit at negative y).
 //!
-//! What it does not do yet: paragraph formatting (those controls are
-//! opaque), stacked fractions, fields, installed or per-run fonts, columns,
+//! What it does not do yet: the paragraph controls AutoCAD has not been seen
+//! to write, stacked fractions, fields, installed or per-run fonts, columns,
 //! vertical flow and mixed-direction (bidi) lines. Each of those is
 //! reported as a [`LayoutIssue`] rather than dropped without a word.
 
 mod items;
 mod lines;
+mod spacing;
 
 use std::ops::Range;
 
