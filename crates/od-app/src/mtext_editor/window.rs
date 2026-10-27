@@ -101,7 +101,9 @@ pub fn show(
             editor.select_line_at(x, y);
         } else if response.double_clicked() {
             editor.select_word_at(x, y);
-        } else if pressed && bounds.contains(pos) {
+        } else if pressed && response.contains_pointer() {
+            // Not `bounds.contains`: a dialog or menu drawn over the text
+            // must not move the caret when it is clicked.
             editor.place_at(x, y, shift);
             editor.active_since = now;
         } else if response.dragged() {

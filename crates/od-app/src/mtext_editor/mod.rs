@@ -11,6 +11,8 @@ mod ruler;
 mod state;
 mod toolbar;
 mod window;
+#[cfg(test)]
+mod window_tests;
 
 pub use input::Outcome;
 pub use state::MTextEditor;
