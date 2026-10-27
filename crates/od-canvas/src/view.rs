@@ -30,6 +30,8 @@ mod point_paint;
 mod snap_choice;
 mod snap_marker;
 mod text_paint;
+#[cfg(test)]
+mod text_paint_tests;
 mod text_raster;
 pub use text_paint::paint_text;
 mod types;
@@ -75,6 +77,8 @@ pub struct View {
     constraint: Option<Arc<dyn Fn(Point) -> Point + Send + Sync>>,
     input_exclusions: Vec<Rect>,
     wheel_through: bool,
+    /// An entity the drawing leaves out (a text whose editor is open).
+    hidden: Option<EntityId>,
     pub camera: Camera,
     /// Where the pointer was last seen while an operation was in progress,
     /// so the rubber band keeps following it past the canvas edge.

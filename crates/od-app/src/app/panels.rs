@@ -244,6 +244,8 @@ impl PanelViewer<'_> {
         };
         let doc = &mut self.state.docs[self.state.active];
         doc.view.set_wheel_through_exclusions(editing);
+        doc.view
+            .set_hidden_entity(doc.mtext_editor.as_ref().and_then(|e| e.replaces));
         if editing {
             // The editor owns the pointer over the drawing.
             doc.view

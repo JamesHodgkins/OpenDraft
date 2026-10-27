@@ -23,6 +23,11 @@ impl View {
 
     /// Let the wheel zoom where clicks are excluded (an in-place editor
     /// covers the drawing but the view should stay navigable).
+    /// Leave `id` out of the drawing (its in-place editor draws it instead).
+    pub fn set_hidden_entity(&mut self, id: Option<EntityId>) {
+        self.hidden = id;
+    }
+
     pub fn set_wheel_through_exclusions(&mut self, through: bool) {
         self.wheel_through = through;
     }

@@ -14,19 +14,21 @@ impl AppState {
         let wanted = self
             .waiting()
             .filter(|ask| ask.wants == Wants::MTextEditor)
-            .and_then(|ask| ask.mtext.clone());
+            .and_then(|ask| ask.mtext.clone().map(|text| (text, ask.mtext_of)));
         let Some(doc) = self.docs.get_mut(self.run_doc) else {
             return;
         };
         match wanted {
-            Some(text) if doc.mtext_editor.is_none() => {
+            Some((text, of)) if doc.mtext_editor.is_none() => {
                 let style = doc
                     .session
                     .document
                     .text_style(text.style)
                     .cloned()
                     .unwrap_or_else(TextStyle::standard);
-                doc.mtext_editor = Some(MTextEditor::new(*text, style));
+                let mut editor = MTextEditor::new(*text, style);
+                editor.replaces = of;
+                doc.mtext_editor = Some(editor);
             }
             None => doc.mtext_editor = None,
             Some(_) => {}

@@ -55,6 +55,9 @@ pub struct MTextEditor {
     pub composing: Option<String>,
     /// The Paragraph dialog is open.
     pub paragraph_dialog: bool,
+    /// The drawing's text object this edit replaces, left out of the drawing
+    /// while the draft is shown in its place.
+    pub replaces: Option<od_core::EntityId>,
     /// A format chosen at a bare caret, taken by the next typed text.
     pending: CharEdit,
     /// Just before the closing brace of the group that text made, so more
@@ -84,6 +87,7 @@ impl MTextEditor {
             notice: None,
             composing: None,
             paragraph_dialog: false,
+            replaces: None,
             pending: CharEdit::default(),
             open_group: None,
             active_since: 0.0,
