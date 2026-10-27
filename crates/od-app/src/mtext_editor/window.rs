@@ -101,10 +101,12 @@ pub fn show(
             editor.select_line_at(x, y);
         } else if response.double_clicked() {
             editor.select_word_at(x, y);
-        } else if pressed && bounds.contains(pos) {
+        } else if pressed && response.contains_pointer() {
+            // Not `bounds.contains`: a dialog or menu drawn over the text
+            // must not move the caret when it is clicked.
             editor.place_at(x, y, shift);
             editor.active_since = now;
-        } else if response.dragged() {
+        } else if response.dragged_by(egui::PointerButton::Primary) {
             editor.place_at(x, y, true);
         }
     }
@@ -208,7 +210,7 @@ pub fn show(
     let (chosen, tools) =
         super::toolbar::show(&ctx, theme, editor, styles, bounds.union(ruler), canvas);
     outcome = outcome.or(chosen);
-    let dialog = super::paragraph_dialog::show(&ctx, theme, editor, tools, now);
+    let dialog = super::paragraph_dialog::show(&ctx, theme, editor, now);
 
     // A click on the drawing outside the box and the toolbar accepts.
     if pressed {
