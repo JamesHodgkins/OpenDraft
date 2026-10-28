@@ -10,9 +10,12 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use od_core::block::{block_name_problem, MAX_EXPANSION, MAX_NESTING};
-use od_core::{Attributes, BlockDef, BlockEntity, BlockId, Color, Entity, LayerId, Lineweight};
+use od_core::{
+    Attributes, BlockDef, BlockEntity, BlockId, Color, DimStyle, Entity, LayerId, Lineweight,
+};
 use serde::{Deserialize, Serialize};
 
+use super::dimension_style::StylePool;
 use super::entity::{from_point, invalid, point, EntityDto, PointDto};
 use super::{attr_from_dto, attr_to_dto, AttrDto, ColorDto};
 use crate::FileError;
@@ -46,7 +49,7 @@ struct BlockObjectDto {
 }
 
 impl BlockDto {
-    pub(super) fn from_block(block: &BlockDef) -> Result<Self, FileError> {
+    pub(super) fn from_block(block: &BlockDef, styles: &mut StylePool) -> Result<Self, FileError> {
         let objects = block
             .entities
             .iter()
@@ -57,7 +60,7 @@ impl BlockDto {
                     linetype: attr_to_dto(&e.attrs.linetype, String::clone),
                     lineweight: attr_to_dto(&e.attrs.lineweight, |w| w.0),
                     scale: super::linetype::ScaleDto::of(&e.attrs),
-                    entity: EntityDto::from_entity(&e.entity)?,
+                    entity: EntityDto::from_entity(&e.entity, styles)?,
                 })
             })
             .collect::<Result<_, FileError>>()?;
@@ -75,6 +78,7 @@ impl BlockDto {
 /// a layer id exists.
 pub(super) fn load_blocks(
     dtos: &[BlockDto],
+    dim_styles: &[DimStyle],
     layer_ok: impl Fn(u64) -> bool,
 ) -> Result<Vec<Arc<BlockDef>>, FileError> {
     let mut by_id = HashMap::new();
@@ -90,7 +94,9 @@ pub(super) fn load_blocks(
     let mut path = Vec::new();
     let mut sizes = HashMap::new();
     for dto in dtos {
-        resolve(dto.id, &by_id, &layer_ok, &mut done, &mut path, &mut sizes)?;
+        resolve(
+            dto.id, &by_id, &layer_ok, dim_styles, &mut done, &mut path, &mut sizes,
+        )?;
     }
     Ok(dtos
         .iter()
@@ -102,6 +108,7 @@ fn resolve(
     id: u64,
     by_id: &HashMap<u64, &BlockDto>,
     layer_ok: &impl Fn(u64) -> bool,
+    dim_styles: &[DimStyle],
     done: &mut Blocks,
     path: &mut Vec<u64>,
     sizes: &mut HashMap<BlockId, usize>,
@@ -123,7 +130,7 @@ fn resolve(
     path.push(id);
     for object in &dto.objects {
         if let EntityDto::Insert { block, .. } = &object.entity {
-            resolve(*block, by_id, layer_ok, done, path, sizes)?;
+            resolve(*block, by_id, layer_ok, dim_styles, done, path, sizes)?;
         }
     }
     path.pop();
@@ -144,7 +151,7 @@ fn resolve(
         };
         object.scale.apply(&mut attrs);
         entities.push(BlockEntity {
-            entity: object.entity.to_entity(done)?,
+            entity: object.entity.to_entity(done, dim_styles)?,
             attrs,
         });
     }

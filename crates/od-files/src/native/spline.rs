@@ -148,7 +148,7 @@ mod tests {
     }
 
     fn read(text: &str) -> Result<Document, FileError> {
-        NativeFormat.read(text.as_bytes()).map(|l| l.document)
+        crate::native::tests::read(text)
     }
 
     const GOOD: &str = r#""degree": 2, "control_points": [[0, 0], [1, 1], [2, 0]],
@@ -164,7 +164,9 @@ mod tests {
         assert_eq!(s.knot_tolerance, od_core::spline::DEFAULT_KNOT_TOLERANCE);
         let text = String::from_utf8(NativeFormat.write(&document).unwrap().bytes).unwrap();
         assert!(text.contains("\"type\": \"spline\""));
-        assert!(!text.contains("weights") && !text.contains("\"fit\""));
+        let file: serde_json::Value = serde_json::from_str(&text).unwrap();
+        let entity = &file["drawing"]["objects"][0]["entity"];
+        assert!(entity.get("weights").is_none() && entity.get("fit").is_none());
     }
 
     #[test]

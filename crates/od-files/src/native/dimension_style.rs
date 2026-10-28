@@ -1,15 +1,17 @@
-//! The dimension style as the native file keeps it: only the values that
-//! differ from the stock style are written.
+//! Dimension styles as the native file keeps them. Every style is written in
+//! full, so a file means the same in every build whatever the stock style
+//! becomes. They live in one pool without repeats (`dim_styles`): the named
+//! table first, then the copies that dimensions carry. The table
+//! (`named_dim_styles`), the current style (`current_dim_style`, by name) and
+//! each dimension refer to the pool by position.
 
-use od_core::{AngleFormat, Arrow, DimStyle, LengthFormat};
+use od_core::{AngleFormat, Arrow, DimStyle, Document, LengthFormat};
 use serde::{Deserialize, Serialize};
-use serde_json::{Map, Value};
 
 use super::entity::invalid;
 use crate::FileError;
 
 #[derive(Serialize, Deserialize)]
-#[serde(default)]
 struct DimStyleDto {
     name: String,
     scale: f64,
@@ -61,12 +63,6 @@ struct DimStyleDto {
     angle_precision: u8,
     /// The text style's id.
     text_style: u64,
-}
-
-impl Default for DimStyleDto {
-    fn default() -> Self {
-        Self::from(&DimStyle::default())
-    }
 }
 
 impl From<&DimStyle> for DimStyleDto {
@@ -212,89 +208,119 @@ impl DimStyleDto {
     }
 }
 
-fn as_map(style: &DimStyle) -> Map<String, Value> {
-    match serde_json::to_value(DimStyleDto::from(style)) {
-        Ok(Value::Object(map)) => map,
-        _ => Map::new(),
+/// The write side: the styles met so far, without repeats.
+pub(super) struct StylePool {
+    styles: Vec<DimStyle>,
+}
+
+impl StylePool {
+    pub(super) fn new() -> Self {
+        Self { styles: Vec::new() }
     }
-}
 
-/// The values of `style` that differ from the stock style, or `None` when
-/// none do.
-pub(super) fn sparse_style(style: &DimStyle) -> Option<Value> {
-    let stock = as_map(&DimStyle::default());
-    let changed: Map<String, Value> = as_map(style)
-        .into_iter()
-        .filter(|(key, value)| stock.get(key) != Some(value))
-        .collect();
-    (!changed.is_empty()).then_some(Value::Object(changed))
-}
-
-/// The named styles, when the drawing has more than the stock `Standard`:
-/// each as its differences from the stock style (`{}` for none).
-pub(super) fn sparse_table(styles: &[DimStyle]) -> Option<Vec<Value>> {
-    if styles == [DimStyle::default()] {
-        return None;
-    }
-    Some(
-        styles
-            .iter()
-            .map(|s| sparse_style(s).unwrap_or_else(|| Value::Object(Map::new())))
-            .collect(),
-    )
-}
-
-/// The table a file describes. `Standard` is put first when the file lacks
-/// it, `current` replaces the style of its name (or is added), and a name
-/// used twice is refused.
-pub(super) fn table_from(
-    sparse: Option<&[Value]>,
-    current: &DimStyle,
-) -> Result<Vec<DimStyle>, FileError> {
-    let mut table: Vec<DimStyle> = Vec::new();
-    for value in sparse.unwrap_or_default() {
-        let style = style_from(Some(value))?;
-        if table
-            .iter()
-            .any(|s| s.name.eq_ignore_ascii_case(&style.name))
-            || style.name.trim().is_empty()
-        {
-            return invalid(format!(
-                "dimension style \"{}\" is empty or appears twice",
-                style.name
-            ));
+    /// Where `style` is in the pool, adding it when it is not there yet.
+    pub(super) fn index_of(&mut self, style: &DimStyle) -> usize {
+        if let Some(at) = self.styles.iter().position(|s| s == style) {
+            return at;
         }
-        table.push(style);
+        self.styles.push(style.clone());
+        self.styles.len() - 1
     }
-    if !table
-        .first()
-        .is_some_and(|s| s.name.eq_ignore_ascii_case("Standard"))
-    {
-        table.retain(|s| !s.name.eq_ignore_ascii_case("Standard"));
-        table.insert(0, DimStyle::default());
+
+    pub(super) fn styles(&self) -> &[DimStyle] {
+        &self.styles
     }
-    match table
-        .iter_mut()
-        .find(|s| s.name.eq_ignore_ascii_case(&current.name))
-    {
-        Some(slot) => *slot = current.clone(),
-        None => table.push(current.clone()),
-    }
-    Ok(table)
 }
 
-/// The style a file's differences describe.
-pub(super) fn style_from(sparse: Option<&Value>) -> Result<DimStyle, FileError> {
-    let Some(Value::Object(changed)) = sparse else {
-        return match sparse {
-            None | Some(Value::Null) => Ok(DimStyle::default()),
-            Some(_) => invalid("a dimension style is not an object"),
+/// The pool, the named table and the current style, as the drawing holds them.
+#[derive(Serialize, Deserialize)]
+pub(super) struct DimStylesDto {
+    dim_styles: Vec<DimStyleDto>,
+    /// Pool positions of the named styles, in table order.
+    named_dim_styles: Vec<usize>,
+    current_dim_style: String,
+}
+
+impl DimStylesDto {
+    /// The table goes into `pool` first, so it is complete before the
+    /// objects add their copies.
+    pub(super) fn start(document: &Document, pool: &mut StylePool) -> Vec<usize> {
+        document
+            .dim_styles()
+            .iter()
+            .map(|s| pool.index_of(s))
+            .collect()
+    }
+
+    pub(super) fn of(document: &Document, pool: &StylePool, named: Vec<usize>) -> Self {
+        Self {
+            dim_styles: pool.styles.iter().map(DimStyleDto::from).collect(),
+            named_dim_styles: named,
+            current_dim_style: document.dim_style().name.clone(),
+        }
+    }
+
+    /// The pool, read and checked, ready to be handed to the dimensions and
+    /// to [`Styles::install`].
+    pub(super) fn read(self) -> Result<Styles, FileError> {
+        let pool = self
+            .dim_styles
+            .into_iter()
+            .map(DimStyleDto::into_style)
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(Styles {
+            pool,
+            named: self.named_dim_styles,
+            current: self.current_dim_style,
+        })
+    }
+}
+
+pub(super) struct Styles {
+    pub(super) pool: Vec<DimStyle>,
+    named: Vec<usize>,
+    current: String,
+}
+
+impl Styles {
+    /// Sets the table and current style. The table must start with
+    /// `Standard`, name every style once (ignoring case) and contain the
+    /// current one.
+    pub(super) fn install(self, document: &mut Document) -> Result<(), FileError> {
+        let mut table: Vec<DimStyle> = Vec::new();
+        for at in &self.named {
+            let Some(style) = self.pool.get(*at) else {
+                return invalid(format!("dimension style {at} does not exist"));
+            };
+            if style.name.trim().is_empty()
+                || table
+                    .iter()
+                    .any(|s| s.name.eq_ignore_ascii_case(&style.name))
+            {
+                return invalid(format!(
+                    "dimension style \"{}\" is empty or appears twice",
+                    style.name
+                ));
+            }
+            table.push(style.clone());
+        }
+        if !table
+            .first()
+            .is_some_and(|s| s.name.eq_ignore_ascii_case("Standard"))
+        {
+            return invalid("the dimension styles do not start with Standard");
+        }
+        let Some(current) = table
+            .iter()
+            .find(|s| s.name.eq_ignore_ascii_case(&self.current))
+            .cloned()
+        else {
+            return invalid(format!(
+                "the current dimension style \"{}\" does not exist",
+                self.current
+            ));
         };
-    };
-    let mut all = as_map(&DimStyle::default());
-    all.extend(changed.clone());
-    match serde_json::from_value::<DimStyleDto>(Value::Object(all)) {
-        Ok(dto) => dto.into_style(),
-        Err(e) => invalid(format!("a dimension style is damaged: {e}")),
+        document.set_dim_styles(table, current);
+        Ok(())
     }
 }

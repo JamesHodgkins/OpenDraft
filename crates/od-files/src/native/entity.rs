@@ -1,11 +1,12 @@
 //! The native format's description of one entity, kept apart from the rest
 //! of the file so both stay small.
 
-use od_core::{Ellipse, Entity, Point};
+use od_core::{DimStyle, Ellipse, Entity, Point};
 use serde::{Deserialize, Serialize};
 
 use super::block::{insert_entity, Blocks};
 use super::dimension::DimensionDto;
+use super::dimension_style::StylePool;
 use super::hatch::HatchDto;
 use super::leader::LeaderDto;
 use super::mleader::MLeaderDto;
@@ -117,7 +118,7 @@ fn unit_direction(p: PointDto) -> Result<Point, FileError> {
 }
 
 impl EntityDto {
-    pub(super) fn from_entity(entity: &Entity) -> Result<Self, FileError> {
+    pub(super) fn from_entity(entity: &Entity, styles: &mut StylePool) -> Result<Self, FileError> {
         let dto = match entity {
             Entity::Point { at } => EntityDto::Point { at: point(*at) },
             Entity::Xline { origin, direction } => EntityDto::Xline {
@@ -164,7 +165,7 @@ impl EntityDto {
                 min: point(*min),
                 max: point(*max),
             },
-            Entity::Dimension(d) => EntityDto::Dimension(DimensionDto::from_dimension(d)),
+            Entity::Dimension(d) => EntityDto::Dimension(DimensionDto::from_dimension(d, styles)),
             Entity::MText(m) => EntityDto::MText(MTextDto::from_mtext(m)),
             Entity::MLeader(m) => EntityDto::MLeader(MLeaderDto::from_mleader(m)?),
             Entity::Leader(l) => EntityDto::Leader(LeaderDto::from_leader(l)?),
@@ -194,13 +195,17 @@ impl EntityDto {
             },
         };
         // Refuse to write what could not be read back.
-        dto.to_entity(&Blocks::new())?;
+        dto.to_entity(&Blocks::new(), styles.styles())?;
         Ok(dto)
     }
 
     /// The entity, with inserts resolved in `blocks` (definitions already
     /// read).
-    pub(super) fn to_entity(&self, blocks: &Blocks) -> Result<Entity, FileError> {
+    pub(super) fn to_entity(
+        &self,
+        blocks: &Blocks,
+        dim_styles: &[DimStyle],
+    ) -> Result<Entity, FileError> {
         Ok(match self {
             EntityDto::Insert {
                 block,
@@ -268,7 +273,7 @@ impl EntityDto {
                 .or_else(|why| invalid(format!("an ellipse is not valid: {why}")))?,
             ),
             EntityDto::Spline(s) => Entity::Spline(Box::new(s.to_spline()?)),
-            EntityDto::Dimension(d) => Entity::Dimension(Box::new(d.to_dimension()?)),
+            EntityDto::Dimension(d) => Entity::Dimension(Box::new(d.to_dimension(dim_styles)?)),
             EntityDto::MText(m) => Entity::MText(Box::new(m.to_mtext()?)),
             EntityDto::MLeader(m) => Entity::MLeader(Box::new(m.to_mleader()?)),
             EntityDto::Leader(l) => Entity::Leader(Box::new(l.to_leader()?)),
@@ -347,11 +352,11 @@ mod tests {
         let line = |d: &str| format!(r#"{{"type": "ray", "origin": [0, 0], "direction": {d}}}"#);
         let ok: super::EntityDto = serde_json::from_str(&line("[3, 4]")).unwrap();
         let blocks = crate::native::block::Blocks::new();
-        let Entity::Ray { direction, .. } = ok.to_entity(&blocks).unwrap() else {
+        let Entity::Ray { direction, .. } = ok.to_entity(&blocks, &[]).unwrap() else {
             panic!("a ray");
         };
         assert!((direction.x - 0.6).abs() < 1e-12 && (direction.y - 0.8).abs() < 1e-12);
         let zero: super::EntityDto = serde_json::from_str(&line("[0, 0]")).unwrap();
-        assert!(zero.to_entity(&blocks).is_err());
+        assert!(zero.to_entity(&blocks, &[]).is_err());
     }
 }

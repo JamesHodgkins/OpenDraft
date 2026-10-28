@@ -61,7 +61,7 @@ mod text;
 mod units;
 
 use block::BlockDto;
-use dimension::{sparse_style, sparse_table};
+use dimension_style::{DimStylesDto, StylePool};
 use entity::EntityDto;
 use layout::LayoutDto;
 use text::TextStyleDto;
@@ -189,13 +189,9 @@ struct DrawingDto {
     current_layer: u64,
     #[serde(default)]
     units: UnitsDto,
-    /// The current dimension style's differences from the stock one.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    dim_style: Option<serde_json::Value>,
-    /// The named dimension styles, each as its differences from the stock
-    /// style; left out when `Standard` is all there is.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    dim_styles: Option<Vec<serde_json::Value>>,
+    /// The dimension styles, in full: see `dimension_style.rs`.
+    #[serde(flatten)]
+    dim_styles: DimStylesDto,
     layers: Vec<LayerDto>,
     /// In draw order.
     objects: Vec<ObjectDto>,
@@ -332,6 +328,8 @@ impl DrawingDto {
                 locked: l.locked,
             })
             .collect();
+        let mut styles = StylePool::new();
+        let named_styles = DimStylesDto::start(document, &mut styles);
         let objects = document
             .objects()
             .iter()
@@ -344,20 +342,24 @@ impl DrawingDto {
                     lineweight: attr_to_dto(&o.attrs.lineweight, |w| w.0),
                     scale: linetype::ScaleDto::of(&o.attrs),
                     layout: o.layout.map(|l| l.0),
-                    entity: EntityDto::from_entity(&o.entity)?,
+                    entity: EntityDto::from_entity(&o.entity, &mut styles)?,
                 })
             })
             .collect::<Result<_, FileError>>()?;
         let (next_object_id, next_layer_id) = document.next_ids();
         let (next_layout_id, next_viewport_id) = document.next_layout_ids();
         let stock_styles = text::is_stock(document);
+        let blocks = document
+            .blocks()
+            .iter()
+            .map(|b| BlockDto::from_block(b, &mut styles))
+            .collect::<Result<_, FileError>>()?;
         Ok(Self {
             next_object_id,
             next_layer_id,
             current_layer: document.current_layer().0,
             units: UnitsDto::from(document.units()),
-            dim_style: sparse_style(document.dim_style()),
-            dim_styles: sparse_table(document.dim_styles()),
+            dim_styles: DimStylesDto::of(document, &styles, named_styles),
             layers,
             objects,
             layouts: document
@@ -379,11 +381,7 @@ impl DrawingDto {
             current_text_style: document.current_text_style().0,
             next_text_style_id: document.next_text_style_id(),
             mleader_styles: mleader_style::TableDto::of(document),
-            blocks: document
-                .blocks()
-                .iter()
-                .map(|b| BlockDto::from_block(b))
-                .collect::<Result<_, FileError>>()?,
+            blocks,
             next_block_id: document.next_block_id(),
             linetypes: linetype::TableDto::of(document),
             new_style: new_style::NewStyleDto::of(document),
@@ -401,8 +399,30 @@ mod tests {
 
     use super::*;
 
+    /// `text` with the stock dimension styles added to its drawing when it
+    /// has none, so a hand-written file need not spell out fifty values. The
+    /// reader itself requires them.
+    pub(super) fn with_dim_styles(text: &str) -> String {
+        let Ok(mut file) = serde_json::from_str::<serde_json::Value>(text) else {
+            return text.to_owned();
+        };
+        let stock: serde_json::Value =
+            serde_json::from_slice(&NativeFormat.write(&Document::default()).unwrap().bytes)
+                .unwrap();
+        if let Some(drawing) = file.get_mut("drawing").and_then(|d| d.as_object_mut()) {
+            for key in ["dim_styles", "named_dim_styles", "current_dim_style"] {
+                drawing
+                    .entry(key)
+                    .or_insert_with(|| stock["drawing"][key].clone());
+            }
+        }
+        file.to_string()
+    }
+
     pub(super) fn read(text: &str) -> Result<Document, FileError> {
-        NativeFormat.read(text.as_bytes()).map(|l| l.document)
+        NativeFormat
+            .read(with_dim_styles(text).as_bytes())
+            .map(|l| l.document)
     }
 
     pub(super) fn roundtrip(document: &Document) -> Document {

@@ -66,6 +66,6 @@ Keep as optional: sparse per-entity flags (section 1 note), `layouts`, `blocks`,
 
 Each step is a schema change in place at version 0, with the tests updated and no conversion code.
 
-## Note on dimensions under rule A
+## Dimensions under rule A (done)
 
-A dimension carries a snapshot of its style (`Dimension.style`), not a reference, and `DimensionDto::to_dimension` converts with no document context. Writing the full style inline on every dimension would add about 50 fields (some 55 pretty-printed lines) per dimension. The alternative is a document-level pool of full styles (the named table plus any distinct snapshots) with each dimension holding an index; that needs the pool passed into entity conversion (`entity.rs`, `block.rs`, `load.rs`). Not yet decided.
+A dimension carries a snapshot of its style (`Dimension.style`), not a reference, and `DimensionDto::to_dimension` converts with no document context. Writing the full style inline on every dimension would add about 50 fields (some 55 pretty-printed lines) per dimension. The alternative is a document-level pool of full styles (the named table plus any distinct snapshots) with each dimension holding an index; that needs the pool passed into entity conversion (`entity.rs`, `block.rs`, `load.rs`). Chosen and built: the pool, with `named_dim_styles` (pool positions in table order), `current_dim_style` (a name) and `style` (a position) on each dimension.

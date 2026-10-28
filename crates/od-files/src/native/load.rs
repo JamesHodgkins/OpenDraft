@@ -7,7 +7,6 @@ use od_core::{
 };
 
 use super::block::{load_blocks, Blocks};
-use super::dimension::{style_from, table_from};
 use super::entity::invalid;
 use super::layout::{into_layouts, LayoutDto};
 use super::{attr_from_dto, text, Color, DrawingDto};
@@ -48,6 +47,7 @@ impl DrawingDto {
             return invalid("there is no layer 0");
         }
 
+        let dim_styles = self.dim_styles.read()?;
         text::load_styles(
             &mut document,
             &self.text_styles,
@@ -58,7 +58,7 @@ impl DrawingDto {
         self.linetypes.load(&mut document)?;
         self.new_style.load(&mut document);
         self.point_style.load(&mut document);
-        let blocks = load_blocks(&self.blocks, |l| layer_ids.contains(&l))?;
+        let blocks = load_blocks(&self.blocks, &dim_styles.pool, |l| layer_ids.contains(&l))?;
         let by_id: Blocks = blocks.iter().map(|b| (b.id.0, b.clone())).collect();
         for block in blocks {
             document.push_block(block);
@@ -82,7 +82,7 @@ impl DrawingDto {
                     object.id, object.layer
                 ));
             }
-            let entity = object.entity.to_entity(&by_id)?;
+            let entity = object.entity.to_entity(&by_id, &dim_styles.pool)?;
             if let Entity::MText(text) = &entity {
                 if document.text_style(text.style).is_none() {
                     return invalid(format!(
@@ -119,9 +119,7 @@ impl DrawingDto {
         // A current layer that is gone falls back to layer 0.
         document.set_current_layer(LayerId(self.current_layer));
         document.set_units(self.units.into_units()?);
-        let current = style_from(self.dim_style.as_ref())?;
-        let table = table_from(self.dim_styles.as_deref(), &current)?;
-        document.set_dim_styles(table, current.sanitized());
+        dim_styles.install(&mut document)?;
         document.set_layouts(into_layouts(self.layouts)?);
         document.reserve_layout_ids(self.next_layout_id, self.next_viewport_id);
         document.finish_bulk_load();
