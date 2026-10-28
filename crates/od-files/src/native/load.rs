@@ -116,7 +116,12 @@ impl DrawingDto {
         }
 
         document.reserve_ids(self.next_object_id, self.next_layer_id);
-        // A current layer that is gone falls back to layer 0.
+        if !layer_ids.contains(&self.current_layer) {
+            return invalid(format!(
+                "the current layer {} does not exist",
+                self.current_layer
+            ));
+        }
         document.set_current_layer(LayerId(self.current_layer));
         document.set_units(self.units.into_units()?);
         dim_styles.install(&mut document)?;

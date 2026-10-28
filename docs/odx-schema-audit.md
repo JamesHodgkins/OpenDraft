@@ -66,6 +66,10 @@ Keep as optional: sparse per-entity flags (section 1 note), `layouts`, `blocks`,
 
 Each step is a schema change in place at version 0, with the tests updated and no conversion code.
 
+## Required fields (section 5): done
+
+`units`, the layout, viewport and block counters, the layer flags (`on`, `frozen`, `locked`), the viewport `on`/`locked`, and every object's and block object's colour, linetype and lineweight are required, and a current layer that does not exist is refused instead of replaced by layer 0. A counter below the largest id in use is harmless: `push`, `push_block` and the `reserve_*` calls only ever raise it. Kept optional on purpose: `layouts` and `blocks` (an empty list is the definition of none), per-object linetype scale and generation, descriptions, `big_font`, `fixed_height` and the other per-entity omit-when-false flags.
+
 ## Rule A: done for dimensions, text, multileader and linetype tables and the point style
 
 The text style table, multileader style table, linetype table, `LTSCALE` and `PDMODE`/`PDSIZE` are written in full and required (no `#[serde(default)]` and no stock fallback), as are their per-style fields. Per-entity omit-when-false flags are kept.

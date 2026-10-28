@@ -187,7 +187,6 @@ struct DrawingDto {
     next_object_id: u64,
     next_layer_id: u64,
     current_layer: u64,
-    #[serde(default)]
     units: UnitsDto,
     /// The dimension styles, in full: see `dimension_style.rs`.
     #[serde(flatten)]
@@ -198,9 +197,7 @@ struct DrawingDto {
     /// Sheets in tab order; counters keep deleted ids retired.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     layouts: Vec<LayoutDto>,
-    #[serde(default)]
     next_layout_id: u64,
-    #[serde(default)]
     next_viewport_id: u64,
     text_styles: Vec<TextStyleDto>,
     current_text_style: u64,
@@ -211,7 +208,6 @@ struct DrawingDto {
     /// Block definitions in table order.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     blocks: Vec<BlockDto>,
-    #[serde(default)]
     next_block_id: u64,
     /// The linetype table and `LTSCALE`.
     #[serde(flatten)]
@@ -231,16 +227,9 @@ struct LayerDto {
     linetype: String,
     /// Hundredths of a millimetre.
     lineweight: u16,
-    #[serde(default = "yes")]
     on: bool,
-    #[serde(default)]
     frozen: bool,
-    #[serde(default)]
     locked: bool,
-}
-
-fn yes() -> bool {
-    true
 }
 
 #[derive(Clone, Copy, Serialize, Deserialize)]
@@ -262,11 +251,8 @@ enum AttrDto<T> {
 struct ObjectDto {
     id: u64,
     layer: u64,
-    #[serde(default)]
     color: AttrDto<ColorDto>,
-    #[serde(default)]
     linetype: AttrDto<String>,
-    #[serde(default)]
     lineweight: AttrDto<u16>,
     #[serde(flatten)]
     scale: linetype::ScaleDto,
@@ -390,8 +376,9 @@ mod tests {
 
     use super::*;
 
-    /// The tables a drawing must spell out (styles, linetypes, point style).
-    const TABLE_KEYS: [&str; 14] = [
+    /// The tables a drawing must spell out (styles, linetypes, point style,
+    /// units, counters).
+    const TABLE_KEYS: [&str; 18] = [
         "dim_styles",
         "named_dim_styles",
         "current_dim_style",
@@ -406,25 +393,71 @@ mod tests {
         "linetype_scale",
         "point_mode",
         "point_size",
+        "units",
+        "next_layout_id",
+        "next_viewport_id",
+        "next_block_id",
     ];
 
-    /// `text` with the stock tables added to its drawing where it has none,
-    /// so a hand-written file need not spell out hundreds of values. The
-    /// reader itself requires them.
+    fn fill(value: &mut serde_json::Value, defaults: &[(&str, serde_json::Value)]) {
+        if let Some(map) = value.as_object_mut() {
+            for (key, default) in defaults {
+                map.entry(*key).or_insert_with(|| default.clone());
+            }
+        }
+    }
+
+    /// `text` with what a hand-written file leaves out added to its drawing:
+    /// the stock tables, layer flags, by-layer attributes. The reader itself
+    /// requires them all.
     pub(super) fn with_dim_styles(text: &str) -> String {
+        use serde_json::json;
         let Ok(mut file) = serde_json::from_str::<serde_json::Value>(text) else {
             return text.to_owned();
         };
         let stock: serde_json::Value =
             serde_json::from_slice(&NativeFormat.write(&Document::default()).unwrap().bytes)
                 .unwrap();
-        if let Some(drawing) = file.get_mut("drawing").and_then(|d| d.as_object_mut()) {
-            for key in TABLE_KEYS {
-                drawing
-                    .entry(key)
-                    .or_insert_with(|| stock["drawing"][key].clone());
-            }
+        let attrs = [
+            ("color", json!("by_layer")),
+            ("linetype", json!("by_layer")),
+            ("lineweight", json!("by_layer")),
+        ];
+        let Some(drawing) = file.get_mut("drawing").and_then(|d| d.as_object_mut()) else {
+            return file.to_string();
+        };
+        for key in TABLE_KEYS {
+            drawing
+                .entry(key)
+                .or_insert_with(|| stock["drawing"][key].clone());
         }
+        let each = |value: Option<&mut serde_json::Value>,
+                    f: &mut dyn FnMut(&mut serde_json::Value)| {
+            if let Some(items) = value.and_then(|v| v.as_array_mut()) {
+                items.iter_mut().for_each(f);
+            }
+        };
+        each(drawing.get_mut("layers"), &mut |layer| {
+            fill(
+                layer,
+                &[
+                    ("on", json!(true)),
+                    ("frozen", json!(false)),
+                    ("locked", json!(false)),
+                ],
+            );
+        });
+        each(drawing.get_mut("objects"), &mut |object| {
+            fill(object, &attrs)
+        });
+        each(drawing.get_mut("blocks"), &mut |block| {
+            each(block.get_mut("objects"), &mut |object| fill(object, &attrs));
+        });
+        each(drawing.get_mut("layouts"), &mut |layout| {
+            each(layout.get_mut("viewports"), &mut |viewport| {
+                fill(viewport, &[("on", json!(true)), ("locked", json!(false))]);
+            });
+        });
         file.to_string()
     }
 
@@ -913,9 +946,10 @@ mod tests {
     }
 
     #[test]
-    fn a_missing_current_layer_falls_back_to_layer_zero() {
+    fn a_missing_current_layer_is_refused() {
         let text = MINIMAL.replace("\"current_layer\": 0", "\"current_layer\": 42");
-        assert_eq!(read(&text).unwrap().current_layer(), LayerId::DEFAULT);
+        assert!(matches!(read(&text), Err(FileError::Invalid(_))));
+        assert_eq!(read(MINIMAL).unwrap().current_layer(), LayerId::DEFAULT);
     }
 
     #[test]
@@ -1037,17 +1071,19 @@ mod tests {
     }
 
     #[test]
-    fn a_file_without_units_reads_as_decimal() {
+    fn a_file_without_units_is_refused() {
+        assert!(NativeFormat.read(MINIMAL.as_bytes()).is_err());
         assert_eq!(*read(MINIMAL).unwrap().units(), Units::default());
     }
 
     #[test]
     fn units_that_do_not_exist_are_refused() {
-        let text = MINIMAL.replace(
-            "\"current_layer\": 0",
-            "\"current_layer\": 0, \"units\": { \"length\": 9 }",
-        );
-        assert!(matches!(read(&text), Err(FileError::Invalid(_))));
+        let mut file: serde_json::Value = serde_json::from_str(&with_dim_styles(MINIMAL)).unwrap();
+        file["drawing"]["units"]["length"] = 9.into();
+        assert!(matches!(
+            read(&file.to_string()),
+            Err(FileError::Invalid(_))
+        ));
     }
 
     /// A drawing with a second style and text that uses every optional field.

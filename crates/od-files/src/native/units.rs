@@ -9,7 +9,6 @@ use super::entity::invalid;
 use crate::FileError;
 
 #[derive(Serialize, Deserialize)]
-#[serde(default)]
 pub(super) struct UnitsDto {
     /// 1 scientific, 2 decimal, 3 engineering, 4 architectural, 5 fractional.
     length: i64,
@@ -23,12 +22,6 @@ pub(super) struct UnitsDto {
     base_angle: f64,
     /// What a drawing unit is, as AutoCAD's `INSUNITS` code (0 unitless).
     insert: i64,
-}
-
-impl Default for UnitsDto {
-    fn default() -> Self {
-        Self::from(&Units::default())
-    }
 }
 
 impl From<&Units> for UnitsDto {

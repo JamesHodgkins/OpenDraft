@@ -37,11 +37,8 @@ pub(super) struct BlockDto {
 #[derive(Serialize, Deserialize)]
 struct BlockObjectDto {
     layer: u64,
-    #[serde(default)]
     color: AttrDto<ColorDto>,
-    #[serde(default)]
     linetype: AttrDto<String>,
-    #[serde(default)]
     lineweight: AttrDto<u16>,
     #[serde(flatten)]
     scale: super::linetype::ScaleDto,
