@@ -225,7 +225,8 @@ struct LayerDto {
     id: u64,
     name: String,
     color: ColorDto,
-    linetype: String,
+    /// The id of a record of the file's linetype table.
+    linetype: u64,
     /// Hundredths of a millimetre.
     lineweight: u16,
     on: bool,
@@ -253,7 +254,7 @@ struct ObjectDto {
     id: u64,
     layer: u64,
     color: AttrDto<ColorDto>,
-    linetype: AttrDto<String>,
+    linetype: AttrDto<u64>,
     lineweight: AttrDto<u16>,
     #[serde(flatten)]
     scale: linetype::ScaleDto,
@@ -304,7 +305,7 @@ impl DrawingDto {
                 id: l.id.0,
                 name: l.name.clone(),
                 color: l.color.into(),
-                linetype: l.linetype.clone(),
+                linetype: l.linetype.0,
                 lineweight: l.lineweight.0,
                 on: l.on,
                 frozen: l.frozen,
@@ -321,7 +322,7 @@ impl DrawingDto {
                     id: o.id.0,
                     layer: o.attrs.layer.0,
                     color: attr_to_dto(&o.attrs.color, |c| (*c).into()),
-                    linetype: attr_to_dto(&o.attrs.linetype, String::clone),
+                    linetype: attr_to_dto(&o.attrs.linetype, |id| id.0),
                     lineweight: attr_to_dto(&o.attrs.lineweight, |w| w.0),
                     scale: linetype::ScaleDto::of(&o.attrs),
                     layout: o.layout.map(|l| l.0),
@@ -481,7 +482,7 @@ mod tests {
             id: walls,
             name: "Walls".into(),
             color: Color::Rgb(200, 30, 30),
-            linetype: "Dashed".into(),
+            linetype: od_core::LinetypeId::DASHED,
             lineweight: Lineweight(50),
             on: true,
             frozen: false,
@@ -569,7 +570,7 @@ mod tests {
             Attributes {
                 layer: LayerId::DEFAULT,
                 color: Attr::Set(Color::Rgb(1, 2, 3)),
-                linetype: Attr::Set("Center".into()),
+                linetype: Attr::Set(od_core::LinetypeId::CENTER),
                 lineweight: Attr::Set(Lineweight(100)),
                 linetype_scale: 2.5,
                 continuous_generation: true,
@@ -627,7 +628,7 @@ mod tests {
         "drawing": {
             "next_object_id": 0, "next_layer_id": 1, "current_layer": 0,
             "layers": [ { "id": 0, "name": "0", "color": "foreground",
-                          "linetype": "Continuous", "lineweight": 25 } ],
+                          "linetype": 1, "lineweight": 25 } ],
             "objects": []
         }
     }"#;
@@ -866,7 +867,7 @@ mod tests {
                 "\"layers\": [",
                 &format!(
                     r#""layers": [ {{ "id": {id}, "name": "Last", "color": "foreground",
-                        "linetype": "Continuous", "lineweight": 25 }},"#
+                        "linetype": 1, "lineweight": 25 }},"#
                 ),
             )
         };
@@ -895,7 +896,7 @@ mod tests {
     }
 
     const LAYER0: &str = r#"{ "id": 0, "name": "0", "color": "foreground",
-                              "linetype": "Continuous", "lineweight": 25 }"#;
+                              "linetype": 1, "lineweight": 25 }"#;
 
     #[test]
     fn damaged_content_is_reported_not_loaded() {
@@ -1290,6 +1291,34 @@ mod tests {
         assert!(text.contains("\"linetypes\"") && text.contains("\"next_linetype_id\""));
         assert!(NativeFormat.read(MINIMAL.as_bytes()).is_err());
         assert!(read(MINIMAL).unwrap().linetypes().is_stock());
+    }
+
+    /// A reference is an id of the file's own linetype table: one that is not
+    /// there, a name instead, or a record that only says where a linetype comes
+    /// from, is a damaged file.
+    #[test]
+    fn a_linetype_that_is_not_a_record_of_the_table_is_refused() {
+        let layer = |linetype: &str| {
+            MINIMAL.replace("\"linetype\": 1", &format!("\"linetype\": {linetype}"))
+        };
+        assert!(read(&layer("1")).is_ok());
+        assert!(read(&layer("4")).is_ok(), "DASHED, in the stock table");
+        for bad in ["99", "2", "3", "\"Continuous\"", "\"DASHED\""] {
+            assert!(read(&layer(bad)).is_err(), "{bad}");
+        }
+        let object = |linetype: &str| {
+            MINIMAL.replace(
+                "\"objects\": []",
+                &format!(
+                    r#""objects": [ {{ "id": 1, "layer": 0, "linetype": {{ "set": {linetype} }},
+                        "entity": {{ "type": "line", "start": [0, 0], "end": [1, 0] }} }} ]"#
+                ),
+            )
+        };
+        assert!(read(&object("5")).is_ok());
+        for bad in ["99", "2", "3"] {
+            assert!(read(&object(bad)).is_err(), "{bad}");
+        }
     }
 
     #[test]

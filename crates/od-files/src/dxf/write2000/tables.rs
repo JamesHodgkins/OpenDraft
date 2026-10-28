@@ -104,10 +104,7 @@ pub(super) fn write_tables(
         if let Some(rgb) = true_color(layer.color) {
             out.pair(420, rgb);
         }
-        out.pair(
-            6,
-            crate::dxf::linetypes::name_for(document, &layer.linetype),
-        );
+        out.pair(6, crate::dxf::linetypes::name_for(document, layer.linetype));
         out.pair(370, weight_code(layer.lineweight));
         out.pair(390, hex(ids.placeholder));
     }

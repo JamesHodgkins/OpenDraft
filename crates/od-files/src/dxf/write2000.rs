@@ -158,11 +158,11 @@ pub fn write(document: &Document) -> Result<Encoded, FileError> {
 
     let mut linetypes: BTreeSet<String> = BTreeSet::new();
     for layer in document.layers() {
-        linetypes.insert(super::linetypes::name_for(document, &layer.linetype));
+        linetypes.insert(super::linetypes::name_for(document, layer.linetype));
     }
     for object in document.objects() {
-        if let Attr::Set(name) = &object.attrs.linetype {
-            linetypes.insert(super::linetypes::name_for(document, name));
+        if let Attr::Set(id) = &object.attrs.linetype {
+            linetypes.insert(super::linetypes::name_for(document, *id));
         }
     }
     linetypes.extend(super::linetypes::table_names(document));

@@ -117,7 +117,7 @@ fn dashed_line() -> Document {
             end: pt(200.0, 0.0),
         },
         Attributes {
-            linetype: Attr::Set("DASHED".into()),
+            linetype: Attr::Set(od_core::LinetypeId::DASHED),
             ..Attributes::on_layer(LayerId::DEFAULT)
         },
     );

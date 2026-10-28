@@ -1,20 +1,12 @@
 //! The LTYPE table: the dash patterns a drawing defines, read into the
 //! drawing's linetype table (see `linetype_import`).
 
-use od_core::{StrokeElement, LINETYPES};
+use od_core::StrokeElement;
 
 use super::{decode, Importer, Record};
 
 /// What the table reading has to report.
 pub(super) type Reading = crate::linetype_import::Imported;
-
-/// The app's spelling of a linetype name, when it has one of that name.
-pub(super) fn linetype_name(name: &str) -> String {
-    LINETYPES
-        .iter()
-        .find(|known| known.eq_ignore_ascii_case(name))
-        .map_or_else(|| name.to_owned(), |known| (*known).to_owned())
-}
 
 impl Importer {
     /// Read one LTYPE record. The three special records are ours already.
@@ -44,6 +36,6 @@ impl Importer {
 
     /// After everything is read: give each linetype name in use a record.
     pub(super) fn resolve_linetypes(&mut self) {
-        self.ltypes.resolve_used(&mut self.document);
+        self.ltypes.finish(&mut self.document);
     }
 }

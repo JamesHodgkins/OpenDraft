@@ -167,12 +167,12 @@ pub(super) fn write_r12(document: &Document) -> Result<Encoded, FileError> {
     let mut linetypes: BTreeSet<String> = BTreeSet::new();
     linetypes.insert("CONTINUOUS".into());
     for layer in document.layers() {
-        linetypes.insert(super::linetypes::name_for(document, &layer.linetype));
+        linetypes.insert(super::linetypes::name_for(document, layer.linetype));
         lineweights |= layer.lineweight != Lineweight::DEFAULT;
     }
     for object in document.model_objects() {
-        if let Attr::Set(name) = &object.attrs.linetype {
-            linetypes.insert(super::linetypes::name_for(document, name));
+        if let Attr::Set(id) = &object.attrs.linetype {
+            linetypes.insert(super::linetypes::name_for(document, *id));
         }
         lineweights |= matches!(object.attrs.lineweight, Attr::Set(_));
     }
@@ -230,7 +230,7 @@ pub(super) fn write_r12(document: &Document) -> Result<Encoded, FileError> {
         out.pair(2, dxf_name(&layer.name));
         out.pair(70, i32::from(layer.frozen) + 4 * i32::from(layer.locked));
         out.pair(62, if layer.on { index } else { -index });
-        out.pair(6, super::linetypes::name_for(document, &layer.linetype));
+        out.pair(6, super::linetypes::name_for(document, layer.linetype));
     }
     out.pair(0, "ENDTAB");
     out.end_section();
@@ -247,8 +247,8 @@ pub(super) fn write_r12(document: &Document) -> Result<Encoded, FileError> {
         // Group 8 (layer), then colour and linetype when set on the object.
         let mut common = |out: &mut Out| -> Result<(), FileError> {
             out.pair(8, &layer);
-            if let Attr::Set(name) = &object.attrs.linetype {
-                out.pair(6, super::linetypes::name_for(document, name));
+            if let Attr::Set(id) = &object.attrs.linetype {
+                out.pair(6, super::linetypes::name_for(document, *id));
             }
             if object.attrs.linetype_scale != 1.0 {
                 out.pair(48, finite(object.attrs.linetype_scale)?);
@@ -443,7 +443,7 @@ mod tests {
         let walls = document.allocate_layer_id();
         document.push_layer(Layer {
             color: Color::Rgb(255, 0, 0),
-            linetype: "Dashed".into(),
+            linetype: od_core::LinetypeId::DASHED,
             locked: true,
             ..Layer::new(walls, "Walls")
         });
@@ -481,7 +481,7 @@ mod tests {
             Attributes {
                 layer: LayerId::DEFAULT,
                 color: Attr::Set(Color::Rgb(0, 255, 0)),
-                linetype: Attr::Set("Center".into()),
+                linetype: Attr::Set(od_core::LinetypeId::CENTER),
                 lineweight: Attr::ByLayer,
                 linetype_scale: 2.5,
                 continuous_generation: true,
@@ -533,7 +533,7 @@ mod tests {
                 .clone()
         };
         assert_eq!(layer("Walls").color, Color::Rgb(255, 0, 0));
-        assert_eq!(layer("Walls").linetype, "Dashed");
+        assert_eq!(layer("Walls").linetype, od_core::LinetypeId::DASHED);
         assert!(layer("Walls").locked);
         let hidden = layer("Hidden");
         assert!(!hidden.on && hidden.frozen && hidden.color == Color::Rgb(0, 0, 255));
@@ -541,7 +541,10 @@ mod tests {
 
         let polyline = &back.objects()[3];
         assert_eq!(polyline.attrs.color, Attr::Set(Color::Rgb(0, 255, 0)));
-        assert_eq!(polyline.attrs.linetype, Attr::Set("Center".into()));
+        assert_eq!(
+            polyline.attrs.linetype,
+            Attr::Set(od_core::LinetypeId::CENTER)
+        );
         assert_eq!(
             back.layer(back.objects()[0].attrs.layer).unwrap().name,
             "Walls"

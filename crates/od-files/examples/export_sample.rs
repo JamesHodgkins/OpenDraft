@@ -13,7 +13,7 @@ fn main() {
     let walls = document.allocate_layer_id();
     document.push_layer(Layer {
         color: Color::Rgb(255, 0, 0),
-        linetype: "Dashed".into(),
+        linetype: od_core::LinetypeId::DASHED,
         lineweight: Lineweight(50),
         locked: true,
         ..Layer::new(walls, "Walls")
@@ -49,7 +49,7 @@ fn main() {
         Attributes {
             layer: LayerId::DEFAULT,
             color: Attr::Set(Color::Rgb(0, 0, 255)),
-            linetype: Attr::Set("Center".into()),
+            linetype: Attr::Set(od_core::LinetypeId::CENTER),
             lineweight: Attr::Set(Lineweight(35)),
             ..Attributes::on_layer(LayerId::DEFAULT)
         },

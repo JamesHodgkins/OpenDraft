@@ -50,7 +50,7 @@ fn main() {
         Attributes {
             layer: LayerId::DEFAULT,
             color: Attr::Set(Color::Rgb(10, 120, 200)),
-            linetype: Attr::Set("Dashed".into()),
+            linetype: Attr::Set(od_core::LinetypeId::DASHED),
             lineweight: Attr::Set(Lineweight(70)),
             ..Attributes::on_layer(LayerId::DEFAULT)
         },

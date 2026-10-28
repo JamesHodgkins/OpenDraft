@@ -141,7 +141,7 @@ mod tests {
             r#"{{ "format": "opendraft-drawing", "version": 0,
             "drawing": {{ "next_object_id": 1, "next_layer_id": 1, "current_layer": 0,
                 "layers": [ {{ "id": 0, "name": "0", "color": "foreground",
-                              "linetype": "Continuous", "lineweight": 25 }} ],
+                              "linetype": 1, "lineweight": 25 }} ],
                 "objects": [ {{ "id": 0, "layer": 0,
                     "entity": {{ "type": "spline", {fields} }} }} ] }} }}"#
         )

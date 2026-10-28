@@ -6,8 +6,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use od_core::aci::aci_rgb;
 use od_core::{
     arc, AngleFormat, Attr, Attributes, Color, Document, Ellipse, Entity, InsertUnits,
-    KnotParameterization, Layer, LayerId, LengthFormat, Lineweight, Point, Spline, StrokeElement,
-    Units, LINETYPES,
+    KnotParameterization, Layer, LayerId, LengthFormat, LinetypeId, Lineweight, Point, Spline,
+    StrokeElement, Units,
 };
 use od_dwg::{
     Drawing, DwgColor, DwgEntity, DwgHandle, DwgHeader, DwgLinetype, DwgLineweight, Shape,
@@ -49,14 +49,6 @@ pub(super) fn color(c: DwgColor) -> Color {
         }
         DwgColor::True(r, g, b) => Color::Rgb(r, g, b),
     }
-}
-
-/// The app's spelling of a linetype name, when it has one of that name.
-fn linetype(name: &str) -> String {
-    LINETYPES
-        .iter()
-        .find(|known| known.eq_ignore_ascii_case(name))
-        .map_or_else(|| name.to_owned(), |known| (*known).to_owned())
 }
 
 fn lineweight(w: DwgLineweight) -> Lineweight {
@@ -266,13 +258,18 @@ impl Notes {
 }
 
 /// An entity's layer and properties in the document.
-fn attributes(e: &DwgEntity, ids: &HashMap<DwgHandle, LayerId>) -> Result<Attributes, FileError> {
+fn attributes(
+    e: &DwgEntity,
+    ids: &HashMap<DwgHandle, LayerId>,
+    document: &mut Document,
+    linetypes: &mut crate::linetype_import::Imported,
+) -> Result<Attributes, FileError> {
     let layer = *ids
         .get(&e.layer)
         .ok_or_else(|| FileError::Invalid("an object is on a layer that is not there".into()))?;
     let linetype = match &e.linetype {
         DwgLinetype::ByLayer => Attr::ByLayer,
-        DwgLinetype::Named(name) => Attr::Set(linetype(name)),
+        DwgLinetype::Named(name) => Attr::Set(linetypes.id_for(document, name)),
     };
     Ok(Attributes {
         layer,
@@ -308,7 +305,7 @@ pub(super) fn to_document(
     let mut taken: HashSet<String> = HashSet::new();
     document.set_linetype_scale(drawing.header.linetype_scale);
     for def in &drawing.linetypes {
-        // A pattern that did not decode leaves the name for `resolve_used`.
+        // A pattern that did not decode leaves the name for `finish`.
         let Some(pattern) = &def.pattern else {
             continue;
         };
@@ -339,15 +336,17 @@ pub(super) fn to_document(
             name = format!("{}_{suffix}", l.name);
             notes.renamed_layers += usize::from(suffix == 2);
         }
-        let linetype_name = l
+        let layer_linetype = l
             .linetype
             .as_deref()
-            .map_or_else(|| LINETYPES[0].to_owned(), linetype);
+            .map_or(LinetypeId::CONTINUOUS, |name| {
+                notes.linetypes.id_for(&mut document, name)
+            });
         let layer = Layer {
             id,
             name,
             color: color(l.color),
-            linetype: linetype_name,
+            linetype: layer_linetype,
             lineweight: lineweight(l.lineweight),
             on: l.on,
             frozen: l.frozen,
@@ -374,7 +373,7 @@ pub(super) fn to_document(
     for b in &drawing.blocks {
         let mut items = Vec::with_capacity(b.entities.len());
         for e in &b.entities {
-            let attrs = attributes(e, &ids)?;
+            let attrs = attributes(e, &ids, &mut document, &mut notes.linetypes)?;
             match item(&e.shape, &styles) {
                 Ok(made) => items.push((made, attrs)),
                 Err(why) => notes.refused(why),
@@ -394,7 +393,7 @@ pub(super) fn to_document(
         if n % 1024 == 0 && cancelled.load(Ordering::Relaxed) {
             return Err(FileError::Cancelled);
         }
-        let attrs = attributes(e, &ids)?;
+        let attrs = attributes(e, &ids, &mut document, &mut notes.linetypes)?;
         let entity = match item(&e.shape, &styles) {
             Ok(Item::Entity(entity)) => Some(entity),
             Ok(Item::Insert(insert)) => blocks.insert(insert),
@@ -407,7 +406,7 @@ pub(super) fn to_document(
             document.add_with(entity, attrs);
         }
     }
-    notes.linetypes.resolve_used(&mut document);
+    notes.linetypes.finish(&mut document);
     notes.blocks = blocks.warnings();
     document
         .validate()
