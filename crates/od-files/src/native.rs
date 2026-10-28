@@ -2,20 +2,33 @@
 //!
 //! The file has its own schema (the `*Dto` types here), not the in-memory
 //! types serialised as they happen to be, so refactoring the app cannot
-//! silently change what is on disk. Rules for changing it:
+//! silently change what is on disk.
 //!
-//! - Adding an optional field does not need a new version: old readers ignore
-//!   it and files without it still read the same.
-//! - A new kind of entity DOES bump [`CURRENT_VERSION`]. A reader never skips
-//!   an object it does not understand, because saving the file again would
-//!   delete that object from the user's drawing. Instead it refuses the file
-//!   as saved by a newer version.
-//! - Anything else bumps [`CURRENT_VERSION`] too.
+//! # Development and stable
 //!
-//! Only the current version is read: until the first release there are no
-//! files to keep working, so an older one is refused rather than converted.
-//! From the first release on, a conversion for each older version goes in
-//! `read`.
+//! The format has two phases, told apart by [`CURRENT_VERSION`]:
+//!
+//! - **Development (version 0, the value now).** The format is still being
+//!   shaped and nothing promises that a file keeps opening. Any change to the
+//!   schema (new entity kinds, renamed or removed fields, a new layout) is made
+//!   in place and does NOT bump the version. A file saved by an earlier
+//!   development build may fail to open; the error then names the build that
+//!   saved it (`saved_by`). Nothing converts development files.
+//! - **Stable (version 1 and up).** Once the format is declared stable,
+//!   [`CURRENT_VERSION`] is set to 1, once, as a deliberate release step, never
+//!   as a side effect of a feature. From then on files must keep opening:
+//!   - Adding an optional field does not need a new version: old readers ignore
+//!     it and files without it still read the same.
+//!   - A new kind of entity DOES bump [`CURRENT_VERSION`]. A reader never skips
+//!     an object it does not understand, because saving the file again would
+//!     delete that object from the user's drawing. Instead it refuses the file
+//!     as saved by a newer version.
+//!   - Any other change that an older reader would misread bumps
+//!     [`CURRENT_VERSION`] too, and `read` gains a conversion for the version
+//!     it replaces.
+//!
+//! Version 0 files are never read by a stable build, and a development build
+//! reads only version 0: a file with a higher number is refused as newer.
 //!
 //! A file is read in one pass, bounded by [`MAX_BYTES`], and checked with
 //! [`Document::validate`] before it is handed over.
@@ -50,9 +63,10 @@ use layout::LayoutDto;
 use text::TextStyleDto;
 use units::UnitsDto;
 
-/// The file format version this build writes and reads. Versions before the
-/// first release are not kept: see the module notes.
-pub const CURRENT_VERSION: u32 = 3;
+/// The file format version this build writes and reads. 0 is the development
+/// format, which changes without a bump; 1 is the first stable format. See the
+/// module notes before changing this.
+pub const CURRENT_VERSION: u32 = 0;
 /// The largest `.odx` file that is opened. Reading holds the whole file and the
 /// drawing built from it in memory at once, so a file past this is refused
 /// before it is read.
@@ -127,6 +141,8 @@ impl FileFormat for NativeFormat {
 struct Header {
     format: String,
     version: u32,
+    #[serde(default)]
+    saved_by: String,
 }
 
 fn check_version(found: u32) -> Result<(), FileError> {
@@ -154,6 +170,14 @@ fn unreadable(bytes: &[u8], parse: &serde_json::Error) -> FileError {
         }
         Ok(header) => match check_version(header.version) {
             Err(error) => error,
+            Ok(()) if header.version == 0 => FileError::Unreadable(format!(
+                "{parse}; version 0 is the development format, which changes between builds, and this file was saved by {}",
+                if header.saved_by.is_empty() {
+                    "an unknown build"
+                } else {
+                    &header.saved_by
+                }
+            )),
             Ok(()) => FileError::Unreadable(parse.to_string()),
         },
         Err(_) => FileError::Unreadable(parse.to_string()),
@@ -548,7 +572,7 @@ mod tests {
     }
 
     pub(super) const MINIMAL: &str = r#"{
-        "format": "opendraft-drawing", "version": 3,
+        "format": "opendraft-drawing", "version": 0,
         "drawing": {
             "next_object_id": 0, "next_layer_id": 1, "current_layer": 0,
             "layers": [ { "id": 0, "name": "0", "color": "foreground",
@@ -736,19 +760,33 @@ mod tests {
     }
 
     #[test]
-    fn an_older_file_is_refused_as_older_even_with_unknown_content() {
-        let text = r#"{ "format": "opendraft-drawing", "version": 1,
-                        "drawing": { "something": "old" } }"#;
+    fn the_first_stable_version_is_refused_as_newer_by_a_development_build() {
+        assert_eq!(
+            CURRENT_VERSION, 0,
+            "development format: see the module notes"
+        );
+        let newer = MINIMAL.replace("\"version\": 0", "\"version\": 1");
         assert!(matches!(
-            read(text),
-            Err(FileError::TooOld {
+            read(&newer),
+            Err(FileError::TooNew {
                 found: 1,
-                supported: CURRENT_VERSION
+                supported: 0
             })
         ));
-        // Also when it would have read: only the current version does.
-        let older = MINIMAL.replace("\"version\": 3", "\"version\": 1");
-        assert!(matches!(read(&older), Err(FileError::TooOld { .. })));
+    }
+
+    #[test]
+    fn a_development_file_that_does_not_parse_names_the_build_that_saved_it() {
+        let text = r#"{ "format": "opendraft-drawing", "version": 0,
+                        "saved_by": "OpenDraft 0.0.9",
+                        "drawing": { "something": "from another build" } }"#;
+        match read(text) {
+            Err(FileError::Unreadable(why)) => {
+                assert!(why.contains("development format"), "{why}");
+                assert!(why.contains("OpenDraft 0.0.9"), "{why}");
+            }
+            other => panic!("expected Unreadable, got {other:?}"),
+        }
     }
 
     #[test]
@@ -789,7 +827,7 @@ mod tests {
 
     fn invalid_with(objects: &str, layers: &str) -> FileError {
         let text = format!(
-            r#"{{ "format": "opendraft-drawing", "version": 3,
+            r#"{{ "format": "opendraft-drawing", "version": 0,
               "drawing": {{ "next_object_id": 0, "next_layer_id": 1, "current_layer": 0,
                 "layers": [{layers}], "objects": [{objects}] }} }}"#
         );

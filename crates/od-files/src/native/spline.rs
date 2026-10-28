@@ -138,7 +138,7 @@ mod tests {
 
     fn with_spline(fields: &str) -> String {
         format!(
-            r#"{{ "format": "opendraft-drawing", "version": 3,
+            r#"{{ "format": "opendraft-drawing", "version": 0,
             "drawing": {{ "next_object_id": 1, "next_layer_id": 1, "current_layer": 0,
                 "layers": [ {{ "id": 0, "name": "0", "color": "foreground",
                               "linetype": "Continuous", "lineweight": 25 }} ],

@@ -19,7 +19,7 @@ A command is `fn(&mut Editor) -> Result<(), Cancelled>` running on its own threa
 - Entities are referred to by `EntityId`, never list position. Arc entity is CCW radians. Polyline `bulges` is empty or one per point (`bulges[i]` shapes segment i to i+1); always use `od_core::bulge`, never assume straight segments.
 - No `unwrap`, `todo!`, `dbg!`, prints in production code; `unsafe` forbidden (tests may unwrap).
 - Files stay under about 400 production lines; `od-app/tests/file_sizes.rs` enforces 450 and lists `widgets.rs` and `dxf/read.rs` as still too big (they may not grow).
-- Adding an entity kind bumps the `.odx` version (unknown kinds are refused, never skipped); an optional field does not. Current version 3 (see `CURRENT_VERSION` in `od-files/src/native.rs`).
+- `.odx` has a development phase and a stable phase (see the module notes in `od-files/src/native.rs`). Now it is development: `CURRENT_VERSION` is 0 and schema changes (new entity kinds, renamed fields) are made in place with NO version bump and no conversion. Never raise `CURRENT_VERSION` as part of a feature; setting it to 1 is a deliberate release step the user takes when the format is declared stable. Only from then on: a new entity kind bumps it (unknown kinds are refused, never skipped), an optional field does not, and each older version gets a conversion.
 - Use `text::plural` for counts. Match the surrounding code's comment density and naming.
 
 ## Checks (CI runs these on Windows and Linux)

@@ -19,7 +19,8 @@ pub enum FileError {
         found: u32,
         supported: u32,
     },
-    /// Written by an older, pre-release version this one no longer reads.
+    /// Written by an older stable version this one cannot convert. (Not
+    /// reachable while the format is in development at version 0.)
     TooOld {
         found: u32,
         supported: u32,
@@ -46,7 +47,7 @@ impl fmt::Display for FileError {
             ),
             FileError::TooOld { found, supported } => write!(
                 f,
-                "it was saved by an older pre-release version (file format {found}; this version reads only {supported})"
+                "it was saved by an older version (file format {found}; this version reads only {supported})"
             ),
             FileError::Invalid(why) => write!(f, "the drawing is damaged: {why}"),
             FileError::Cancelled => write!(f, "cancelled"),

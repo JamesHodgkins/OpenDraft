@@ -120,11 +120,18 @@ Rules that follow:
   diff-friendly on purpose, and the schema (`od-files/src/native.rs`) is
   separate from the in-memory types so refactoring cannot change what is on
   disk by accident.
-- **Versioning:** only `CURRENT_VERSION` is read. A newer file is refused
-  ("saved by a newer version") and so is an older one ("older pre-release
-  version"); the file is parsed once, and only when that fails is its header
-  read to say which. Adding an optional field needs no new version (readers
-  ignore unknown fields); anything else bumps `CURRENT_VERSION`.
+- **Versioning:** two phases, told apart by `CURRENT_VERSION`. *Development*
+  (version 0, now): the schema changes in place with no bump and no
+  conversion, and a file from an earlier build may not open; when a
+  version-0 file fails to parse, the error says it is the development format
+  and names the build that saved it (`saved_by`). *Stable* (version 1 and up):
+  set to 1 once, as a deliberate release step. From then on adding an optional
+  field needs no new version (readers ignore unknown fields), a new entity kind
+  or anything else an older reader would misread bumps `CURRENT_VERSION`, and
+  each older version gets a conversion in `read`. Only `CURRENT_VERSION` is
+  read without a conversion; a newer file is refused ("saved by a newer
+  version"). The file is parsed once, and only when that fails is its header
+  read to say why.
 - **Block expansion budget:** nesting is a graph, so depth alone does not bound
   the work (a block inserting the next one twice, forty levels, is 2^40
   objects from forty definitions). Expanding an insert visits at most
@@ -137,12 +144,15 @@ Rules that follow:
   so an id of `u64::MAX` is refused as damaged, not wrapped or panicked on.
 - **Unknown entity kinds are refused, never skipped.** A reader that dropped
   an object it does not understand would delete it from the user's drawing the
-  next time they saved. So adding an entity kind bumps `CURRENT_VERSION`, and
-  an older build reports the file as saved by a newer version. Only optional
-  fields can be added without a bump.
-- **Version history:** none is kept before the first release (the repo is
-  private and no drawings need to keep opening). From then on each older
-  version gets a conversion in `read`.
+  next time they saved. So once the format is stable, adding an entity kind
+  bumps `CURRENT_VERSION`, and an older build reports the file as saved by a
+  newer version; only optional fields can be added without a bump. In the
+  development phase (version 0) the rule is the same in effect, since a
+  reader always refuses what it does not understand, but nothing is bumped.
+- **Version history:** none is kept while the format is in development. The
+  numbers 1 to 8 that earlier builds used (see `ui_plan.md`) were reset to 0 on
+  28-10-2026, with no users and no compatibility kept. From version 1 on each
+  older version gets a conversion in `read`.
 - **Validation:** loading rejects what cannot exist (an object on a missing
   layer, repeated ids, a circle with no radius, no layer 0) with a message, and
   never loads half a drawing. Saving refuses what could not be read back.
