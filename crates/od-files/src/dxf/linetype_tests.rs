@@ -162,19 +162,17 @@ fn drawing() -> Document {
         end: Point::new(50.0, 0.0),
     };
     doc.add_with(line(), on("MyLine"));
-    doc.add_with(line(), on("Dotted"));
+    doc.add_with(line(), on("DOT"));
     doc
 }
 
 #[test]
-fn the_table_survives_r12_and_r2000_and_dotted_is_written_as_dot() {
+fn the_table_survives_r12_and_r2000() {
     let original = drawing();
     for bytes in [
         write::write(&original).unwrap().bytes,
         write2000::write(&original).unwrap().bytes,
     ] {
-        let text = String::from_utf8_lossy(&bytes).to_string();
-        assert!(!text.contains("DOTTED"), "the old name is not written");
         let back = read(&bytes).unwrap().document;
         for name in ["MyLine", "ACAD_ISO04W100", "DASHED"] {
             let was = original.linetypes().named(name).unwrap();
@@ -188,7 +186,7 @@ fn the_table_survives_r12_and_r2000_and_dotted_is_written_as_dot() {
             StrokeElement::Dash(2.0),
             "not stock 12.7"
         );
-        // The objects still draw dashed: the custom one and the old Dotted.
+        // The objects still draw dashed: the custom one and DOT.
         assert!(back
             .objects()
             .iter()

@@ -120,11 +120,19 @@ Rules that follow:
   diff-friendly on purpose, and the schema (`od-files/src/native.rs`) is
   separate from the in-memory types so refactoring cannot change what is on
   disk by accident.
-- **Versioning:** only `CURRENT_VERSION` is read. A newer file is refused
-  ("saved by a newer version") and so is an older one ("older pre-release
-  version"); the file is parsed once, and only when that fails is its header
-  read to say which. Adding an optional field needs no new version (readers
-  ignore unknown fields); anything else bumps `CURRENT_VERSION`.
+- **Versioning:** two phases, told apart by `CURRENT_VERSION`. *Development*
+  (version 0, now): the schema changes in place with no bump and no
+  conversion, and a file from an earlier build may not open; when a
+  version-0 file fails to parse, the error says it is the development format
+  and names the build that saved it (`saved_by`). *Stable* (version 1 and up):
+  set to 1 once, as a deliberate release step. From then on adding an optional
+  field needs no new version (readers ignore unknown fields), a new entity kind
+  or anything else an older reader would misread bumps `CURRENT_VERSION`, and
+  each older version gets a conversion in `read`. Only `CURRENT_VERSION` is
+  read without a conversion; a newer file is refused ("saved by a newer
+  version"). The header is read before the body, so a file of another version
+  is refused by name (`WrongVersion`, with `saved_by`) rather than failing to
+  parse. Declaring the format stable has a checklist in `CONTRIBUTING.md`.
 - **Block expansion budget:** nesting is a graph, so depth alone does not bound
   the work (a block inserting the next one twice, forty levels, is 2^40
   objects from forty definitions). Expanding an insert visits at most
@@ -137,12 +145,15 @@ Rules that follow:
   so an id of `u64::MAX` is refused as damaged, not wrapped or panicked on.
 - **Unknown entity kinds are refused, never skipped.** A reader that dropped
   an object it does not understand would delete it from the user's drawing the
-  next time they saved. So adding an entity kind bumps `CURRENT_VERSION`, and
-  an older build reports the file as saved by a newer version. Only optional
-  fields can be added without a bump.
-- **Version history:** none is kept before the first release (the repo is
-  private and no drawings need to keep opening). From then on each older
-  version gets a conversion in `read`.
+  next time they saved. So once the format is stable, adding an entity kind
+  bumps `CURRENT_VERSION`, and an older build reports the file as saved by a
+  newer version; only optional fields can be added without a bump. In the
+  development phase (version 0) the rule is the same in effect, since a
+  reader always refuses what it does not understand, but nothing is bumped.
+- **Version history:** none is kept while the format is in development. The
+  numbers 1 to 8 that earlier builds used (see `ui_plan.md`) were reset to 0 on
+  28-10-2026, with no users and no compatibility kept. From version 1 on each
+  older version gets a conversion in `read`.
 - **Validation:** loading rejects what cannot exist (an object on a missing
   layer, repeated ids, a circle with no radius, no layer 0) with a message, and
   never loads half a drawing. Saving refuses what could not be read back.
@@ -649,11 +660,11 @@ A block definition is a record in the drawing's block table and a block referenc
 
 - **Records.** `Linetype { id, name, description, elements, flags }`: `LinetypeId` (never reused, counter kept), names unique ignoring ASCII case, up to 255 bytes. A pattern is one repeat of `StrokeElement::Dash(len) | Gap(len) | Dot` (lengths above zero and finite; `from_dxf`/`to_dxf` convert DXF group 49). `CONTINUOUS` (id 1), `BYLAYER` (2) and `BYBLOCK` (3) always exist, have no pattern and cannot be changed or removed. A new drawing also has `DASHED`, `DOT`, `DASHDOT`, `CENTER`, `HIDDEN` and `PHANTOM` (ids 4 to 9) so the names layers and objects use already resolve.
 - **Stock library** (`linetype/stock.rs`): the 24 families (8 x `x`, `2`, `X2`) in AutoCAD's metric (`acadiso.lin`) numbers and the 14 ISO 128 patterns. The variants are data, not computed (`CENTER2` is not half of `CENTER`); a test holds the imperial numbers apart and checks metric = imperial x 25.4. `LinetypeTable::load_stock(name)` adds one to the drawing; once loaded the drawing owns it.
-- **Names, not ids, for now.** `Layer.linetype` and `Attributes.linetype` still hold names (looked up with `LinetypeTable::named`) and `LINETYPES` still feeds the UI lists. Moving them to `EntityLinetype { ByLayer, ByBlock, Named(id) }` is a later slice. `linetype::legacy_alias` maps the old `Dotted` to `DOT`; it is not applied yet and must only be where the drawing has no record of that name.
+- **Names, not ids, for now.** `Layer.linetype` and `Attributes.linetype` still hold names (looked up with `LinetypeTable::named`) and `LINETYPES` still feeds the UI lists. Moving them to `EntityLinetype { ByLayer, ByBlock, Named(id) }` is a later slice.
 - **File.** `.odx` writes `linetypes` (id, name, description, pattern as DXF lengths, flags) and `next_linetype_id` only when the table differs from the stock one, so no version bump; a file without them reads with the stock table. Loading refuses a table missing or patterning a special record (`LinetypeTable::from_records`).
 - **The generator** (`linetype/dash.rs`, pure): `fit(length, closed, elements, scale)` says which stretches of a path are drawn; `dash_path(points, closed, elements, scale)` maps that onto a flattened path (`Piece::Dash(run)` keeps the corners it crosses, `Piece::Dot { at, along }`). Rules from the guide: an open path starts and ends with a dash (a dot-first pattern with a dot), the end dashes take up the slack, a dot-first pattern stretches its gaps, a closed path is stretched to whole repeats so there is no seam, a path shorter than one repeat plus a dash is continuous, and a bad scale or more than 200,000 marks is continuous. **The slack split is our own choice, not AutoCAD's published arithmetic: lock it down with AutoCAD-made fixtures.**
 - **Which curves** (`linetype/paths.rs`): `is_dashable` (line, circle, arc, ellipse, spline, rectangle, polyline) and `curve_outlines(entity, tolerance)`, the flattening plotting already used (a circle starts at angle 0). Text, hatches, dimensions and block references are not dashed as a whole.
-- **Which pattern an object uses:** `Document::dash_pattern(object)` = its resolved linetype name looked up in the table (the old `Dotted` falls back to `DOT` when the drawing has no record of that name); the scale is the object's own `Attributes::linetype_scale` times the drawing's `LTSCALE` (`Document::linetype_scale`, undoable through `SetLinetypeScale` and the `LTSCALE` variable, saved in `.odx` and read and written as `$LTSCALE`).
+- **Which pattern an object uses:** `Document::dash_pattern(object)` = its resolved linetype name looked up in the table; the scale is the object's own `Attributes::linetype_scale` times the drawing's `LTSCALE` (`Document::linetype_scale`, undoable through `SetLinetypeScale` and the `LTSCALE` variable, saved in `.odx` and read and written as `$LTSCALE`).
 - **Canvas** (`od-canvas/src/view/dash_paint.rs`): the entity is flattened to half a pixel, dashed, and each dash stroked; the selection glow follows the dashes. A pattern whose repeat is under 6 px on screen (`MIN_REPEAT_PX`: 10,000 dashed objects in view cost 41 ms at a 4 px repeat, 26 ms at 7 px, 8 ms solid), or a path needing over 20,000 dashes, is drawn solid: a view-only choice that never reaches the file or a plot.
 - **Plot** (`plot.rs`, `dashed_outlines`): outlines are dashed in the units they are made in (model units for a viewport, so its scale applies to the dashes; millimetres on the sheet), then clipped. A dot is a hair of line that the writers' round caps make a dot.
 - **Scale and generation live on `Attributes`** (`linetype_scale`, default 1, above zero; `continuous_generation`, default false), not on the polyline entity, so no entity variant changed. Linetype Generation applies to polylines and rectangles: off (AutoCAD's default) lays the pattern afresh on every segment (`curve_outlines(.., per_segment = true)`), on lays it along the whole outline. Properties' General section has Linetype scale (typed) and, when a polyline or rectangle is selected, Linetype generation. `.odx` writes both as optional fields on objects and block objects (flattened `ScaleDto`) and `LTSCALE` beside the table; DXF reads and writes group 48, bit 128 of group 70 on polylines, and `$LTSCALE` (R12 and R2000).

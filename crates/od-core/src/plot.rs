@@ -794,11 +794,11 @@ mod tests {
     }
 
     #[test]
-    fn a_layers_linetype_is_followed_and_the_old_dotted_name_means_dot() {
+    fn a_layers_linetype_is_followed() {
         let (mut doc, id) = plotted(&[]);
         doc.set_active_layout(Some(id));
         let mut layer = doc.layer(crate::LayerId::DEFAULT).unwrap().clone();
-        layer.linetype = "Dotted".into();
+        layer.linetype = "DOT".into();
         doc.replace_layer(layer);
         doc.add(line((0.0, 0.0), (50.0, 0.0)));
         let paths = plot_layout(&doc, id).unwrap().paths;

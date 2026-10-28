@@ -64,7 +64,7 @@ The main conventions (the full list is in ARCHITECTURE.md):
 - **Keep files under about 400 lines of production code.** Tests do not count. A test enforces a hard limit.
 - **No `unwrap`, `todo!`, `dbg!` or prints in production code**, and `unsafe` is forbidden.
 - Match the style, naming and comment density of the code around you, and avoid unnecessary abstractions.
-- A new entity kind in the `.odx` format must bump the format version.
+- The `.odx` format is in development (version 0): change it freely and do not bump the version. Once it is declared stable (version 1), a new entity kind must bump the format version and older versions need a conversion. See the notes at the top of `crates/od-files/src/native.rs`.
 - **A new dependency's licence must be on the list in `deny.toml`** (and the same list in `about.toml`). OpenDraft is GPL-3.0-or-later and ships its dependencies' notices in `THIRD-PARTY-LICENSES.txt`; CI runs `cargo deny check licenses` and makes that file, so a licence that is not on the list fails the build. To see it locally: `cargo install cargo-deny cargo-about --locked` (cargo-about also needs `--features cli`), then `cargo deny check licenses` and `bash scripts/third_party.sh out.txt`. A font or icon file that is not a Rust crate needs its licence file beside it and a line in `scripts/third_party.sh`.
 
 ## 6. Test your changes
@@ -98,6 +98,17 @@ Open a pull request against `main` of the original repository. Describe what you
 ## 9. Review
 
 A maintainer will review your pull request and may ask for changes. Push further commits to the same branch to update it. Once approved and CI is green, it will be merged into `main`.
+
+### Declaring `.odx` stable
+
+The `.odx` format stays at version 0 (development) until it is declared stable. Setting `CURRENT_VERSION` to 1 is one deliberate pull request, never a side effect of a feature, and it has to include:
+
+1. A schema review: every field is required, deliberately optional, or removed (no untyped blobs, no defaults kept only for old development files), and references use ids, not names.
+2. A committed `.odx` fixture saved by the build that declares it, which a test must read back.
+3. `CURRENT_VERSION` set to 1, the assertion in `a_pre_reset_file_is_refused_and_names_the_build_that_saved_it` updated, and the "Versioning" notes in `native.rs`, `ARCHITECTURE.md` and `CLAUDE.md` changed from development to stable.
+4. A "What's new" note and a line in the readme saying that drawings now keep opening.
+
+From then on a new entity kind or any change an older reader would misread bumps the version, with a conversion in `read` and a fixture of the old version. Do not write a conversion before there is a version to convert from.
 
 ## Code of Conduct
 

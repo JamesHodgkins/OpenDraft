@@ -24,14 +24,10 @@ impl Document {
     }
 
     /// Whether a layer, an object or a block's contents use the linetype
-    /// called `name` (ignoring case; the old `Dotted` counts as `DOT`). A
-    /// linetype in use is not for deleting.
+    /// called `name` (ignoring case). A linetype in use is not for
+    /// deleting.
     pub fn linetype_in_use(&self, name: &str) -> bool {
-        let same = |used: &str| {
-            let alias = |n: &str| crate::linetype::legacy_alias(n).map(str::to_owned);
-            used.eq_ignore_ascii_case(name)
-                || alias(used).is_some_and(|a| a.eq_ignore_ascii_case(name))
-        };
+        let same = |used: &str| used.eq_ignore_ascii_case(name);
         let set = |attr: &crate::Attr<String>| match attr {
             crate::Attr::Set(used) => same(used),
             crate::Attr::ByLayer => false,

@@ -161,7 +161,7 @@ mod tests {
         assert_eq!(loaded, document);
         let text = String::from_utf8(NativeFormat.write(&document).unwrap().bytes).unwrap();
         assert!(text.contains("\"type\": \"mleader\""));
-        assert!(text.contains("\"version\": 3"));
+        assert!(text.contains("\"version\": 0"));
     }
 
     fn file(entity: &str) -> String {
@@ -193,8 +193,11 @@ mod tests {
     }
 
     #[test]
-    fn a_file_from_a_newer_version_is_still_refused() {
-        let newer = MINIMAL.replace("\"version\": 3", "\"version\": 4");
-        assert!(matches!(read(&newer), Err(crate::FileError::TooNew { .. })));
+    fn a_file_of_another_version_is_still_refused() {
+        let newer = MINIMAL.replace("\"version\": 0", "\"version\": 1");
+        assert!(matches!(
+            read(&newer),
+            Err(crate::FileError::WrongVersion { .. })
+        ));
     }
 }

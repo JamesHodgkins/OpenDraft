@@ -367,11 +367,3 @@ impl LinetypeTable {
         Ok(())
     }
 }
-
-/// The stock name an old OpenDraft linetype name stands for, for migrating
-/// files from before the table existed. `Dotted` was our spelling of `DOT`.
-/// Apply it only where the drawing has no record of the old name, so a custom
-/// linetype called `Dotted` is never renamed.
-pub fn legacy_alias(name: &str) -> Option<&'static str> {
-    name.eq_ignore_ascii_case("Dotted").then_some("DOT")
-}

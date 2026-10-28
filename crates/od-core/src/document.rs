@@ -324,10 +324,7 @@ impl Document {
     pub fn dash_pattern(&self, object: &Object) -> Option<(&[StrokeElement], f64)> {
         let name = self.linetype_of(object);
         let table = self.linetypes();
-        let record = table.named(&name).or_else(|| {
-            // An old name with no record of its own stands for its stock one.
-            crate::linetype::legacy_alias(&name).and_then(|alias| table.named(alias))
-        })?;
+        let record = table.named(&name)?;
         (!record.is_continuous()).then_some((
             record.elements.as_slice(),
             object.attrs.linetype_scale * self.linetype_scale,

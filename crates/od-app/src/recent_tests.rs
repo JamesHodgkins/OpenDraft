@@ -180,25 +180,6 @@ fn saved_and_loaded_lists_match() {
 }
 
 #[test]
-fn the_old_newline_list_migrates_in_order_with_fresh_ids() {
-    let mut storage = MemoryStorage::default();
-    storage.set_string("recent_files", "new.odx\nmiddle.odx\n\nold.odx".to_owned());
-    let recent = RecentFiles::load(Some(&storage));
-    assert_eq!(
-        recent.paths(),
-        [p("new.odx"), p("middle.odx"), p("old.odx")]
-    );
-    let ids: Vec<u64> = recent.items().iter().map(|i| i.id.0).collect();
-    assert_eq!(ids, [1, 2, 3]);
-    let mut recent = recent;
-    assert_eq!(recent.add(&p("fresh.odx")), RecentId(4));
-    assert_eq!(recent.paths()[0], p("fresh.odx"));
-    // Saving writes the new format, which then wins.
-    recent.save(&mut storage);
-    assert_eq!(RecentFiles::load(Some(&storage)), recent);
-}
-
-#[test]
 fn one_malformed_record_and_unknown_fields_do_not_spoil_the_rest() {
     let mut storage = MemoryStorage::default();
     storage.set_string(
@@ -275,7 +256,6 @@ fn more_than_five_stored_pins_keep_only_the_first_five() {
 fn the_chosen_view_is_remembered_and_grid_is_the_default() {
     let mut storage = MemoryStorage::default();
     assert_eq!(RecentFiles::load(Some(&storage)).view, RecentView::Grid);
-    storage.set_string("recent_files", "a.odx".to_owned());
     assert_eq!(RecentFiles::load(Some(&storage)).view, RecentView::Grid);
     let mut recent = filled(&["a.odx"]);
     recent.view = RecentView::List;
