@@ -468,6 +468,30 @@ mod tests {
         assert_eq!(used, vec![serde_json::json!(1); 3]);
     }
 
+    #[test]
+    fn style_settings_are_named_and_a_number_autocad_does_not_define_is_refused() {
+        let file = written();
+        let style = &file["drawing"]["dim_styles"][0];
+        for (key, name) in [
+            ("text_above", "above"),
+            ("text_just", "centred"),
+            ("fit", "best_fit"),
+            ("text_move", "move_line"),
+            ("arc_symbol", "before"),
+            ("tol_mode", "none"),
+        ] {
+            assert_eq!(style[key], name, "{key}");
+        }
+        let mut document = Document::default();
+        // Styles are brought into range when they are made, so only a field
+        // set by hand can be out of it.
+        let mut dimension =
+            Dimension::aligned(p(0.0, 0.0), p(1.0, 0.0), p(0.0, 1.0), &DimStyle::default());
+        dimension.style.fit = 9;
+        document.add(Entity::Dimension(Box::new(dimension)));
+        assert!(NativeFormat.write(&document).is_err());
+    }
+
     fn written() -> serde_json::Value {
         let text =
             String::from_utf8(NativeFormat.write(&Document::default()).unwrap().bytes).unwrap();

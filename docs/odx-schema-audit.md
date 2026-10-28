@@ -66,9 +66,9 @@ Keep as optional: sparse per-entity flags (section 1 note), `layouts`, `blocks`,
 
 Each step is a schema change in place at version 0, with the tests updated and no conversion code.
 
-## Named choices (section 3): partly done
+## Named choices (section 3): done
 
-Done: arrowheads, length and angle formats (dimension styles, units), the second arrowhead (an `Option` instead of -1), the fixed extension length (an `Option` instead of 0), multileader arrowheads, MTEXT attachment point and flow direction, and line spacing style are named (`native/names.rs`). Kept as AutoCAD's own numbers on purpose: the insertion units (`INSUNITS`, a long table). Still DXF numbers or raw DXF values: the dimension style's `text_above`, `text_just`, `fit`, `text_move`, `tol_mode` and `arc_symbol` (no enums in `od-core` yet), and the DXF-only leftovers `extra_bits`, `unimplemented_441` and `raw_typeface`, which should move into one clearly named object or be dropped.
+Done: arrowheads, length and angle formats (dimension styles, units), the second arrowhead (an `Option` instead of -1), the fixed extension length (an `Option` instead of 0), multileader arrowheads, MTEXT attachment point and flow direction, and line spacing style are named (`native/names.rs`). Kept as AutoCAD's own numbers on purpose: the insertion units (`INSUNITS`, a long table). The dimension style's `text_above`, `text_just`, `fit`, `text_move`, `arc_symbol` and `tol_mode` are named in the file too (`TextPlacementDto` and the others in `names.rs`) while `DimStyle` keeps its `u8` fields, so `od-core` and the app are unchanged; a number outside AutoCAD's list is refused on writing. The DXF-only leftovers keep their place but say where they come from in the file: `dxf_group_441`, `dxf_fill_bits`, `dxf_font` and `dxf_typeface`. They exist so a DXF to `.odx` to DXF trip loses nothing.
 
 ## Required fields (section 5): done
 

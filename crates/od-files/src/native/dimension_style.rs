@@ -9,7 +9,10 @@ use od_core::{DimStyle, Document};
 use serde::{Deserialize, Serialize};
 
 use super::entity::invalid;
-use super::names::{AngleFormatDto, ArrowDto, LengthFormatDto};
+use super::names::{
+    AngleFormatDto, ArcSymbolDto, ArrowDto, FitDto, LengthFormatDto, TextJustifyDto, TextMoveDto,
+    TextPlacementDto, ToleranceDto,
+};
 use crate::FileError;
 
 #[derive(Serialize, Deserialize)]
@@ -23,14 +26,14 @@ struct DimStyleDto {
     text_height: f64,
     text_gap: f64,
     centre_mark: f64,
-    text_above: u8,
-    text_just: u8,
+    text_above: TextPlacementDto,
+    text_just: TextJustifyDto,
     inside_horizontal: bool,
     outside_horizontal: bool,
     text_inside: bool,
     force_line: bool,
-    fit: u8,
-    text_move: u8,
+    fit: FitDto,
+    text_move: TextMoveDto,
     suppress_line: [bool; 2],
     suppress_ext: [bool; 2],
     linear_factor: f64,
@@ -40,9 +43,9 @@ struct DimStyleDto {
     trim_zeros: bool,
     decimal_separator: String,
     post: String,
-    arc_symbol: u8,
+    arc_symbol: ArcSymbolDto,
     baseline_spacing: f64,
-    tol_mode: u8,
+    tol_mode: ToleranceDto,
     tol_plus: f64,
     tol_minus: f64,
     tol_precision: u8,
@@ -65,9 +68,17 @@ struct DimStyleDto {
     text_style: u64,
 }
 
-impl From<&DimStyle> for DimStyleDto {
-    fn from(s: &DimStyle) -> Self {
-        Self {
+impl TryFrom<&DimStyle> for DimStyleDto {
+    type Error = FileError;
+
+    fn try_from(s: &DimStyle) -> Result<Self, FileError> {
+        let bad = |what: &str, code: u8| {
+            FileError::Invalid(format!(
+                "dimension style {} has {what} {code}, which AutoCAD does not define",
+                s.name
+            ))
+        };
+        Ok(Self {
             name: s.name.clone(),
             scale: s.scale,
             arrow_size: s.arrow_size,
@@ -77,14 +88,17 @@ impl From<&DimStyle> for DimStyleDto {
             text_height: s.text_height,
             text_gap: s.text_gap,
             centre_mark: s.centre_mark,
-            text_above: s.text_above,
-            text_just: s.text_just,
+            text_above: TextPlacementDto::from_code(s.text_above)
+                .ok_or_else(|| bad(stringify!(text_above), s.text_above))?,
+            text_just: TextJustifyDto::from_code(s.text_just)
+                .ok_or_else(|| bad(stringify!(text_just), s.text_just))?,
             inside_horizontal: s.inside_horizontal,
             outside_horizontal: s.outside_horizontal,
             text_inside: s.text_inside,
             force_line: s.force_line,
-            fit: s.fit,
-            text_move: s.text_move,
+            fit: FitDto::from_code(s.fit).ok_or_else(|| bad(stringify!(fit), s.fit))?,
+            text_move: TextMoveDto::from_code(s.text_move)
+                .ok_or_else(|| bad(stringify!(text_move), s.text_move))?,
             suppress_line: s.suppress_line,
             suppress_ext: s.suppress_ext,
             linear_factor: s.linear_factor,
@@ -94,9 +108,11 @@ impl From<&DimStyle> for DimStyleDto {
             trim_zeros: s.trim_zeros,
             decimal_separator: s.decimal_separator.to_string(),
             post: s.post.clone(),
-            arc_symbol: s.arc_symbol,
+            arc_symbol: ArcSymbolDto::from_code(s.arc_symbol)
+                .ok_or_else(|| bad(stringify!(arc_symbol), s.arc_symbol))?,
             baseline_spacing: s.baseline_spacing,
-            tol_mode: s.tol_mode,
+            tol_mode: ToleranceDto::from_code(s.tol_mode)
+                .ok_or_else(|| bad(stringify!(tol_mode), s.tol_mode))?,
             tol_plus: s.tol_plus,
             tol_minus: s.tol_minus,
             tol_precision: s.tol_precision,
@@ -112,7 +128,7 @@ impl From<&DimStyle> for DimStyleDto {
             angle_format: s.angle_format.into(),
             angle_precision: s.angle_precision,
             text_style: s.text_style.0,
-        }
+        })
     }
 }
 
@@ -153,14 +169,14 @@ impl DimStyleDto {
             text_height: self.text_height,
             text_gap: self.text_gap,
             centre_mark: self.centre_mark,
-            text_above: self.text_above,
-            text_just: self.text_just,
+            text_above: self.text_above.code(),
+            text_just: self.text_just.code(),
             inside_horizontal: self.inside_horizontal,
             outside_horizontal: self.outside_horizontal,
             text_inside: self.text_inside,
             force_line: self.force_line,
-            fit: self.fit,
-            text_move: self.text_move,
+            fit: self.fit.code(),
+            text_move: self.text_move.code(),
             suppress_line: self.suppress_line,
             suppress_ext: self.suppress_ext,
             linear_factor: self.linear_factor,
@@ -170,9 +186,9 @@ impl DimStyleDto {
             trim_zeros: self.trim_zeros,
             decimal_separator,
             post: self.post,
-            arc_symbol: self.arc_symbol,
+            arc_symbol: self.arc_symbol.code(),
             baseline_spacing: self.baseline_spacing,
-            tol_mode: self.tol_mode,
+            tol_mode: self.tol_mode.code(),
             tol_plus: self.tol_plus,
             tol_minus: self.tol_minus,
             tol_precision: self.tol_precision,
@@ -237,12 +253,20 @@ impl DimStylesDto {
             .collect()
     }
 
-    pub(super) fn of(document: &Document, pool: &StylePool, named: Vec<usize>) -> Self {
-        Self {
-            dim_styles: pool.styles.iter().map(DimStyleDto::from).collect(),
+    pub(super) fn of(
+        document: &Document,
+        pool: &StylePool,
+        named: Vec<usize>,
+    ) -> Result<Self, FileError> {
+        Ok(Self {
+            dim_styles: pool
+                .styles
+                .iter()
+                .map(DimStyleDto::try_from)
+                .collect::<Result<_, _>>()?,
             named_dim_styles: named,
             current_dim_style: document.dim_style().name.clone(),
-        }
+        })
     }
 
     /// The pool, read and checked, ready to be handed to the dimensions and

@@ -39,8 +39,13 @@ enum FontDto {
         italic: bool,
     },
     Opaque {
+        #[serde(rename = "dxf_font")]
         raw_primary: String,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            default,
+            skip_serializing_if = "Option::is_none",
+            rename = "dxf_typeface"
+        )]
         raw_typeface: Option<i32>,
     },
 }
@@ -201,7 +206,7 @@ struct BackgroundDto {
     fill: FillDto,
     scale: f64,
     /// Bits of the DXF fill setting this build does not know.
-    #[serde(default, skip_serializing_if = "is_zero_int")]
+    #[serde(default, skip_serializing_if = "is_zero_int", rename = "dxf_fill_bits")]
     extra_bits: i32,
 }
 
@@ -256,7 +261,11 @@ pub(super) struct MTextDto {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     columns: Option<ColumnsDto>,
     /// DXF group 441, kept and never used.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        rename = "dxf_group_441"
+    )]
     unimplemented_441: Option<i32>,
 }
 

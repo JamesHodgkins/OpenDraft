@@ -34,6 +34,46 @@ macro_rules! mirror {
 }
 pub(super) use mirror;
 
+/// A serde enum for a setting `DimStyle` keeps as AutoCAD's small number: the
+/// file names the choice, and a number outside the list cannot be written.
+macro_rules! coded {
+    ($dto:ident { $($variant:ident = $code:literal),+ $(,)? }) => {
+        #[derive(Clone, Copy, Serialize, Deserialize)]
+        #[serde(rename_all = "snake_case")]
+        pub(super) enum $dto {
+            $($variant),+
+        }
+
+        impl $dto {
+            pub(super) fn from_code(code: u8) -> Option<Self> {
+                match code {
+                    $($code => Some(Self::$variant),)+
+                    _ => None,
+                }
+            }
+
+            pub(super) fn code(self) -> u8 {
+                match self {
+                    $(Self::$variant => $code),+
+                }
+            }
+        }
+    };
+}
+
+coded!(TextPlacementDto { Centred = 0, Above = 1, Outside = 2, Jis = 3, Below = 4 });
+coded!(TextJustifyDto {
+    Centred = 0,
+    AtExtension1 = 1,
+    AtExtension2 = 2,
+    OverExtension1 = 3,
+    OverExtension2 = 4,
+});
+coded!(FitDto { Both = 0, Arrows = 1, Text = 2, BestFit = 3 });
+coded!(TextMoveDto { MoveLine = 0, Leader = 1, Free = 2 });
+coded!(ArcSymbolDto { Before = 0, Above = 1, None = 2 });
+coded!(ToleranceDto { None = 0, Symmetrical = 1, Deviation = 2, Limits = 3 });
+
 mirror!(ArrowDto <-> Arrow { Closed, Open, Tick, None });
 mirror!(LengthFormatDto <-> LengthFormat {
     Scientific,

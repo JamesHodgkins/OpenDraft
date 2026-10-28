@@ -341,7 +341,7 @@ impl DrawingDto {
             next_layer_id,
             current_layer: document.current_layer().0,
             units: UnitsDto::from(document.units()),
-            dim_styles: DimStylesDto::of(document, &styles, named_styles),
+            dim_styles: DimStylesDto::of(document, &styles, named_styles)?,
             layers,
             objects,
             layouts: document
