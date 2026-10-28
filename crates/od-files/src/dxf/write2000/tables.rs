@@ -104,10 +104,7 @@ pub(super) fn write_tables(
         if let Some(rgb) = true_color(layer.color) {
             out.pair(420, rgb);
         }
-        out.pair(
-            6,
-            crate::dxf::linetypes::name_for(document, &layer.linetype),
-        );
+        out.pair(6, crate::dxf::linetypes::name_for(document, layer.linetype));
         out.pair(370, weight_code(layer.lineweight));
         out.pair(390, hex(ids.placeholder));
     }
@@ -157,7 +154,10 @@ pub(super) fn write_tables(
     for (i, _) in super::sheets(document).iter().enumerate() {
         block_record(out, &block_name(i), ids.records[i], ids.layouts[i]);
     }
-    for (name, record_handle) in ids.dim_blocks.values() {
+    // In handle order, so the same drawing always writes the same file.
+    let mut dim_blocks: Vec<_> = ids.dim_blocks.values().collect();
+    dim_blocks.sort_by_key(|(_, handle)| *handle);
+    for (name, record_handle) in dim_blocks {
         block_record(out, name, *record_handle, 0);
     }
     out.pair(0, "ENDTAB");

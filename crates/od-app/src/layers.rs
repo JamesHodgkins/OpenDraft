@@ -4,7 +4,7 @@
 use od_commands::{
     AddLayer, ModifyAttributes, ModifyLayers, RemoveLayer, SetCurrentLayer, SetNewObjectStyle,
 };
-use od_core::{Attr, Color, EntityKind, Layer, LayerId, Lineweight};
+use od_core::{Attr, Color, EntityKind, Layer, LayerId, LinetypeId, Lineweight};
 
 use crate::state::AppState;
 use crate::text::plural;
@@ -56,7 +56,7 @@ pub enum LayerEdit {
     Rename(LayerId, String),
     Toggle(LayerId, LayerFlag),
     SetColor(LayerId, Color),
-    SetLinetype(LayerId, String),
+    SetLinetype(LayerId, LinetypeId),
     SetLineweight(LayerId, Lineweight),
     /// Freeze or thaw a layer in the viewport being worked on (VP Freeze).
     ToggleInViewport(LayerId),
@@ -67,7 +67,7 @@ pub enum LayerEdit {
 pub enum AttrEdit {
     Layer(LayerId),
     Color(Attr<Color>),
-    Linetype(Attr<String>),
+    Linetype(Attr<LinetypeId>),
     Lineweight(Attr<Lineweight>),
     /// The objects' own linetype scale, above zero.
     LinetypeScale(f64),
@@ -110,8 +110,8 @@ impl AppState {
             LayerEdit::SetColor(id, color) => {
                 self.edit_layers("Change layer colour", [id], |l| l.color = color)
             }
-            LayerEdit::SetLinetype(id, name) => {
-                self.edit_layers("Change layer linetype", [id], |l| l.linetype = name.clone())
+            LayerEdit::SetLinetype(id, linetype) => {
+                self.edit_layers("Change layer linetype", [id], |l| l.linetype = linetype)
             }
             LayerEdit::SetLineweight(id, weight) => {
                 self.edit_layers("Change layer lineweight", [id], |l| l.lineweight = weight)

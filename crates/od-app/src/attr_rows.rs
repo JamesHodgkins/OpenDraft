@@ -3,7 +3,7 @@
 //! disagree; choosing a value sets it on all of them.
 
 use eframe::egui::{self, Ui};
-use od_core::{Attr, Color, Document, Lineweight, Object};
+use od_core::{Attr, Color, Document, LinetypeId, Lineweight, Object};
 use od_ui::{menu, Theme};
 
 use crate::colour_ui::{self, Pick};
@@ -151,7 +151,7 @@ pub(crate) fn linetype_value_field(
     id: egui::Id,
     area: egui::Rect,
     document: &Document,
-    attr: Option<Attr<String>>,
+    attr: Option<Attr<LinetypeId>>,
 ) -> Option<AttrEdit> {
     let choices = linetype_ui::choices(document);
     // ByLayer first, then the table's linetypes, each with a picture.
@@ -160,10 +160,11 @@ pub(crate) fn linetype_value_field(
         .collect();
     let current = attr.as_ref().and_then(|a| match a {
         Attr::ByLayer => Some(0),
-        Attr::Set(name) => linetype_ui::position(&choices, name).map(|i| i + 1),
+        Attr::Set(id) => linetype_ui::position(&choices, *id).map(|i| i + 1),
     });
     let text = match (&attr, current) {
-        (Some(Attr::Set(name)), None) => name.as_str(),
+        // A reference the table cannot answer (a valid drawing has none).
+        (Some(Attr::Set(_)), None) => "?",
         (_, Some(i)) => entries[i].as_str(),
         _ => VARIES,
     };
@@ -185,7 +186,7 @@ pub(crate) fn linetype_value_field(
     )?;
     Some(AttrEdit::Linetype(match picked {
         0 => Attr::ByLayer,
-        i => Attr::Set(choices[i - 1].name.clone()),
+        i => Attr::Set(choices[i - 1].id),
     }))
 }
 

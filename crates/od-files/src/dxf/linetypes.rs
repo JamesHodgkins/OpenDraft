@@ -8,9 +8,9 @@ use super::write::linetype_for;
 
 /// The name a linetype is written under: that of its record in the table, the
 /// way DXF spells names.
-pub(super) fn name_for(document: &Document, name: &str) -> String {
-    let table = document.linetypes();
-    linetype_for(table.named(name).map_or(name, |r| r.name.as_str()))
+pub(super) fn name_for(document: &Document, id: LinetypeId) -> String {
+    let record = document.linetypes().get(id);
+    linetype_for(record.map_or("CONTINUOUS", |r| r.name.as_str()))
 }
 
 /// The table's own records as written, which every writer defines whether or

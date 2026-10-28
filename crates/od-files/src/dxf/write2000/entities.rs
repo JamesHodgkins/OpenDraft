@@ -123,8 +123,8 @@ pub(super) fn write_object(
             out.pair(67, 1);
         }
         out.pair(8, &layer);
-        if let Attr::Set(name) = &object.attrs.linetype {
-            out.pair(6, crate::dxf::linetypes::name_for(document, name));
+        if let Attr::Set(id) = &object.attrs.linetype {
+            out.pair(6, crate::dxf::linetypes::name_for(document, *id));
         }
         if object.attrs.linetype_scale != 1.0 {
             out.pair(48, object.attrs.linetype_scale);

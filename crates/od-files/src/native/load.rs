@@ -3,7 +3,8 @@
 use std::collections::HashSet;
 
 use od_core::{
-    Attributes, Document, Entity, EntityId, Layer, LayerId, LayoutId, Lineweight, Object,
+    Attributes, Document, Entity, EntityId, Layer, LayerId, LayoutId, LinetypeId, Lineweight,
+    Object,
 };
 
 use super::block::{load_blocks, Blocks};
@@ -29,7 +30,7 @@ impl DrawingDto {
                 id: LayerId(layer.id),
                 name: layer.name,
                 color: layer.color.into(),
-                linetype: layer.linetype,
+                linetype: LinetypeId(layer.linetype),
                 lineweight: Lineweight(layer.lineweight),
                 on: layer.on,
                 frozen: layer.frozen,
@@ -102,7 +103,7 @@ impl DrawingDto {
             let mut attrs = Attributes {
                 layer: LayerId(object.layer),
                 color: attr_from_dto(object.color, Color::from),
-                linetype: attr_from_dto(object.linetype, |s| s),
+                linetype: attr_from_dto(object.linetype, LinetypeId),
                 lineweight: attr_from_dto(object.lineweight, Lineweight),
                 ..Attributes::on_layer(LayerId(object.layer))
             };

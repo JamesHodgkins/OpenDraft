@@ -397,10 +397,14 @@ fn row(
         return result;
     }
     let cell = ui.interact(cols.linetype, id.with("linetype"), Sense::click());
-    cell_text(ui, theme, cols.linetype, &layer.linetype);
+    let linetype_name = document
+        .linetypes()
+        .get(layer.linetype)
+        .map_or("?", |r| r.name.as_str());
+    cell_text(ui, theme, cols.linetype, linetype_name);
     let menu_id = id.with("linetype_menu");
-    if let Some(name) = linetype_ui::pick(ui, theme, menu_id, &cell, document, &layer.linetype) {
-        result.edit = Some(LayerEdit::SetLinetype(layer.id, name));
+    if let Some(linetype) = linetype_ui::pick(ui, theme, menu_id, &cell, document, layer.linetype) {
+        result.edit = Some(LayerEdit::SetLinetype(layer.id, linetype));
     }
 
     let weights: Vec<String> = Lineweight::STANDARD

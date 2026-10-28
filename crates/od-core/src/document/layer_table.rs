@@ -3,6 +3,7 @@
 
 use super::{after, Document};
 use crate::layer::{Attr, Attributes, Color, Layer, LayerId, Lineweight};
+use crate::linetype::LinetypeId;
 
 impl Document {
     /// Layers in display order.
@@ -42,14 +43,14 @@ impl Document {
     }
 
     /// The current colour, linetype and lineweight, in that order.
-    pub fn new_object_style(&self) -> (&Attr<Color>, &Attr<String>, &Attr<Lineweight>) {
+    pub fn new_object_style(&self) -> (&Attr<Color>, &Attr<LinetypeId>, &Attr<Lineweight>) {
         (&self.new_color, &self.new_linetype, &self.new_lineweight)
     }
 
     pub fn set_new_object_style(
         &mut self,
         color: Attr<Color>,
-        linetype: Attr<String>,
+        linetype: Attr<LinetypeId>,
         lineweight: Attr<Lineweight>,
     ) {
         self.new_color = color;

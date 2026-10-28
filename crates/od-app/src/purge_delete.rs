@@ -44,11 +44,9 @@ pub(crate) fn delete_actions(doc: &Document, items: &[Item]) -> Vec<Box<dyn Acti
     if has(&|i| matches!(i, Item::Linetype(_))) {
         let mut table = doc.linetypes().clone();
         for item in items {
-            if let Item::Linetype(name) = item {
-                if let Some(id) = table.named(name).map(|r| r.id) {
-                    // Special records are never offered; ignore a refusal.
-                    let _ = table.remove(id);
-                }
+            if let Item::Linetype(id) = item {
+                // Special records are never offered; ignore a refusal.
+                let _ = table.remove(*id);
             }
         }
         actions.push(Box::new(SetLinetypes::new(table, doc.linetype_scale())));

@@ -75,12 +75,12 @@ fn a_linetype_in_use_is_not_for_deleting_but_a_free_one_is() {
     });
     app.state.select_all();
     app.state.set_attrs(
-        &crate::layers::AttrEdit::Linetype(od_core::Attr::Set("dashed".into())),
+        &crate::layers::AttrEdit::Linetype(od_core::Attr::Set(LinetypeId::DASHED)),
         None,
     );
     let doc = &app.state.session().document();
-    assert!(doc.linetype_in_use("DASHED"));
-    assert!(!doc.linetype_in_use("HIDDEN"));
+    assert!(doc.linetype_in_use(LinetypeId::DASHED));
+    assert!(!doc.linetype_in_use(LinetypeId::HIDDEN));
     let hidden = doc.linetypes().named("HIDDEN").unwrap().id;
     assert!(!hidden.is_special() && !LinetypeId::CONTINUOUS.0.eq(&hidden.0));
 }

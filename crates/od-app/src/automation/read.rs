@@ -158,7 +158,11 @@ fn get(state: &AppState, instance: &str, args: GetArgs) -> Result<GetResult, Api
     let entities = args
         .ids
         .iter()
-        .map(|id| document.object(od_core::EntityId(id.0)).map(entity_dto))
+        .map(|id| {
+            document
+                .object(od_core::EntityId(id.0))
+                .map(|o| entity_dto(document, o))
+        })
         .collect();
     Ok(GetResult {
         revision: WireId(doc.session.revision()),
@@ -179,7 +183,10 @@ fn layers(doc: &Doc) -> LayersResult {
                 name: l.name.clone(),
                 // A layer's own colour is never by-layer.
                 color: color_dto(&Attr::Set(l.color)),
-                linetype: l.linetype.clone(),
+                linetype: document
+                    .linetypes()
+                    .get(l.linetype)
+                    .map_or_else(|| "CONTINUOUS".to_owned(), |r| r.name.clone()),
                 lineweight_hundredths_mm: l.lineweight.0,
                 visible: l.on,
                 frozen: l.frozen,

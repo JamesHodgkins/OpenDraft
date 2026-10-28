@@ -9,6 +9,7 @@ mod tests;
 
 pub use scan::{blocked, purgeable, unnamed, unused_blocks, users_of, Unnamed};
 
+use crate::linetype::LinetypeId;
 use crate::text_style::TextStyleId;
 use crate::{BlockId, EntityId, LayerId};
 
@@ -57,7 +58,7 @@ pub enum Item {
     Block(BlockId),
     DimStyle(String),
     Layer(LayerId),
-    Linetype(String),
+    Linetype(LinetypeId),
     MLeaderStyle(String),
     TextStyle(TextStyleId),
     ZeroLength(Vec<EntityId>),

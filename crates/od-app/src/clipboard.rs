@@ -12,7 +12,9 @@
 use std::sync::{Arc, Mutex, PoisonError};
 
 use eframe::egui;
-use od_commands::{Cancelled, Command, Editor, PasteDrawing, PointOptions, RemoveEntities};
+use od_commands::{
+    Cancelled, Command, Editor, PasteDrawing, PointOptions, RemoveEntities, WarningSink,
+};
 use od_core::{Document, Entity, EntityId, Placement, Point};
 use od_files::{FileFormat, NativeFormat};
 
@@ -202,8 +204,11 @@ impl AppState {
         if how == Paste::Original {
             let count = plural(clip.count(), "object");
             let placement = Placement::Loose { dx: 0.0, dy: 0.0 };
-            self.perform(PasteDrawing::new("Paste", clip.drawing, placement));
-            self.message = format!("Pasted {count}");
+            let sink = WarningSink::default();
+            self.perform(
+                PasteDrawing::new("Paste", clip.drawing, placement).reporting(sink.clone()),
+            );
+            self.message = with_warnings(format!("Pasted {count}"), &sink);
         } else {
             self.start_command("PASTECLIP", move |ed| paste(ed, clip, how));
         }
@@ -234,12 +239,24 @@ fn paste(ed: &mut Editor, clip: Clipboard, how: Paste) -> Result<(), Cancelled> 
             },
         ),
     };
+    let sink = WarningSink::default();
+    let reporting = sink.clone();
     ed.transaction("Paste", move |tx| {
-        tx.perform(PasteDrawing::new(name, clip.drawing, placement));
+        tx.perform(PasteDrawing::new(name, clip.drawing, placement).reporting(reporting));
         Ok(())
     })?;
-    ed.say(format!("Pasted {count}"));
+    ed.say(with_warnings(format!("Pasted {count}"), &sink));
     Ok(())
+}
+
+/// `said` followed by what the paste could not carry over exactly.
+fn with_warnings(said: String, sink: &WarningSink) -> String {
+    let Ok(warnings) = sink.lock() else {
+        return said;
+    };
+    warnings
+        .iter()
+        .fold(said, |text, warning| format!("{text}. {warning}"))
 }
 
 /// COPYBASE: pick objects and a base point, and copy them with it.

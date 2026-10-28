@@ -6,7 +6,7 @@ use od_core::mleader::{
     LeaderAttachment, MLeaderContentType, MLeaderLineType, MLeaderStyle, MLeaderStyleContent,
     MLeaderStyleId, TextAngle,
 };
-use od_core::{Document, Lineweight, TextStyleId};
+use od_core::{Document, LinetypeId, Lineweight, TextStyleId};
 use serde::{Deserialize, Serialize};
 
 use super::entity::invalid;
@@ -87,7 +87,7 @@ struct BodyDto {
     description: String,
     leader_type: LineTypeDto,
     leader_color: AttrDto<ColorDto>,
-    leader_linetype: AttrDto<String>,
+    leader_linetype: AttrDto<u64>,
     leader_lineweight: AttrDto<u16>,
     arrow: ArrowDto,
     arrow_size: f64,
@@ -108,7 +108,7 @@ impl BodyDto {
             description: s.description.clone(),
             leader_type: s.leader_type.into(),
             leader_color: attr_to_dto(&s.leader_color, |c| (*c).into()),
-            leader_linetype: attr_to_dto(&s.leader_linetype, String::clone),
+            leader_linetype: attr_to_dto(&s.leader_linetype, |id| id.0),
             leader_lineweight: attr_to_dto(&s.leader_lineweight, |w| w.0),
             arrow: s.arrow.into(),
             arrow_size: s.arrow_size,
@@ -149,7 +149,7 @@ impl MLeaderStyleDto {
             description: b.description,
             leader_type: b.leader_type.into(),
             leader_color: attr_from_dto(b.leader_color, |c| c.into()),
-            leader_linetype: attr_from_dto(b.leader_linetype, |n| n),
+            leader_linetype: attr_from_dto(b.leader_linetype, LinetypeId),
             leader_lineweight: attr_from_dto(b.leader_lineweight, Lineweight),
             arrow: b.arrow.into(),
             arrow_size: b.arrow_size,
@@ -249,7 +249,7 @@ mod tests {
             description: "Notes in red".into(),
             leader_type: MLeaderLineType::Spline,
             leader_color: Attr::Set(Color::Rgb(200, 0, 0)),
-            leader_linetype: Attr::Set("DASHED".into()),
+            leader_linetype: Attr::Set(od_core::LinetypeId::DASHED),
             leader_lineweight: Attr::Set(Lineweight(70)),
             arrow: Arrow::Open,
             arrow_size: 3.0,

@@ -33,6 +33,9 @@ pub enum DocumentError {
     /// name, or a style that could not exist.
     BadTextStyle(String),
     CurrentTextStyleMissing(TextStyleId),
+    /// Something uses a linetype the table lacks, or `BYLAYER` or `BYBLOCK`
+    /// as a linetype.
+    BadLinetype(String),
     /// The multileader-style table lacks `Standard` first, has a repeated id
     /// or name, a style that could not exist or one using a missing text
     /// style, or a counter behind its ids.
@@ -93,6 +96,7 @@ impl fmt::Display for DocumentError {
             Self::CurrentTextStyleMissing(id) => {
                 write!(f, "the current text style {} does not exist", id.0)
             }
+            Self::BadLinetype(why) => write!(f, "{why}"),
             Self::MissingTextStyle(object, style) => {
                 write!(f, "object {} uses missing text style {}", object.0, style.0)
             }
@@ -189,6 +193,7 @@ impl Document {
             return Err(DocumentError::CounterBehind);
         }
         self.validate_text()?;
+        self.validate_linetypes()?;
         self.validate_mleader_styles()?;
         self.validate_mleaders()?;
         self.validate_leaders()?;

@@ -124,7 +124,7 @@ fn layers_keep_their_colour_linetype_weight_and_flags() {
     };
     let walls = layer("Walls");
     assert_eq!(walls.color, Color::Rgb(255, 0, 0));
-    assert_eq!(walls.linetype, "Dashed");
+    assert_eq!(walls.linetype, od_core::LinetypeId::DASHED);
     assert_eq!(walls.lineweight, Lineweight(50));
     assert!(layer("Frozen").frozen);
     assert!(layer("Locked").locked);
@@ -163,7 +163,10 @@ fn entities_arrive_on_their_layers_with_their_attributes() {
     // The old-style polyline arrives with its three vertices.
     assert!(matches!(&objects[5].entity, Entity::Polyline { points, .. } if points.len() == 3));
     // Attributes set on an entity, and true colour.
-    assert_eq!(objects[6].attrs.linetype, Attr::Set("Center".into()));
+    assert_eq!(
+        objects[6].attrs.linetype,
+        Attr::Set(od_core::LinetypeId::CENTER)
+    );
     assert_eq!(objects[6].attrs.lineweight, Attr::Set(Lineweight(35)));
     assert_eq!(objects[6].attrs.color, Attr::Set(Color::Rgb(0, 0, 255)));
     assert_eq!(objects[7].attrs.color, Attr::Set(Color::Rgb(255, 128, 0)));

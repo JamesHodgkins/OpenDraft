@@ -7,7 +7,9 @@ use std::collections::HashSet;
 
 use od_commands::{Cancelled, Editor, ModifyEntities, RemoveEntities};
 use od_core::overkill::{overkill, Candidate, Ignore, Settings};
-use od_core::{Attr, Attributes, Color, Document, Entity, EntityId, LayerId, LayoutId, Lineweight};
+use od_core::{
+    Attr, Attributes, Color, Document, Entity, EntityId, LayerId, LayoutId, LinetypeId, Lineweight,
+};
 
 use crate::overkill_memory::{memory, remember};
 use crate::text::plural;
@@ -18,7 +20,7 @@ struct Key {
     layout: Option<LayoutId>,
     layer: Option<LayerId>,
     color: Option<Attr<Color>>,
-    linetype: Option<Attr<String>>,
+    linetype: Option<Attr<LinetypeId>>,
     linetype_scale: Option<u64>,
     lineweight: Option<Attr<Lineweight>>,
 }

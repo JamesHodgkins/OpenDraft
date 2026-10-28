@@ -29,6 +29,13 @@ impl LinetypeId {
     pub const CONTINUOUS: LinetypeId = LinetypeId(1);
     pub const BYLAYER: LinetypeId = LinetypeId(2);
     pub const BYBLOCK: LinetypeId = LinetypeId(3);
+    // The stock records a new drawing starts with (see `SEEDED`).
+    pub const DASHED: LinetypeId = LinetypeId(4);
+    pub const DOT: LinetypeId = LinetypeId(5);
+    pub const DASHDOT: LinetypeId = LinetypeId(6);
+    pub const CENTER: LinetypeId = LinetypeId(7);
+    pub const HIDDEN: LinetypeId = LinetypeId(8);
+    pub const PHANTOM: LinetypeId = LinetypeId(9);
 
     /// The three records every drawing has and none can remove.
     pub fn is_special(self) -> bool {

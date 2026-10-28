@@ -61,10 +61,10 @@ fn apply_props(document: &Document, layer: &mut Layer, props: &LayerProps) -> Re
         Some(ColorDto::Rgb { r, g, b }) => layer.color = Color::Rgb(*r, *g, *b),
     }
     if let Some(name) = &props.linetype {
-        document.linetypes().named(name).ok_or_else(|| {
+        let record = document.linetypes().named(name).ok_or_else(|| {
             ApiError::new(ErrorCode::InvalidReference, "No such linetype.").detail("linetype", name)
         })?;
-        layer.linetype = name.clone();
+        layer.linetype = record.id;
     }
     if let Some(hundredths) = props.lineweight_hundredths_mm {
         let weight = Lineweight(hundredths);

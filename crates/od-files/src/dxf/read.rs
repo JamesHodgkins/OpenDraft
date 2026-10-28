@@ -6,11 +6,10 @@
 use std::collections::{BTreeMap, HashMap};
 
 use od_core::{
-    Attr, Attributes, Color, Document, Entity, Layer, LayerId, Lineweight, Point, LINETYPES,
+    Attr, Attributes, Color, Document, Entity, Layer, LayerId, LinetypeId, Lineweight, Point,
 };
 
 use crate::{FileError, Loaded};
-use ltype::linetype_name;
 use od_core::aci::aci_rgb;
 
 mod basic;
@@ -209,9 +208,9 @@ impl Importer {
                 name
             },
             color,
-            linetype: record
-                .text(6)
-                .map_or_else(|| LINETYPES[0].to_owned(), linetype_name),
+            linetype: self
+                .linetype_ref(record.text(6))
+                .unwrap_or(LinetypeId::CONTINUOUS),
             lineweight,
             on: index >= 0,
             frozen: flags & 1 != 0,
@@ -230,15 +229,9 @@ impl Importer {
             }
             _ => Attr::ByLayer,
         };
-        let linetype = match record.text(6) {
-            Some(name)
-                if !name.eq_ignore_ascii_case("bylayer")
-                    && !name.eq_ignore_ascii_case("byblock") =>
-            {
-                Attr::Set(linetype_name(name))
-            }
-            _ => Attr::ByLayer,
-        };
+        let linetype = self
+            .linetype_ref(record.text(6))
+            .map_or(Attr::ByLayer, Attr::Set);
         let lineweight = match record.int(370) {
             Some(w) if w >= 0 => Attr::Set(Lineweight(u16::try_from(w).unwrap_or(u16::MAX))),
             _ => Attr::ByLayer,
@@ -514,7 +507,7 @@ mod tests {
         assert_eq!(doc.len(), 2);
         let walls = doc.layers().iter().find(|l| l.name == "Walls").unwrap();
         assert_eq!(walls.color, Color::Rgb(255, 0, 0));
-        assert_eq!(walls.linetype, "Dashed");
+        assert_eq!(walls.linetype, od_core::LinetypeId::DASHED);
         assert_eq!(walls.lineweight, Lineweight(50));
         assert_eq!(doc.objects()[0].attrs.layer, walls.id);
         assert_eq!(
@@ -610,7 +603,10 @@ mod tests {
         let objects = loaded.document.objects();
         assert_eq!(objects[0].attrs, Attributes::on_layer(LayerId::DEFAULT));
         assert_eq!(objects[1].attrs.color, Attr::Set(Color::Rgb(0, 0, 255)));
-        assert_eq!(objects[1].attrs.linetype, Attr::Set("Center".into()));
+        assert_eq!(
+            objects[1].attrs.linetype,
+            Attr::Set(od_core::LinetypeId::CENTER)
+        );
         assert_eq!(objects[1].attrs.lineweight, Attr::Set(Lineweight(35)));
         assert_eq!(objects[2].attrs, Attributes::on_layer(LayerId::DEFAULT));
     }

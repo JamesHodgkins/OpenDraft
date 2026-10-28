@@ -69,7 +69,9 @@ pub use block::{Affine, BlockDef, BlockEntity, BlockId, Insert};
 pub use corner::{Chamfer, CornerError, Joined};
 pub use corner_infinite::{chamfer_lines, fillet};
 pub use dimension::{Arrow, DimKind, DimStyle, DimText, Dimension};
-pub use document::{Absorbed, Document, EntityId, Object, Placement, SpatialStats};
+pub use document::{
+    Absorbed, Document, EntityId, LinetypeUse, Object, Placement, SpatialStats, TransferWarning,
+};
 pub use ellipse::{Ellipse, EllipseError};
 pub use entity_kind::EntityKind;
 pub use extend::End;
@@ -77,7 +79,7 @@ pub use grip::{Grip, GripKind};
 pub use hatch::HatchEntity;
 pub use intersect::Curve;
 pub use join::{join, Merged};
-pub use layer::{Attr, Attributes, Color, Layer, LayerId, Lineweight, LINETYPES};
+pub use layer::{Attr, Attributes, Color, Layer, LayerId, Lineweight};
 pub use layout::{
     format_scale, paper_size, paper_size_name, parse_scale, Layout, LayoutId, Viewport, ViewportId,
     MIN_SHEET, PAPER_SIZES,

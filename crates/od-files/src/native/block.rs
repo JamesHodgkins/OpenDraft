@@ -11,7 +11,8 @@ use std::sync::Arc;
 
 use od_core::block::{block_name_problem, MAX_EXPANSION, MAX_NESTING};
 use od_core::{
-    Attributes, BlockDef, BlockEntity, BlockId, Color, DimStyle, Entity, LayerId, Lineweight,
+    Attributes, BlockDef, BlockEntity, BlockId, Color, DimStyle, Entity, LayerId, LinetypeId,
+    Lineweight,
 };
 use serde::{Deserialize, Serialize};
 
@@ -38,7 +39,7 @@ pub(super) struct BlockDto {
 struct BlockObjectDto {
     layer: u64,
     color: AttrDto<ColorDto>,
-    linetype: AttrDto<String>,
+    linetype: AttrDto<u64>,
     lineweight: AttrDto<u16>,
     #[serde(flatten)]
     scale: super::linetype::ScaleDto,
@@ -54,7 +55,7 @@ impl BlockDto {
                 Ok(BlockObjectDto {
                     layer: e.attrs.layer.0,
                     color: attr_to_dto(&e.attrs.color, |c| (*c).into()),
-                    linetype: attr_to_dto(&e.attrs.linetype, String::clone),
+                    linetype: attr_to_dto(&e.attrs.linetype, |id| id.0),
                     lineweight: attr_to_dto(&e.attrs.lineweight, |w| w.0),
                     scale: super::linetype::ScaleDto::of(&e.attrs),
                     entity: EntityDto::from_entity(&e.entity, styles)?,
@@ -142,7 +143,7 @@ fn resolve(
         let mut attrs = Attributes {
             layer: LayerId(object.layer),
             color: attr_from_dto(object.color.clone(), Color::from),
-            linetype: attr_from_dto(object.linetype.clone(), |s| s),
+            linetype: attr_from_dto(object.linetype.clone(), LinetypeId),
             lineweight: attr_from_dto(object.lineweight.clone(), Lineweight),
             ..Attributes::on_layer(LayerId(object.layer))
         };

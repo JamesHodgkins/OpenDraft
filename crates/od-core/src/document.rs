@@ -7,7 +7,7 @@ use crate::block::BlockDef;
 use crate::dimension::DimStyle;
 use crate::layer::{Attr, Attributes, Color, Layer, LayerId, Lineweight};
 use crate::layout::{Layout, LayoutId};
-use crate::linetype::{LinetypeTable, StrokeElement};
+use crate::linetype::{LinetypeId, LinetypeTable, StrokeElement};
 use crate::mleader::{MLeaderStyle, MLeaderStyleId};
 use crate::text_style::{TextStyle, TextStyleId};
 use crate::units::Units;
@@ -44,7 +44,7 @@ pub struct Document {
     /// The colour, linetype and lineweight new objects get (`CECOLOR`,
     /// `CELTYPE`, `CELWEIGHT`); ByLayer unless set.
     new_color: Attr<Color>,
-    new_linetype: Attr<String>,
+    new_linetype: Attr<LinetypeId>,
     new_lineweight: Attr<Lineweight>,
     /// How lengths and angles are shown and typed.
     units: Units,
@@ -93,6 +93,7 @@ mod layer_table;
 mod layouts;
 mod leaders;
 mod linetypes;
+pub use linetypes::LinetypeUse;
 mod mleader_styles;
 mod object;
 mod object_list;
@@ -111,7 +112,7 @@ mod transplant;
 
 pub use object::Object;
 pub use spatial::SpatialStats;
-pub use transplant::{Absorbed, Placement};
+pub use transplant::{Absorbed, Placement, TransferWarning};
 
 impl Default for Document {
     fn default() -> Self {
@@ -311,7 +312,7 @@ impl Document {
         object.attrs.color.resolve(&self.layer_of(object).color)
     }
 
-    pub fn linetype_of(&self, object: &Object) -> String {
+    pub fn linetype_of(&self, object: &Object) -> LinetypeId {
         object
             .attrs
             .linetype
@@ -320,11 +321,10 @@ impl Document {
 
     /// The pattern an object is drawn with and the scale to lay it at (its own
     /// linetype scale times `LTSCALE`), or
-    /// `None` for a continuous line (also for a linetype the table lacks).
+    /// `None` for a continuous line (also for an id the table lacks, which a
+    /// valid drawing has none of).
     pub fn dash_pattern(&self, object: &Object) -> Option<(&[StrokeElement], f64)> {
-        let name = self.linetype_of(object);
-        let table = self.linetypes();
-        let record = table.named(&name)?;
+        let record = self.linetypes().get(self.linetype_of(object))?;
         (!record.is_continuous()).then_some((
             record.elements.as_slice(),
             object.attrs.linetype_scale * self.linetype_scale,

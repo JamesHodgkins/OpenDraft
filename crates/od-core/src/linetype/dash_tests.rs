@@ -240,7 +240,7 @@ fn an_object_scale_multiplies_ltscale_and_a_bad_ltscale_is_ignored() {
     use crate::{Attr, Attributes, Document, LayerId};
     let mut doc = Document::default();
     let attrs = Attributes {
-        linetype: Attr::Set("DASHED".into()),
+        linetype: Attr::Set(crate::LinetypeId::DASHED),
         linetype_scale: 2.0,
         ..Attributes::on_layer(LayerId::DEFAULT)
     };

@@ -84,7 +84,11 @@ fn a_name_the_file_never_defines_gets_the_stock_pattern_or_none_and_is_reported(
     let doc = &loaded.document;
     let hidden = doc.linetypes().named("HIDDEN2").unwrap();
     assert_eq!(hidden.elements.len(), 2);
-    assert!(doc.linetypes().named("NOPE").is_none());
+    // The name is kept, as a record with no pattern, so nothing points at nothing.
+    assert!(doc
+        .linetypes()
+        .named("NOPE")
+        .is_some_and(|r| r.elements.is_empty()));
     assert!(doc.dash_pattern(&doc.objects()[0]).is_none());
     let text = loaded.warnings.join("\n");
     assert!(text.contains("standard pattern: HIDDEN2"), "{text}");
@@ -153,16 +157,17 @@ fn drawing() -> Document {
         })
         .unwrap();
     doc.set_linetypes(table);
-    let on = |name: &str| Attributes {
-        linetype: Attr::Set(name.to_owned()),
+    let my_line = doc.linetypes().named("MyLine").unwrap().id;
+    let on = |id: od_core::LinetypeId| Attributes {
+        linetype: Attr::Set(id),
         ..Attributes::on_layer(LayerId::DEFAULT)
     };
     let line = || Entity::Line {
         start: Point::new(0.0, 0.0),
         end: Point::new(50.0, 0.0),
     };
-    doc.add_with(line(), on("MyLine"));
-    doc.add_with(line(), on("DOT"));
+    doc.add_with(line(), on(my_line));
+    doc.add_with(line(), on(od_core::LinetypeId::DOT));
     doc
 }
 

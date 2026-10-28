@@ -166,7 +166,7 @@ mod tests {
     fn red_dashed(layer: LayerId) -> Attributes {
         Attributes {
             color: Attr::Set(Color::Rgb(255, 0, 0)),
-            linetype: Attr::Set("DASHED".to_owned()),
+            linetype: Attr::Set(od_core::LinetypeId::DASHED),
             lineweight: Attr::Set(Lineweight::STANDARD[3]),
             linetype_scale: 2.0,
             ..Attributes::on_layer(layer)

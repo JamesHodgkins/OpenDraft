@@ -1,6 +1,6 @@
 //! Undoable edits to a drawing's layers.
 
-use od_core::{Attr, Color, Document, Layer, LayerId, Lineweight};
+use od_core::{Attr, Color, Document, Layer, LayerId, LinetypeId, Lineweight};
 
 use crate::{Action, Changes};
 
@@ -148,12 +148,16 @@ impl Action for SetCurrentLayer {
 
 /// Change the colour, linetype and lineweight new objects are drawn with.
 pub struct SetNewObjectStyle {
-    style: (Attr<Color>, Attr<String>, Attr<Lineweight>),
-    previous: Option<(Attr<Color>, Attr<String>, Attr<Lineweight>)>,
+    style: (Attr<Color>, Attr<LinetypeId>, Attr<Lineweight>),
+    previous: Option<(Attr<Color>, Attr<LinetypeId>, Attr<Lineweight>)>,
 }
 
 impl SetNewObjectStyle {
-    pub fn new(color: Attr<Color>, linetype: Attr<String>, lineweight: Attr<Lineweight>) -> Self {
+    pub fn new(
+        color: Attr<Color>,
+        linetype: Attr<LinetypeId>,
+        lineweight: Attr<Lineweight>,
+    ) -> Self {
         Self {
             style: (color, linetype, lineweight),
             previous: None,
@@ -267,12 +271,12 @@ mod tests {
         let mut doc = Document::default();
         let red = Attr::Set(Color::Rgb(255, 0, 0));
         let mut action =
-            SetNewObjectStyle::new(red.clone(), Attr::Set("DASHED".into()), Attr::ByLayer);
+            SetNewObjectStyle::new(red.clone(), Attr::Set(LinetypeId::DASHED), Attr::ByLayer);
         action.apply(&mut doc);
         let id = doc.add(circle());
         let attrs = &doc.object(id).unwrap().attrs;
         assert_eq!(attrs.color, red);
-        assert_eq!(attrs.linetype, Attr::Set("DASHED".to_owned()));
+        assert_eq!(attrs.linetype, Attr::Set(LinetypeId::DASHED));
         assert_eq!(attrs.lineweight, Attr::<Lineweight>::ByLayer);
         action.revert(&mut doc);
         assert_eq!(

@@ -114,13 +114,16 @@ fn a_linetype_goes_only_when_no_layer_object_or_default_uses_it() {
     let mut doc = Document::default();
     assert!(names(&doc, Category::Linetypes).contains(&"DASHED".to_owned()));
     let mut attrs = Attributes::on_layer(LayerId::DEFAULT);
-    attrs.linetype = Attr::Set("DASHED".to_owned());
+    attrs.linetype = Attr::Set(crate::LinetypeId::DASHED);
     let id = doc.add_with(line(0.0, 1.0), attrs);
     let left = names(&doc, Category::Linetypes);
     assert!(!left.contains(&"DASHED".to_owned()) && left.contains(&"DOT".to_owned()));
     let why = blocked(&doc).into_iter().find(|b| b.name == "DASHED");
     assert!(why.is_some_and(|b| b.reasons == ["Used by objects or blocks"]));
-    assert_eq!(users_of(&doc, &Item::Linetype("DASHED".to_owned())), [id]);
+    assert_eq!(
+        users_of(&doc, &Item::Linetype(crate::LinetypeId::DASHED)),
+        [id]
+    );
 }
 
 #[test]

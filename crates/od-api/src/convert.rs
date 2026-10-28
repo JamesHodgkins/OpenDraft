@@ -409,11 +409,11 @@ pub fn attributes_from(
         None => {}
         Some(LinetypeDto::ByLayer) => base.linetype = Attr::ByLayer,
         Some(LinetypeDto::Named { name }) => {
-            doc.linetypes().named(name).ok_or_else(|| {
+            let record = doc.linetypes().named(name).ok_or_else(|| {
                 ApiError::new(ErrorCode::InvalidReference, "No such linetype.")
                     .detail("linetype", name)
             })?;
-            base.linetype = Attr::Set(name.clone());
+            base.linetype = Attr::Set(record.id);
         }
     }
     match &input.lineweight {
