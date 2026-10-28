@@ -14,8 +14,8 @@ Several tables are written as "differences from the stock value" and read back b
 
 The problem: a drawing saved today records "dimension text height is the stock one". If a later build changes the stock text height, an old drawing silently re-dimensions on opening, with no error and nothing a conversion could detect. For the stock tables the same applies (a changed stock `DASHED` pattern, say).
 
-**Decide:** which of these two rules the stable format follows.
-- **A. Write everything that affects appearance explicitly** (full dimension style per style, full text style, full linetype table). Larger files, but a file means the same thing in every build. Recommended for anything that changes how the drawing looks or measures.
+**Decided (28-10-2026): rule A.** Anything that affects how a drawing looks or measures is written in full, so a file means the same in every build. Which of these two rules the stable format follows was:
+- **A. Write everything that affects appearance explicitly (chosen)** (full dimension style per style, full text style, full linetype table). Larger files, but a file means the same thing in every build. Recommended for anything that changes how the drawing looks or measures.
 - **B. Keep sparse, but freeze the stock.** The stock values become part of the format and a later change to them is a version bump with a conversion. Smaller files, a permanent constraint.
 
 Entity-level "false/empty means absent" flags (`closed`, `bulges`, `widths`, `reversed`...) are fine under either rule, because their omitted value is a definition, not a tunable default.
@@ -65,3 +65,7 @@ Keep as optional: sparse per-entity flags (section 1 note), `layouts`, `blocks`,
 4. Committed fixtures and the version-1 PR following the checklist in `CONTRIBUTING.md`.
 
 Each step is a schema change in place at version 0, with the tests updated and no conversion code.
+
+## Note on dimensions under rule A
+
+A dimension carries a snapshot of its style (`Dimension.style`), not a reference, and `DimensionDto::to_dimension` converts with no document context. Writing the full style inline on every dimension would add about 50 fields (some 55 pretty-printed lines) per dimension. The alternative is a document-level pool of full styles (the named table plus any distinct snapshots) with each dimension holding an index; that needs the pool passed into entity conversion (`entity.rs`, `block.rs`, `load.rs`). Not yet decided.
