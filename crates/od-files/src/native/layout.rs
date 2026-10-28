@@ -28,9 +28,7 @@ struct ViewportDto {
     view_center: [f64; 2],
     /// Paper millimetres per model unit.
     scale: f64,
-    #[serde(default)]
     locked: bool,
-    #[serde(default = "super::yes")]
     on: bool,
     /// Layers frozen in this viewport only.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

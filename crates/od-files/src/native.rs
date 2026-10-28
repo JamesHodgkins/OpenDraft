@@ -54,6 +54,7 @@ mod linetype;
 mod load;
 mod mleader;
 mod mleader_style;
+mod names;
 mod new_style;
 mod point_style;
 pub(crate) mod spline;
@@ -61,7 +62,7 @@ mod text;
 mod units;
 
 use block::BlockDto;
-use dimension::{sparse_style, sparse_table};
+use dimension_style::{DimStylesDto, StylePool};
 use entity::EntityDto;
 use layout::LayoutDto;
 use text::TextStyleDto;
@@ -187,46 +188,34 @@ struct DrawingDto {
     next_object_id: u64,
     next_layer_id: u64,
     current_layer: u64,
-    #[serde(default)]
     units: UnitsDto,
-    /// The current dimension style's differences from the stock one.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    dim_style: Option<serde_json::Value>,
-    /// The named dimension styles, each as its differences from the stock
-    /// style; left out when `Standard` is all there is.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    dim_styles: Option<Vec<serde_json::Value>>,
+    /// The dimension styles, in full: see `dimension_style.rs`.
+    #[serde(flatten)]
+    dim_styles: DimStylesDto,
     layers: Vec<LayerDto>,
     /// In draw order.
     objects: Vec<ObjectDto>,
     /// Sheets in tab order; counters keep deleted ids retired.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     layouts: Vec<LayoutDto>,
-    #[serde(default)]
     next_layout_id: u64,
-    #[serde(default)]
     next_viewport_id: u64,
-    /// Left out for the stock table (just `Standard`).
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     text_styles: Vec<TextStyleDto>,
-    #[serde(default)]
     current_text_style: u64,
-    #[serde(default)]
     next_text_style_id: u64,
-    /// The multileader styles; left out for the stock table.
+    /// The multileader styles.
     #[serde(flatten)]
     mleader_styles: mleader_style::TableDto,
     /// Block definitions in table order.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     blocks: Vec<BlockDto>,
-    #[serde(default)]
     next_block_id: u64,
-    /// The linetype table and `LTSCALE`; each is left out at its stock value.
+    /// The linetype table and `LTSCALE`.
     #[serde(flatten)]
     linetypes: linetype::TableDto,
     #[serde(flatten)]
     new_style: new_style::NewStyleDto,
-    /// `PDMODE` and `PDSIZE`; each is left out at its default.
+    /// `PDMODE` and `PDSIZE`.
     #[serde(flatten)]
     point_style: point_style::PointStyleDto,
 }
@@ -239,16 +228,9 @@ struct LayerDto {
     linetype: String,
     /// Hundredths of a millimetre.
     lineweight: u16,
-    #[serde(default = "yes")]
     on: bool,
-    #[serde(default)]
     frozen: bool,
-    #[serde(default)]
     locked: bool,
-}
-
-fn yes() -> bool {
-    true
 }
 
 #[derive(Clone, Copy, Serialize, Deserialize)]
@@ -270,11 +252,8 @@ enum AttrDto<T> {
 struct ObjectDto {
     id: u64,
     layer: u64,
-    #[serde(default)]
     color: AttrDto<ColorDto>,
-    #[serde(default)]
     linetype: AttrDto<String>,
-    #[serde(default)]
     lineweight: AttrDto<u16>,
     #[serde(flatten)]
     scale: linetype::ScaleDto,
@@ -332,6 +311,8 @@ impl DrawingDto {
                 locked: l.locked,
             })
             .collect();
+        let mut styles = StylePool::new();
+        let named_styles = DimStylesDto::start(document, &mut styles);
         let objects = document
             .objects()
             .iter()
@@ -344,20 +325,23 @@ impl DrawingDto {
                     lineweight: attr_to_dto(&o.attrs.lineweight, |w| w.0),
                     scale: linetype::ScaleDto::of(&o.attrs),
                     layout: o.layout.map(|l| l.0),
-                    entity: EntityDto::from_entity(&o.entity)?,
+                    entity: EntityDto::from_entity(&o.entity, &mut styles)?,
                 })
             })
             .collect::<Result<_, FileError>>()?;
         let (next_object_id, next_layer_id) = document.next_ids();
         let (next_layout_id, next_viewport_id) = document.next_layout_ids();
-        let stock_styles = text::is_stock(document);
+        let blocks = document
+            .blocks()
+            .iter()
+            .map(|b| BlockDto::from_block(b, &mut styles))
+            .collect::<Result<_, FileError>>()?;
         Ok(Self {
             next_object_id,
             next_layer_id,
             current_layer: document.current_layer().0,
             units: UnitsDto::from(document.units()),
-            dim_style: sparse_style(document.dim_style()),
-            dim_styles: sparse_table(document.dim_styles()),
+            dim_styles: DimStylesDto::of(document, &styles, named_styles)?,
             layers,
             objects,
             layouts: document
@@ -367,23 +351,15 @@ impl DrawingDto {
                 .collect(),
             next_layout_id,
             next_viewport_id,
-            text_styles: if stock_styles {
-                Vec::new()
-            } else {
-                document
-                    .text_styles()
-                    .iter()
-                    .map(TextStyleDto::from_style)
-                    .collect()
-            },
+            text_styles: document
+                .text_styles()
+                .iter()
+                .map(TextStyleDto::from_style)
+                .collect(),
             current_text_style: document.current_text_style().0,
             next_text_style_id: document.next_text_style_id(),
             mleader_styles: mleader_style::TableDto::of(document),
-            blocks: document
-                .blocks()
-                .iter()
-                .map(|b| BlockDto::from_block(b))
-                .collect::<Result<_, FileError>>()?,
+            blocks,
             next_block_id: document.next_block_id(),
             linetypes: linetype::TableDto::of(document),
             new_style: new_style::NewStyleDto::of(document),
@@ -401,8 +377,95 @@ mod tests {
 
     use super::*;
 
+    /// The tables a drawing must spell out (styles, linetypes, point style,
+    /// units, counters).
+    const TABLE_KEYS: [&str; 18] = [
+        "dim_styles",
+        "named_dim_styles",
+        "current_dim_style",
+        "text_styles",
+        "current_text_style",
+        "next_text_style_id",
+        "mleader_styles",
+        "current_mleader_style",
+        "next_mleader_style_id",
+        "linetypes",
+        "next_linetype_id",
+        "linetype_scale",
+        "point_mode",
+        "point_size",
+        "units",
+        "next_layout_id",
+        "next_viewport_id",
+        "next_block_id",
+    ];
+
+    fn fill(value: &mut serde_json::Value, defaults: &[(&str, serde_json::Value)]) {
+        if let Some(map) = value.as_object_mut() {
+            for (key, default) in defaults {
+                map.entry(*key).or_insert_with(|| default.clone());
+            }
+        }
+    }
+
+    /// `text` with what a hand-written file leaves out added to its drawing:
+    /// the stock tables, layer flags, by-layer attributes. The reader itself
+    /// requires them all.
+    pub(super) fn with_dim_styles(text: &str) -> String {
+        use serde_json::json;
+        let Ok(mut file) = serde_json::from_str::<serde_json::Value>(text) else {
+            return text.to_owned();
+        };
+        let stock: serde_json::Value =
+            serde_json::from_slice(&NativeFormat.write(&Document::default()).unwrap().bytes)
+                .unwrap();
+        let attrs = [
+            ("color", json!("by_layer")),
+            ("linetype", json!("by_layer")),
+            ("lineweight", json!("by_layer")),
+        ];
+        let Some(drawing) = file.get_mut("drawing").and_then(|d| d.as_object_mut()) else {
+            return file.to_string();
+        };
+        for key in TABLE_KEYS {
+            drawing
+                .entry(key)
+                .or_insert_with(|| stock["drawing"][key].clone());
+        }
+        let each = |value: Option<&mut serde_json::Value>,
+                    f: &mut dyn FnMut(&mut serde_json::Value)| {
+            if let Some(items) = value.and_then(|v| v.as_array_mut()) {
+                items.iter_mut().for_each(f);
+            }
+        };
+        each(drawing.get_mut("layers"), &mut |layer| {
+            fill(
+                layer,
+                &[
+                    ("on", json!(true)),
+                    ("frozen", json!(false)),
+                    ("locked", json!(false)),
+                ],
+            );
+        });
+        each(drawing.get_mut("objects"), &mut |object| {
+            fill(object, &attrs)
+        });
+        each(drawing.get_mut("blocks"), &mut |block| {
+            each(block.get_mut("objects"), &mut |object| fill(object, &attrs));
+        });
+        each(drawing.get_mut("layouts"), &mut |layout| {
+            each(layout.get_mut("viewports"), &mut |viewport| {
+                fill(viewport, &[("on", json!(true)), ("locked", json!(false))]);
+            });
+        });
+        file.to_string()
+    }
+
     pub(super) fn read(text: &str) -> Result<Document, FileError> {
-        NativeFormat.read(text.as_bytes()).map(|l| l.document)
+        NativeFormat
+            .read(with_dim_styles(text).as_bytes())
+            .map(|l| l.document)
     }
 
     pub(super) fn roundtrip(document: &Document) -> Document {
@@ -884,9 +947,10 @@ mod tests {
     }
 
     #[test]
-    fn a_missing_current_layer_falls_back_to_layer_zero() {
+    fn a_missing_current_layer_is_refused() {
         let text = MINIMAL.replace("\"current_layer\": 0", "\"current_layer\": 42");
-        assert_eq!(read(&text).unwrap().current_layer(), LayerId::DEFAULT);
+        assert!(matches!(read(&text), Err(FileError::Invalid(_))));
+        assert_eq!(read(MINIMAL).unwrap().current_layer(), LayerId::DEFAULT);
     }
 
     #[test]
@@ -1008,17 +1072,16 @@ mod tests {
     }
 
     #[test]
-    fn a_file_without_units_reads_as_decimal() {
+    fn a_file_without_units_is_refused() {
+        assert!(NativeFormat.read(MINIMAL.as_bytes()).is_err());
         assert_eq!(*read(MINIMAL).unwrap().units(), Units::default());
     }
 
     #[test]
     fn units_that_do_not_exist_are_refused() {
-        let text = MINIMAL.replace(
-            "\"current_layer\": 0",
-            "\"current_layer\": 0, \"units\": { \"length\": 9 }",
-        );
-        assert!(matches!(read(&text), Err(FileError::Invalid(_))));
+        let mut file: serde_json::Value = serde_json::from_str(&with_dim_styles(MINIMAL)).unwrap();
+        file["drawing"]["units"]["length"] = "nine".into();
+        assert!(read(&file.to_string()).is_err());
     }
 
     /// A drawing with a second style and text that uses every optional field.
@@ -1112,9 +1175,11 @@ mod tests {
     }
 
     #[test]
-    fn a_drawing_without_text_writes_no_style_table_and_reads_back_with_standard() {
+    fn a_drawing_without_text_still_writes_its_style_table_in_full() {
         let text = String::from_utf8(NativeFormat.write(&rich()).unwrap().bytes).unwrap();
-        assert!(!text.contains("text_styles") && !text.contains("mtext"));
+        assert!(text.contains("\"text_styles\"") && !text.contains("\"mtext\""));
+        assert!(text.contains("\"width_factor\"") && text.contains("\"stroke_weight\""));
+        assert!(NativeFormat.read(MINIMAL.as_bytes()).is_err());
         let loaded = read(MINIMAL).unwrap();
         assert_eq!(loaded.text_styles().len(), 1);
         assert_eq!(loaded.current_text_style(), TextStyleId::STANDARD);
@@ -1134,7 +1199,8 @@ mod tests {
             "\"objects\": []",
             &format!(
                 r#""objects": [ {{ "id": 1, "layer": 0, "entity": {{ "type": "mtext",
-                    "insertion": [0, 0], "height": 2.5, "contents": "Hi" {entity} }} }} ]"#
+                    "insertion": [0, 0], "height": 2.5, "contents": "Hi",
+                    "attachment": "top_left", "flow": "left_to_right" {entity} }} }} ]"#
             ),
         )
     }
@@ -1142,15 +1208,16 @@ mod tests {
     #[test]
     fn damaged_text_is_reported_not_loaded() {
         assert!(read(&mtext_file("")).is_ok(), "the minimal text reads");
+        // A choice that does not exist cannot be written in the file at all.
+        for unknown in [r#""attachment": "top_left""#, r#""flow": "left_to_right""#] {
+            let nonsense = mtext_file("").replace(unknown, &unknown.replace('_', "-"));
+            assert!(read(&nonsense).is_err(), "{unknown}");
+        }
         for bad in [
-            r#", "attachment": 0"#,
-            r#", "attachment": 10"#,
-            r#", "flow": 2"#,
             r#", "style": 4"#,
             r#", "direction": [0, 0]"#,
             r#", "width": -1"#,
-            r#", "line_spacing": { "style": 3, "factor": 1 }"#,
-            r#", "line_spacing": { "style": 1, "factor": 9 }"#,
+            r#", "line_spacing": { "style": "at_least", "factor": 9 }"#,
             r#", "columns": { "kind": "wavy", "count": 2 }"#,
             r#", "columns": { "kind": "static", "count": 0 }"#,
             r#", "background": { "fill": "window", "scale": 0.5 }"#,
@@ -1173,11 +1240,22 @@ mod tests {
         let table = |styles: &str| {
             MINIMAL.replace(
                 "\"objects\": []",
-                &format!("\"objects\": [], \"text_styles\": [{styles}]"),
+                &format!(
+                    "\"objects\": [], \"text_styles\": [{styles}], \"current_text_style\": 0, \"next_text_style_id\": 2"
+                ),
             )
         };
-        let standard = r#"{ "id": 0, "name": "Standard", "font": { "type": "bundled_sans" } }"#;
-        let notes = r#"{ "id": 1, "name": "Notes", "font": { "type": "bundled_sans" } }"#;
+        let style = |id: u32, name: &str| {
+            format!(
+                r#"{{ "id": {id}, "name": "{name}", "font": {{ "type": "bundled_sans" }},
+                    "width_factor": 1.0, "oblique": 0.0, "backward": false,
+                    "upside_down": false, "vertical": false, "stroke_weight": 0.1 }}"#
+            )
+        };
+        let standard = style(0, "Standard");
+        let notes = style(1, "Notes");
+        let standard = standard.as_str();
+        let notes = notes.as_str();
         assert!(read(&table(standard)).is_ok());
         assert!(read(&table(&format!("{standard}, {notes}"))).is_ok());
         for bad in [
@@ -1207,10 +1285,10 @@ mod tests {
     }
 
     #[test]
-    fn a_stock_linetype_table_is_left_out_and_old_files_read_with_it() {
+    fn a_stock_linetype_table_is_written_in_full_and_a_file_without_one_is_refused() {
         let text = String::from_utf8(NativeFormat.write(&rich()).unwrap().bytes).unwrap();
-        assert!(!text.contains("linetypes"));
-        assert!(!text.contains("next_linetype_id"));
+        assert!(text.contains("\"linetypes\"") && text.contains("\"next_linetype_id\""));
+        assert!(NativeFormat.read(MINIMAL.as_bytes()).is_err());
         assert!(read(MINIMAL).unwrap().linetypes().is_stock());
     }
 

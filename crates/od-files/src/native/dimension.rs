@@ -1,13 +1,12 @@
-//! How dimensions and their styles are written to the native file. Only the
-//! style values that differ from the stock style are written, so a dimension
-//! stays short and a style added later reads as the default.
+//! How dimensions are written to the native file. A dimension names its style
+//! by position in the drawing's pool of dimension styles (see
+//! `dimension_style.rs`), which holds each in full.
 
 use od_core::dimension::{Assoc, AssocPoint};
-use od_core::{DimKind, DimText, Dimension, EntityId};
+use od_core::{DimKind, DimStyle, DimText, Dimension, EntityId};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
-pub(super) use super::dimension_style::{sparse_style, sparse_table, style_from, table_from};
+use super::dimension_style::StylePool;
 use super::entity::{from_point, invalid, point, PointDto};
 use crate::FileError;
 
@@ -122,13 +121,12 @@ pub(super) struct DimensionDto {
     /// The objects the defining points follow.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     assoc: Vec<AssocDto>,
-    /// The style's differences from the stock one.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    style: Option<Value>,
+    /// Its position in the pool of dimension styles.
+    style: usize,
 }
 
 impl DimensionDto {
-    pub(super) fn from_dimension(d: &Dimension) -> Self {
+    pub(super) fn from_dimension(d: &Dimension, styles: &mut StylePool) -> Self {
         let kind = match &d.kind {
             DimKind::Linear {
                 p1,
@@ -199,11 +197,11 @@ impl DimensionDto {
             text_angle: d.text_angle,
             jog_line: d.jog_line.map(point),
             assoc: d.assoc.iter().map(AssocDto::from_assoc).collect(),
-            style: sparse_style(&d.style),
+            style: styles.index_of(&d.style),
         }
     }
 
-    pub(super) fn to_dimension(&self) -> Result<Dimension, FileError> {
+    pub(super) fn to_dimension(&self, styles: &[DimStyle]) -> Result<Dimension, FileError> {
         let pt = |p: &PointDto| from_point(*p);
         let angle = |a: &Option<f64>| match a {
             Some(v) if !v.is_finite() => invalid("a dimension angle is not a finite number"),
@@ -282,7 +280,10 @@ impl DimensionDto {
         };
         let dimension = Dimension {
             kind,
-            style: style_from(self.style.as_ref())?,
+            style: match styles.get(self.style) {
+                Some(style) => style.clone(),
+                None => return invalid(format!("dimension style {} does not exist", self.style)),
+            },
             text: DimText::from_entry(&self.text),
             text_pos: self.text_pos.as_ref().map(pt).transpose()?,
             text_angle: angle(&self.text_angle)?,
@@ -304,7 +305,7 @@ impl DimensionDto {
 mod tests {
     use od_core::{Arrow, DimStyle, Document, Entity, LengthFormat, Point};
 
-    use super::super::{NativeFormat, CURRENT_VERSION};
+    use super::super::NativeFormat;
     use super::*;
     use crate::FileFormat;
 
@@ -421,7 +422,7 @@ mod tests {
     }
 
     #[test]
-    fn named_styles_survive_and_a_file_without_them_still_opens() {
+    fn named_styles_survive_and_the_current_one_is_kept() {
         let mut document = Document::default();
         let metric = DimStyle {
             name: "Metric".to_owned(),
@@ -436,49 +437,106 @@ mod tests {
         assert_eq!(back.dim_style_named("metric"), Some(&metric));
         assert_eq!(*back.dim_style(), metric);
         assert!(back.validate().is_ok());
-
-        // Only the current style written: the table is built round it.
-        let text = String::from_utf8(NativeFormat.write(&document).unwrap().bytes).unwrap();
-        let mut value: serde_json::Value = serde_json::from_str(&text).unwrap();
-        value.as_object_mut().unwrap().remove("dim_styles");
-        let old = NativeFormat.read(value.to_string().as_bytes()).unwrap();
-        assert_eq!(old.document.dim_styles().len(), 2);
-        assert_eq!(old.document.dim_styles()[0], DimStyle::default());
-        assert!(old.document.validate().is_ok());
     }
 
+    /// The file holds each style once, in full, and dimensions point at it.
     #[test]
-    fn a_repeated_style_name_is_refused() {
-        let styles = [
-            serde_json::json!({}),
-            serde_json::json!({"name": "A"}),
-            serde_json::json!({"name": "a"}),
-        ];
-        assert!(table_from(Some(&styles), &DimStyle::default()).is_err());
-    }
-
-    #[test]
-    fn a_default_style_writes_no_style_at_all() {
+    fn styles_are_written_in_full_and_once() {
         let mut document = Document::default();
-        document.add(Entity::Dimension(Box::new(Dimension::aligned(
-            p(0.0, 0.0),
-            p(1.0, 0.0),
-            p(0.0, 1.0),
-            &DimStyle::default(),
-        ))));
+        for _ in 0..3 {
+            document.add(Entity::Dimension(Box::new(Dimension::aligned(
+                p(0.0, 0.0),
+                p(1.0, 0.0),
+                p(0.0, 1.0),
+                &custom(),
+            ))));
+        }
         let text = String::from_utf8(NativeFormat.write(&document).unwrap().bytes).unwrap();
-        assert!(!text.contains("\"style\""));
-        assert!(!text.contains("dim_style"));
-        assert!(text.contains(&format!("\"version\": {CURRENT_VERSION}")));
+        let file: serde_json::Value = serde_json::from_str(&text).unwrap();
+        let pool = file["drawing"]["dim_styles"].as_array().unwrap();
+        assert_eq!(pool.len(), 2, "Standard and the one custom style");
+        assert_eq!(pool[0]["text_height"], DimStyle::default().text_height);
+        assert!(pool[1].as_object().unwrap().len() > 40, "every value");
+        assert_eq!(file["drawing"]["named_dim_styles"], serde_json::json!([0]));
+        assert_eq!(file["drawing"]["current_dim_style"], "Standard");
+        let used: Vec<_> = file["drawing"]["objects"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|o| o["entity"]["style"].clone())
+            .collect();
+        assert_eq!(used, vec![serde_json::json!(1); 3]);
     }
 
     #[test]
-    fn only_the_changed_style_values_are_written() {
-        let sparse = sparse_style(&custom()).unwrap();
-        let keys: Vec<&String> = sparse.as_object().unwrap().keys().collect();
-        assert!(keys.contains(&&"text_height".to_owned()));
-        assert!(!keys.contains(&&"scale".to_owned()));
-        assert_eq!(style_from(Some(&sparse)).unwrap(), custom());
+    fn style_settings_are_named_and_a_number_autocad_does_not_define_is_refused() {
+        let file = written();
+        let style = &file["drawing"]["dim_styles"][0];
+        for (key, name) in [
+            ("text_above", "above"),
+            ("text_just", "centred"),
+            ("fit", "best_fit"),
+            ("text_move", "move_line"),
+            ("arc_symbol", "before"),
+            ("tol_mode", "none"),
+        ] {
+            assert_eq!(style[key], name, "{key}");
+        }
+        let mut document = Document::default();
+        // Styles are brought into range when they are made, so only a field
+        // set by hand can be out of it.
+        let mut dimension =
+            Dimension::aligned(p(0.0, 0.0), p(1.0, 0.0), p(0.0, 1.0), &DimStyle::default());
+        dimension.style.fit = 9;
+        document.add(Entity::Dimension(Box::new(dimension)));
+        assert!(NativeFormat.write(&document).is_err());
+    }
+
+    fn written() -> serde_json::Value {
+        let text =
+            String::from_utf8(NativeFormat.write(&Document::default()).unwrap().bytes).unwrap();
+        serde_json::from_str(&text).unwrap()
+    }
+
+    #[test]
+    fn a_damaged_style_table_is_refused() {
+        let edits: [(&str, serde_json::Value); 5] = [
+            ("named_dim_styles", serde_json::json!([])),
+            ("named_dim_styles", serde_json::json!([0, 0])),
+            ("named_dim_styles", serde_json::json!([5])),
+            ("current_dim_style", serde_json::json!("Nowhere")),
+            ("dim_styles", serde_json::json!([{}])),
+        ];
+        for (key, value) in edits {
+            let mut file = written();
+            file["drawing"][key] = value.clone();
+            assert!(
+                NativeFormat.read(file.to_string().as_bytes()).is_err(),
+                "{key}: {value}"
+            );
+        }
+        let mut file = written();
+        file["drawing"]
+            .as_object_mut()
+            .unwrap()
+            .remove("dim_styles");
+        assert!(NativeFormat.read(file.to_string().as_bytes()).is_err());
+    }
+
+    #[test]
+    fn a_table_that_does_not_start_with_standard_is_refused() {
+        let mut document = Document::default();
+        let metric = DimStyle {
+            name: "Metric".to_owned(),
+            ..DimStyle::default()
+        };
+        let table = vec![DimStyle::default(), metric.clone()];
+        document.set_dim_styles(table, metric);
+        let text = String::from_utf8(NativeFormat.write(&document).unwrap().bytes).unwrap();
+        let mut file: serde_json::Value = serde_json::from_str(&text).unwrap();
+        assert!(NativeFormat.read(file.to_string().as_bytes()).is_ok());
+        file["drawing"]["named_dim_styles"] = serde_json::json!([1, 0]);
+        assert!(NativeFormat.read(file.to_string().as_bytes()).is_err());
     }
 
     #[test]
@@ -494,14 +552,18 @@ mod tests {
 
     #[test]
     fn damaged_dimensions_are_refused() {
-        for bad in [
-            serde_json::json!({ "arrow": 9 }),
-            serde_json::json!({ "length_format": 0 }),
-            serde_json::json!({ "decimal_separator": "ab" }),
-            serde_json::json!({ "text_height": "tall" }),
-            serde_json::json!(5),
+        for (key, bad) in [
+            ("arrow", serde_json::json!(9)),
+            ("length_format", serde_json::json!(0)),
+            ("decimal_separator", serde_json::json!("ab")),
+            ("text_height", serde_json::json!("tall")),
         ] {
-            assert!(style_from(Some(&bad)).is_err(), "{bad}");
+            let mut file = written();
+            file["drawing"]["dim_styles"][0][key] = bad.clone();
+            assert!(
+                NativeFormat.read(file.to_string().as_bytes()).is_err(),
+                "{key}: {bad}"
+            );
         }
         let nothing = DimensionDto {
             kind: DimKindDto::Radial {
@@ -516,8 +578,11 @@ mod tests {
             text_angle: None,
             jog_line: None,
             assoc: Vec::new(),
-            style: None,
+            style: 0,
         };
-        assert!(nothing.to_dimension().is_err(), "nothing to measure");
+        assert!(
+            nothing.to_dimension(&[DimStyle::default()]).is_err(),
+            "nothing to measure"
+        );
     }
 }
