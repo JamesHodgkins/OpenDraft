@@ -61,6 +61,11 @@ fn point(out: &mut Out, code: i32, p: Point) -> Result<(), FileError> {
     Ok(())
 }
 
+/// An aligned dimension's line runs the way its points do.
+fn line_angle(p1: Point, p2: Point, rotation: Option<f64>) -> f64 {
+    rotation.unwrap_or_else(|| (p2.y - p1.y).atan2(p2.x - p1.x))
+}
+
 /// The groups of a DIMENSION after the entity header, the way AutoCAD
 /// orders them: the common part, then the kind's.
 pub(super) fn entity(
@@ -126,27 +131,32 @@ pub(super) fn entity(
         DimText::Custom(text) => out.pair(1, text),
     }
     out.pair(3, &d.style.name);
+    // The oblique angle is a common group: AutoCAD refuses a 52 inside the
+    // aligned dimension's own part ("Unexpected DXF group code: 52").
+    if let DimKind::Linear {
+        p1,
+        p2,
+        rotation,
+        oblique: Some(oblique),
+        ..
+    } = &d.kind
+    {
+        // Measured from the dimension line.
+        let line = line_angle(*p1, *p2, *rotation);
+        out.pair(52, finite((oblique - line).rem_euclid(TAU).to_degrees())?);
+    }
     if let Some(angle) = d.text_angle {
         out.pair(53, finite(angle.rem_euclid(TAU).to_degrees())?);
     }
     match &d.kind {
         DimKind::Linear {
-            p1,
-            p2,
-            rotation,
-            oblique,
-            ..
+            p1, p2, rotation, ..
         } => {
             out.pair(100, "AcDbAlignedDimension");
             point(out, 13, *p1)?;
             point(out, 14, *p2)?;
-            // An aligned dimension's line runs the way its points do.
-            let line = rotation.unwrap_or_else(|| (p2.y - p1.y).atan2(p2.x - p1.x));
+            let line = line_angle(*p1, *p2, *rotation);
             out.pair(50, finite(line.rem_euclid(TAU).to_degrees())?);
-            if let Some(oblique) = oblique {
-                // Measured from the dimension line.
-                out.pair(52, finite((oblique - line).rem_euclid(TAU).to_degrees())?);
-            }
             if rotation.is_some() {
                 out.pair(100, "AcDbRotatedDimension");
             }
@@ -250,6 +260,33 @@ mod tests {
 
     fn p(x: f64, y: f64) -> Point {
         Point::new(x, y)
+    }
+
+    /// AutoCAD stops reading with "Unexpected DXF group code: 52" when the
+    /// oblique angle is written inside the aligned dimension's own part.
+    #[test]
+    fn the_oblique_angle_is_a_common_group_before_the_aligned_part() {
+        let style = DimStyle::default();
+        let mut slanted = Dimension::linear(p(40.0, 0.0), p(70.0, 0.0), p(55.0, 10.0), 0.0, &style);
+        if let DimKind::Linear { oblique, .. } = &mut slanted.kind {
+            *oblique = Some(1.2);
+        }
+        let mut doc = Document::default();
+        doc.add(Entity::Dimension(Box::new(slanted)));
+        let bytes = write2000::write(&doc).unwrap().bytes;
+        let text = String::from_utf8(bytes).unwrap().replace('\r', "");
+        let lines: Vec<&str> = text.lines().collect();
+        let at = |code: &str, value: Option<&str>| {
+            lines.chunks(2).position(|c| {
+                c[0].trim() == code && value.is_none_or(|v| c.get(1).is_some_and(|x| *x == v))
+            })
+        };
+        let aligned = at("100", Some("AcDbAlignedDimension")).unwrap();
+        let oblique = lines
+            .chunks(2)
+            .position(|c| c[0].trim() == "52")
+            .expect("an oblique angle");
+        assert!(oblique < aligned, "52 comes before the aligned part");
     }
 
     fn all_kinds() -> Vec<Dimension> {

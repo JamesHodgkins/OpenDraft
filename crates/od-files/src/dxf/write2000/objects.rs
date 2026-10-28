@@ -16,7 +16,7 @@ pub(super) fn write_objects(
     document: &Document,
     leaders: bool,
 ) -> Result<(), FileError> {
-    let layouts = document.layouts();
+    let layouts = super::sheets(document);
     let (root, groups, layout_dict, plot_settings, plot_styles) =
         (h.next(), h.next(), h.next(), h.next(), h.next());
     out.section("OBJECTS");

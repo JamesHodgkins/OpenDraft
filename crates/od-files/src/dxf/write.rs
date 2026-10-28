@@ -115,12 +115,23 @@ pub(super) fn finite(value: f64) -> Result<f64, FileError> {
     }
 }
 
+/// Whether R12 allows `name` for a table entry: letters, digits, `$`, `-`
+/// and `_` only. AutoCAD refuses others ("Improper table entry name"); R2000
+/// allows spaces and, as `\U+XXXX`, any character.
+fn r12_name(name: &str) -> bool {
+    name.chars()
+        .all(|c| c.is_ascii_alphanumeric() || matches!(c, '$' | '-' | '_'))
+}
+
 /// Whether the drawing needs R2000: R12 has one unnamed paper space, so
 /// layouts need it, and R12 has no ellipse, spline, hatch or multiline text (AutoCAD turns
 /// them into lines, arcs and polylines when saving that far back, which we
 /// do not guess at).
 fn needs_r2000(document: &Document) -> bool {
     !document.layouts().is_empty()
+        || document.layers().iter().any(|l| !r12_name(&l.name))
+        || document.text_styles().iter().any(|s| !r12_name(&s.name))
+        || super::linetypes::table_names(document).any(|n| !r12_name(&n))
         || document.objects().iter().any(|o| {
             matches!(
                 o.entity,
@@ -608,7 +619,12 @@ mod tests {
         let id = document.allocate_layer_id();
         document.push_layer(Layer::new(id, "Café <x>"));
         let bytes = write(&document).unwrap().bytes;
-        assert!(bytes.contains(&0xE9), "one byte, in code page 1252");
+        // R12 allows only letters, digits, $, - and _ in names, so a name
+        // with a space or an accent is written as R2000, with the accent as
+        // \U+00E9 whatever code page the reader assumes.
+        assert!(bytes.windows(6).any(|w| w == b"AC1015"), "R2000");
+        assert!(bytes.iter().all(u8::is_ascii), "ASCII only");
+        assert!(String::from_utf8_lossy(&bytes).contains(r"Caf\U+00E9"));
         let back = read(&bytes).unwrap().document;
         assert!(back.layers().iter().any(|l| l.name == "Café _x_"));
     }

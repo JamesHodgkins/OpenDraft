@@ -9,9 +9,10 @@
 //! entities in `ENTITIES` with group 67 = 1 and the others inside their
 //! `*Paper_SpaceN` blocks. Not tested against AutoCAD itself.
 
+use std::borrow::Cow;
 use std::collections::{BTreeSet, HashMap};
 
-use od_core::{Attr, Color, Document, LayerId, Lineweight};
+use od_core::{Attr, Color, Document, LayerId, Layout, Lineweight};
 
 mod dimension;
 mod entities;
@@ -27,7 +28,7 @@ use objects::write_objects;
 use tables::write_tables;
 
 use super::units::header as units_header;
-use super::write::{finite, latin1, Out};
+use super::write::{finite, Out};
 use crate::{Encoded, FileError};
 
 /// Hands out handles (hexadecimal ids) one after another.
@@ -76,6 +77,35 @@ fn block_name(index: usize) -> String {
     }
 }
 
+/// The sheets to write. AutoCAD requires `*Paper_Space` and a layout besides
+/// Model, so a drawing with none gets an empty `Layout1` with one viewport,
+/// as a new drawing in AutoCAD has.
+fn sheets(document: &Document) -> Cow<'_, [Layout]> {
+    if document.layouts().is_empty() {
+        Cow::Owned(vec![document.new_layout("Layout1", 420.0, 297.0)])
+    } else {
+        Cow::Borrowed(document.layouts())
+    }
+}
+
+/// The text as ASCII bytes. DXF 2000 and later keep non-ASCII characters in
+/// text as `\U+XXXX`, which reads the same whatever code page or encoding the
+/// reader assumes (2007 and later files are UTF-8, 2000's are ANSI).
+fn ascii(text: &str) -> Vec<u8> {
+    let mut out = String::with_capacity(text.len());
+    for c in text.chars() {
+        if c.is_ascii() {
+            out.push(c);
+        } else {
+            let mut buffer = [0u16; 2];
+            for unit in c.encode_utf16(&mut buffer) {
+                out.push_str(&format!("\\U+{unit:04X}"));
+            }
+        }
+    }
+    out.into_bytes()
+}
+
 /// The nearest lineweight AutoCAD accepts (hundredths of a millimetre).
 fn weight_code(weight: Lineweight) -> i32 {
     if weight == Lineweight::DEFAULT {
@@ -97,7 +127,7 @@ fn true_color(color: Color) -> Option<i32> {
 }
 
 pub fn write(document: &Document) -> Result<Encoded, FileError> {
-    let layouts = document.layouts();
+    let layouts = sheets(document);
     let mut h = Handles(0x0F);
     let mut ids = Ids {
         model_record: h.next(),
@@ -140,13 +170,19 @@ pub fn write(document: &Document) -> Result<Encoded, FileError> {
 
     let mut classes = Out::new();
     classes.section("CLASSES");
-    for (name, class, app, flags, proxy, entity) in [
+    // Files from 2004 on say how many objects each class has (group 91).
+    let multileaders = document
+        .objects()
+        .iter()
+        .filter(|o| matches!(o.entity, od_core::Entity::MLeader(_)))
+        .count();
+    for (name, class, app, flags, count, entity) in [
         (
             "ACDBDICTIONARYWDFLT",
             "AcDbDictionaryWithDefault",
             "ObjectDBX Classes",
             0,
-            0,
+            1,
             0,
         ),
         (
@@ -154,16 +190,23 @@ pub fn write(document: &Document) -> Result<Encoded, FileError> {
             "AcDbPlaceHolder",
             "ObjectDBX Classes",
             0,
-            0,
+            1,
             0,
         ),
-        ("LAYOUT", "AcDbLayout", "ObjectDBX Classes", 0, 0, 0),
+        (
+            "LAYOUT",
+            "AcDbLayout",
+            "ObjectDBX Classes",
+            0,
+            layouts.len() + 1,
+            0,
+        ),
         (
             "MLEADERSTYLE",
             "AcDbMLeaderStyle",
             "ACDB_MLEADERSTYLE_CLASS",
             4095,
-            7,
+            document.mleader_styles().len(),
             0,
         ),
         (
@@ -171,7 +214,7 @@ pub fn write(document: &Document) -> Result<Encoded, FileError> {
             "AcDbMLeader",
             "ACDB_MLEADER_CLASS",
             1025,
-            10,
+            multileaders,
             1,
         ),
     ] {
@@ -183,8 +226,8 @@ pub fn write(document: &Document) -> Result<Encoded, FileError> {
         classes.pair(2, class);
         classes.pair(3, app);
         classes.pair(90, flags);
-        if proxy != 0 {
-            classes.pair(91, proxy);
+        if leaders {
+            classes.pair(91, count);
         }
         classes.pair(280, 0);
         classes.pair(281, entity);
@@ -318,7 +361,7 @@ pub fn write(document: &Document) -> Result<Encoded, FileError> {
         .objects()
         .iter()
         .any(|o| matches!(o.entity, od_core::Entity::MText(_)));
-    let why = match (layouts.is_empty(), has(false), has(true)) {
+    let why = match (document.layouts().is_empty(), has(false), has(true)) {
         (true, false, false) if texts && !hatches => {
             "Written as DXF 2000 so that multiline text is kept (DXF R12 has none)."
         }
@@ -348,7 +391,7 @@ pub fn write(document: &Document) -> Result<Encoded, FileError> {
         );
     }
     Ok(Encoded {
-        bytes: latin1(&out.text),
+        bytes: ascii(&out.text),
         notes,
     })
 }
@@ -512,6 +555,25 @@ mod tests {
             }
         }
         assert_eq!(pairs.last().unwrap(), &(0, "EOF".to_owned()));
+    }
+
+    /// AutoCAD refuses a 2000 file without `*Paper_Space` ("Missing Default
+    /// entry Paper_Space in SymbolTable:BLOCK_RECORD"), so a drawing with no
+    /// layouts is written with an empty one.
+    #[test]
+    fn a_drawing_with_no_layouts_is_written_with_a_paper_space_and_a_layout() {
+        let mut doc = Document::default();
+        let full = Ellipse::full(Point::new(1.0, 2.0), Point::new(3.0, 4.0), 0.25).unwrap();
+        doc.add(Entity::Ellipse(full));
+        assert!(doc.layouts().is_empty());
+        let pairs = pairs(&write(&doc).unwrap().bytes);
+        assert!(pairs.iter().any(|(c, v)| *c == 2 && v == "*Paper_Space"));
+        let layouts = pairs
+            .iter()
+            .filter(|(c, v)| *c == 0 && v == "LAYOUT")
+            .count();
+        assert_eq!(layouts, 2, "Model and Layout1");
+        assert!(pairs.iter().any(|(c, v)| *c == 1 && v == "Layout1"));
     }
 
     #[test]
