@@ -3,19 +3,16 @@
 use std::collections::HashSet;
 
 use od_core::mtext::{
-    BackgroundFill, ColumnKind, EntityLineSpacing, LineSpacingStyle, MTextAttachment,
-    MTextBackground, MTextColumns, MTextFlow, PreservedMTextFields,
+    BackgroundFill, ColumnKind, EntityLineSpacing, MTextBackground, MTextColumns,
+    PreservedMTextFields,
 };
 use od_core::{Document, FontDescriptor, MText, TextStyle, TextStyleId};
 use serde::{Deserialize, Serialize};
 
 use super::entity::{from_point, invalid, point, PointDto};
+use super::names::{AttachmentPointDto, FlowDto, SpacingStyleDto};
 use super::ColorDto;
 use crate::FileError;
-
-fn one_code() -> u8 {
-    1
-}
 
 fn east() -> PointDto {
     [1.0, 0.0]
@@ -230,8 +227,7 @@ struct ColumnsDto {
 
 #[derive(Serialize, Deserialize)]
 struct SpacingDto {
-    /// 1 at least, 2 exact.
-    style: u8,
+    style: SpacingStyleDto,
     factor: f64,
 }
 
@@ -247,12 +243,8 @@ pub(super) struct MTextDto {
     /// How tall the box is when taller than its text; absent for as tall as it.
     #[serde(default, skip_serializing_if = "is_zero")]
     box_height: f64,
-    /// DXF code 1 to 9.
-    #[serde(default = "one_code")]
-    attachment: u8,
-    /// DXF code 1, 3 or 5.
-    #[serde(default = "one_code")]
-    flow: u8,
+    attachment: AttachmentPointDto,
+    flow: FlowDto,
     #[serde(default)]
     style: u64,
     /// The AutoCAD format-code stream, exactly.
@@ -298,12 +290,12 @@ impl MTextDto {
             height: m.nominal_height,
             width: m.reference_width,
             box_height: m.reference_height,
-            attachment: m.attachment.code(),
-            flow: m.flow.code(),
+            attachment: m.attachment.into(),
+            flow: m.flow.into(),
             style: m.style.0,
             contents: m.contents.clone(),
             line_spacing: (spacing != EntityLineSpacing::default()).then(|| SpacingDto {
-                style: spacing.style.code(),
+                style: spacing.style.into(),
                 factor: spacing.factor,
             }),
             background,
@@ -313,23 +305,12 @@ impl MTextDto {
     }
 
     pub(super) fn to_mtext(&self) -> Result<MText, FileError> {
-        let Some(attachment) = MTextAttachment::from_code(self.attachment.into()) else {
-            return invalid("text has an attachment point that does not exist");
-        };
-        let Some(flow) = MTextFlow::from_code(self.flow.into()) else {
-            return invalid("text has a flow direction that does not exist");
-        };
         let line_spacing = match &self.line_spacing {
             None => EntityLineSpacing::default(),
-            Some(s) => {
-                let Some(style) = LineSpacingStyle::from_code(s.style.into()) else {
-                    return invalid("text has a line spacing style that does not exist");
-                };
-                EntityLineSpacing {
-                    style,
-                    factor: s.factor,
-                }
-            }
+            Some(s) => EntityLineSpacing {
+                style: s.style.into(),
+                factor: s.factor,
+            },
         };
         let background = self.background.as_ref().map(|b| MTextBackground {
             fill: match &b.fill {
@@ -360,8 +341,8 @@ impl MTextDto {
             nominal_height: self.height,
             reference_width: self.width,
             reference_height: self.box_height,
-            attachment,
-            flow,
+            attachment: self.attachment.into(),
+            flow: self.flow.into(),
             style: TextStyleId(self.style),
             contents: self.contents.clone(),
             line_spacing,

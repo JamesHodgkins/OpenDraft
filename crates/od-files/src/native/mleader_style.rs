@@ -6,40 +6,13 @@ use od_core::mleader::{
     LeaderAttachment, MLeaderContentType, MLeaderLineType, MLeaderStyle, MLeaderStyleContent,
     MLeaderStyleId, TextAngle,
 };
-use od_core::{Arrow, Document, Lineweight, TextStyleId};
+use od_core::{Document, Lineweight, TextStyleId};
 use serde::{Deserialize, Serialize};
 
 use super::entity::invalid;
+use super::names::{mirror, ArrowDto};
 use super::{attr_from_dto, attr_to_dto, AttrDto, ColorDto};
 use crate::FileError;
-
-/// A serde twin of a plain enum, so the file names the choice instead of
-/// numbering it.
-macro_rules! mirror {
-    ($dto:ident <-> $core:ident { $($variant:ident),+ $(,)? }) => {
-        #[derive(Clone, Copy, Serialize, Deserialize)]
-        #[serde(rename_all = "snake_case")]
-        pub(super) enum $dto {
-            $($variant),+
-        }
-
-        impl From<$core> for $dto {
-            fn from(value: $core) -> Self {
-                match value {
-                    $($core::$variant => Self::$variant),+
-                }
-            }
-        }
-
-        impl From<$dto> for $core {
-            fn from(value: $dto) -> Self {
-                match value {
-                    $($dto::$variant => Self::$variant),+
-                }
-            }
-        }
-    };
-}
 
 mirror!(LineTypeDto <-> MLeaderLineType { None, Straight, Spline });
 mirror!(ContentTypeDto <-> MLeaderContentType { None, MText });
@@ -116,8 +89,7 @@ struct BodyDto {
     leader_color: AttrDto<ColorDto>,
     leader_linetype: AttrDto<String>,
     leader_lineweight: AttrDto<u16>,
-    /// `Arrow::code`.
-    arrow: i64,
+    arrow: ArrowDto,
     arrow_size: f64,
     break_gap: f64,
     max_points: Option<u32>,
@@ -138,7 +110,7 @@ impl BodyDto {
             leader_color: attr_to_dto(&s.leader_color, |c| (*c).into()),
             leader_linetype: attr_to_dto(&s.leader_linetype, String::clone),
             leader_lineweight: attr_to_dto(&s.leader_lineweight, |w| w.0),
-            arrow: s.arrow.code(),
+            arrow: s.arrow.into(),
             arrow_size: s.arrow_size,
             break_gap: s.break_gap,
             max_points: s.max_points,
@@ -171,12 +143,6 @@ impl MLeaderStyleDto {
 
     fn into_style(self) -> Result<MLeaderStyle, FileError> {
         let b = self.body;
-        let Some(arrow) = Arrow::from_code(b.arrow) else {
-            return invalid(format!(
-                "multileader style \"{}\" has an unknown arrow",
-                self.name
-            ));
-        };
         Ok(MLeaderStyle {
             id: MLeaderStyleId(self.id),
             name: self.name,
@@ -185,7 +151,7 @@ impl MLeaderStyleDto {
             leader_color: attr_from_dto(b.leader_color, |c| c.into()),
             leader_linetype: attr_from_dto(b.leader_linetype, |n| n),
             leader_lineweight: attr_from_dto(b.leader_lineweight, Lineweight),
-            arrow,
+            arrow: b.arrow.into(),
             arrow_size: b.arrow_size,
             break_gap: b.break_gap,
             max_points: b.max_points,
@@ -266,7 +232,7 @@ impl TableDto {
 #[cfg(test)]
 mod tests {
     use od_core::mleader::MLeaderStyleContent;
-    use od_core::{Attr, Color};
+    use od_core::{Arrow, Attr, Color};
 
     use crate::native::tests::{read, roundtrip};
     use crate::native::NativeFormat;

@@ -66,6 +66,10 @@ Keep as optional: sparse per-entity flags (section 1 note), `layouts`, `blocks`,
 
 Each step is a schema change in place at version 0, with the tests updated and no conversion code.
 
+## Named choices (section 3): partly done
+
+Done: arrowheads, length and angle formats (dimension styles, units), the second arrowhead (an `Option` instead of -1), the fixed extension length (an `Option` instead of 0), multileader arrowheads, MTEXT attachment point and flow direction, and line spacing style are named (`native/names.rs`). Kept as AutoCAD's own numbers on purpose: the insertion units (`INSUNITS`, a long table). Still DXF numbers or raw DXF values: the dimension style's `text_above`, `text_just`, `fit`, `text_move`, `tol_mode` and `arc_symbol` (no enums in `od-core` yet), and the DXF-only leftovers `extra_bits`, `unimplemented_441` and `raw_typeface`, which should move into one clearly named object or be dropped.
+
 ## Required fields (section 5): done
 
 `units`, the layout, viewport and block counters, the layer flags (`on`, `frozen`, `locked`), the viewport `on`/`locked`, and every object's and block object's colour, linetype and lineweight are required, and a current layer that does not exist is refused instead of replaced by layer 0. A counter below the largest id in use is harmless: `push`, `push_block` and the `reserve_*` calls only ever raise it. Kept optional on purpose: `layouts` and `blocks` (an empty list is the definition of none), per-object linetype scale and generation, descriptions, `big_font`, `fixed_height` and the other per-entity omit-when-false flags.

@@ -54,6 +54,7 @@ mod linetype;
 mod load;
 mod mleader;
 mod mleader_style;
+mod names;
 mod new_style;
 mod point_style;
 pub(crate) mod spline;
@@ -1079,11 +1080,8 @@ mod tests {
     #[test]
     fn units_that_do_not_exist_are_refused() {
         let mut file: serde_json::Value = serde_json::from_str(&with_dim_styles(MINIMAL)).unwrap();
-        file["drawing"]["units"]["length"] = 9.into();
-        assert!(matches!(
-            read(&file.to_string()),
-            Err(FileError::Invalid(_))
-        ));
+        file["drawing"]["units"]["length"] = "nine".into();
+        assert!(read(&file.to_string()).is_err());
     }
 
     /// A drawing with a second style and text that uses every optional field.
@@ -1201,7 +1199,8 @@ mod tests {
             "\"objects\": []",
             &format!(
                 r#""objects": [ {{ "id": 1, "layer": 0, "entity": {{ "type": "mtext",
-                    "insertion": [0, 0], "height": 2.5, "contents": "Hi" {entity} }} }} ]"#
+                    "insertion": [0, 0], "height": 2.5, "contents": "Hi",
+                    "attachment": "top_left", "flow": "left_to_right" {entity} }} }} ]"#
             ),
         )
     }
@@ -1209,15 +1208,16 @@ mod tests {
     #[test]
     fn damaged_text_is_reported_not_loaded() {
         assert!(read(&mtext_file("")).is_ok(), "the minimal text reads");
+        // A choice that does not exist cannot be written in the file at all.
+        for unknown in [r#""attachment": "top_left""#, r#""flow": "left_to_right""#] {
+            let nonsense = mtext_file("").replace(unknown, &unknown.replace('_', "-"));
+            assert!(read(&nonsense).is_err(), "{unknown}");
+        }
         for bad in [
-            r#", "attachment": 0"#,
-            r#", "attachment": 10"#,
-            r#", "flow": 2"#,
             r#", "style": 4"#,
             r#", "direction": [0, 0]"#,
             r#", "width": -1"#,
-            r#", "line_spacing": { "style": 3, "factor": 1 }"#,
-            r#", "line_spacing": { "style": 1, "factor": 9 }"#,
+            r#", "line_spacing": { "style": "at_least", "factor": 9 }"#,
             r#", "columns": { "kind": "wavy", "count": 2 }"#,
             r#", "columns": { "kind": "static", "count": 0 }"#,
             r#", "background": { "fill": "window", "scale": 0.5 }"#,

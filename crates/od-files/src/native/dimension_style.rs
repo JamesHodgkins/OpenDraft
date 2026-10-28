@@ -5,10 +5,11 @@
 //! (`named_dim_styles`), the current style (`current_dim_style`, by name) and
 //! each dimension refer to the pool by position.
 
-use od_core::{AngleFormat, Arrow, DimStyle, Document, LengthFormat};
+use od_core::{DimStyle, Document};
 use serde::{Deserialize, Serialize};
 
 use super::entity::invalid;
+use super::names::{AngleFormatDto, ArrowDto, LengthFormatDto};
 use crate::FileError;
 
 #[derive(Serialize, Deserialize)]
@@ -16,8 +17,7 @@ struct DimStyleDto {
     name: String,
     scale: f64,
     arrow_size: f64,
-    /// 0 closed filled, 1 open, 2 tick, 3 none.
-    arrow: i64,
+    arrow: ArrowDto,
     ext_offset: f64,
     ext_extend: f64,
     text_height: f64,
@@ -35,8 +35,7 @@ struct DimStyleDto {
     suppress_ext: [bool; 2],
     linear_factor: f64,
     round_to: f64,
-    /// `LUNITS` code: 1 scientific ... 5 fractional.
-    length_format: i64,
+    length_format: LengthFormatDto,
     precision: u8,
     trim_zeros: bool,
     decimal_separator: String,
@@ -54,12 +53,13 @@ struct DimStyleDto {
     alt_post: String,
     text_frame: bool,
     text_fill: bool,
-    /// The second arrowhead's code, when it differs; -1 for the same.
-    arrow2: i64,
-    /// Fixed extension line length; 0 for none.
-    ext_fixed: f64,
-    /// `AUNITS` code of an angular dimension's angle.
-    angle_format: i64,
+    /// The second arrowhead, when it differs from the first.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    arrow2: Option<ArrowDto>,
+    /// Fixed extension line length, when there is one.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    ext_fixed: Option<f64>,
+    angle_format: AngleFormatDto,
     angle_precision: u8,
     /// The text style's id.
     text_style: u64,
@@ -71,7 +71,7 @@ impl From<&DimStyle> for DimStyleDto {
             name: s.name.clone(),
             scale: s.scale,
             arrow_size: s.arrow_size,
-            arrow: s.arrow.code(),
+            arrow: s.arrow.into(),
             ext_offset: s.ext_offset,
             ext_extend: s.ext_extend,
             text_height: s.text_height,
@@ -89,7 +89,7 @@ impl From<&DimStyle> for DimStyleDto {
             suppress_ext: s.suppress_ext,
             linear_factor: s.linear_factor,
             round_to: s.round_to,
-            length_format: s.length_format.code(),
+            length_format: s.length_format.into(),
             precision: s.precision,
             trim_zeros: s.trim_zeros,
             decimal_separator: s.decimal_separator.to_string(),
@@ -107,9 +107,9 @@ impl From<&DimStyle> for DimStyleDto {
             alt_post: s.alt_post.clone(),
             text_frame: s.text_frame,
             text_fill: s.text_fill,
-            arrow2: s.arrow2.map_or(-1, Arrow::code),
-            ext_fixed: s.ext_fixed.unwrap_or(0.0),
-            angle_format: s.angle_format.code(),
+            arrow2: s.arrow2.map(Into::into),
+            ext_fixed: s.ext_fixed,
+            angle_format: s.angle_format.into(),
             angle_precision: s.angle_precision,
             text_style: s.text_style.0,
         }
@@ -118,21 +118,6 @@ impl From<&DimStyle> for DimStyleDto {
 
 impl DimStyleDto {
     fn into_style(self) -> Result<DimStyle, FileError> {
-        let Some(arrow) = Arrow::from_code(self.arrow) else {
-            return invalid(format!("dimension arrow {} does not exist", self.arrow));
-        };
-        let Some(length_format) = LengthFormat::from_code(self.length_format) else {
-            return invalid(format!(
-                "dimension length format {} does not exist",
-                self.length_format
-            ));
-        };
-        let Some(angle_format) = AngleFormat::from_code(self.angle_format) else {
-            return invalid(format!(
-                "dimension angle format {} does not exist",
-                self.angle_format
-            ));
-        };
         let numbers = [
             self.scale,
             self.arrow_size,
@@ -148,7 +133,7 @@ impl DimStyleDto {
             self.tol_minus,
             self.tol_scale,
             self.alt_factor,
-            self.ext_fixed,
+            self.ext_fixed.unwrap_or(0.0),
         ];
         if numbers.iter().any(|n| !n.is_finite()) {
             return invalid("a dimension style value is not a finite number");
@@ -162,7 +147,7 @@ impl DimStyleDto {
             name: self.name,
             scale: self.scale,
             arrow_size: self.arrow_size,
-            arrow,
+            arrow: self.arrow.into(),
             ext_offset: self.ext_offset,
             ext_extend: self.ext_extend,
             text_height: self.text_height,
@@ -180,7 +165,7 @@ impl DimStyleDto {
             suppress_ext: self.suppress_ext,
             linear_factor: self.linear_factor,
             round_to: self.round_to,
-            length_format,
+            length_format: self.length_format.into(),
             precision: self.precision,
             trim_zeros: self.trim_zeros,
             decimal_separator,
@@ -198,9 +183,9 @@ impl DimStyleDto {
             alt_post: self.alt_post,
             text_frame: self.text_frame,
             text_fill: self.text_fill,
-            arrow2: Arrow::from_code(self.arrow2),
-            ext_fixed: Some(self.ext_fixed).filter(|l| *l > 0.0),
-            angle_format,
+            arrow2: self.arrow2.map(Into::into),
+            ext_fixed: self.ext_fixed.filter(|l| *l > 0.0),
+            angle_format: self.angle_format.into(),
             angle_precision: self.angle_precision,
             text_style: od_core::TextStyleId(self.text_style),
         }
