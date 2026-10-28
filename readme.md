@@ -49,12 +49,14 @@ If that looks familiar, you are home.
 
 - **Familiar.** A ribbon interface, a command line with the standard drafting command names and short aliases, and step-by-step prompts with options (`Specify first point:`, `[Undo/Close]`). If you have drafted in other CAD packages, your muscle memory carries over.
 - **Fast and light.** Written in Rust on [egui](https://github.com/emilk/egui). One native executable, no interpreter, no runtime to install.
-- **Opens your drawings.** Reads DXF and DWG (including files saved by AutoCAD 2010 to 2018), writes DXF, and has its own versioned `.odx` format.
+- **Opens your drawings.** Reads DXF and DWG (including files saved by AutoCAD 2010 to 2018), writes DXF, and has its own `.odx` format (still in development).
 - **Robust.** Every change is one undo step, saves are atomic, autosave and crash recovery are built in, and a crash inside a command cannot take down your drawing.
 - **Scriptable by AI.** An optional, off-by-default [MCP server](./docs/mcp.md) lets an assistant inspect and draw in your open drawings, with every change undoable.
 - **Free for good.** GPL-3.0-or-later, no subscription, no telemetry.
 
 > **Status:** OpenDraft is in early development (0.1). It already covers a large part of everyday 2D drafting, but features, commands and the `.odx` format may still change. See the [roadmap](#roadmap) for what is missing.
+
+> **Your drawings:** the native `.odx` format is still in development (format version 0) and changes between releases without a conversion, so a drawing saved by one version may not open in a later one; the error then says which version saved it. To keep a drawing safe, also save a DXF copy (File > Save As, DXF), which any version and other CAD programs can read.
 
 ## 🧰 What it can do
 
@@ -88,7 +90,7 @@ If that looks familiar, you are home.
 - A Lucide-based icon library exported as SVG, and a dark flat theme
 
 **💾 Files**
-- Native `.odx` format (versioned JSON; unknown content is refused rather than silently dropped, loading is size-limited)
+- Native `.odx` format (JSON, in development: it may change between releases without a conversion; unknown content is refused rather than silently dropped, loading is size-limited)
 - DXF import and export (R12, or R2000 for layouts, ellipses, splines, hatches and text)
 - DWG import (AC1024, AC1027, AC1032) through the standalone `od-dwg` reader; there is no DWG export yet
 - Atomic saves, background open/save/export with a Cancel button, autosave and crash recovery, and a recent files list
