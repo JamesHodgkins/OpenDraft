@@ -3,6 +3,7 @@
 
 use crate::dimension::Arrow;
 use crate::layer::{Attr, Color, Lineweight};
+use crate::linetype::LinetypeId;
 use crate::text_style::{TextStyleId, MAX_NAME_BYTES};
 
 /// Permanent identity of a multileader style; never reused within a drawing.
@@ -175,7 +176,7 @@ pub struct MLeaderStyle {
     // Leader Format
     pub leader_type: MLeaderLineType,
     pub leader_color: Attr<Color>,
-    pub leader_linetype: Attr<String>,
+    pub leader_linetype: Attr<LinetypeId>,
     pub leader_lineweight: Attr<Lineweight>,
     pub arrow: Arrow,
     pub arrow_size: f64,
@@ -247,14 +248,6 @@ impl MLeaderStyle {
                 .is_none_or(|n| (2..=MAX_POINTS).contains(&n))
             && angle(self.first_angle)
             && angle(self.second_angle)
-            && self.leader_linetype_ok()
-    }
-
-    fn leader_linetype_ok(&self) -> bool {
-        match &self.leader_linetype {
-            Attr::ByLayer => true,
-            Attr::Set(name) => !name.is_empty() && name.len() <= MAX_NAME_BYTES,
-        }
     }
 }
 

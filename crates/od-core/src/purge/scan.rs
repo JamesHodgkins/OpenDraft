@@ -3,8 +3,9 @@
 use std::sync::Arc;
 
 use super::{Blocked, Item, Purgeable};
+use crate::document::LinetypeUse;
 use crate::text_style::TextStyleId;
-use crate::{Attr, BlockDef, BlockId, Document, Entity, EntityId, LayerId};
+use crate::{BlockDef, BlockId, Document, Entity, EntityId, LayerId};
 
 /// A named record with every reason it must stay; none means it can go.
 struct Entry {
@@ -126,32 +127,32 @@ fn layer_entries(doc: &Document, out: &mut Vec<Entry>) {
 }
 
 fn linetype_entries(doc: &Document, out: &mut Vec<Entry>) {
-    let new_linetype = match doc.new_object_style().1 {
-        Attr::Set(name) => Some(name.as_str()),
-        Attr::ByLayer => None,
-    };
     for record in doc.linetypes().records() {
         let mut reasons = Vec::new();
         if record.id.is_special() {
             reasons.push("It is a permanent linetype".to_owned());
         }
-        if new_linetype.is_some_and(|n| n.eq_ignore_ascii_case(&record.name)) {
-            reasons.push("New objects are drawn with it".to_owned());
+        let (mut by_layer, mut by_objects) = (false, false);
+        for (_, who) in doc.linetype_uses().filter(|(id, _)| *id == record.id) {
+            match who {
+                LinetypeUse::NewObjects => {
+                    reasons.push("New objects are drawn with it".to_owned());
+                }
+                LinetypeUse::Layer(layer) => {
+                    by_layer = true;
+                    reasons.push(format!("Used by layer \"{}\"", layer.name));
+                }
+                LinetypeUse::MLeaderStyle(style) => {
+                    reasons.push(format!("Used by multileader style \"{}\"", style.name));
+                }
+                LinetypeUse::Object(_) | LinetypeUse::BlockObject(_) => by_objects = true,
+            }
         }
-        let mut by_layer = false;
-        for layer in doc
-            .layers()
-            .iter()
-            .filter(|l| l.linetype.eq_ignore_ascii_case(&record.name))
-        {
-            by_layer = true;
-            reasons.push(format!("Used by layer \"{}\"", layer.name));
-        }
-        if !by_layer && !record.id.is_special() && doc.linetype_in_use(&record.name) {
+        if by_objects && !by_layer {
             reasons.push("Used by objects or blocks".to_owned());
         }
         out.push(Entry {
-            item: Item::Linetype(record.name.clone()),
+            item: Item::Linetype(record.id),
             name: record.name.clone(),
             reasons,
         });
@@ -300,12 +301,7 @@ pub fn users_of(doc: &Document, item: &Item) -> Vec<EntityId> {
     let used = |o: &crate::Object| match item {
         Item::Block(id) => matches!(&o.entity, Entity::Insert(i) if i.block.holds(*id)),
         Item::Layer(id) => o.attrs.layer == *id,
-        Item::Linetype(name) => match &o.attrs.linetype {
-            Attr::Set(n) => same(n, name),
-            Attr::ByLayer => doc
-                .layer(o.attrs.layer)
-                .is_some_and(|l| same(&l.linetype, name)),
-        },
+        Item::Linetype(id) => doc.linetype_of(o) == *id,
         Item::DimStyle(name) => {
             matches!(&o.entity, Entity::Dimension(d) if same(&d.style.name, name))
         }

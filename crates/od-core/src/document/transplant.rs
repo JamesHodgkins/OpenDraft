@@ -16,7 +16,7 @@ use crate::block::{BlockDef, BlockEntity, BlockId, Insert};
 use crate::dimension::DimStyle;
 use crate::layer::{Attr, Attributes, Layer, LayerId};
 use crate::layout::LayoutId;
-use crate::linetype::LinetypeTable;
+use crate::linetype::{LinetypeId, LinetypeTable};
 use crate::mleader::{MLeaderContent, MLeaderStyle};
 use crate::text_style::{TextStyle, TextStyleId};
 use crate::{Entity, EntityId, Object, Point};
@@ -50,12 +50,44 @@ struct Tables {
     next_block_id: u64,
 }
 
+/// Something a transfer between drawings could not carry over exactly.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TransferWarning {
+    /// The drawing already has a linetype of this name with another pattern;
+    /// the drawing's own is used.
+    LinetypeDiffers(String),
+    /// The source used a linetype its own table lacks; it is drawn continuous.
+    LinetypeMissing(u64),
+    /// A linetype could not be added (its name was refused); it is drawn
+    /// continuous.
+    LinetypeRefused(String),
+}
+
+impl std::fmt::Display for TransferWarning {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::LinetypeDiffers(name) => write!(
+                f,
+                "Linetype {name} differs from this drawing's; this drawing's is used."
+            ),
+            Self::LinetypeMissing(id) => {
+                write!(f, "Linetype {id} is not in the source; drawn continuous.")
+            }
+            Self::LinetypeRefused(name) => {
+                write!(f, "Linetype {name} could not be added; drawn continuous.")
+            }
+        }
+    }
+}
+
 /// What an absorb did, so it can be undone and done again.
 #[derive(Clone, Debug)]
 pub struct Absorbed {
     before: Tables,
     after: Tables,
     objects: Vec<Object>,
+    /// What did not carry over exactly, once each.
+    pub warnings: Vec<TransferWarning>,
 }
 
 impl Absorbed {
@@ -130,6 +162,8 @@ impl Document {
             src: source,
             layers: HashMap::new(),
             text_styles: HashMap::new(),
+            linetypes: HashMap::new(),
+            warnings: Vec::new(),
             blocks: HashMap::new(),
         };
         let mut objects = Vec::new();
@@ -163,6 +197,7 @@ impl Document {
                 objects.push((Entity::Insert(Box::new(Insert::new(def, *at))), attrs));
             }
         }
+        let warnings = merge.warnings;
         let objects: Vec<Object> = objects
             .into_iter()
             .map(|(entity, attrs)| Object::new(self.allocate_id(), entity, attrs, layout))
@@ -172,6 +207,7 @@ impl Document {
             before,
             after: self.tables(),
             objects,
+            warnings,
         }
     }
 
@@ -202,6 +238,11 @@ struct Merge<'a> {
     src: &'a Document,
     layers: HashMap<LayerId, LayerId>,
     text_styles: HashMap<TextStyleId, TextStyleId>,
+    /// The source's linetype ids to this drawing's: built as the objects are
+    /// copied, and total (an id never maps to nothing), so a transfer cannot
+    /// fail halfway. An id is only ever meaningful inside its own drawing.
+    linetypes: HashMap<LinetypeId, LinetypeId>,
+    warnings: Vec<TransferWarning>,
     blocks: HashMap<BlockId, Arc<BlockDef>>,
 }
 
@@ -217,7 +258,7 @@ impl Merge<'_> {
                 None => {
                     let mut copy = layer.clone();
                     copy.id = self.dst.allocate_layer_id();
-                    self.linetype(&copy.linetype);
+                    copy.linetype = self.linetype(copy.linetype);
                     let id = copy.id;
                     self.dst.push_layer(copy);
                     id
@@ -228,18 +269,44 @@ impl Merge<'_> {
         found
     }
 
-    /// Make sure the drawing has the linetype called `name`, if the source does.
-    fn linetype(&mut self, name: &str) {
-        if self.dst.linetypes.named(name).is_some() {
-            return;
+    /// The record of this drawing that stands for the source's linetype `id`.
+    /// The three special records are the same in every drawing. Otherwise the
+    /// drawing's record of that name is used (and a different pattern is
+    /// reported: the drawing's own wins), or the source's record is added.
+    fn linetype(&mut self, id: LinetypeId) -> LinetypeId {
+        if let Some(done) = self.linetypes.get(&id) {
+            return *done;
         }
-        if let Some(record) = self.src.linetypes.named(name) {
-            let mut copy = record.clone();
-            copy.id = crate::linetype::LinetypeId(self.dst.linetypes.next_id());
-            // A refused record (a bad name) leaves the objects ByLayer-looking
-            // continuous, which is the best the target can do.
-            let _ = self.dst.linetypes.push(copy);
-        }
+        let found = if id.is_special() {
+            id
+        } else if let Some(record) = self.src.linetypes.get(id) {
+            match self.dst.linetypes.named(&record.name) {
+                Some(same) => {
+                    if same.elements != record.elements {
+                        self.warnings
+                            .push(TransferWarning::LinetypeDiffers(record.name.clone()));
+                    }
+                    same.id
+                }
+                None => {
+                    let mut copy = record.clone();
+                    copy.id = LinetypeId(self.dst.linetypes.next_id());
+                    let new = copy.id;
+                    if self.dst.linetypes.push(copy).is_ok() {
+                        new
+                    } else {
+                        self.warnings
+                            .push(TransferWarning::LinetypeRefused(record.name.clone()));
+                        LinetypeId::CONTINUOUS
+                    }
+                }
+            }
+        } else {
+            self.warnings.push(TransferWarning::LinetypeMissing(id.0));
+            LinetypeId::CONTINUOUS
+        };
+        self.linetypes.insert(id, found);
+        found
     }
 
     fn text_style(&mut self, id: TextStyleId) -> TextStyleId {
@@ -266,8 +333,8 @@ impl Merge<'_> {
     fn attrs(&mut self, attrs: &Attributes) -> Attributes {
         let mut out = attrs.clone();
         out.layer = self.layer(attrs.layer);
-        if let Attr::Set(name) = &attrs.linetype {
-            self.linetype(name);
+        if let Attr::Set(id) = &attrs.linetype {
+            out.linetype = Attr::Set(self.linetype(*id));
         }
         out
     }
@@ -288,6 +355,9 @@ impl Merge<'_> {
         if let Some(style) = self.src.mleader_style_named(name) {
             let mut copy = style.clone();
             copy.content.text_style = self.text_style(copy.content.text_style);
+            if let Attr::Set(id) = copy.leader_linetype {
+                copy.leader_linetype = Attr::Set(self.linetype(id));
+            }
             copy.id = crate::mleader::MLeaderStyleId(self.dst.next_mleader_style_id);
             self.dst.next_mleader_style_id = after(self.dst.next_mleader_style_id);
             self.dst.mleader_styles.push(copy);
@@ -366,6 +436,7 @@ fn layer_match(a: &Layer, b: &Layer) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::linetype::StrokeElement;
     use crate::{Color, Point};
 
     fn circle() -> Entity {
@@ -508,5 +579,184 @@ mod tests {
             dst.get(absorbed.ids()[0]),
             Some(Entity::MText(m)) if m.style == style
         ));
+    }
+
+    // ---- linetypes cross drawings through a map of ids, not names
+
+    fn with_linetype(doc: &mut Document, name: &str, pattern: &[StrokeElement]) -> LinetypeId {
+        let mut table = doc.linetypes().clone();
+        let id = table.add(name, "", pattern.to_vec()).unwrap();
+        doc.set_linetypes(table);
+        id
+    }
+
+    fn drawn_with(doc: &mut Document, linetype: LinetypeId) -> EntityId {
+        let attrs = Attributes {
+            linetype: Attr::Set(linetype),
+            ..Attributes::on_layer(LayerId::DEFAULT)
+        };
+        doc.add_with(circle(), attrs)
+    }
+
+    fn paste(src: &Document, ids: &[EntityId], dst: &mut Document) -> Absorbed {
+        let extract = src.extract(ids);
+        dst.absorb(&extract, &Placement::Loose { dx: 0.0, dy: 0.0 }, None)
+    }
+
+    use StrokeElement::{Dash, Gap};
+
+    #[test]
+    fn a_linetype_the_target_lacks_is_copied_with_a_new_id_and_the_objects_follow() {
+        let mut src = Document::default();
+        let mine = with_linetype(&mut src, "Mine", &[Dash(2.0), Gap(1.0)]);
+        let id = drawn_with(&mut src, mine);
+        let mut dst = Document::default();
+        // Make ids differ, so a raw copy of the id would point at the wrong thing.
+        let other = with_linetype(&mut dst, "Other", &[Dash(9.0), Gap(9.0)]);
+        assert_eq!(other, mine, "the same id means different records here");
+        let absorbed = paste(&src, &[id], &mut dst);
+        let copied = dst.linetypes().named("Mine").expect("copied");
+        assert_ne!(copied.id, mine);
+        assert_eq!(copied.elements, vec![Dash(2.0), Gap(1.0)]);
+        let new = dst.object(absorbed.ids()[0]).unwrap();
+        assert_eq!(new.attrs.linetype, Attr::Set(copied.id));
+        assert!(absorbed.warnings.is_empty());
+        assert_eq!(dst.validate(), Ok(()));
+    }
+
+    #[test]
+    fn the_special_records_are_the_same_in_every_drawing() {
+        let mut src = Document::default();
+        let id = drawn_with(&mut src, LinetypeId::CONTINUOUS);
+        let mut dst = Document::default();
+        let absorbed = paste(&src, &[id], &mut dst);
+        let new = dst.object(absorbed.ids()[0]).unwrap();
+        assert_eq!(new.attrs.linetype, Attr::Set(LinetypeId::CONTINUOUS));
+        assert_eq!(
+            dst.linetypes().records().len(),
+            src.linetypes().records().len()
+        );
+    }
+
+    #[test]
+    fn a_linetype_the_target_has_by_name_is_reused_and_a_different_pattern_is_reported_once() {
+        let mut src = Document::default();
+        let a = with_linetype(&mut src, "Same", &[Dash(1.0), Gap(1.0)]);
+        let b = with_linetype(&mut src, "Differs", &[Dash(5.0), Gap(5.0)]);
+        let ids = [
+            drawn_with(&mut src, a),
+            drawn_with(&mut src, b),
+            drawn_with(&mut src, b),
+            drawn_with(&mut src, b),
+        ];
+        let mut dst = Document::default();
+        let same = with_linetype(&mut dst, "SAME", &[Dash(1.0), Gap(1.0)]);
+        let differs = with_linetype(&mut dst, "differs", &[Dash(2.0), Gap(2.0)]);
+        let before = dst.linetypes().records().len();
+        let absorbed = paste(&src, &ids, &mut dst);
+        assert_eq!(dst.linetypes().records().len(), before, "nothing added");
+        let used: Vec<_> = absorbed
+            .ids()
+            .iter()
+            .map(|id| dst.object(*id).unwrap().attrs.linetype.clone())
+            .collect();
+        assert_eq!(
+            used,
+            [same, differs, differs, differs].map(Attr::Set),
+            "the target's own records"
+        );
+        assert_eq!(
+            absorbed.warnings,
+            [TransferWarning::LinetypeDiffers("Differs".to_owned())],
+            "once for the name, not once per object"
+        );
+        let kept = &dst.linetypes().named("differs").unwrap().elements;
+        assert_eq!(*kept, vec![Dash(2.0), Gap(2.0)]);
+    }
+
+    #[test]
+    fn a_layers_linetype_is_carried_with_its_layer() {
+        let mut src = Document::default();
+        let mine = with_linetype(&mut src, "Mine", &[Dash(3.0), Gap(1.0)]);
+        let layer = src.allocate_layer_id();
+        let mut l = Layer::new(layer, "Pipes");
+        l.linetype = mine;
+        src.push_layer(l);
+        let id = src.add_with(circle(), Attributes::on_layer(layer));
+        let mut dst = Document::default();
+        paste(&src, &[id], &mut dst);
+        let pipes = dst.layers().iter().find(|l| l.name == "Pipes").unwrap();
+        assert_eq!(dst.linetypes().get(pipes.linetype).unwrap().name, "Mine");
+        assert_eq!(dst.validate(), Ok(()));
+    }
+
+    #[test]
+    fn a_block_brings_its_contents_linetypes_once() {
+        let mut src = Document::default();
+        let mine = with_linetype(&mut src, "Mine", &[Dash(3.0), Gap(1.0)]);
+        let id = src.allocate_block_id();
+        let def = Arc::new(BlockDef {
+            id,
+            name: "B".to_owned(),
+            base: Point::new(0.0, 0.0),
+            description: String::new(),
+            entities: vec![BlockEntity {
+                entity: circle(),
+                attrs: Attributes {
+                    linetype: Attr::Set(mine),
+                    ..Attributes::on_layer(LayerId::DEFAULT)
+                },
+            }],
+        });
+        src.push_block(def.clone());
+        let insert = src.add(Entity::Insert(Box::new(Insert::new(
+            def,
+            Point::new(0.0, 0.0),
+        ))));
+        let mut dst = Document::default();
+        with_linetype(&mut dst, "Taken", &[Dash(1.0)]);
+        paste(&src, &[insert], &mut dst);
+        paste(&src, &[insert], &mut dst);
+        let copied: Vec<_> = dst
+            .linetypes()
+            .records()
+            .iter()
+            .filter(|r| r.name == "Mine")
+            .collect();
+        assert_eq!(copied.len(), 1, "added once, reused the second time");
+        let block = dst.block_named("B").unwrap();
+        assert_eq!(block.entities[0].attrs.linetype, Attr::Set(copied[0].id));
+        assert_eq!(dst.validate(), Ok(()));
+    }
+
+    #[test]
+    fn a_source_reference_to_nothing_is_drawn_continuous_and_reported() {
+        let mut src = Document::default();
+        let id = drawn_with(&mut src, LinetypeId(77));
+        let mut dst = Document::default();
+        let absorbed = paste(&src, &[id], &mut dst);
+        let new = dst.object(absorbed.ids()[0]).unwrap();
+        assert_eq!(new.attrs.linetype, Attr::Set(LinetypeId::CONTINUOUS));
+        assert_eq!(absorbed.warnings, [TransferWarning::LinetypeMissing(77)]);
+        assert_eq!(dst.validate(), Ok(()));
+    }
+
+    #[test]
+    fn undoing_and_redoing_a_paste_restores_the_linetype_table_and_references() {
+        let mut src = Document::default();
+        let mine = with_linetype(&mut src, "Mine", &[Dash(2.0), Gap(1.0)]);
+        let id = drawn_with(&mut src, mine);
+        let mut dst = Document::default();
+        let table_before = dst.linetypes().clone();
+        let absorbed = paste(&src, &[id], &mut dst);
+        let table_after = dst.linetypes().clone();
+        let refs_after: Vec<_> = dst.linetype_uses().map(|(id, _)| id).collect();
+        dst.unabsorb(&absorbed);
+        assert_eq!(*dst.linetypes(), table_before);
+        dst.reabsorb(&absorbed);
+        assert_eq!(*dst.linetypes(), table_after);
+        let refs_again: Vec<_> = dst.linetype_uses().map(|(id, _)| id).collect();
+        assert_eq!(refs_again, refs_after);
+        assert_eq!(dst.validate(), Ok(()));
     }
 }

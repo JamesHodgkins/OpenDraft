@@ -744,7 +744,7 @@ mod tests {
     #[test]
     fn a_dashed_construction_line_plots_as_dashes_within_the_window_only() {
         let dashed = Attributes {
-            linetype: Attr::Set("DASHED".into()),
+            linetype: Attr::Set(crate::LinetypeId::DASHED),
             ..Attributes::on_layer(crate::LayerId::DEFAULT)
         };
         let (mut doc, id) = plotted(&[]);
@@ -779,7 +779,7 @@ mod tests {
         let (mut doc, id) = plotted(&[]);
         doc.set_active_layout(Some(id));
         let dashed = Attributes {
-            linetype: Attr::Set("DASHED".into()),
+            linetype: Attr::Set(crate::LinetypeId::DASHED),
             ..Attributes::on_layer(crate::LayerId::DEFAULT)
         };
         doc.add_with(line((0.0, 0.0), (100.0, 0.0)), dashed);
@@ -798,7 +798,7 @@ mod tests {
         let (mut doc, id) = plotted(&[]);
         doc.set_active_layout(Some(id));
         let mut layer = doc.layer(crate::LayerId::DEFAULT).unwrap().clone();
-        layer.linetype = "DOT".into();
+        layer.linetype = crate::LinetypeId::DOT;
         doc.replace_layer(layer);
         doc.add(line((0.0, 0.0), (50.0, 0.0)));
         let paths = plot_layout(&doc, id).unwrap().paths;
@@ -810,7 +810,7 @@ mod tests {
     fn dashes_in_a_viewport_are_laid_in_model_units_then_scaled() {
         let (mut doc, id) = plotted(&[]);
         let dashed = Attributes {
-            linetype: Attr::Set("DASHED".into()),
+            linetype: Attr::Set(crate::LinetypeId::DASHED),
             ..Attributes::on_layer(crate::LayerId::DEFAULT)
         };
         doc.add_with(line((4900.0, 4000.0), (5100.0, 4000.0)), dashed);
@@ -836,7 +836,7 @@ mod tests {
             widths: Vec::new(),
         };
         let attrs = |continuous: bool| Attributes {
-            linetype: Attr::Set("DASHED".into()),
+            linetype: Attr::Set(crate::LinetypeId::DASHED),
             continuous_generation: continuous,
             ..Attributes::on_layer(crate::LayerId::DEFAULT)
         };

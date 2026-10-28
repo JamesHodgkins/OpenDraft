@@ -69,7 +69,9 @@ pub use block::{Affine, BlockDef, BlockEntity, BlockId, Insert};
 pub use corner::{Chamfer, CornerError, Joined};
 pub use corner_infinite::{chamfer_lines, fillet};
 pub use dimension::{Arrow, DimKind, DimStyle, DimText, Dimension};
-pub use document::{Absorbed, Document, EntityId, Object, Placement, SpatialStats};
+pub use document::{
+    Absorbed, Document, EntityId, LinetypeUse, Object, Placement, SpatialStats, TransferWarning,
+};
 pub use ellipse::{Ellipse, EllipseError};
 pub use entity_kind::EntityKind;
 pub use extend::End;

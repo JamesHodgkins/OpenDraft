@@ -1,5 +1,7 @@
 //! Layers and the display attributes objects take from them.
 
+use crate::linetype::LinetypeId;
+
 /// Permanent identity of a layer; never reused within a drawing.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct LayerId(pub u64);
@@ -92,7 +94,7 @@ impl<T: Clone> Attr<T> {
 pub struct Attributes {
     pub layer: LayerId,
     pub color: Attr<Color>,
-    pub linetype: Attr<String>,
+    pub linetype: Attr<LinetypeId>,
     pub lineweight: Attr<Lineweight>,
     /// The object's own linetype scale (DXF group 48), above zero; multiplied
     /// by the drawing's `LTSCALE`.
@@ -122,7 +124,7 @@ pub struct Layer {
     pub id: LayerId,
     pub name: String,
     pub color: Color,
-    pub linetype: String,
+    pub linetype: LinetypeId,
     pub lineweight: Lineweight,
     /// Off layers are hidden.
     pub on: bool,
@@ -138,7 +140,7 @@ impl Layer {
             id,
             name: name.into(),
             color: Color::Foreground,
-            linetype: LINETYPES[0].to_owned(),
+            linetype: LinetypeId::CONTINUOUS,
             lineweight: Lineweight::DEFAULT,
             on: true,
             frozen: false,
