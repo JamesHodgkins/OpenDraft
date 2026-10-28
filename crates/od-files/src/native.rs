@@ -202,14 +202,10 @@ struct DrawingDto {
     next_layout_id: u64,
     #[serde(default)]
     next_viewport_id: u64,
-    /// Left out for the stock table (just `Standard`).
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     text_styles: Vec<TextStyleDto>,
-    #[serde(default)]
     current_text_style: u64,
-    #[serde(default)]
     next_text_style_id: u64,
-    /// The multileader styles; left out for the stock table.
+    /// The multileader styles.
     #[serde(flatten)]
     mleader_styles: mleader_style::TableDto,
     /// Block definitions in table order.
@@ -217,12 +213,12 @@ struct DrawingDto {
     blocks: Vec<BlockDto>,
     #[serde(default)]
     next_block_id: u64,
-    /// The linetype table and `LTSCALE`; each is left out at its stock value.
+    /// The linetype table and `LTSCALE`.
     #[serde(flatten)]
     linetypes: linetype::TableDto,
     #[serde(flatten)]
     new_style: new_style::NewStyleDto,
-    /// `PDMODE` and `PDSIZE`; each is left out at its default.
+    /// `PDMODE` and `PDSIZE`.
     #[serde(flatten)]
     point_style: point_style::PointStyleDto,
 }
@@ -348,7 +344,6 @@ impl DrawingDto {
             .collect::<Result<_, FileError>>()?;
         let (next_object_id, next_layer_id) = document.next_ids();
         let (next_layout_id, next_viewport_id) = document.next_layout_ids();
-        let stock_styles = text::is_stock(document);
         let blocks = document
             .blocks()
             .iter()
@@ -369,15 +364,11 @@ impl DrawingDto {
                 .collect(),
             next_layout_id,
             next_viewport_id,
-            text_styles: if stock_styles {
-                Vec::new()
-            } else {
-                document
-                    .text_styles()
-                    .iter()
-                    .map(TextStyleDto::from_style)
-                    .collect()
-            },
+            text_styles: document
+                .text_styles()
+                .iter()
+                .map(TextStyleDto::from_style)
+                .collect(),
             current_text_style: document.current_text_style().0,
             next_text_style_id: document.next_text_style_id(),
             mleader_styles: mleader_style::TableDto::of(document),
@@ -399,8 +390,26 @@ mod tests {
 
     use super::*;
 
-    /// `text` with the stock dimension styles added to its drawing when it
-    /// has none, so a hand-written file need not spell out fifty values. The
+    /// The tables a drawing must spell out (styles, linetypes, point style).
+    const TABLE_KEYS: [&str; 14] = [
+        "dim_styles",
+        "named_dim_styles",
+        "current_dim_style",
+        "text_styles",
+        "current_text_style",
+        "next_text_style_id",
+        "mleader_styles",
+        "current_mleader_style",
+        "next_mleader_style_id",
+        "linetypes",
+        "next_linetype_id",
+        "linetype_scale",
+        "point_mode",
+        "point_size",
+    ];
+
+    /// `text` with the stock tables added to its drawing where it has none,
+    /// so a hand-written file need not spell out hundreds of values. The
     /// reader itself requires them.
     pub(super) fn with_dim_styles(text: &str) -> String {
         let Ok(mut file) = serde_json::from_str::<serde_json::Value>(text) else {
@@ -410,7 +419,7 @@ mod tests {
             serde_json::from_slice(&NativeFormat.write(&Document::default()).unwrap().bytes)
                 .unwrap();
         if let Some(drawing) = file.get_mut("drawing").and_then(|d| d.as_object_mut()) {
-            for key in ["dim_styles", "named_dim_styles", "current_dim_style"] {
+            for key in TABLE_KEYS {
                 drawing
                     .entry(key)
                     .or_insert_with(|| stock["drawing"][key].clone());
@@ -1132,9 +1141,11 @@ mod tests {
     }
 
     #[test]
-    fn a_drawing_without_text_writes_no_style_table_and_reads_back_with_standard() {
+    fn a_drawing_without_text_still_writes_its_style_table_in_full() {
         let text = String::from_utf8(NativeFormat.write(&rich()).unwrap().bytes).unwrap();
-        assert!(!text.contains("text_styles") && !text.contains("mtext"));
+        assert!(text.contains("\"text_styles\"") && !text.contains("\"mtext\""));
+        assert!(text.contains("\"width_factor\"") && text.contains("\"stroke_weight\""));
+        assert!(NativeFormat.read(MINIMAL.as_bytes()).is_err());
         let loaded = read(MINIMAL).unwrap();
         assert_eq!(loaded.text_styles().len(), 1);
         assert_eq!(loaded.current_text_style(), TextStyleId::STANDARD);
@@ -1193,11 +1204,22 @@ mod tests {
         let table = |styles: &str| {
             MINIMAL.replace(
                 "\"objects\": []",
-                &format!("\"objects\": [], \"text_styles\": [{styles}]"),
+                &format!(
+                    "\"objects\": [], \"text_styles\": [{styles}], \"current_text_style\": 0, \"next_text_style_id\": 2"
+                ),
             )
         };
-        let standard = r#"{ "id": 0, "name": "Standard", "font": { "type": "bundled_sans" } }"#;
-        let notes = r#"{ "id": 1, "name": "Notes", "font": { "type": "bundled_sans" } }"#;
+        let style = |id: u32, name: &str| {
+            format!(
+                r#"{{ "id": {id}, "name": "{name}", "font": {{ "type": "bundled_sans" }},
+                    "width_factor": 1.0, "oblique": 0.0, "backward": false,
+                    "upside_down": false, "vertical": false, "stroke_weight": 0.1 }}"#
+            )
+        };
+        let standard = style(0, "Standard");
+        let notes = style(1, "Notes");
+        let standard = standard.as_str();
+        let notes = notes.as_str();
         assert!(read(&table(standard)).is_ok());
         assert!(read(&table(&format!("{standard}, {notes}"))).is_ok());
         for bad in [
@@ -1227,10 +1249,10 @@ mod tests {
     }
 
     #[test]
-    fn a_stock_linetype_table_is_left_out_and_old_files_read_with_it() {
+    fn a_stock_linetype_table_is_written_in_full_and_a_file_without_one_is_refused() {
         let text = String::from_utf8(NativeFormat.write(&rich()).unwrap().bytes).unwrap();
-        assert!(!text.contains("linetypes"));
-        assert!(!text.contains("next_linetype_id"));
+        assert!(text.contains("\"linetypes\"") && text.contains("\"next_linetype_id\""));
+        assert!(NativeFormat.read(MINIMAL.as_bytes()).is_err());
         assert!(read(MINIMAL).unwrap().linetypes().is_stock());
     }
 

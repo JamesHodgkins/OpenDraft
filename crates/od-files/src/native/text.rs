@@ -6,24 +6,12 @@ use od_core::mtext::{
     BackgroundFill, ColumnKind, EntityLineSpacing, LineSpacingStyle, MTextAttachment,
     MTextBackground, MTextColumns, MTextFlow, PreservedMTextFields,
 };
-use od_core::{Document, FontDescriptor, MText, TextStyle, TextStyleId, DEFAULT_STROKE_WEIGHT};
+use od_core::{Document, FontDescriptor, MText, TextStyle, TextStyleId};
 use serde::{Deserialize, Serialize};
 
 use super::entity::{from_point, invalid, point, PointDto};
 use super::ColorDto;
 use crate::FileError;
-
-fn one() -> f64 {
-    1.0
-}
-
-fn default_weight() -> f64 {
-    DEFAULT_STROKE_WEIGHT
-}
-
-fn is_default_weight(v: &f64) -> bool {
-    *v == DEFAULT_STROKE_WEIGHT
-}
 
 fn one_code() -> u8 {
     1
@@ -43,18 +31,14 @@ enum FontDto {
     BundledSans,
     TrueType {
         family: String,
-        #[serde(default)]
         bold: bool,
-        #[serde(default)]
         italic: bool,
     },
     Shx {
         file_name: String,
     },
     OdRoman {
-        #[serde(default)]
         bold: bool,
-        #[serde(default)]
         italic: bool,
     },
     Opaque {
@@ -73,19 +57,13 @@ pub(super) struct TextStyleDto {
     big_font: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     fixed_height: Option<f64>,
-    #[serde(default = "one")]
     width_factor: f64,
     /// Radians.
-    #[serde(default, skip_serializing_if = "is_zero")]
     oblique: f64,
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     backward: bool,
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     upside_down: bool,
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     vertical: bool,
     /// Pen width of a stroke font, as a fraction of the text height.
-    #[serde(default = "default_weight", skip_serializing_if = "is_default_weight")]
     stroke_weight: f64,
 }
 
@@ -180,46 +158,38 @@ impl TextStyleDto {
     }
 }
 
-/// Load the style table into `document`. A file from before text styles has
-/// none, which leaves the stock `Standard`.
+/// Load the style table into `document`: it must hold text style 0 and the
+/// current style.
 pub(super) fn load_styles(
     document: &mut Document,
     styles: &[TextStyleDto],
     current: u64,
     next: u64,
 ) -> Result<(), FileError> {
-    if !styles.is_empty() {
-        let (mut ids, mut names) = (HashSet::new(), HashSet::new());
-        for dto in styles {
-            let style = dto.to_style()?;
-            if !ids.insert(style.id) {
-                return invalid(format!("text style {} appears twice", dto.id));
-            }
-            if !names.insert(style.name.to_ascii_lowercase()) {
-                return invalid(format!("two text styles are called \"{}\"", style.name));
-            }
-            if style.id == TextStyleId::STANDARD {
-                document.replace_text_style(style);
-            } else {
-                document.push_text_style(style);
-            }
+    let (mut ids, mut names) = (HashSet::new(), HashSet::new());
+    for dto in styles {
+        let style = dto.to_style()?;
+        if !ids.insert(style.id) {
+            return invalid(format!("text style {} appears twice", dto.id));
         }
-        if !ids.contains(&TextStyleId::STANDARD) {
-            return invalid("there is no text style 0");
+        if !names.insert(style.name.to_ascii_lowercase()) {
+            return invalid(format!("two text styles are called \"{}\"", style.name));
+        }
+        if style.id == TextStyleId::STANDARD {
+            document.replace_text_style(style);
+        } else {
+            document.push_text_style(style);
         }
     }
+    if !ids.contains(&TextStyleId::STANDARD) {
+        return invalid("there is no text style 0");
+    }
+    if !ids.contains(&TextStyleId(current)) {
+        return invalid(format!("the current text style {current} does not exist"));
+    }
     document.reserve_text_style_id(next);
-    // A current style that is gone falls back to Standard.
     document.set_current_text_style(TextStyleId(current));
     Ok(())
-}
-
-/// Whether a drawing's style table is the stock one, so the file can leave
-/// it out.
-pub(super) fn is_stock(document: &Document) -> bool {
-    document.text_styles() == [TextStyle::standard()]
-        && document.current_text_style() == TextStyleId::STANDARD
-        && document.next_text_style_id() == 1
 }
 
 #[derive(Serialize, Deserialize)]

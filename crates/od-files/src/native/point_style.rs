@@ -1,24 +1,12 @@
-//! How point objects are drawn (`PDMODE`, `PDSIZE`). Each is left out at its
-//! default, so files from before points existed still read.
+//! How point objects are drawn (`PDMODE`, `PDSIZE`), always written.
 
 use od_core::{Document, PointStyle};
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Default)]
-#[serde(default)]
+#[derive(Serialize, Deserialize)]
 pub(super) struct PointStyleDto {
-    #[serde(skip_serializing_if = "is_zero_mode")]
     point_mode: i32,
-    #[serde(skip_serializing_if = "is_zero_size")]
     point_size: f64,
-}
-
-fn is_zero_mode(v: &i32) -> bool {
-    *v == 0
-}
-
-fn is_zero_size(v: &f64) -> bool {
-    *v == 0.0
 }
 
 impl PointStyleDto {
@@ -47,10 +35,12 @@ mod tests {
     use crate::FileFormat;
 
     #[test]
-    fn the_style_round_trips_and_is_left_out_at_the_default() {
+    fn the_style_round_trips_and_is_written_at_the_default_too() {
         let mut document = Document::default();
         let plain = NativeFormat.write(&document).unwrap().bytes;
-        assert!(!String::from_utf8(plain).unwrap().contains("point_"));
+        assert!(String::from_utf8(plain)
+            .unwrap()
+            .contains("\"point_mode\": 0"));
         document.set_point_style(PointStyle {
             mode: 35,
             size: -3.5,
