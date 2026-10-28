@@ -3,7 +3,6 @@
 
 use eframe::egui::{self, Color32, Painter, Rect};
 use od_core::linetype::dash::{fit, Mark};
-use od_core::linetype::legacy_alias;
 use od_core::{Document, Linetype, LinetypeId, StrokeElement};
 
 /// How wide the picture of a pattern is in a list row.
@@ -22,14 +21,11 @@ pub fn choices(document: &Document) -> Vec<&Linetype> {
         .collect()
 }
 
-/// Where `name` is among `choices`, ignoring case (the old `Dotted` is `DOT`).
+/// Where `name` is among `choices`, ignoring case.
 pub fn position(choices: &[&Linetype], name: &str) -> Option<usize> {
-    let find = |wanted: &str| {
-        choices
-            .iter()
-            .position(|r| r.name.eq_ignore_ascii_case(wanted))
-    };
-    find(name).or_else(|| legacy_alias(name).and_then(find))
+    choices
+        .iter()
+        .position(|r| r.name.eq_ignore_ascii_case(name))
 }
 
 /// A list of the table's linetypes, each with a picture, under `anchor`;
@@ -103,7 +99,7 @@ mod tests {
         assert_eq!(names[0], "CONTINUOUS");
         assert!(!names.contains(&"BYLAYER") && !names.contains(&"BYBLOCK"));
         assert_eq!(position(&all, "dashed"), Some(1));
-        assert_eq!(position(&all, "Dotted"), position(&all, "DOT"));
+        assert_eq!(position(&all, "dot"), position(&all, "DOT"));
         assert_eq!(position(&all, "nothing"), None);
     }
 }

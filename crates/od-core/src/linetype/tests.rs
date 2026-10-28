@@ -272,13 +272,6 @@ fn lin_rules_are_checked_apart_from_what_a_dxf_may_hold() {
 }
 
 #[test]
-fn dotted_is_a_legacy_alias_for_dot() {
-    assert_eq!(legacy_alias("Dotted"), Some("DOT"));
-    assert_eq!(legacy_alias("DOTTED"), Some("DOT"));
-    assert_eq!(legacy_alias("Dashed"), None);
-}
-
-#[test]
 fn a_table_from_records_needs_the_special_ones() {
     let table = LinetypeTable::default();
     let records = table.records().to_vec();

@@ -146,17 +146,13 @@ struct Header {
 }
 
 fn check_version(found: u32) -> Result<(), FileError> {
-    match found.cmp(&CURRENT_VERSION) {
-        std::cmp::Ordering::Equal => Ok(()),
-        std::cmp::Ordering::Greater => Err(FileError::TooNew {
+    if found > CURRENT_VERSION {
+        return Err(FileError::TooNew {
             found,
             supported: CURRENT_VERSION,
-        }),
-        std::cmp::Ordering::Less => Err(FileError::TooOld {
-            found,
-            supported: CURRENT_VERSION,
-        }),
+        });
     }
+    Ok(())
 }
 
 /// The error for bytes that did not read as a drawing. A file from another

@@ -10,8 +10,6 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde_json::{json, Value};
 
-/// The newline-separated paths of the first versions.
-const OLD_KEY: &str = "recent_files";
 const KEY: &str = "recent_drawings";
 const VERSION: u64 = 1;
 /// How many drawings are remembered.
@@ -262,9 +260,8 @@ impl RecentFiles {
         changed
     }
 
-    /// Read the list: the current format, else the older newline-separated
-    /// paths (kept in their order). Anything unreadable is left out rather
-    /// than failing the rest.
+    /// Read the list. Anything unreadable is left out rather than failing the
+    /// rest.
     pub fn load(storage: Option<&dyn eframe::Storage>) -> Self {
         let Some(storage) = storage else {
             return Self::default();
@@ -275,31 +272,7 @@ impl RecentFiles {
         {
             return Self::from_value(&value);
         }
-        let old = storage.get_string(OLD_KEY).unwrap_or_default();
-        let paths: Vec<PathBuf> = old
-            .lines()
-            .filter(|line| !line.is_empty())
-            .map(PathBuf::from)
-            .take(MAX_RECENT)
-            .collect();
-        let count = paths.len();
-        let mut recent = Self {
-            items: paths
-                .into_iter()
-                .enumerate()
-                .map(|(i, path)| RecentDrawing {
-                    id: RecentId(i as u64 + 1),
-                    path,
-                    pinned: false,
-                    last_opened: from_millis((count - i) as u64),
-                })
-                .collect(),
-            next_id: count as u64 + 1,
-            view: RecentView::default(),
-            seen_notes: Vec::new(),
-        };
-        recent.sort();
-        recent
+        Self::default()
     }
 
     fn from_value(value: &Value) -> Self {

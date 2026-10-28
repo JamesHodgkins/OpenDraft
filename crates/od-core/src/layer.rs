@@ -57,12 +57,12 @@ impl Lineweight {
     }
 }
 
-/// Linetype names offered in the UI. Only the name is stored for now; every
-/// line is drawn continuous.
+/// The names the readers spell in the app's way when a file has them in
+/// another case; `Continuous` is also the default. The table, not this list,
+/// says what a drawing offers.
 pub const LINETYPES: &[&str] = &[
     "Continuous",
     "Dashed",
-    "Dotted",
     "DashDot",
     "Center",
     "Hidden",

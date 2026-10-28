@@ -1,19 +1,16 @@
 //! The linetype scale in DXF: the drawing's `$LTSCALE` and an entity's group
 //! 48 and, for polylines, bit 128 of group 70 (Linetype Generation).
 
-use od_core::linetype::{self, stock};
+use od_core::linetype::stock;
 use od_core::{Document, LinetypeId};
 
 use super::write::linetype_for;
 
-/// The name a linetype is written under: that of its record in the table (the
-/// old `Dotted` is the record `DOT`), the way DXF spells names.
+/// The name a linetype is written under: that of its record in the table, the
+/// way DXF spells names.
 pub(super) fn name_for(document: &Document, name: &str) -> String {
     let table = document.linetypes();
-    let record = table
-        .named(name)
-        .or_else(|| linetype::legacy_alias(name).and_then(|alias| table.named(alias)));
-    linetype_for(record.map_or(name, |r| r.name.as_str()))
+    linetype_for(table.named(name).map_or(name, |r| r.name.as_str()))
 }
 
 /// The table's own records as written, which every writer defines whether or

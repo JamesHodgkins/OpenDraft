@@ -6,7 +6,7 @@
 
 use std::collections::BTreeSet;
 
-use od_core::linetype::{legacy_alias, stock};
+use od_core::linetype::stock;
 use od_core::{Attr, Document, Linetype, StrokeElement};
 
 /// The three records every drawing has; a file's copies of them change nothing.
@@ -86,9 +86,7 @@ impl Imported {
         }
         let mut table = document.linetypes().clone();
         for name in used {
-            let known = table.named(&name).is_some()
-                || legacy_alias(&name).is_some_and(|a| table.named(a).is_some());
-            if known {
+            if table.named(&name).is_some() {
                 continue;
             }
             if stock::find(&name).is_some() && table.load_stock(&name).is_ok() {

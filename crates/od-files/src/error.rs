@@ -19,12 +19,6 @@ pub enum FileError {
         found: u32,
         supported: u32,
     },
-    /// Written by an older stable version this one cannot convert. (Not
-    /// reachable while the format is in development at version 0.)
-    TooOld {
-        found: u32,
-        supported: u32,
-    },
     /// Readable, but describes a drawing that cannot exist (an object on a
     /// layer that is not there, a circle with no radius, ...).
     Invalid(String),
@@ -44,10 +38,6 @@ impl fmt::Display for FileError {
             FileError::TooNew { found, supported } => write!(
                 f,
                 "it was saved by a newer version (file format {found}; this version reads up to {supported})"
-            ),
-            FileError::TooOld { found, supported } => write!(
-                f,
-                "it was saved by an older version (file format {found}; this version reads only {supported})"
             ),
             FileError::Invalid(why) => write!(f, "the drawing is damaged: {why}"),
             FileError::Cancelled => write!(f, "cancelled"),
