@@ -208,15 +208,9 @@ impl Importer {
                 name
             },
             color,
-            linetype: match record.text(6).map(decode) {
-                Some(name)
-                    if !name.eq_ignore_ascii_case("bylayer")
-                        && !name.eq_ignore_ascii_case("byblock") =>
-                {
-                    self.ltypes.id_for(&mut self.document, &name)
-                }
-                _ => LinetypeId::CONTINUOUS,
-            },
+            linetype: self
+                .linetype_ref(record.text(6))
+                .unwrap_or(LinetypeId::CONTINUOUS),
             lineweight,
             on: index >= 0,
             frozen: flags & 1 != 0,
@@ -235,15 +229,9 @@ impl Importer {
             }
             _ => Attr::ByLayer,
         };
-        let linetype = match record.text(6).map(decode) {
-            Some(name)
-                if !name.eq_ignore_ascii_case("bylayer")
-                    && !name.eq_ignore_ascii_case("byblock") =>
-            {
-                Attr::Set(self.ltypes.id_for(&mut self.document, &name))
-            }
-            _ => Attr::ByLayer,
-        };
+        let linetype = self
+            .linetype_ref(record.text(6))
+            .map_or(Attr::ByLayer, Attr::Set);
         let lineweight = match record.int(370) {
             Some(w) if w >= 0 => Attr::Set(Lineweight(u16::try_from(w).unwrap_or(u16::MAX))),
             _ => Attr::ByLayer,

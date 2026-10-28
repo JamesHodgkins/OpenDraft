@@ -59,18 +59,6 @@ impl Lineweight {
     }
 }
 
-/// The names the readers spell in the app's way when a file has them in
-/// another case; `Continuous` is also the default. The table, not this list,
-/// says what a drawing offers.
-pub const LINETYPES: &[&str] = &[
-    "Continuous",
-    "Dashed",
-    "DashDot",
-    "Center",
-    "Hidden",
-    "Phantom",
-];
-
 /// An object attribute that either follows its layer or is set on the object.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Attr<T> {

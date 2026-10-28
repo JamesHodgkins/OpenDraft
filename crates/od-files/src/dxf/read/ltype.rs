@@ -1,7 +1,7 @@
 //! The LTYPE table: the dash patterns a drawing defines, read into the
 //! drawing's linetype table (see `linetype_import`).
 
-use od_core::StrokeElement;
+use od_core::{LinetypeId, StrokeElement};
 
 use super::{decode, Importer, Record};
 
@@ -9,6 +9,16 @@ use super::{decode, Importer, Record};
 pub(super) type Reading = crate::linetype_import::Imported;
 
 impl Importer {
+    /// The record named by a layer's or object's linetype (group 6); `None`
+    /// for ByLayer and ByBlock, which are not linetypes.
+    pub(super) fn linetype_ref(&mut self, text: Option<&str>) -> Option<LinetypeId> {
+        let name = decode(text?);
+        if name.eq_ignore_ascii_case("bylayer") || name.eq_ignore_ascii_case("byblock") {
+            return None;
+        }
+        Some(self.ltypes.id_for(&mut self.document, &name))
+    }
+
     /// Read one LTYPE record. The three special records are ours already.
     pub(super) fn linetype_record(&mut self, record: &Record) {
         let name = decode(record.text(2).unwrap_or(""));

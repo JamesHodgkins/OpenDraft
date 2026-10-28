@@ -166,7 +166,10 @@ fn read(document: &Document, object: &Object, prop: Prop) -> Reading {
         Prop::Color => Reading::Text(colour_text(&attrs.color)),
         Prop::Linetype => Reading::Text(match &attrs.linetype {
             Attr::ByLayer => "ByLayer".to_owned(),
-            Attr::Set(name) => name.clone(),
+            Attr::Set(id) => document
+                .linetypes()
+                .get(*id)
+                .map_or_else(String::new, |r| r.name.clone()),
         }),
         Prop::Lineweight => Reading::Text(match &attrs.lineweight {
             Attr::ByLayer => "ByLayer".to_owned(),

@@ -4,7 +4,7 @@
 
 use od_core::hatch::HatchFill;
 use od_core::mtext::MTextAttachment;
-use od_core::{Attr, Attributes, Color, Entity, LayoutId, Object, Point};
+use od_core::{Attr, Attributes, Color, Document, Entity, LayoutId, Object, Point};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -215,13 +215,19 @@ pub fn color_dto(color: &Attr<Color>) -> ColorDto {
     }
 }
 
-fn attributes_dto(a: &Attributes) -> AttributesDto {
+fn attributes_dto(document: &Document, a: &Attributes) -> AttributesDto {
     AttributesDto {
         layer_id: WireId(a.layer.0),
         color: color_dto(&a.color),
         linetype: match &a.linetype {
             Attr::ByLayer => LinetypeDto::ByLayer,
-            Attr::Set(name) => LinetypeDto::Named { name: name.clone() },
+            // The wire speaks names; ids are the drawing's own business.
+            Attr::Set(id) => LinetypeDto::Named {
+                name: document
+                    .linetypes()
+                    .get(*id)
+                    .map_or_else(|| "CONTINUOUS".to_owned(), |r| r.name.clone()),
+            },
         },
         lineweight: match a.lineweight {
             Attr::ByLayer => LineweightDto::ByLayer,
@@ -370,12 +376,12 @@ pub fn space_dto(layout: Option<LayoutId>) -> SpaceDto {
 }
 
 /// The wire form of an object.
-pub fn entity_dto(object: &Object) -> EntityDto {
+pub fn entity_dto(document: &Document, object: &Object) -> EntityDto {
     EntityDto {
         id: WireId(object.id.0),
         kind: object.entity.kind().wire_name().to_owned(),
         geometry: geometry_dto(&object.entity),
-        attributes: attributes_dto(&object.attrs),
+        attributes: attributes_dto(document, &object.attrs),
         space: space_dto(object.layout),
         bounds: object.bounds().into(),
     }
@@ -390,7 +396,7 @@ mod tests {
     fn first(entity: Entity) -> EntityDto {
         let mut doc = Document::default();
         let id = doc.add(entity);
-        entity_dto(doc.object(id).unwrap())
+        entity_dto(&doc, doc.object(id).unwrap())
     }
 
     #[test]

@@ -88,9 +88,13 @@ pub fn dashed(document: &Document, name: &str, scale: f64) -> Document {
     let mut out = Document::default();
     out.set_linetypes(document.linetypes().clone());
     out.set_linetype_scale(scale);
+    let linetype = document
+        .linetypes()
+        .named(name)
+        .map_or(od_core::LinetypeId::CONTINUOUS, |r| r.id);
     for object in document.objects() {
         let attrs = Attributes {
-            linetype: Attr::Set(name.to_owned()),
+            linetype: Attr::Set(linetype),
             ..Attributes::on_layer(LayerId::DEFAULT)
         };
         out.add_with(object.entity.clone(), attrs);

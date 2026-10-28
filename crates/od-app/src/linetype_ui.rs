@@ -21,23 +21,21 @@ pub fn choices(document: &Document) -> Vec<&Linetype> {
         .collect()
 }
 
-/// Where `name` is among `choices`, ignoring case.
-pub fn position(choices: &[&Linetype], name: &str) -> Option<usize> {
-    choices
-        .iter()
-        .position(|r| r.name.eq_ignore_ascii_case(name))
+/// Where the record `id` is among `choices`.
+pub fn position(choices: &[&Linetype], id: LinetypeId) -> Option<usize> {
+    choices.iter().position(|r| r.id == id)
 }
 
 /// A list of the table's linetypes, each with a picture, under `anchor`;
-/// returns the name picked. `current` is the name now in use.
+/// returns the record picked. `current` is the record now in use.
 pub fn pick(
     ui: &egui::Ui,
     theme: &od_ui::Theme,
     id: egui::Id,
     anchor: &egui::Response,
     document: &Document,
-    current: &str,
-) -> Option<String> {
+    current: LinetypeId,
+) -> Option<LinetypeId> {
     let choices = choices(document);
     let names: Vec<String> = choices.iter().map(|r| r.name.clone()).collect();
     let sample = |painter: &Painter, area: Rect, i: usize, color: Color32| {
@@ -54,7 +52,7 @@ pub fn pick(
         position(&choices, current),
         Some((SAMPLE_WIDTH, &sample)),
     )?;
-    Some(names[picked].clone())
+    choices.get(picked).map(|r| r.id)
 }
 
 /// Draw `elements` as a line across `area`, at a size that shows a few
@@ -92,14 +90,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_choices_leave_out_the_two_sources_and_names_match_loosely() {
+    fn the_choices_leave_out_the_two_sources_and_are_found_by_id() {
         let document = Document::default();
         let all = choices(&document);
         let names: Vec<&str> = all.iter().map(|r| r.name.as_str()).collect();
         assert_eq!(names[0], "CONTINUOUS");
         assert!(!names.contains(&"BYLAYER") && !names.contains(&"BYBLOCK"));
-        assert_eq!(position(&all, "dashed"), Some(1));
-        assert_eq!(position(&all, "dot"), position(&all, "DOT"));
-        assert_eq!(position(&all, "nothing"), None);
+        assert_eq!(position(&all, LinetypeId::DASHED), Some(1));
+        assert_eq!(position(&all, LinetypeId::BYLAYER), None);
+        assert_eq!(position(&all, LinetypeId(99)), None);
     }
 }

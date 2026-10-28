@@ -112,7 +112,11 @@ pub(super) fn entities(
 
     let limit = page_size(args.limit);
     let mut page = candidates.into_iter().filter(matching).skip(offset);
-    let entities: Vec<_> = page.by_ref().take(limit).map(entity_dto).collect();
+    let entities: Vec<_> = page
+        .by_ref()
+        .take(limit)
+        .map(|o| entity_dto(document, o))
+        .collect();
     let next_cursor = page
         .next()
         .map(|_| format!("{revision:x}.{digest:x}.{:x}", offset + entities.len()));

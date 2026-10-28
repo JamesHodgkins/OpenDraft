@@ -65,7 +65,7 @@ fn unnamed_objects_go_only_when_asked_for() {
 fn what_a_drawing_uses_is_kept() {
     let mut state = AppState::new();
     let mut attrs = Attributes::on_layer(LayerId::DEFAULT);
-    attrs.linetype = Attr::Set("DASHED".to_owned());
+    attrs.linetype = Attr::Set(od_core::LinetypeId::DASHED);
     state.perform(od_commands::AddCopies::new(
         "Add",
         vec![(line(0.0, 5.0), attrs)],
@@ -84,7 +84,7 @@ fn purging_chosen_items_leaves_the_rest() {
     run(
         &mut state,
         Purge {
-            only: Some(vec![Item::Linetype("DOT".to_owned())]),
+            only: Some(vec![Item::Linetype(od_core::LinetypeId::DOT)]),
             ..Purge::default()
         },
     );
@@ -97,9 +97,9 @@ fn purging_chosen_items_leaves_the_rest() {
 fn confirming_each_item_deletes_only_those_answered_yes() {
     let mut state = AppState::new();
     let only = Some(vec![
-        Item::Linetype("DASHED".to_owned()),
-        Item::Linetype("DOT".to_owned()),
-        Item::Linetype("HIDDEN".to_owned()),
+        Item::Linetype(od_core::LinetypeId::DASHED),
+        Item::Linetype(od_core::LinetypeId::DOT),
+        Item::Linetype(od_core::LinetypeId::HIDDEN),
     ]);
     run(
         &mut state,

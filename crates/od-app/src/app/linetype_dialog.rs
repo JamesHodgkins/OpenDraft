@@ -89,7 +89,7 @@ impl OpenDraftApp {
                     let deletable = draft
                         .selected
                         .and_then(|id| draft.table.get(id))
-                        .filter(|r| !r.id.is_special() && !document.linetype_in_use(&r.name))
+                        .filter(|r| !r.id.is_special() && !document.linetype_in_use(r.id))
                         .map(|r| r.id);
                     let button = ui.add_enabled_ui(deletable.is_some(), |ui| {
                         widgets::secondary_button(ui, theme, "Delete")

@@ -6,7 +6,7 @@ use eframe::egui::{self, RichText};
 use od_core::mleader::{
     LeaderAttachment, MLeaderContentType, MLeaderLineType, MLeaderStyle, TextAngle, MAX_POINTS,
 };
-use od_core::{Arrow, Attr, Color, Document, Lineweight};
+use od_core::{Arrow, Attr, Color, Document, LinetypeId, Lineweight};
 use od_ui::{widgets, Theme};
 
 use super::mleader_style_dialog::Draft;
@@ -80,11 +80,14 @@ fn colour_row(ui: &mut egui::Ui, theme: &Theme, id: &str, label: &str, value: &m
     });
 }
 
-fn linetype_row(ui: &mut egui::Ui, theme: &Theme, value: &mut Attr<String>, doc: &Document) {
+fn linetype_row(ui: &mut egui::Ui, theme: &Theme, value: &mut Attr<LinetypeId>, doc: &Document) {
     row(ui, theme, "Linetype:", |ui| {
         let shown = match value {
             Attr::ByLayer => "ByLayer".to_owned(),
-            Attr::Set(name) => name.clone(),
+            Attr::Set(id) => doc
+                .linetypes()
+                .get(*id)
+                .map_or_else(|| "?".to_owned(), |r| r.name.clone()),
         };
         widgets::dropdown(ui, theme, "ml_linetype", &shown, FIELD_WIDTH, |ui| {
             if ui
@@ -94,9 +97,9 @@ fn linetype_row(ui: &mut egui::Ui, theme: &Theme, value: &mut Attr<String>, doc:
                 *value = Attr::ByLayer;
             }
             for record in linetype_ui::choices(doc) {
-                let on = matches!(value, Attr::Set(n) if n.eq_ignore_ascii_case(&record.name));
+                let on = matches!(value, Attr::Set(id) if *id == record.id);
                 if ui.selectable_label(on, &record.name).clicked() {
-                    *value = Attr::Set(record.name.clone());
+                    *value = Attr::Set(record.id);
                 }
             }
         });
