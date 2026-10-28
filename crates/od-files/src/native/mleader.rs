@@ -193,8 +193,11 @@ mod tests {
     }
 
     #[test]
-    fn a_file_from_a_newer_version_is_still_refused() {
+    fn a_file_of_another_version_is_still_refused() {
         let newer = MINIMAL.replace("\"version\": 0", "\"version\": 1");
-        assert!(matches!(read(&newer), Err(crate::FileError::TooNew { .. })));
+        assert!(matches!(
+            read(&newer),
+            Err(crate::FileError::WrongVersion { .. })
+        ));
     }
 }

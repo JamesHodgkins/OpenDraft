@@ -22,15 +22,19 @@
 //!   - A new kind of entity DOES bump [`CURRENT_VERSION`]. A reader never skips
 //!     an object it does not understand, because saving the file again would
 //!     delete that object from the user's drawing. Instead it refuses the file
-//!     as saved by a newer version.
+//!     as another version (`FileError::WrongVersion`).
 //!   - Any other change that an older reader would misread bumps
 //!     [`CURRENT_VERSION`] too, and `read` gains a conversion for the version
 //!     it replaces.
 //!
-//! Version 0 files are never read by a stable build, and a development build
-//! reads only version 0: a file with a higher number is refused as newer.
+//! `read` judges the header (`format`, `version`, `saved_by`) before the body,
+//! so a file of another version is refused by name ("saved by OpenDraft 0.1.3
+//! in file format 3") instead of failing to parse. A development build reads
+//! only version 0. There is no conversion code until there is something to
+//! convert: the first stable bump adds the first conversion, in the same
+//! change, ahead of the body parse.
 //!
-//! A file is read in one pass, bounded by [`MAX_BYTES`], and checked with
+//! The file is bounded by [`MAX_BYTES`] and checked with
 //! [`Document::validate`] before it is handed over.
 
 use od_core::{Attr, Color, Document};
@@ -97,14 +101,19 @@ impl FileFormat for NativeFormat {
     }
 
     fn read(&self, bytes: &[u8]) -> Result<Loaded, FileError> {
-        let file: FileDto = match serde_json::from_slice(bytes) {
-            Ok(file) => file,
-            Err(e) => return Err(unreadable(bytes, &e)),
-        };
-        if file.format != MAGIC {
+        let header: Header =
+            serde_json::from_slice(bytes).map_err(|e| FileError::Unreadable(e.to_string()))?;
+        if header.format != MAGIC {
             return Err(FileError::Unreadable("not an OpenDraft drawing".into()));
         }
-        check_version(file.version)?;
+        if header.version != CURRENT_VERSION {
+            return Err(FileError::WrongVersion {
+                found: header.version,
+                supported: CURRENT_VERSION,
+                saved_by: header.saved_by,
+            });
+        }
+        let file: FileDto = serde_json::from_slice(bytes).map_err(|e| unreadable(&header, &e))?;
         let document = file.drawing.into_document()?;
         document
             .validate()
@@ -136,7 +145,8 @@ impl FileFormat for NativeFormat {
     }
 }
 
-/// Just the start of a file, read only to say why the whole of it would not.
+/// Just the start of a file, read first so the version is judged before the
+/// body is (an older or newer body would not parse as this one's).
 #[derive(Deserialize)]
 struct Header {
     format: String,
@@ -145,39 +155,21 @@ struct Header {
     saved_by: String,
 }
 
-fn check_version(found: u32) -> Result<(), FileError> {
-    if found > CURRENT_VERSION {
-        return Err(FileError::TooNew {
-            found,
-            supported: CURRENT_VERSION,
-        });
+/// The error for a body of the current version that did not parse. While the
+/// format is in development (version 0) that usually means another build
+/// wrote it.
+fn unreadable(header: &Header, parse: &serde_json::Error) -> FileError {
+    if header.version != 0 {
+        return FileError::Unreadable(parse.to_string());
     }
-    Ok(())
-}
-
-/// The error for bytes that did not read as a drawing. A file from another
-/// version has content this one cannot parse, so its header says what is
-/// wrong before the parse error does. (Only here, after a failure: a good
-/// file is read once.)
-fn unreadable(bytes: &[u8], parse: &serde_json::Error) -> FileError {
-    match serde_json::from_slice::<Header>(bytes) {
-        Ok(header) if header.format != MAGIC => {
-            FileError::Unreadable("not an OpenDraft drawing".into())
-        }
-        Ok(header) => match check_version(header.version) {
-            Err(error) => error,
-            Ok(()) if header.version == 0 => FileError::Unreadable(format!(
-                "{parse}; version 0 is the development format, which changes between builds, and this file was saved by {}",
-                if header.saved_by.is_empty() {
-                    "an unknown build"
-                } else {
-                    &header.saved_by
-                }
-            )),
-            Ok(()) => FileError::Unreadable(parse.to_string()),
-        },
-        Err(_) => FileError::Unreadable(parse.to_string()),
-    }
+    let by = if header.saved_by.is_empty() {
+        "an unknown build"
+    } else {
+        &header.saved_by
+    };
+    FileError::Unreadable(format!(
+        "{parse}; version 0 is the development format, which changes between builds, and this file was saved by {by}"
+    ))
 }
 
 #[derive(Serialize, Deserialize)]
@@ -744,31 +736,40 @@ mod tests {
     }
 
     #[test]
-    fn a_newer_file_is_reported_as_newer_even_with_unknown_content() {
+    fn a_file_of_another_version_is_refused_whatever_its_content() {
         let text = r#"{ "format": "opendraft-drawing", "version": 99,
                         "drawing": { "something": "new" } }"#;
         match read(text) {
-            Err(FileError::TooNew { found, supported }) => {
-                assert_eq!((found, supported), (99, CURRENT_VERSION));
-            }
-            other => panic!("expected TooNew, got {other:?}"),
+            Err(FileError::WrongVersion {
+                found, supported, ..
+            }) => assert_eq!((found, supported), (99, CURRENT_VERSION)),
+            other => panic!("expected WrongVersion, got {other:?}"),
         }
     }
 
     #[test]
-    fn the_first_stable_version_is_refused_as_newer_by_a_development_build() {
+    fn a_pre_reset_file_is_refused_and_names_the_build_that_saved_it() {
+        // Declaring the format stable means setting CURRENT_VERSION to 1 as a
+        // release step: follow "Declaring .odx stable" in CONTRIBUTING.md,
+        // then change this assertion.
         assert_eq!(
             CURRENT_VERSION, 0,
             "development format: see the module notes"
         );
-        let newer = MINIMAL.replace("\"version\": 0", "\"version\": 1");
+        let old = MINIMAL.replace(
+            "\"version\": 0",
+            "\"version\": 3, \"saved_by\": \"OpenDraft 0.1.3\"",
+        );
+        let error = read(&old).unwrap_err();
         assert!(matches!(
-            read(&newer),
-            Err(FileError::TooNew {
-                found: 1,
-                supported: 0
-            })
+            error,
+            FileError::WrongVersion {
+                found: 3,
+                supported: 0,
+                ..
+            }
         ));
+        assert!(error.to_string().contains("OpenDraft 0.1.3"), "{error}");
     }
 
     #[test]

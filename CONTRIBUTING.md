@@ -99,6 +99,17 @@ Open a pull request against `main` of the original repository. Describe what you
 
 A maintainer will review your pull request and may ask for changes. Push further commits to the same branch to update it. Once approved and CI is green, it will be merged into `main`.
 
+### Declaring `.odx` stable
+
+The `.odx` format stays at version 0 (development) until it is declared stable. Setting `CURRENT_VERSION` to 1 is one deliberate pull request, never a side effect of a feature, and it has to include:
+
+1. A schema review: every field is required, deliberately optional, or removed (no untyped blobs, no defaults kept only for old development files), and references use ids, not names.
+2. A committed `.odx` fixture saved by the build that declares it, which a test must read back.
+3. `CURRENT_VERSION` set to 1, the assertion in `a_pre_reset_file_is_refused_and_names_the_build_that_saved_it` updated, and the "Versioning" notes in `native.rs`, `ARCHITECTURE.md` and `CLAUDE.md` changed from development to stable.
+4. A "What's new" note and a line in the readme saying that drawings now keep opening.
+
+From then on a new entity kind or any change an older reader would misread bumps the version, with a conversion in `read` and a fixture of the old version. Do not write a conversion before there is a version to convert from.
+
 ## Code of Conduct
 
 All contributors are expected to be respectful and considerate. See [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) for details.
