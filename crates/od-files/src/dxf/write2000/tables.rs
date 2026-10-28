@@ -154,7 +154,10 @@ pub(super) fn write_tables(
     for (i, _) in super::sheets(document).iter().enumerate() {
         block_record(out, &block_name(i), ids.records[i], ids.layouts[i]);
     }
-    for (name, record_handle) in ids.dim_blocks.values() {
+    // In handle order, so the same drawing always writes the same file.
+    let mut dim_blocks: Vec<_> = ids.dim_blocks.values().collect();
+    dim_blocks.sort_by_key(|(_, handle)| *handle);
+    for (name, record_handle) in dim_blocks {
         block_record(out, name, *record_handle, 0);
     }
     out.pair(0, "ENDTAB");

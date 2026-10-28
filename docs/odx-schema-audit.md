@@ -70,6 +70,10 @@ Each step is a schema change in place at version 0, with the tests updated and n
 
 Done: arrowheads, length and angle formats (dimension styles, units), the second arrowhead (an `Option` instead of -1), the fixed extension length (an `Option` instead of 0), multileader arrowheads, MTEXT attachment point and flow direction, and line spacing style are named (`native/names.rs`). Kept as AutoCAD's own numbers on purpose: the insertion units (`INSUNITS`, a long table). The dimension style's `text_above`, `text_just`, `fit`, `text_move`, `arc_symbol` and `tol_mode` are named in the file too (`TextPlacementDto` and the others in `names.rs`) while `DimStyle` keeps its `u8` fields, so `od-core` and the app are unchanged; a number outside AutoCAD's list is refused on writing. The DXF-only leftovers keep their place but say where they come from in the file: `dxf_group_441`, `dxf_fill_bits`, `dxf_font` and `dxf_typeface`. They exist so a DXF to `.odx` to DXF trip loses nothing.
 
+## References by id (section 4): done
+
+Layers, objects, block objects, the new-object default and multileader styles refer to linetypes by id in memory and in the file. The reader refuses an id the file's table lacks, a name, and `BYLAYER`/`BYBLOCK`. See `ARCHITECTURE.md`, "Linetypes".
+
 ## Required fields (section 5): done
 
 `units`, the layout, viewport and block counters, the layer flags (`on`, `frozen`, `locked`), the viewport `on`/`locked`, and every object's and block object's colour, linetype and lineweight are required, and a current layer that does not exist is refused instead of replaced by layer 0. A counter below the largest id in use is harmless: `push`, `push_block` and the `reserve_*` calls only ever raise it. Kept optional on purpose: `layouts` and `blocks` (an empty list is the definition of none), per-object linetype scale and generation, descriptions, `big_font`, `fixed_height` and the other per-entity omit-when-false flags.

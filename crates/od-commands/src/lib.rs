@@ -39,7 +39,7 @@ pub use layer_action::{AddLayer, ModifyLayers, RemoveLayer, SetCurrentLayer, Set
 pub use layout_action::SetLayouts;
 pub use linetype_action::SetLinetypes;
 pub use mleader_style_action::SetMLeaderStyles;
-pub use paste_action::PasteDrawing;
+pub use paste_action::{PasteDrawing, WarningSink};
 pub use point_style_action::SetPointStyle;
 pub use prompt::{
     Answer, Cancelled, DynamicDimensions, Ghost, GhostStyle, Hint, Keyword, Marker, NumberOptions,
