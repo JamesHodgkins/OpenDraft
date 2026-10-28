@@ -146,7 +146,7 @@ pub(super) fn write_tables(
         out,
         h,
         "BLOCK_RECORD",
-        document.layouts().len() + 1 + ids.dim_blocks.len(),
+        super::sheets(document).len() + 1 + ids.dim_blocks.len(),
     );
     let block_record = |out: &mut Out, name: &str, handle: u32, layout: u32| {
         record(out, "BLOCK_RECORD", owner, "AcDbBlockTableRecord", handle);
@@ -154,7 +154,7 @@ pub(super) fn write_tables(
         out.pair(340, hex(layout));
     };
     block_record(out, "*Model_Space", ids.model_record, ids.model_layout);
-    for (i, _) in document.layouts().iter().enumerate() {
+    for (i, _) in super::sheets(document).iter().enumerate() {
         block_record(out, &block_name(i), ids.records[i], ids.layouts[i]);
     }
     for (name, record_handle) in ids.dim_blocks.values() {

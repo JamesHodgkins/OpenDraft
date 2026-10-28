@@ -388,6 +388,32 @@ mod tests {
             .collect()
     }
 
+    /// A 2007 file's class records all say how many objects they have.
+    #[test]
+    fn every_class_of_a_2007_file_has_an_instance_count() {
+        let doc = drawing();
+        let made = doc
+            .objects()
+            .iter()
+            .filter(|o| matches!(o.entity, Entity::MLeader(_)))
+            .count();
+        let pairs = groups(&write(&doc).unwrap().bytes);
+        let mut classes = 0;
+        for (i, (code, value)) in pairs.iter().enumerate() {
+            if (*code, value.as_str()) != (0, "CLASS") {
+                continue;
+            }
+            classes += 1;
+            let record: Vec<_> = pairs[i + 1..].iter().take_while(|(c, _)| *c != 0).collect();
+            let count = record.iter().find(|(c, _)| *c == 91);
+            assert!(count.is_some(), "class {record:?} has no group 91");
+            if record.iter().any(|(_, v)| v == "MULTILEADER") {
+                assert_eq!(count.unwrap().1, made.to_string());
+            }
+        }
+        assert_eq!(classes, 5);
+    }
+
     #[test]
     fn what_is_written_reads_back_as_the_same_multileaders_and_styles() {
         let doc = drawing();
