@@ -22,6 +22,7 @@ use od_api::{ops, ApiError, ErrorCode, Request, Response, Scope, API_VERSION};
 use od_commands::Registry;
 use serde_json::Value;
 
+use super::grants::{Denial, Grant};
 use super::{dispatch, Caller};
 use crate::state::AppState;
 
@@ -40,21 +41,10 @@ pub(super) struct Job {
     pub(super) abandoned: Arc<AtomicBool>,
 }
 
-/// What one connection may do, until it closes or the user revokes it.
-#[derive(Clone, Debug)]
-pub struct Grant {
-    pub client_name: String,
-    pub scopes: Vec<Scope>,
-    /// The in-app assistant, not a program outside: it has no socket, and the
-    /// Settings page for outside connections leaves it out (its permissions
-    /// are chosen where it is used).
-    pub in_process: bool,
-}
-
-struct Inner {
+pub(super) struct Inner {
     instance_id: String,
     jobs: SyncSender<Job>,
-    grants: Mutex<HashMap<u64, Grant>>,
+    pub(super) grants: Mutex<HashMap<u64, Grant>>,
     next_grant: AtomicU64,
     /// Called whenever a request is queued, so the UI looks at it soon.
     waker: Box<dyn Fn() + Send + Sync>,
@@ -64,7 +54,7 @@ struct Inner {
 /// the grant back. It cannot run anything or change a grant's scopes.
 #[derive(Clone)]
 pub struct Link {
-    inner: Arc<Inner>,
+    pub(super) inner: Arc<Inner>,
 }
 
 impl Link {
@@ -79,15 +69,12 @@ impl Link {
         in_process: bool,
     ) -> Option<(u64, Vec<Scope>)> {
         let id = self.inner.next_grant.fetch_add(1, Ordering::AcqRel);
-        let scopes = vec![Scope::DrawingRead];
-        self.inner.grants.lock().ok()?.insert(
-            id,
-            Grant {
-                client_name: client_name.chars().take(CLIENT_NAME_MAX).collect(),
-                scopes: scopes.clone(),
-                in_process,
-            },
+        let grant = Grant::new(
+            client_name.chars().take(CLIENT_NAME_MAX).collect(),
+            in_process,
         );
+        let scopes = grant.scopes.clone();
+        self.inner.grants.lock().ok()?.insert(id, grant);
         Some((id, scopes))
     }
 
@@ -116,19 +103,27 @@ impl Link {
                 "The scope does not match the operation.",
             );
         }
-        let granted = self
-            .inner
-            .grants
-            .lock()
-            .map(|g| {
-                g.get(&grant_id)
-                    .is_some_and(|g| g.scopes.contains(&required))
-            })
-            .unwrap_or(false);
-        if !granted {
-            return fail(
-                ErrorCode::ScopeDenied,
-                "This connection may only read. Ask the user to tick Allow changes for it in OpenDraft (Settings > Automation).",
+        let denial = match self.inner.grants.lock() {
+            Ok(grants) => grants
+                .get(&grant_id)
+                .map_or(Some(Denial::Missing), |grant| {
+                    grant
+                        .permit(
+                            required,
+                            &request.operation,
+                            &request.arguments,
+                            Instant::now(),
+                        )
+                        .err()
+                }),
+            Err(_) => Some(Denial::Missing),
+        };
+        if let Some(denial) = denial {
+            return Response::failure(
+                &id,
+                denial.error(
+                    "This connection may only read. Ask the user to tick Allow changes for it in OpenDraft (Settings > Automation).",
+                ),
             );
         }
         let wait = Duration::from_millis(request.deadline_ms.clamp(1, REQUEST_DEADLINE_MS));
@@ -219,7 +214,7 @@ impl Drop for InProcess {
 }
 
 pub struct AutomationCore {
-    link: Link,
+    pub(super) link: Link,
     jobs: Receiver<Job>,
 }
 
@@ -337,7 +332,7 @@ impl AutomationCore {
             .map(|grants| {
                 grants
                     .iter()
-                    .filter(|(_, grant)| grant.scopes.contains(&Scope::UiSelection))
+                    .filter(|(_, grant)| grant.holds(Scope::UiSelection))
                     .map(|(id, _)| *id)
                     .collect()
             })
@@ -366,27 +361,43 @@ impl AutomationCore {
                 ApiError::new(ErrorCode::InvalidArguments, "Unknown operation."),
             );
         };
-        let grant = self
-            .link
-            .inner
-            .grants
-            .lock()
-            .ok()
-            .and_then(|g| g.get(&job.grant_id).cloned())
-            .filter(|grant| grant.scopes.contains(&required));
-        let Some(grant) = grant else {
-            return Response::failure(
-                id,
-                ApiError::new(
-                    ErrorCode::ScopeDenied,
-                    "This connection no longer has that access. Ask the user to tick Allow changes for it in OpenDraft (Settings > Automation).",
-                ),
-            );
+        // Allowed, and what allowed it used up, in one step under the lock:
+        // a one-shot approval cannot be used by two requests.
+        let admitted = match self.link.inner.grants.lock() {
+            Ok(mut grants) => match grants.get_mut(&job.grant_id) {
+                Some(grant) => grant
+                    .permit(
+                        required,
+                        &job.request.operation,
+                        &job.request.arguments,
+                        Instant::now(),
+                    )
+                    .map(|way| {
+                        grant.spend(way, required);
+                        (
+                            grant.client_name.clone(),
+                            grant.scopes.contains(&Scope::HistoryAny),
+                        )
+                    }),
+                None => Err(Denial::Missing),
+            },
+            Err(_) => Err(Denial::Missing),
+        };
+        let (client, history_any) = match admitted {
+            Ok(allowed) => allowed,
+            Err(denial) => {
+                return Response::failure(
+                    id,
+                    denial.error(
+                        "This connection no longer has that access. Ask the user to tick Allow changes for it in OpenDraft (Settings > Automation).",
+                    ),
+                );
+            }
         };
         let caller = Caller {
             grant_id: job.grant_id,
-            client: &grant.client_name,
-            history_any: grant.scopes.contains(&Scope::HistoryAny),
+            client: &client,
+            history_any,
         };
         let outcome = catch_unwind(AssertUnwindSafe(|| {
             dispatch(

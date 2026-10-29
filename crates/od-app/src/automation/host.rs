@@ -14,7 +14,8 @@ use od_api::instance::{self, Descriptor};
 use od_api::API_VERSION;
 use od_commands::Registry;
 
-use super::core::{AutomationCore, Grant, Link};
+use super::core::{AutomationCore, Link};
+use super::grants::Grant;
 use crate::state::AppState;
 
 /// Most connections served at once; each has a thread.
