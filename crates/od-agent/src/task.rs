@@ -13,7 +13,7 @@ use crate::budget::{Budgets, Meter};
 use crate::host::Host;
 use crate::provider::{CancelToken, Provider};
 use crate::state::{Failure, TaskState};
-use crate::types::{Message, ModelRequest, Part, StopReason};
+use crate::types::{Message, ModelRequest, Part, Role, StopReason};
 use crate::workflow::Workflow;
 
 /// Tries at a model call that fails in a way worth trying again.
@@ -39,6 +39,9 @@ pub struct TaskConfig {
     pub task_id: String,
     pub budgets: Budgets,
     pub retry: Retry,
+    /// What was said before in this chat, from an earlier report's
+    /// `messages`; the prompt continues it. Budgets are for this task alone.
+    pub history: Vec<Message>,
 }
 
 impl TaskConfig {
@@ -47,6 +50,7 @@ impl TaskConfig {
             task_id: task_id.to_owned(),
             budgets: Budgets::default(),
             retry: Retry::default(),
+            history: Vec::new(),
         }
     }
 }
@@ -103,10 +107,17 @@ pub fn run_task(
     host: &dyn Host,
     workflow: &Workflow,
     prompt: &str,
-    config: TaskConfig,
+    mut config: TaskConfig,
     cancel: &CancelToken,
     on_event: &mut dyn FnMut(Event),
 ) -> Report {
+    let mut messages = std::mem::take(&mut config.history);
+    // Two user turns in a row (the last task ended before the model spoke)
+    // are one turn to a provider.
+    match messages.last_mut() {
+        Some(last) if last.role == Role::User => last.parts.push(Part::Text(prompt.to_owned())),
+        _ => messages.push(Message::user(prompt)),
+    }
     let mut task = Task {
         provider,
         host,
@@ -114,7 +125,7 @@ pub fn run_task(
         cancel,
         meter: Meter::new(config.budgets.clone()),
         config,
-        messages: vec![Message::user(prompt)],
+        messages,
         state: TaskState::Idle,
         on_event,
         writes_allowed: !workflow.plan_first,

@@ -350,3 +350,48 @@ fn a_call_is_only_what_the_model_chose() {
         ("abc123XYZ", "opendraft_drawing_summary")
     );
 }
+
+#[test]
+fn a_chat_continues_from_what_was_said_before() {
+    let host = FakeHost::new();
+    let first = go(vec![Step::say("Hello.")], &host, &qa_review());
+    let mut config = quick();
+    config.history = first.report.messages.clone();
+    let second = run(
+        vec![Step::say("Again.")],
+        &host,
+        &qa_review(),
+        config,
+        &crate::CancelToken::new(),
+    );
+    let sent = &second.provider.requests()[0].messages;
+    assert_eq!(
+        sent.len(),
+        3,
+        "the first prompt, the first answer, the new prompt"
+    );
+    assert_eq!(sent[1].text(), "Hello.");
+    assert_eq!(sent[2].text(), "check this drawing");
+    assert_eq!(
+        second.report.messages.len(),
+        4,
+        "the new report holds the whole chat"
+    );
+}
+
+#[test]
+fn two_user_turns_in_a_row_are_sent_as_one() {
+    let host = FakeHost::new();
+    let mut config = quick();
+    config.history = vec![crate::Message::user("first, unanswered")];
+    let run = run(
+        vec![Step::say("ok")],
+        &host,
+        &qa_review(),
+        config,
+        &crate::CancelToken::new(),
+    );
+    let sent = &run.provider.requests()[0].messages;
+    assert_eq!(sent.len(), 1);
+    assert_eq!(sent[0].text(), "first, unanswered\ncheck this drawing");
+}
