@@ -6,8 +6,13 @@
 mod equal;
 mod merge;
 mod polyline;
+mod prepare;
+#[cfg(test)]
+mod prepare_tests;
 #[cfg(test)]
 mod tests;
+
+pub use prepare::{prepare, Prepared};
 
 use crate::Entity;
 
@@ -115,11 +120,22 @@ pub const MAX_COMPARISONS: u64 = 25_000_000;
 /// Tidy `items`. Fails, changing nothing, on a bad tolerance or when the
 /// selection is too big to compare.
 pub fn overkill(items: &[Candidate], settings: &Settings) -> Result<Outcome, OverkillError> {
+    overkill_capped(items, settings, MAX_OBJECTS, MAX_COMPARISONS)
+}
+
+/// [`overkill`] with its own limits, for a caller that must stay quick (a
+/// look that runs while the user waits) and so compares less.
+pub fn overkill_capped(
+    items: &[Candidate],
+    settings: &Settings,
+    max_objects: usize,
+    max_comparisons: u64,
+) -> Result<Outcome, OverkillError> {
     settings.validate()?;
-    if items.len() > MAX_OBJECTS {
+    if items.len() > max_objects {
         return Err(OverkillError::TooManyObjects {
             count: items.len(),
-            limit: MAX_OBJECTS,
+            limit: max_objects,
         });
     }
     let tol = settings.tolerance;
@@ -135,9 +151,9 @@ pub fn overkill(items: &[Candidate], settings: &Settings) -> Result<Outcome, Ove
     let mut work = 0u64;
     let mut count = |n: u64| {
         work += n;
-        if work > MAX_COMPARISONS {
+        if work > max_comparisons {
             Err(OverkillError::TooMuchWork {
-                limit: MAX_COMPARISONS,
+                limit: max_comparisons,
             })
         } else {
             Ok(())

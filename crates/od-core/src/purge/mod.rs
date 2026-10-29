@@ -7,7 +7,7 @@ mod scan;
 #[cfg(test)]
 mod tests;
 
-pub use scan::{blocked, purgeable, unnamed, unused_blocks, users_of, Unnamed};
+pub use scan::{blocked, purgeable, unnamed, unnamed_with, unused_blocks, users_of, Unnamed};
 
 use crate::linetype::LinetypeId;
 use crate::text_style::TextStyleId;

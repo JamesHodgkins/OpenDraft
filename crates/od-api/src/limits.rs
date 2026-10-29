@@ -25,6 +25,17 @@ pub const SELECTION_PROMPT_MAX: usize = 200;
 /// How long a selection request waits for the user, by default and at most.
 pub const SELECTION_WAIT_DEFAULT_S: u32 = 300;
 pub const SELECTION_WAIT_MAX_S: u32 = 900;
+/// The most objects one audit compares for duplicates and overlaps, and the
+/// most pairs it tests: few enough to answer within a frame or two.
+pub const AUDIT_OBJECTS_MAX: usize = 20_000;
+pub const AUDIT_COMPARISONS_MAX: u64 = 1_000_000;
+/// Ids, names and texts listed by default and at most.
+pub const LISTED_DEFAULT: usize = 30;
+pub const LISTED_MAX: usize = 200;
+/// Most layer names an audit is given to check against.
+pub const ALLOWED_LAYERS_MAX: usize = 100;
+/// Cells along each side of the summary's density grid.
+pub const DENSITY_CELLS: usize = 8;
 /// Longest a caller may be asked to wait inside one poll of an operation.
 pub const OPERATION_WAIT_MAX_S: u32 = 30;
 pub const REQUEST_DEADLINE_MS: u64 = 30_000;

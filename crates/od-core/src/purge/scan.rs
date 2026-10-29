@@ -267,9 +267,15 @@ pub struct Unnamed {
 }
 
 pub fn unnamed(doc: &Document) -> Unnamed {
+    unnamed_with(doc, false)
+}
+
+/// [`unnamed`], and with `include_locked` also those on locked layers: a
+/// look at the drawing (an audit) reports them though PURGE leaves them.
+pub fn unnamed_with(doc: &Document, include_locked: bool) -> Unnamed {
     let mut found = Unnamed::default();
     for object in doc.objects() {
-        if doc.layer(object.attrs.layer).is_some_and(|l| l.locked) {
+        if !include_locked && doc.layer(object.attrs.layer).is_some_and(|l| l.locked) {
             continue;
         }
         match &object.entity {

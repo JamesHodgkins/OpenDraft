@@ -77,6 +77,8 @@ If more than one OpenDraft is running, add `"args": ["--instance", "<id>"]` with
 | `opendraft_layers_list`, `_selection_get` | layers; what is selected | nothing |
 | `opendraft_geometry_measure` | exact length, area, centre, radius, end points | nothing |
 | `opendraft_geometry_intersections` | where entities cross | nothing |
+| `opendraft_drawing_summary` | an overview without reading every entity: counts by kind and layer, block names, the text on the drawing, the box round it all and a grid of where the objects are | nothing |
+| `opendraft_drawing_audit` | housekeeping checks that change nothing: duplicates, overlaps, zero-length objects, empty text, unused blocks, layers and styles, and layers that are not on a standard you give | nothing |
 | `opendraft_view_render` | an SVG picture of a window, some entities or a layout sheet | nothing |
 | `opendraft_commands_list` | which commands automation may run or start | nothing |
 | `opendraft_events_poll` | what changed in the app since the last look (drawings, commands, the selection) | nothing |
@@ -91,6 +93,8 @@ If more than one OpenDraft is running, add `"args": ["--instance", "<id>"]` with
 | `opendraft_files_open`, `_files_save`, `_files_save_as`, `_files_export` | open, save, DXF or PDF/SVG export | Allow files |
 
 Splines, block references, dimensions and hatches can be read and measured but not written yet.
+
+**Looking without changing anything.** `opendraft_drawing_audit` finds things a person would tidy up with OVERKILL and PURGE, but only reports them: it never deletes or changes anything, and it also sees objects on locked layers. It can look at one layer, one space or one window at a time, which a very large drawing needs (more than 20,000 objects at once are not compared for duplicates and overlaps; the answer says so and how to narrow it). To check layer names, the assistant passes the names your standard allows (for example `A-WALL-*`); layer 0 and Defpoints always pass. Unused linetypes are not reported, because a new drawing carries the standard set. Names and text in the results come from the drawing and are passed to the assistant as data.
 
 ## Staying in control
 
@@ -155,7 +159,7 @@ Tool names are part of the interface and will not be repurposed. New optional fi
 
 ## Limits
 
-Per request: 1,000 operations in a batch, 1,000 entities per page, 200 entities for intersections, 5,000 entities and 500,000 points in a picture, 6 MiB for a picture, 64 KiB per text, 8 operations in flight per connection; a request to select takes a prompt of up to 200 characters and up to 1,000 objects, and one wait is at most 30 seconds. Reading a 100-entity page of a 10,000-object drawing takes about a millisecond; the connection program idles at about 7 MiB.
+Per request: 1,000 operations in a batch, 1,000 entities per page, 200 entities for intersections, 5,000 entities and 500,000 points in a picture, 6 MiB for a picture, 64 KiB per text, 8 operations in flight per connection; an audit compares at most 20,000 objects (and a million pairs) for duplicates and overlaps, and lists 30 findings by default and 200 at most; a request to select takes a prompt of up to 200 characters and up to 1,000 objects, and one wait is at most 30 seconds. Reading a 100-entity page of a 10,000-object drawing takes about a millisecond; the connection program idles at about 7 MiB.
 
 ## Not available yet
 

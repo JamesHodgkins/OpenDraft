@@ -3,7 +3,7 @@ use crate::overkill_line::overkill_prompt;
 use crate::state::AppState;
 use od_commands::{Reply, Wants};
 use od_core::dimension::{Assoc, AssocPoint};
-use od_core::{Dimension, Point};
+use od_core::{Dimension, Entity, Point};
 
 fn line(x1: f64, x2: f64) -> Entity {
     Entity::Line {

@@ -7,11 +7,12 @@
 
 use od_api::entity::entity_dto;
 use od_api::limits::page_size;
-use od_api::ops::{BoundsArg, QueryArgs, QueryResult, SpaceFilter};
+use od_api::ops::{QueryArgs, QueryResult};
 use od_api::{ApiError, ErrorCode, WireId};
-use od_core::{Bounds, EntityKind, LayerId, LayoutId, Object, Point};
+use od_core::{EntityKind, LayerId, Object};
 
 use super::resolve;
+use super::scope::{objects_in, space_of};
 use crate::state::AppState;
 
 /// FNV-1a over the filter fields, so a cursor can tell its own query.
@@ -41,20 +42,6 @@ fn decode_cursor(cursor: &str) -> Option<(u64, u64, usize)> {
     parts.next().is_none().then_some((revision, digest, offset))
 }
 
-fn finite_bounds(b: &BoundsArg) -> Result<Bounds, ApiError> {
-    let all = [b.min_x, b.min_y, b.max_x, b.max_y];
-    if all.iter().any(|v| !v.is_finite()) || b.min_x > b.max_x || b.min_y > b.max_y {
-        return Err(ApiError::new(
-            ErrorCode::InvalidArguments,
-            "bounds must be finite with min not above max.",
-        ));
-    }
-    Ok(Bounds {
-        min: Point::new(b.min_x, b.min_y),
-        max: Point::new(b.max_x, b.max_y),
-    })
-}
-
 pub(super) fn entities(
     state: &AppState,
     instance: &str,
@@ -77,19 +64,7 @@ pub(super) fn entities(
         },
     };
 
-    let space: Option<LayoutId> = match &args.space {
-        None | Some(SpaceFilter::Model) => None,
-        Some(SpaceFilter::Paper { layout_id }) => {
-            let id = LayoutId(layout_id.0);
-            if document.layout(id).is_none() {
-                return Err(
-                    ApiError::new(ErrorCode::InvalidReference, "No such layout.")
-                        .detail("layout_id", layout_id),
-                );
-            }
-            Some(id)
-        }
-    };
+    let space = space_of(document, args.space.as_ref())?;
     let layer = args.layer_id.map(|id| LayerId(id.0));
     // A word that names no kind matches nothing, as before.
     let kinds: Option<Vec<EntityKind>> = args
@@ -97,14 +72,7 @@ pub(super) fn entities(
         .as_ref()
         .map(|k| k.iter().filter_map(|s| EntityKind::from_wire(s)).collect());
 
-    let candidates: Vec<&Object> = match &args.bounds {
-        Some(b) => document.objects_intersecting(space, finite_bounds(b)?),
-        None => document
-            .objects()
-            .iter()
-            .filter(|o| o.layout == space)
-            .collect(),
-    };
+    let candidates: Vec<&Object> = objects_in(document, space, args.bounds.as_ref())?;
     let matching = |o: &&Object| {
         layer.is_none_or(|l| o.attrs.layer == l)
             && kinds.as_ref().is_none_or(|k| k.contains(&o.entity.kind()))

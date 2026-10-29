@@ -2,6 +2,7 @@
 //! caller (the MCP server, later plugins) exchanges with the running app.
 //! It knows nothing of egui, MCP or the native `.odx` schema.
 
+pub mod audit_ops;
 pub mod command_ops;
 pub mod convert;
 pub mod entity;

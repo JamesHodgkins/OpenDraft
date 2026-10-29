@@ -67,6 +67,9 @@ fn unnamed_objects_on_a_locked_layer_stay() {
     layer.locked = true;
     doc.replace_layer(layer);
     assert!(unnamed(&doc).zero_length.is_empty());
+    // A look at the drawing still reports it.
+    assert_eq!(unnamed_with(&doc, true).zero_length.len(), 1);
+    assert!(unnamed_with(&doc, false).zero_length.is_empty());
 }
 
 #[test]

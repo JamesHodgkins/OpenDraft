@@ -3,6 +3,9 @@
 //! plain functions over `AppState`; the transport (`ipc`, `host`) only moves
 //! framed JSON to and from them.
 
+mod audit;
+#[cfg(test)]
+mod audit_tests;
 #[cfg(test)]
 mod budget_tests;
 mod command_ops;
@@ -37,6 +40,7 @@ mod read;
 mod render;
 #[cfg(test)]
 mod run_tests;
+mod scope;
 #[cfg(test)]
 mod selection_guard_tests;
 #[cfg(test)]
@@ -46,6 +50,9 @@ mod selection_request;
 mod selection_tests;
 mod settings_page;
 mod setup;
+mod summary;
+#[cfg(test)]
+mod summary_tests;
 #[cfg(test)]
 mod tests;
 mod ui_mutate;
