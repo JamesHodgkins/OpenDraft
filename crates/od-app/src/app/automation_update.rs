@@ -13,6 +13,8 @@ pub(super) struct Automation {
     pub core: Arc<crate::automation::AutomationCore>,
     pub socket: Option<crate::automation::SocketServer>,
     repaint: Arc<OnceLock<egui::Context>>,
+    /// The chat panel's conversations; it shares the core.
+    pub assistant: crate::assistant::Assistant,
 }
 
 impl Automation {
@@ -29,10 +31,22 @@ impl Automation {
                 }
             }),
         );
+        // The key may come from the environment; it is otherwise typed into
+        // the panel and kept for the session only.
+        let key = std::env::var("MISTRAL_API_KEY").ok();
+        let wake: crate::assistant::Waker = Arc::new({
+            let repaint = Arc::clone(&repaint);
+            move || {
+                if let Some(ctx) = repaint.get() {
+                    ctx.request_repaint();
+                }
+            }
+        });
         Self {
             core: Arc::new(core),
             socket: None,
             repaint,
+            assistant: crate::assistant::Assistant::new(crate::assistant::mistral(), wake, key),
         }
     }
 }
@@ -82,6 +96,7 @@ impl OpenDraftApp {
             }
             _ => {}
         }
+        self.automation.assistant.poll();
         // Nothing to answer and nobody to answer it: leave the frame alone.
         if self.automation.socket.is_some() || !self.automation.core.grants().is_empty() {
             self.automation.core.poll(&mut self.state, &self.registry);

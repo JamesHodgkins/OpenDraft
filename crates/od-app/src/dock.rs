@@ -3,8 +3,11 @@
 
 use eframe::egui;
 use egui_dock::{DockState, NodeIndex};
+use od_commands::Command;
 use od_ui::Theme;
 use serde::{Deserialize, Serialize};
+
+use crate::state::AppState;
 
 // Bumped when a new default panel is added, so saved layouts pick it up.
 const LAYOUT_KEY: &str = "dock_layout_v4";
@@ -16,6 +19,7 @@ pub enum PanelTab {
     Properties,
     Layers,
     CommandLine,
+    Assistant,
 }
 
 impl PanelTab {
@@ -25,6 +29,7 @@ impl PanelTab {
             PanelTab::Properties => "Properties",
             PanelTab::Layers => "Layers",
             PanelTab::CommandLine => "Command Line",
+            PanelTab::Assistant => "Assistant",
         }
     }
 
@@ -126,7 +131,7 @@ pub fn apply(dock: &mut DockState<PanelTab>, request: LayoutRequest) {
 
 /// Put a hidden panel back where the default layout keeps it: Properties
 /// down the left; the command line and Layers sharing the right-hand
-/// column, the command line on top.
+/// column, the command line on top; the assistant beside Layers.
 fn restore(dock: &mut DockState<PanelTab>, panel: PanelTab) {
     let partner = match panel {
         PanelTab::CommandLine => Some((PanelTab::Layers, egui_dock::Split::Above)),
@@ -142,6 +147,14 @@ fn restore(dock: &mut DockState<PanelTab>, panel: PanelTab) {
                 SIDE_SPLIT,
                 egui_dock::Node::leaf(panel),
             );
+            return;
+        }
+    }
+    // The assistant is a tab beside Layers, the tallest place in the column.
+    if panel == PanelTab::Assistant {
+        if let Some((surface, node, _)) = dock.find_tab(&PanelTab::Layers) {
+            dock.set_focused_node_and_surface((surface, node));
+            dock.push_to_focused_leaf(panel);
             return;
         }
     }
@@ -218,6 +231,43 @@ pub fn style(theme: &Theme, egui_style: &egui::Style) -> egui_dock::Style {
     tab.hovered.bg_fill = c.hover;
     tab.hovered.text_color = c.text;
     style
+}
+
+/// The panel a command shows or hides, for its button to look pressed.
+pub fn panel_of(command: &str) -> Option<PanelTab> {
+    match command {
+        "view.panel_properties" => Some(PanelTab::Properties),
+        "view.panel_layers" | "layer.properties" => Some(PanelTab::Layers),
+        "view.command_line" => Some(PanelTab::CommandLine),
+        "view.assistant" => Some(PanelTab::Assistant),
+        _ => None,
+    }
+}
+
+/// The commands that show, hide and reset the panels.
+pub fn commands() -> Vec<Command<AppState>> {
+    let toggle =
+        |id, label, run: fn(&mut AppState)| Command::new(id, label, run).transparent().global();
+    vec![
+        toggle("view.panel_properties", "Properties Panel", |s| {
+            s.layout_request = Some(LayoutRequest::Toggle(PanelTab::Properties))
+        })
+        .key("Ctrl+1"),
+        toggle("view.panel_layers", "Layers Panel", |s| {
+            s.layout_request = Some(LayoutRequest::Toggle(PanelTab::Layers))
+        })
+        .key("Ctrl+2"),
+        toggle("view.command_line", "Command Line", |s| {
+            s.layout_request = Some(LayoutRequest::Toggle(PanelTab::CommandLine))
+        })
+        .key("Ctrl+9"),
+        toggle("view.assistant", "Assistant", |s| {
+            s.layout_request = Some(LayoutRequest::Toggle(PanelTab::Assistant))
+        }),
+        toggle("view.reset_layout", "Reset Layout", |s| {
+            s.layout_request = Some(LayoutRequest::Reset)
+        }),
+    ]
 }
 
 #[cfg(test)]
@@ -305,6 +355,41 @@ mod tests {
         apply(&mut dock, LayoutRequest::Toggle(PanelTab::CommandLine));
         assert!(is_open(&dock, PanelTab::CommandLine));
         assert!(is_valid(&dock));
+    }
+
+    #[test]
+    fn the_assistant_opens_beside_layers_and_can_be_closed() {
+        let mut dock = default_layout();
+        assert!(
+            !is_open(&dock, PanelTab::Assistant),
+            "not there until asked for"
+        );
+        apply(&mut dock, LayoutRequest::Toggle(PanelTab::Assistant));
+        let layers = dock.find_tab(&PanelTab::Layers).map(|(s, n, _)| (s, n));
+        let assistant = dock.find_tab(&PanelTab::Assistant).map(|(s, n, _)| (s, n));
+        assert!(assistant.is_some());
+        assert_eq!(layers, assistant, "the same tab strip as Layers");
+        assert!(is_valid(&dock));
+        apply(&mut dock, LayoutRequest::Toggle(PanelTab::Assistant));
+        assert!(!is_open(&dock, PanelTab::Assistant));
+    }
+
+    #[test]
+    fn the_assistant_opens_even_when_layers_is_closed() {
+        let mut dock = default_layout();
+        apply(&mut dock, LayoutRequest::Toggle(PanelTab::Layers));
+        apply(&mut dock, LayoutRequest::Toggle(PanelTab::Assistant));
+        assert!(is_open(&dock, PanelTab::Assistant));
+        assert!(is_valid(&dock));
+    }
+
+    #[test]
+    fn a_layout_with_the_assistant_survives_saving() {
+        let mut dock = default_layout();
+        apply(&mut dock, LayoutRequest::Toggle(PanelTab::Assistant));
+        let text = ron::to_string(&dock).unwrap();
+        let back: DockState<PanelTab> = ron::from_str(&text).unwrap();
+        assert!(is_open(&back, PanelTab::Assistant));
     }
 
     #[test]

@@ -28,6 +28,8 @@ pub const DEFAULT_BASE_URL: &str = "https://api.mistral.ai";
 pub const DEFAULT_MODEL: &str = "mistral-large-latest";
 /// Low, because the work is accuracy.
 pub const DEFAULT_TEMPERATURE: f64 = 0.2;
+/// How a refused key is worded in a failure, so a screen can ask for another.
+pub const KEY_REFUSED: &str = "the model service did not accept the key";
 /// The largest answer read: a runaway body is not held in memory.
 const BODY_MAX: u64 = 16 * 1024 * 1024;
 
@@ -166,9 +168,7 @@ impl MistralProvider {
             format!("status {status}: {said}")
         };
         match status {
-            401 | 403 => ProviderError::Fatal(format!(
-                "the model service did not accept the key ({detail})"
-            )),
+            401 | 403 => ProviderError::Fatal(format!("{KEY_REFUSED} ({detail})")),
             408 | 425 | 429 | 500..=599 => {
                 ProviderError::Transient(format!("the model service is busy or down ({detail})"))
             }

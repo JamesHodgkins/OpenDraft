@@ -44,6 +44,12 @@ The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
 | ![](annotate-tablestyle.svg) | `annotate-tablestyle.svg` | table | Table Style |
 | ![](annotate-text.svg) | `annotate-text.svg` | text-cursor-input | Single Line |
 | ![](annotate-textstyle.svg) | `annotate-textstyle.svg` | case-sensitive | Text Style |
+| ![](assistant-add.svg) | `assistant-add.svg` | plus | (not used) |
+| ![](assistant-history.svg) | `assistant-history.svg` | history | (not used) |
+| ![](assistant-menu.svg) | `assistant-menu.svg` | chevron-down | (not used) |
+| ![](assistant-new-chat.svg) | `assistant-new-chat.svg` | message-square-plus | (not used) |
+| ![](assistant-send.svg) | `assistant-send.svg` | arrow-up | (not used) |
+| ![](assistant-stop.svg) | `assistant-stop.svg` | square | (not used) |
 | ![](block-attedit.svg) | `block-attedit.svg` | pen-line | Single |
 | ![](block-close.svg) | `block-close.svg` | x | Close Block Editor |
 | ![](block-create.svg) | `block-create.svg` | component | Create |
@@ -108,7 +114,7 @@ The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
 | ![](draw-polygon.svg) | `draw-polygon.svg` | hexagon | Polygon |
 | ![](draw-polyline.svg) | `draw-polyline.svg` | spline | Polyline |
 | ![](draw-ray.svg) | `draw-ray.svg` | move-up-right | Ray (Lucide's arrow up and right: a line that leaves a point.) |
-| ![](draw-rectangle.svg) | `draw-rectangle.svg` | square | Rectangle |
+| ![](draw-rectangle.svg) | `draw-rectangle.svg` | square | Rectangle, icon_set.rs |
 | ![](draw-spline.svg) | `draw-spline.svg` | spline | Spline |
 | ![](draw-xline.svg) | `draw-xline.svg` | slash | Construction Line (Lucide's slash: a line that runs on both ways.) |
 | ![](dropdown-arrow.svg) | `dropdown-arrow.svg` | chevron-down | widgets.rs |
@@ -199,6 +205,20 @@ The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
 | ![](modify-scale.svg) | `modify-scale.svg` | maximize | Scale, app/context_menu.rs |
 | ![](modify-stretch.svg) | `modify-stretch.svg` | unfold-horizontal | Stretch |
 | ![](modify-trim.svg) | `modify-trim.svg` | scissors | Trim |
+| ![](osnap-apparent-intersection.svg) | `osnap-apparent-intersection.svg` | grid-3x3 | app/status_toggles.rs |
+| ![](osnap-centre.svg) | `osnap-centre.svg` | grid-3x3 | app/status_toggles.rs |
+| ![](osnap-end.svg) | `osnap-end.svg` | grid-3x3 | app/status_toggles.rs |
+| ![](osnap-extension.svg) | `osnap-extension.svg` | grid-3x3 | app/status_toggles.rs |
+| ![](osnap-geo-centre.svg) | `osnap-geo-centre.svg` | grid-3x3 | app/status_toggles.rs |
+| ![](osnap-insertion.svg) | `osnap-insertion.svg` | grid-3x3 | app/status_toggles.rs |
+| ![](osnap-intersection.svg) | `osnap-intersection.svg` | grid-3x3 | app/status_toggles.rs |
+| ![](osnap-mid.svg) | `osnap-mid.svg` | grid-3x3 | app/status_toggles.rs |
+| ![](osnap-nearest.svg) | `osnap-nearest.svg` | grid-3x3 | app/status_toggles.rs |
+| ![](osnap-node.svg) | `osnap-node.svg` | grid-3x3 | app/status_toggles.rs |
+| ![](osnap-parallel.svg) | `osnap-parallel.svg` | grid-3x3 | app/status_toggles.rs |
+| ![](osnap-perpendicular.svg) | `osnap-perpendicular.svg` | grid-3x3 | app/status_toggles.rs |
+| ![](osnap-quadrant.svg) | `osnap-quadrant.svg` | grid-3x3 | app/status_toggles.rs |
+| ![](osnap-tangent.svg) | `osnap-tangent.svg` | grid-3x3 | app/status_toggles.rs |
 | ![](panel-section-closed.svg) | `panel-section-closed.svg` | chevron-right | properties_ui.rs |
 | ![](panel-section-open.svg) | `panel-section-open.svg` | chevron-down | properties_ui.rs |
 | ![](power-select-pick.svg) | `power-select-pick.svg` | mouse-pointer-2 | app/power_select_dialog.rs |
@@ -213,6 +233,14 @@ The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
 | ![](select-power.svg) | `select-power.svg` | wand-sparkles | Quick Select, app/context_menu.rs |
 | ![](select-window-polygon.svg) | `select-window-polygon.svg` | lasso-select | Window Polygon |
 | ![](text-align-center.svg) | `text-align-center.svg` | align-center | mtext_editor/toolbar.rs |
+| ![](status-grid-display.svg) | `status-grid-display.svg` | grid-3x3 | app/status_toggles.rs |
+| ![](status-grid-snap.svg) | `status-grid-snap.svg` | magnet | app/status_toggles.rs |
+| ![](status-iso.svg) | `status-iso.svg` | grid-3x3 | (not used) |
+| ![](status-ortho.svg) | `status-ortho.svg` | grid-3x3 | app/status_toggles.rs |
+| ![](status-osnap.svg) | `status-osnap.svg` | magnet | app/status_toggles.rs |
+| ![](status-otrack.svg) | `status-otrack.svg` | grid-3x3 | app/status_toggles.rs |
+| ![](status-polar.svg) | `status-polar.svg` | grid-3x3 | app/status_toggles.rs |
+| ![](status-settings.svg) | `status-settings.svg` | grid-3x3 | app/status_toggles.rs |
 | ![](text-align-justify.svg) | `text-align-justify.svg` | align-justify | mtext_editor/toolbar.rs |
 | ![](text-align-left.svg) | `text-align-left.svg` | align-left | mtext_editor/toolbar.rs |
 | ![](text-align-right.svg) | `text-align-right.svg` | align-right | mtext_editor/toolbar.rs |
@@ -221,6 +249,7 @@ The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
 | ![](text-undo.svg) | `text-undo.svg` | undo-2 | mtext_editor/toolbar.rs |
 | ![](tools-quickcalc.svg) | `tools-quickcalc.svg` | calculator | Calculator |
 | ![](tool-select.svg) | `tool-select.svg` | mouse-pointer-2 | Select |
+| ![](view-assistant.svg) | `view-assistant.svg` | bot | (not used) |
 | ![](view-base-inventor.svg) | `view-base-inventor.svg` | file | From Inventor |
 | ![](view-base-model.svg) | `view-base-model.svg` | frame | From Model Space |
 | ![](view-command-line.svg) | `view-command-line.svg` | rectangle-horizontal | Command Line |

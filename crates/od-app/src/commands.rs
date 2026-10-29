@@ -57,6 +57,7 @@ pub fn build_registry() -> Registry<AppState> {
         crate::circle_arc_commands::commands(),
         crate::primitive_commands::commands(),
         crate::dimension_commands::commands(),
+        crate::dock::commands(),
     ];
     for command in all().into_iter().chain(tables.into_iter().flatten()) {
         registry
@@ -409,18 +410,6 @@ fn all() -> Vec<Command<AppState>> {
         toggle_command!("view.snap_grid", "Grid Snap", snap.grid)
             .when(|s| s.settings.snap.enabled)
             .transparent(),
-        cmd("view.panel_properties", "Properties Panel", |s| {
-            s.layout_request = Some(LayoutRequest::Toggle(PanelTab::Properties))
-        })
-        .key("Ctrl+1")
-        .transparent()
-        .global(),
-        cmd("view.panel_layers", "Layers Panel", |s| {
-            s.layout_request = Some(LayoutRequest::Toggle(PanelTab::Layers))
-        })
-        .key("Ctrl+2")
-        .transparent()
-        .global(),
         cmd("layer.properties", "Layer Properties", |s| {
             s.layout_request = Some(LayoutRequest::Toggle(PanelTab::Layers))
         })
@@ -428,17 +417,6 @@ fn all() -> Vec<Command<AppState>> {
         cmd("layer.hide", "Hide", |s| s.hide_selected_layers()).when(|s| !s.selection().is_empty()),
         cmd("layer.lock", "Lock", |s| s.lock_selected_layers()).when(|s| !s.selection().is_empty()),
         cmd("layer.show", "Show", |s| s.show_all_layers()).when(|s| s.any_layer_hidden()),
-        cmd("view.command_line", "Command Line", |s| {
-            s.layout_request = Some(LayoutRequest::Toggle(PanelTab::CommandLine))
-        })
-        .key("Ctrl+9")
-        .transparent()
-        .global(),
-        cmd("view.reset_layout", "Reset Layout", |s| {
-            s.layout_request = Some(LayoutRequest::Reset)
-        })
-        .transparent()
-        .global(),
         cmd("manage.settings", "Settings", |s| s.show_settings = true)
             .transparent()
             .global(),

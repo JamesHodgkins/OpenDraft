@@ -29,7 +29,7 @@ mod tests;
 pub use budget::{BudgetKind, Budgets, Meter};
 pub use fake::{FakeProvider, Step};
 pub use host::{Answer, Host, Plan, PlanOutcome, Question, ToolOutcome};
-pub use mistral::{MistralProvider, DEFAULT_MODEL};
+pub use mistral::{MistralProvider, DEFAULT_MODEL, KEY_REFUSED};
 pub use provider::{CancelToken, Provider, ProviderError};
 pub use state::{Failure, TaskState};
 pub use task::{run_task, Event, Report, Retry, TaskConfig};
