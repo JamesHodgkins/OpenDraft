@@ -2218,6 +2218,7 @@ dependencies = [
  "od-api",
  "serde",
  "serde_json",
+ "ureq",
 ]
 
 [[package]]
