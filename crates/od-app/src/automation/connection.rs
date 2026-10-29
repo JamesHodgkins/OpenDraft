@@ -1,19 +1,16 @@
 //! One client connection, start to finish: the token handshake, then
 //! request after request until it closes. It never touches `AppState`; it
-//! queues each request for the UI thread and waits for the reply.
+//! reads a frame, hands the request to the core's queue and writes the
+//! answer back. What a request may do is the core's to decide.
 
 use std::io::{Read, Write};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc::{self, RecvTimeoutError, TrySendError};
-use std::sync::Arc;
-use std::time::{Duration, Instant};
 
 use od_api::frame::{read_frame, write_frame};
 use od_api::handshake::{tokens_match, Hello, HelloReply};
-use od_api::limits::{IPC_FRAME_BYTES, QUEUED_REQUESTS_MAX, REQUEST_DEADLINE_MS};
-use od_api::{negotiate, ops, ApiError, ErrorCode, Request, Response, Scope, API_VERSION};
+use od_api::limits::IPC_FRAME_BYTES;
+use od_api::{negotiate, ApiError, ErrorCode, Request, Response, API_VERSION};
 
-use super::host::{Grant, Job, Shared};
+use super::host::Socket;
 
 fn send<S: Write>(stream: &mut S, value: &impl serde::Serialize) -> bool {
     match serde_json::to_vec(value) {
@@ -23,12 +20,12 @@ fn send<S: Write>(stream: &mut S, value: &impl serde::Serialize) -> bool {
 }
 
 /// One connection, start to finish.
-pub(super) fn serve<S: Read + Write>(shared: &Shared, stream: &mut S) {
-    let Some(grant_id) = handshake(shared, stream) else {
+pub(super) fn serve<S: Read + Write>(socket: &Socket, stream: &mut S) {
+    let Some(grant_id) = handshake(socket, stream) else {
         return;
     };
     while let Ok(frame) = read_frame(stream) {
-        let response = respond(shared, grant_id, &frame);
+        let response = respond(socket, grant_id, &frame);
         let sent = match serde_json::to_vec(&response) {
             Ok(bytes) if bytes.len() <= IPC_FRAME_BYTES => write_frame(stream, &bytes).is_ok(),
             _ => send(
@@ -47,14 +44,12 @@ pub(super) fn serve<S: Read + Write>(shared: &Shared, stream: &mut S) {
             break;
         }
     }
-    if let Ok(mut grants) = shared.grants.lock() {
-        grants.remove(&grant_id);
-    }
+    socket.link.release(grant_id);
 }
 
 /// The first frame must be a valid hello with the right token. On success
 /// the connection gets a read-only grant.
-fn handshake<S: Read + Write>(shared: &Shared, stream: &mut S) -> Option<u64> {
+fn handshake<S: Read + Write>(socket: &Socket, stream: &mut S) -> Option<u64> {
     let frame = read_frame(stream).ok()?;
     let refuse = |stream: &mut S, error: ApiError| {
         send(
@@ -75,7 +70,7 @@ fn handshake<S: Read + Write>(shared: &Shared, stream: &mut S) -> Option<u64> {
             ApiError::new(ErrorCode::InvalidArguments, "Bad hello."),
         );
     };
-    if !tokens_match(&hello.token, &shared.token) {
+    if !tokens_match(&hello.token, &socket.token) {
         return refuse(
             stream,
             ApiError::new(ErrorCode::ScopeDenied, "Wrong token."),
@@ -91,15 +86,7 @@ fn handshake<S: Read + Write>(shared: &Shared, stream: &mut S) -> Option<u64> {
             .detail("app_versions", API_VERSION),
         );
     };
-    let grant_id = shared.next_grant.fetch_add(1, Ordering::AcqRel);
-    let scopes = vec![Scope::DrawingRead];
-    shared.grants.lock().ok()?.insert(
-        grant_id,
-        Grant {
-            client_name: hello.client_name.chars().take(80).collect(),
-            scopes: scopes.clone(),
-        },
-    );
+    let (grant_id, scopes) = socket.link.register(&hello.client_name, false)?;
     let reply = HelloReply {
         ok: true,
         api_version: Some(version),
@@ -110,12 +97,12 @@ fn handshake<S: Read + Write>(shared: &Shared, stream: &mut S) -> Option<u64> {
     if send(stream, &reply) {
         Some(grant_id)
     } else {
-        shared.grants.lock().ok()?.remove(&grant_id);
+        socket.link.release(grant_id);
         None
     }
 }
 
-fn respond(shared: &Shared, grant_id: u64, frame: &[u8]) -> Response {
+fn respond(socket: &Socket, grant_id: u64, frame: &[u8]) -> Response {
     let Ok(request) = serde_json::from_slice::<Request>(frame) else {
         return Response::failure(
             "",
@@ -125,73 +112,5 @@ fn respond(shared: &Shared, grant_id: u64, frame: &[u8]) -> Response {
             ),
         );
     };
-    let id = request.request_id.clone();
-    let fail = |code, message: &str| Response::failure(&id, ApiError::new(code, message));
-    if request.api_version != API_VERSION.to_string() {
-        return fail(ErrorCode::InvalidArguments, "Unsupported api_version.");
-    }
-    let Some(required) = ops::required_scope(&request.operation) else {
-        return fail(ErrorCode::InvalidArguments, "Unknown operation.");
-    };
-    if request.scope != required {
-        return fail(
-            ErrorCode::InvalidArguments,
-            "The scope does not match the operation.",
-        );
-    }
-    let granted = shared
-        .grants
-        .lock()
-        .map(|g| {
-            g.get(&grant_id)
-                .is_some_and(|g| g.scopes.contains(&required))
-        })
-        .unwrap_or(false);
-    if !granted {
-        return fail(
-            ErrorCode::ScopeDenied,
-            "This connection may only read. Ask the user to tick Allow changes for it in OpenDraft (Settings > Automation).",
-        );
-    }
-    let wait = Duration::from_millis(request.deadline_ms.clamp(1, REQUEST_DEADLINE_MS));
-    let (reply, answer) = mpsc::channel();
-    let abandoned = Arc::new(AtomicBool::new(false));
-    let job = Job {
-        grant_id,
-        request,
-        reply,
-        expires: Instant::now() + wait,
-        abandoned: Arc::clone(&abandoned),
-    };
-    match shared.jobs.try_send(job) {
-        Ok(()) => (shared.waker)(),
-        Err(TrySendError::Full(_)) => {
-            return Response::failure(
-                &id,
-                ApiError::new(ErrorCode::RateLimited, "Too many requests are waiting.")
-                    .retryable()
-                    .detail("queue_limit", QUEUED_REQUESTS_MAX),
-            );
-        }
-        Err(TrySendError::Disconnected(_)) => {
-            return fail(ErrorCode::InstanceGone, "OpenDraft is shutting down.");
-        }
-    }
-    match answer.recv_timeout(wait) {
-        Ok(response) => response,
-        Err(RecvTimeoutError::Timeout) => {
-            abandoned.store(true, Ordering::Release);
-            Response::failure(
-                &id,
-                ApiError::new(
-                    ErrorCode::DeadlineExceeded,
-                    "OpenDraft did not answer in time.",
-                )
-                .retryable(),
-            )
-        }
-        Err(RecvTimeoutError::Disconnected) => {
-            fail(ErrorCode::InstanceGone, "OpenDraft dropped the request.")
-        }
-    }
+    socket.link.submit(grant_id, request)
 }

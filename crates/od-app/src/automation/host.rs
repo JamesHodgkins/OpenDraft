@@ -1,62 +1,37 @@
-//! The automation host: listens on a local socket, authenticates each
-//! connection and hands its requests to the UI thread through a bounded
-//! queue. Connection threads never touch `AppState`; they own a one-shot
-//! reply channel per request and give up when its deadline passes.
+//! The automation host: the local socket in front of the core. It listens,
+//! publishes where it is, and starts a thread per connection; each
+//! connection authenticates, then hands its requests to the core's queue.
+//! Everything that decides what a request may do is in `core.rs`, which the
+//! in-app assistant uses too.
 
-use std::collections::HashMap;
 use std::io::{self};
-use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
-use std::sync::mpsc::{self, Receiver, SyncSender};
-use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::Arc;
 
 use interprocess::local_socket::{prelude::*, ListenerOptions, Name, Stream};
 use od_api::instance::{self, Descriptor};
-use od_api::limits::QUEUED_REQUESTS_MAX;
-use od_api::{ApiError, ErrorCode, Request, Response, Scope, API_VERSION};
-
-use super::{dispatch, Caller};
-use crate::state::AppState;
+use od_api::API_VERSION;
 use od_commands::Registry;
+
+use super::core::{AutomationCore, Grant, Link};
+use crate::state::AppState;
 
 /// Most connections served at once; each has a thread.
 const MAX_CONNECTIONS: usize = 8;
-/// Requests handled, and time spent on them, in one frame.
-const FRAME_REQUESTS: usize = 16;
-const FRAME_BUDGET: Duration = Duration::from_millis(8);
 
-pub(super) struct Job {
-    pub(super) grant_id: u64,
-    pub(super) request: Request,
-    pub(super) reply: mpsc::Sender<Response>,
-    pub(super) expires: Instant,
-    /// Set by the connection when it stops waiting: do not run it.
-    pub(super) abandoned: Arc<AtomicBool>,
-}
-
-/// What one connection may do, until it closes or the user revokes it.
-#[derive(Clone, Debug)]
-pub struct Grant {
-    pub client_name: String,
-    pub scopes: Vec<Scope>,
-}
-
-pub(super) struct Shared {
-    pub(super) instance_id: String,
+/// What the connection threads share: where to send requests, and the
+/// secret a client must show.
+pub(super) struct Socket {
+    pub(super) link: Link,
     pub(super) token: String,
-    pub(super) jobs: SyncSender<Job>,
-    pub(super) grants: Mutex<HashMap<u64, Grant>>,
-    pub(super) next_grant: AtomicU64,
     connections: AtomicUsize,
     shutdown: AtomicBool,
-    pub(super) waker: Box<dyn Fn() + Send + Sync>,
 }
 
 pub struct AutomationHost {
-    shared: Arc<Shared>,
-    jobs: Receiver<Job>,
+    core: AutomationCore,
+    socket: Arc<Socket>,
     dir: PathBuf,
     endpoint: String,
 }
@@ -118,16 +93,12 @@ impl AutomationHost {
         let listener = ListenerOptions::new()
             .name(socket_name(&endpoint)?)
             .create_sync()?;
-        let (jobs_tx, jobs) = mpsc::sync_channel(QUEUED_REQUESTS_MAX);
-        let shared = Arc::new(Shared {
-            instance_id: instance_id.clone(),
+        let core = AutomationCore::new(instance_id.clone(), waker);
+        let socket = Arc::new(Socket {
+            link: core.link(),
             token: token.clone(),
-            jobs: jobs_tx,
-            grants: Mutex::new(HashMap::new()),
-            next_grant: AtomicU64::new(1),
             connections: AtomicUsize::new(0),
             shutdown: AtomicBool::new(false),
-            waker,
         });
         instance::write(
             dir,
@@ -140,184 +111,60 @@ impl AutomationHost {
                 token,
             },
         )?;
-        let accepting = Arc::clone(&shared);
+        let accepting = Arc::clone(&socket);
         std::thread::Builder::new()
             .name("automation-accept".into())
             .spawn(move || accept_loop(&accepting, &listener))?;
         Ok(Self {
-            shared,
-            jobs,
+            core,
+            socket,
             dir: dir.to_owned(),
             endpoint,
         })
     }
 
+    /// The core behind the socket: the same one an in-app connection uses.
+    #[allow(dead_code)]
+    pub fn core(&self) -> &AutomationCore {
+        &self.core
+    }
+
     #[cfg(test)]
     pub fn instance_id(&self) -> &str {
-        &self.shared.instance_id
+        self.core.instance_id()
     }
 
-    /// The connections now open, oldest first, for the settings window.
+    /// The connections now open, oldest first.
     pub fn grants(&self) -> Vec<(u64, Grant)> {
-        let grants = self.shared.grants.lock().map(|g| g.clone());
-        let mut list: Vec<(u64, Grant)> = grants.unwrap_or_default().into_iter().collect();
-        list.sort_by_key(|(id, _)| *id);
-        list
+        self.core.grants()
     }
 
-    /// Let a connection change drawings (or take that back). Applies to the
-    /// next request it makes; the user's switch, never the client's.
+    /// See [`AutomationCore::set_write`].
     pub fn set_write(&self, grant_id: u64, allow: bool) {
-        if let Ok(mut grants) = self.shared.grants.lock() {
-            if let Some(grant) = grants.get_mut(&grant_id) {
-                let writes = [Scope::DrawingWrite, Scope::UiSelection];
-                grant.scopes.retain(|s| !writes.contains(s));
-                if allow {
-                    grant.scopes.extend(writes);
-                }
-            }
-        }
+        self.core.set_write(grant_id, allow);
     }
 
-    /// Let a connection open, save and export files, in the folders the user
-    /// approved only (or take that back).
+    /// See [`AutomationCore::set_files`].
     pub fn set_files(&self, grant_id: u64, allow: bool) {
-        if let Ok(mut grants) = self.shared.grants.lock() {
-            if let Some(grant) = grants.get_mut(&grant_id) {
-                let files = [Scope::FileRead, Scope::FileWrite];
-                grant.scopes.retain(|s| !files.contains(s));
-                if allow {
-                    grant.scopes.extend(files);
-                }
-            }
-        }
+        self.core.set_files(grant_id, allow);
     }
 
-    /// Let a connection run the commands marked safe (view and mode
-    /// commands), or take that back.
+    /// See [`AutomationCore::set_commands`].
     pub fn set_commands(&self, grant_id: u64, allow: bool) {
-        if let Ok(mut grants) = self.shared.grants.lock() {
-            if let Some(grant) = grants.get_mut(&grant_id) {
-                grant.scopes.retain(|s| *s != Scope::CommandInvoke);
-                if allow {
-                    grant.scopes.push(Scope::CommandInvoke);
-                }
-            }
-        }
+        self.core.set_commands(grant_id, allow);
     }
 
     /// Answer the queued requests, as many as fit in this frame's budget.
     /// Call once per frame from the UI thread.
     pub fn poll(&self, state: &mut AppState, registry: &Registry<AppState>) {
-        state.file_ops.expire();
-        state.observe_events();
-        super::command_runs::sync(state);
-        self.withdraw_orphaned_requests(state);
-        let start = Instant::now();
-        for _ in 0..FRAME_REQUESTS {
-            let Ok(job) = self.jobs.try_recv() else {
-                return;
-            };
-            if job.abandoned.load(Ordering::Acquire) || job.expires < Instant::now() {
-                continue;
-            }
-            let response = self.run(state, registry, &job);
-            let _ = job.reply.send(response);
-            if start.elapsed() > FRAME_BUDGET {
-                break;
-            }
-        }
-        // Budget spent with work possibly left: come back next frame.
-        (self.shared.waker)();
-    }
-
-    /// A request for the user to select objects is of no use to a caller
-    /// that has gone, and must not outlive the user's permission for it: take
-    /// the prompt away from the user.
-    fn withdraw_orphaned_requests(&self, state: &mut AppState) {
-        let allowed: Vec<u64> = self
-            .shared
-            .grants
-            .lock()
-            .map(|grants| {
-                grants
-                    .iter()
-                    .filter(|(_, grant)| grant.scopes.contains(&Scope::UiSelection))
-                    .map(|(id, _)| *id)
-                    .collect()
-            })
-            .unwrap_or_default();
-        super::selection_request::withdraw(
-            state,
-            |grant| !allowed.contains(&grant),
-            "The assistant that asked you to select objects has gone or is no longer allowed to ask.",
-        );
-    }
-
-    fn run(&self, state: &mut AppState, registry: &Registry<AppState>, job: &Job) -> Response {
-        let id = &job.request.request_id;
-        let allowed = self
-            .shared
-            .grants
-            .lock()
-            .map(|g| {
-                g.get(&job.grant_id)
-                    .is_some_and(|grant| grant.scopes.contains(&job.request.scope))
-            })
-            .unwrap_or(false);
-        if !allowed {
-            return Response::failure(
-                id,
-                ApiError::new(
-                    ErrorCode::ScopeDenied,
-                    "This connection no longer has that access. Ask the user to tick Allow changes for it in OpenDraft (Settings > Automation).",
-                ),
-            );
-        }
-        let instance = &self.shared.instance_id;
-        let client = self
-            .shared
-            .grants
-            .lock()
-            .ok()
-            .and_then(|g| g.get(&job.grant_id).map(|grant| grant.client_name.clone()))
-            .unwrap_or_default();
-        let caller = Caller {
-            grant_id: job.grant_id,
-            client: &client,
-            history_any: self.shared.grants.lock().is_ok_and(|g| {
-                g.get(&job.grant_id)
-                    .is_some_and(|grant| grant.scopes.contains(&Scope::HistoryAny))
-            }),
-        };
-        let outcome = catch_unwind(AssertUnwindSafe(|| {
-            dispatch(
-                state,
-                registry,
-                instance,
-                &caller,
-                &job.request.operation,
-                job.request.arguments.clone(),
-            )
-        }));
-        match outcome {
-            Ok(Ok(result)) => Response::success(id, result),
-            Ok(Err(error)) => Response::failure(id, error),
-            Err(_) => Response::failure(
-                id,
-                ApiError::new(
-                    ErrorCode::InternalError,
-                    "The request failed inside the app.",
-                ),
-            ),
-        }
+        self.core.poll(state, registry);
     }
 }
 
 impl Drop for AutomationHost {
     fn drop(&mut self) {
-        self.shared.shutdown.store(true, Ordering::Release);
-        instance::remove(&self.dir, &self.shared.instance_id);
+        self.socket.shutdown.store(true, Ordering::Release);
+        instance::remove(&self.dir, self.core.instance_id());
         // Wake the accept loop so it sees the flag and ends.
         if let Ok(name) = socket_name(&self.endpoint) {
             let _ = Stream::connect(name);
@@ -325,31 +172,31 @@ impl Drop for AutomationHost {
     }
 }
 
-fn accept_loop(shared: &Arc<Shared>, listener: &interprocess::local_socket::Listener) {
+fn accept_loop(socket: &Arc<Socket>, listener: &interprocess::local_socket::Listener) {
     for incoming in listener.incoming() {
-        if shared.shutdown.load(Ordering::Acquire) {
+        if socket.shutdown.load(Ordering::Acquire) {
             return;
         }
         let Ok(stream) = incoming else {
             continue;
         };
-        if shared.connections.fetch_add(1, Ordering::AcqRel) >= MAX_CONNECTIONS {
-            shared.connections.fetch_sub(1, Ordering::AcqRel);
+        if socket.connections.fetch_add(1, Ordering::AcqRel) >= MAX_CONNECTIONS {
+            socket.connections.fetch_sub(1, Ordering::AcqRel);
             continue;
         }
-        let shared = Arc::clone(shared);
+        let socket = Arc::clone(socket);
         let spawned = std::thread::Builder::new()
             .name("automation-conn".into())
             .spawn({
-                let shared = Arc::clone(&shared);
+                let socket = Arc::clone(&socket);
                 move || {
                     let mut stream = stream;
-                    super::connection::serve(&shared, &mut stream);
-                    shared.connections.fetch_sub(1, Ordering::AcqRel);
+                    super::connection::serve(&socket, &mut stream);
+                    socket.connections.fetch_sub(1, Ordering::AcqRel);
                 }
             });
         if spawned.is_err() {
-            shared.connections.fetch_sub(1, Ordering::AcqRel);
+            socket.connections.fetch_sub(1, Ordering::AcqRel);
         }
     }
 }
