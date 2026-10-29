@@ -14,7 +14,7 @@ use od_agent::{
 use serde_json::json;
 
 use super::support::*;
-use super::{AppHost, ApprovalLevel, Decision};
+use super::{AppHost, ApprovalLevel, Decision, Reach};
 use crate::state::AppState;
 
 const WRITE: &str = "opendraft_entities_apply_batch";
@@ -40,7 +40,7 @@ fn run(
 ) -> (Outcome, Arc<crate::automation::AutomationCore>) {
     let core = core();
     let user = Scripted::new();
-    let host = AppHost::new(core.clone(), user.clone(), level).unwrap();
+    let host = AppHost::new(core.clone(), user.clone(), level, Reach::All).unwrap();
     let steps = script(&core, state, &user);
     let provider = Arc::new(FakeProvider::new(steps));
     let report = drive(&core, state, quiet_user, || {

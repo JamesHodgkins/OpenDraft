@@ -25,21 +25,32 @@ pub fn show(
     theme: &Theme,
     assistant: &mut Assistant,
     core: &Arc<AutomationCore>,
-    state: &AppState,
+    state: &mut AppState,
 ) {
     header(ui, theme, assistant);
+    // The open drawings by wire id, for naming one on a card.
+    let names: Vec<(String, String)> = state
+        .docs
+        .iter()
+        .map(|d| {
+            (
+                crate::automation::document_id(core.instance_id(), d.uid),
+                d.title.clone(),
+            )
+        })
+        .collect();
     egui::TopBottomPanel::bottom("assistant_composer")
         .frame(egui::Frame::NONE)
         .show_separator_line(false)
         .resizable(false)
-        .show_inside(ui, |ui| composer::show(ui, theme, assistant, core, state));
+        .show_inside(ui, |ui| composer::show(ui, theme, assistant, core, &*state));
     egui::CentralPanel::default()
         .frame(egui::Frame::NONE)
         .show_inside(ui, |ui| {
             if assistant.history_open {
                 history(ui, theme, assistant);
             } else {
-                transcript::show(ui, theme, assistant);
+                transcript::show(ui, theme, assistant, state, &names);
             }
         });
 }

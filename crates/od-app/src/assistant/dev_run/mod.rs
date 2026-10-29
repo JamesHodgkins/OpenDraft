@@ -33,7 +33,7 @@ use od_agent::{
 use serde_json::json;
 
 use super::support::{add_a_line, core, drive};
-use super::{AppHost, ApprovalLevel};
+use super::{AppHost, ApprovalLevel, Reach};
 use crate::automation::document_id;
 use crate::state::AppState;
 use console::{say, Console, Sink};
@@ -110,7 +110,7 @@ pub fn run(settings: DevRun, input: Box<dyn BufRead + Send>, out: Sink) -> Resul
         input: Mutex::new(input),
         out: out.clone(),
     });
-    let host = AppHost::new(core.clone(), console, settings.level)
+    let host = AppHost::new(core.clone(), console, settings.level, Reach::All)
         .ok_or("could not connect the assistant")?;
     let workflow: Workflow = if settings.edit { edit() } else { qa_review() };
     let provider: Arc<dyn Provider> = match &settings.key {

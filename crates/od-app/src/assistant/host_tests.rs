@@ -11,7 +11,7 @@ use od_core::{Entity, Point};
 use serde_json::{json, Value};
 
 use super::support::*;
-use super::{AppHost, ApprovalLevel, Decision, AUTO_APPROVE_CEILING};
+use super::{AppHost, ApprovalLevel, Decision, Reach, AUTO_APPROVE_CEILING};
 use crate::automation::{AutomationCore, Coverage};
 use crate::state::AppState;
 
@@ -20,7 +20,7 @@ const WRITE: &str = "opendraft_entities_apply_batch";
 fn setup(level: ApprovalLevel) -> (Arc<AutomationCore>, Arc<Scripted>, AppHost, AppState) {
     let core = core();
     let user = Scripted::new();
-    let host = AppHost::new(core.clone(), user.clone(), level).unwrap();
+    let host = AppHost::new(core.clone(), user.clone(), level, Reach::All).unwrap();
     (core, user, host, AppState::new())
 }
 

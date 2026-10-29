@@ -8,7 +8,7 @@ use eframe::egui;
 use od_ui::icon_set::Icon;
 use od_ui::{icons, Theme};
 
-use crate::assistant::{ApprovalLevel, Assistant, Kind};
+use crate::assistant::{ApprovalLevel, Assistant, Drawings, Kind};
 use crate::automation::AutomationCore;
 use crate::state::AppState;
 
@@ -108,6 +108,11 @@ fn input(
                 }
             });
         });
+        // How much to ask about has a row of its own, so the row above keeps
+        // room for the send button in a narrow panel.
+        if assistant.kind == Kind::Edit {
+            ui.horizontal(|ui| level(ui, theme, assistant));
+        }
     });
     if send && !running {
         let text = std::mem::take(&mut assistant.draft);
@@ -125,11 +130,27 @@ fn options(ui: &mut egui::Ui, theme: &Theme, assistant: &mut Assistant) {
     let small = theme.font_size_small;
     let weak = theme.colors.text_weak;
     ui.spacing_mut().item_spacing.x = 4.0;
-    ui.label(
-        egui::RichText::new("Current drawing")
-            .size(small)
-            .color(weak),
-    );
+    let drawings = match assistant.drawings {
+        Drawings::Current => "Current drawing",
+        Drawings::All => "All drawings",
+    };
+    chip(ui, drawings, small, weak, |ui| {
+        if ui
+            .selectable_label(assistant.drawings == Drawings::Current, "Current drawing")
+            .clicked()
+        {
+            assistant.drawings = Drawings::Current;
+            ui.close_menu();
+        }
+        if ui
+            .selectable_label(assistant.drawings == Drawings::All, "All open drawings")
+            .on_hover_text("Lets the assistant read and change every drawing you have open")
+            .clicked()
+        {
+            assistant.drawings = Drawings::All;
+            ui.close_menu();
+        }
+    });
     let kind = match assistant.kind {
         Kind::Review => "Review",
         Kind::Edit => "Edit",
@@ -150,32 +171,37 @@ fn options(ui: &mut egui::Ui, theme: &Theme, assistant: &mut Assistant) {
             ui.close_menu();
         }
     });
-    if assistant.kind == Kind::Edit {
-        let level = match assistant.level {
-            ApprovalLevel::ReviewEach => "Review each change",
-            ApprovalLevel::ApprovePlan => "Approve the plan",
-            ApprovalLevel::AutoApprove { .. } => "Auto-approve",
-        };
-        chip(ui, level, small, weak, |ui| {
-            let levels = [
-                (ApprovalLevel::ReviewEach, "Review each change"),
-                (ApprovalLevel::ApprovePlan, "Approve the plan"),
-                (
-                    ApprovalLevel::AutoApprove { limit: 5 },
-                    "Auto-approve (up to 5)",
-                ),
-            ];
-            for (value, label) in levels {
-                if ui
-                    .selectable_label(assistant.level == value, label)
-                    .clicked()
-                {
-                    assistant.level = value;
-                    ui.close_menu();
-                }
+}
+
+/// The approval level, shown when the assistant may change things.
+fn level(ui: &mut egui::Ui, theme: &Theme, assistant: &mut Assistant) {
+    let small = theme.font_size_small;
+    let weak = theme.colors.text_weak;
+    ui.spacing_mut().item_spacing.x = 4.0;
+    let label = match assistant.level {
+        ApprovalLevel::ReviewEach => "Review each change",
+        ApprovalLevel::ApprovePlan => "Approve the plan",
+        ApprovalLevel::AutoApprove { .. } => "Auto-approve",
+    };
+    chip(ui, label, small, weak, |ui| {
+        let levels = [
+            (ApprovalLevel::ReviewEach, "Review each change"),
+            (ApprovalLevel::ApprovePlan, "Approve the plan"),
+            (
+                ApprovalLevel::AutoApprove { limit: 5 },
+                "Auto-approve (up to 5)",
+            ),
+        ];
+        for (value, name) in levels {
+            if ui
+                .selectable_label(assistant.level == value, name)
+                .clicked()
+            {
+                assistant.level = value;
+                ui.close_menu();
             }
-        });
-    }
+        }
+    });
 }
 
 /// A small flat dropdown.

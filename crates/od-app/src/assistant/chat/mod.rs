@@ -7,6 +7,7 @@
 //! provider factory and nowhere else: not logged, not in any entry, and this
 //! type has no `Debug` so it cannot be printed by accident.
 
+mod briefing;
 pub(super) mod words;
 mod worker;
 
@@ -18,8 +19,9 @@ use od_agent::{
 };
 
 use super::ApprovalLevel;
-use crate::automation::{document_id, AutomationCore};
+use crate::automation::AutomationCore;
 use crate::state::AppState;
+use briefing::{changes_drawing_tool, context, reach, said};
 use worker::{start, Job, Update};
 pub use worker::{Ask, Pending, Reply, Waker};
 
@@ -57,6 +59,21 @@ pub enum Entry {
     },
     /// Something the program says: a stop, an error, what you answered.
     Notice(String),
+    /// What a task changed, with the way to take it back. `outcome` is what
+    /// came of trying, once you have.
+    Made {
+        grant: u64,
+        changes: u32,
+        outcome: Option<String>,
+    },
+}
+
+/// Which drawings the assistant may use: the one in view, or any that are open.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Drawings {
+    #[default]
+    Current,
+    All,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -69,6 +86,10 @@ pub enum Kind {
 struct Running {
     updates: Receiver<Update>,
     cancel: CancelToken,
+    /// The task's connection, whose steps are undone with it.
+    grant: u64,
+    /// Changes to a drawing made so far.
+    changes: u32,
     /// The tool in hand, for the status line.
     tool: Option<String>,
 }
@@ -99,6 +120,8 @@ pub struct Assistant {
     key: Option<String>,
     pub level: ApprovalLevel,
     pub kind: Kind,
+    /// Which drawings it may use.
+    pub drawings: Drawings,
     /// The unsent text in the input box.
     pub draft: String,
     /// Whether the list of earlier chats is showing in place of the chat.
@@ -116,6 +139,7 @@ impl Assistant {
             key: key.filter(|k| !k.trim().is_empty()),
             level: ApprovalLevel::ReviewEach,
             kind: Kind::Review,
+            drawings: Drawings::Current,
             draft: String::new(),
             history_open: false,
             factory,
@@ -215,14 +239,15 @@ impl Assistant {
             core: Arc::clone(core),
             workflow,
             level: self.level,
-            prompt: format!("{}\n\n{text}", context(state, core)),
+            reach: reach(state, core, self.drawings),
+            prompt: format!("{}\n\n{text}", context(state, core, self.drawings)),
             config,
             cancel: cancel.clone(),
             wake: Arc::clone(&self.wake),
         };
         let chat = &mut self.chats[self.current];
         match start(job) {
-            Ok(updates) => {
+            Ok((updates, grant)) => {
                 if chat.entries.is_empty() {
                     chat.title = text.chars().take(40).collect();
                 }
@@ -231,6 +256,8 @@ impl Assistant {
                 chat.running = Some(Running {
                     updates,
                     cancel,
+                    grant,
+                    changes: 0,
                     tool: None,
                 });
                 true
@@ -239,6 +266,25 @@ impl Assistant {
                 chat.entries.push(Entry::Notice(reason));
                 false
             }
+        }
+    }
+
+    /// Take back what a task changed, as far as it is still on top of the
+    /// history. `entry` is the position of its `Made` line in the transcript.
+    pub fn undo(&mut self, entry: usize, state: &mut AppState) {
+        let chat = &mut self.chats[self.current];
+        let Some(Entry::Made {
+            grant,
+            changes,
+            outcome,
+        }) = chat.entries.get_mut(entry)
+        else {
+            return;
+        };
+        if outcome.is_none() {
+            *outcome = Some(match super::undo::task(state, *grant, *changes) {
+                Ok(said) | Err(said) => said,
+            });
         }
     }
 
@@ -308,6 +354,11 @@ impl Chat {
                 }
             }
             Update::Event(Event::ToolFinished { name, ok }) => {
+                if ok && changes_drawing_tool(&name) {
+                    if let Some(running) = &mut self.running {
+                        running.changes += 1;
+                    }
+                }
                 let line = self.entries.iter_mut().rev().find(|e| {
                     matches!(
                         e,
@@ -325,6 +376,15 @@ impl Chat {
             Update::Ask(pending) => self.pending = Some(pending),
             Update::Done(report) => {
                 self.messages = report.messages;
+                if let Some(running) = &self.running {
+                    if running.changes > 0 {
+                        self.entries.push(Entry::Made {
+                            grant: running.grant,
+                            changes: running.changes,
+                            outcome: None,
+                        });
+                    }
+                }
                 if let Some(why) = words::ended(&report.state) {
                     self.entries.push(Entry::Notice(why));
                 }
@@ -341,45 +401,6 @@ impl Chat {
             }
         }
         false
-    }
-}
-
-/// What the model is told about the drawing in view, ahead of the user's
-/// words. It is the user's own drawing's name and a wire id, not its content.
-fn context(state: &AppState, core: &AutomationCore) -> String {
-    if state.home {
-        return "The user is on the Home page; no drawing is in view.".to_owned();
-    }
-    let doc = &state.docs[state.active];
-    let title: String = doc
-        .title
-        .chars()
-        .filter(|c| !c.is_control())
-        .take(80)
-        .collect();
-    format!(
-        "The drawing in view is \"{title}\" (document_id {}).",
-        document_id(core.instance_id(), doc.uid)
-    )
-}
-
-/// What was answered, for the transcript.
-fn said(ask: &Ask, reply: &Reply) -> String {
-    use od_agent::{Answer, PlanOutcome};
-
-    use crate::assistant::Decision;
-    match (ask, reply) {
-        (Ask::Change(_), Reply::Change(Decision::Approved)) => {
-            "You allowed that change.".to_owned()
-        }
-        (Ask::Change(_), Reply::Change(_)) => "You declined that change.".to_owned(),
-        (Ask::Plan(..), Reply::Plan(PlanOutcome::Approved)) => "You approved the plan.".to_owned(),
-        (Ask::Plan(..), Reply::Plan(PlanOutcome::Rejected(Some(why)))) => {
-            format!("You did not approve the plan: {why}")
-        }
-        (Ask::Plan(..), Reply::Plan(_)) => "You did not approve the plan.".to_owned(),
-        (Ask::Question(_), Reply::Answer(Answer::Text(text))) => format!("You answered: {text}"),
-        _ => "You did not answer.".to_owned(),
     }
 }
 

@@ -23,11 +23,23 @@ use crate::automation::{AutomationCore, Coverage, InProcess};
 /// How often an unfinished operation is looked at while waiting for it.
 const LOOK_EVERY: Duration = Duration::from_millis(250);
 
+/// Which drawings a task may reach. The choice is the user's, made in the
+/// panel before it starts, and it holds for the whole task: the host refuses
+/// any call that names another drawing, and the list of drawings it is shown
+/// leaves the others out.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Reach {
+    /// This one, by its wire id.
+    Only(String),
+    All,
+}
+
 pub struct AppHost {
     core: Arc<AutomationCore>,
     connection: InProcess,
     prompter: Arc<dyn Prompter>,
     level: ApprovalLevel,
+    reach: Reach,
 }
 
 impl AppHost {
@@ -37,6 +49,7 @@ impl AppHost {
         core: Arc<AutomationCore>,
         prompter: Arc<dyn Prompter>,
         level: ApprovalLevel,
+        reach: Reach,
     ) -> Option<Self> {
         let connection = core.connect_in_process("Assistant")?;
         core.begin_task(connection.grant_id(), &[Scope::UiSelection], None)?;
@@ -45,6 +58,7 @@ impl AppHost {
             connection,
             prompter,
             level,
+            reach,
         })
     }
 
@@ -121,6 +135,16 @@ impl AppHost {
         }
     }
 
+    /// A list of open drawings, cut to what the task may reach.
+    fn within_reach(&self, mut listed: Value) -> Value {
+        if let (Reach::Only(only), Some(Value::Array(documents))) =
+            (&self.reach, listed.get_mut("documents"))
+        {
+            documents.retain(|d| d.get("document_id").and_then(Value::as_str) == Some(only));
+        }
+        listed
+    }
+
     /// Ask the app once and turn its answer into an outcome.
     fn ask(&self, operation: &str, arguments: Value) -> Result<Value, ApiError> {
         let response = self.connection.call_operation(operation, arguments);
@@ -168,6 +192,16 @@ impl Host for AppHost {
                 "No such tool.",
             ));
         };
+        if let Reach::Only(only) = &self.reach {
+            let named = call.arguments.get("document_id").and_then(Value::as_str);
+            if named.is_some_and(|id| id != only) {
+                return ToolOutcome::Failed(ApiError::new(
+                    ErrorCode::ScopeDenied,
+                    "That drawing is outside what the user allowed. You may use only the \
+                     drawing in view; the user can choose All open drawings in the panel.",
+                ));
+            }
+        }
         if let Err(outcome) = self.clear(tool.name, tool.operation, &call.arguments, cancel) {
             return outcome;
         }
@@ -176,6 +210,9 @@ impl Host for AppHost {
         }
         match self.ask(tool.operation, call.arguments.clone()) {
             Ok(result) if tool.operation == ops::SELECTION_REQUEST => self.settle(result, cancel),
+            Ok(result) if tool.operation == ops::DOCUMENTS_LIST => {
+                ToolOutcome::Done(self.within_reach(result))
+            }
             Ok(result) => ToolOutcome::Done(result),
             Err(error) => ToolOutcome::Failed(error),
         }
