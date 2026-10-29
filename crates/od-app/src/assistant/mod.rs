@@ -19,6 +19,8 @@ mod level;
 mod prompter;
 
 #[cfg(test)]
+mod dev_run;
+#[cfg(test)]
 mod host_tests;
 #[cfg(test)]
 mod run_tests;
