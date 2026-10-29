@@ -28,6 +28,9 @@ pub enum EventKind {
     /// Unsaved changes appeared where there were none.
     DocumentModified,
     DocumentSaved,
+    /// The set of selected entities changed (by anyone). Read it with
+    /// `selection.get`; `detail` says how many are selected.
+    SelectionChanged,
     CommandStarted,
     CommandEnded,
 }

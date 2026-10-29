@@ -79,11 +79,12 @@ If more than one OpenDraft is running, add `"args": ["--instance", "<id>"]` with
 | `opendraft_geometry_intersections` | where entities cross | nothing |
 | `opendraft_view_render` | an SVG picture of a window, some entities or a layout sheet | nothing |
 | `opendraft_commands_list` | which commands automation may run or start | nothing |
-| `opendraft_events_poll` | what changed in the app since the last look | nothing |
-| `opendraft_operations_get`, `_operations_cancel` | watch or stop a file operation or started command of its own | nothing |
+| `opendraft_events_poll` | what changed in the app since the last look (drawings, commands, the selection) | nothing |
+| `opendraft_operations_get`, `_operations_cancel` | watch (optionally waiting up to 30 seconds for the end) or stop a file operation, started command or selection request of its own | nothing |
 | `opendraft_entities_apply_batch` | add, patch, replace and delete lines, circles, arcs, rectangles, polylines, ellipses and text, as one undo step | Allow changes |
 | `opendraft_layers_apply_batch` | create layers, change them, set the current one | Allow changes |
 | `opendraft_selection_set` | change what is selected | Allow changes |
+| `opendraft_selection_request` | **ask you** to pick objects in the app and get their ids back | Allow changes |
 | `opendraft_history_undo`, `_history_redo` | undo or redo a step it made | Allow changes |
 | `opendraft_commands_invoke` | run zoom, grid, snap, select all | Allow commands |
 | `opendraft_commands_start_interactive` | start Line, Move, Trim and so on **for you to finish** in the app | Allow commands |
@@ -96,6 +97,7 @@ Splines, block references, dimensions and hatches can be read and measured but n
 - **One undo step per change.** A batch of edits is a single step named by the assistant. Press Ctrl+Z as usual. An assistant can only undo its *own* steps, and only while it is the top of the history, so it can never undo something you did.
 - **Stale edits are refused.** An edit says which version of the drawing it was based on. If you changed the drawing in the meantime it is refused and the assistant has to look again.
 - **It never talks over you.** Edits are refused while one of your commands is running or while a block is open in the Block Editor. Running or starting a command is also refused while a dialog is open.
+- **It asks, you point.** When an assistant needs you to pick objects (`opendraft_selection_request`), a prompt labelled **ASSISTANT** appears in the command line, beside the cursor and in the status bar, with what it wants, for example `Pick the circle (exactly 1)`. Pick as you always do (click, window, crossing) and press Enter, or press Esc to refuse. The assistant gets only the objects you picked, and only those it asked for: if it asked for circles and you also picked a line, the line is taken out of the selection and you are told. It starts with an empty selection unless it asks to keep yours, never replaces a command you are running, is refused while a dialog is open, and is dropped if you switch to another drawing, start another command, untick **Allow changes**, or the assistant disconnects. If you do not finish within five minutes (the assistant may ask for up to fifteen) it ends as timed out. Nothing in the drawing changes.
 - **Commands that need points stay yours.** When an assistant starts a command, its questions appear in OpenDraft and only you can answer them. It can watch what is being asked and cancel it.
 - **Files stay in approved folders.** Add folders under **Approved folders** (the list starts empty). Paths with `..`, network paths, device names, links and unexpected file types are refused. Saving over the file a drawing already belongs to is allowed; **replacing any other existing file asks you first** in a "Replace file?" window that the assistant cannot answer.
 - **Drawing text is data.** Text, layer names and block names in a drawing can say anything. They are passed to the assistant as data and never change what it is allowed to do.
@@ -103,7 +105,7 @@ Splines, block references, dimensions and hatches can be read and measured but n
 
 ## Retrying safely
 
-Every tool that changes something (edits, undo and redo, running or starting a command, opening, saving and exporting) accepts an optional `idempotency_key`: any unique string of up to 64 letters, digits and `_ - . :`. If a request with a key is sent again with the same arguments, nothing is done twice. The first answer comes back instead, with `"replayed": true`. This is what lets an assistant safely try again after a timeout without drawing a line twice or flipping a setting back.
+Every tool that changes something (edits, undo and redo, running or starting a command, asking you to select, opening, saving and exporting) accepts an optional `idempotency_key`: any unique string of up to 64 letters, digits and `_ - . :`. If a request with a key is sent again with the same arguments, nothing is done twice. The first answer comes back instead, with `"replayed": true`. This is what lets an assistant safely try again after a timeout without drawing a line twice or flipping a setting back.
 
 - The same key with *different* arguments is refused (`idempotency_key_reused`): use a new key for a new request.
 - Only successes are remembered. A request that failed changed nothing, so asking again just runs it.
@@ -129,7 +131,8 @@ Run `opendraft-mcp --check` first.
 | `scope_denied` | the matching switch is off for this connection |
 | `stale_revision` | the drawing changed since it was read: look again, then retry |
 | `command_busy` | a command is running in OpenDraft: finish or cancel it |
-| `operation_busy` | a dialog is open (for commands), or too many operations are waiting |
+| `operation_busy` | a dialog is open (for commands and for asking you to select), or too many operations are waiting |
+| `deadline_exceeded` on a selection request | you did not finish selecting in time: the assistant should ask again only if you still want it |
 | `block_editor_open` | close the Block Editor (BCLOSE) |
 | `path_denied` | the file is outside the approved folders, or not an allowed kind of path |
 | `consent_required` | you declined (or did not answer) the "Replace file?" question |
@@ -152,8 +155,8 @@ Tool names are part of the interface and will not be repurposed. New optional fi
 
 ## Limits
 
-Per request: 1,000 operations in a batch, 1,000 entities per page, 200 entities for intersections, 5,000 entities and 500,000 points in a picture, 6 MiB for a picture, 64 KiB per text, 8 operations in flight per connection. Reading a 100-entity page of a 10,000-object drawing takes about a millisecond; the connection program idles at about 7 MiB.
+Per request: 1,000 operations in a batch, 1,000 entities per page, 200 entities for intersections, 5,000 entities and 500,000 points in a picture, 6 MiB for a picture, 64 KiB per text, 8 operations in flight per connection; a request to select takes a prompt of up to 200 characters and up to 1,000 objects, and one wait is at most 30 seconds. Reading a 100-entity page of a 10,000-object drawing takes about a millisecond; the connection program idles at about 7 MiB.
 
 ## Not available yet
 
-Streamable HTTP (remote use), resource and event subscriptions (events are polled), PNG pictures, writing splines, blocks, dimensions and hatches, and a log of what assistants did. Linux is untested for this feature.
+Streamable HTTP (remote use), resource and event subscriptions (events are polled; pan and zoom are not events), asking you for typed numbers or choices (only for objects so far), PNG pictures, writing splines, blocks, dimensions and hatches, and a log of what assistants did. Linux is untested for this feature.

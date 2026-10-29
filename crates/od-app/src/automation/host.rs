@@ -212,6 +212,7 @@ impl AutomationHost {
         state.file_ops.expire();
         state.observe_events();
         super::command_runs::sync(state);
+        self.withdraw_orphaned_requests(state);
         let start = Instant::now();
         for _ in 0..FRAME_REQUESTS {
             let Ok(job) = self.jobs.try_recv() else {
@@ -228,6 +229,29 @@ impl AutomationHost {
         }
         // Budget spent with work possibly left: come back next frame.
         (self.shared.waker)();
+    }
+
+    /// A request for the user to select objects is of no use to a caller
+    /// that has gone, and must not outlive the user's permission for it: take
+    /// the prompt away from the user.
+    fn withdraw_orphaned_requests(&self, state: &mut AppState) {
+        let allowed: Vec<u64> = self
+            .shared
+            .grants
+            .lock()
+            .map(|grants| {
+                grants
+                    .iter()
+                    .filter(|(_, grant)| grant.scopes.contains(&Scope::UiSelection))
+                    .map(|(id, _)| *id)
+                    .collect()
+            })
+            .unwrap_or_default();
+        super::selection_request::withdraw(
+            state,
+            |grant| !allowed.contains(&grant),
+            "The assistant that asked you to select objects has gone or is no longer allowed to ask.",
+        );
     }
 
     fn run(&self, state: &mut AppState, registry: &Registry<AppState>, job: &Job) -> Response {

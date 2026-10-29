@@ -11,7 +11,7 @@ use od_api::idempotency;
 use od_api::layer_ops::LayersBatchArgs;
 use od_api::measure::{IntersectArgs, MeasureArgs};
 use od_api::ops::{self, DocumentArgs, GetArgs, QueryArgs};
-use od_api::session_ops::{HistoryArgs, SelectionSetArgs};
+use od_api::session_ops::{HistoryArgs, SelectionRequestArgs, SelectionSetArgs};
 use od_api::view::RenderArgs;
 use od_api::write::BatchArgs;
 use od_api::{ApiError, ErrorCode};
@@ -21,6 +21,7 @@ use schemars::JsonSchema;
 use serde_json::{json, Value};
 
 use crate::client::Client;
+use crate::wait;
 
 pub const INSTANCES_LIST: &str = "opendraft_instances_list";
 pub const RENDER: &str = "opendraft_view_render";
@@ -226,14 +227,14 @@ const DEFS: &[Def] = &[
     Def {
         effect: Effect::Read,
         name: "opendraft_operations_get",
-        description: "The state of a file operation or a started command: awaiting_consent (the user has a question in OpenDraft), running (for a command, waiting_for shows what it asks the user), succeeded, failed or cancelled. Poll every few seconds; do not retry a failed or declined one without being asked.",
+        description: "The state of a file operation, started command or selection request: awaiting_consent (the user has a question in OpenDraft), running (waiting_for shows what the user is asked), succeeded (a selection then carries entity_ids), failed or cancelled. Use wait_seconds to hear of the end as it happens; running means ask again. Do not retry a failed or declined one without being asked.",
         operation: Some(ops::OPERATIONS_GET),
         schema: schema_of::<OperationArgs>,
     },
     Def {
         effect: Effect::UiState,
         name: "opendraft_operations_cancel",
-        description: "Give up on a file operation or started command of yours that is waiting or running. Nothing on disk is changed by a cancelled operation.",
+        description: "Give up on a file operation, started command or selection request of yours that is waiting or running. Nothing on disk is changed by a cancelled operation.",
         operation: Some(ops::OPERATIONS_CANCEL),
         schema: schema_of::<OperationArgs>,
     },
@@ -257,6 +258,13 @@ const DEFS: &[Def] = &[
         description: "Replace, extend, trim or clear the selection shown in the app. Not an undo step.",
         operation: Some(ops::SELECTION_SET),
         schema: schema_of::<SelectionSetArgs>,
+    },
+    Def {
+        effect: Effect::Adds,
+        name: "opendraft_selection_request",
+        description: "Ask the USER to pick objects in OpenDraft and tell you which, instead of guessing. They click or drag and press Enter, or Esc to refuse; you cannot answer for them. Returns an operation: poll operations_get with wait_seconds; on success entity_ids are their choice as of the returned revision. A refusal or timeout means ask what they want. Changes nothing in the drawing. Needs Allow changes.",
+        operation: Some(ops::SELECTION_REQUEST),
+        schema: schema_of::<SelectionRequestArgs>,
     },
     Def {
         effect: Effect::Destructive,
@@ -299,19 +307,26 @@ const FILE_TOOLS: &[&str] = &[
 /// that accepts one.
 fn schema_for(def: &Def) -> Arc<JsonObject> {
     let schema = (def.schema)();
-    if !def.operation.is_some_and(idempotency::supports) {
+    let keyed = def.operation.is_some_and(idempotency::supports);
+    let waits = def.operation == Some(ops::OPERATIONS_GET);
+    if !keyed && !waits {
         return schema;
     }
     let mut map = (*schema).clone();
     if let Some(Value::Object(properties)) = map.get_mut("properties") {
-        properties.insert(
-            idempotency::KEY_FIELD.to_owned(),
-            json!({
-                "type": "string",
-                "maxLength": idempotency::KEY_MAX,
-                "description": "Optional unique key: resending the same request with it does not repeat the change; the first answer returns with replayed: true."
-            }),
-        );
+        if keyed {
+            properties.insert(
+                idempotency::KEY_FIELD.to_owned(),
+                json!({
+                    "type": "string",
+                    "maxLength": idempotency::KEY_MAX,
+                    "description": "Optional unique key: resending the same request with it does not repeat the change; the first answer returns with replayed: true."
+                }),
+            );
+        }
+        if waits {
+            wait::offer(properties);
+        }
     }
     Arc::new(map)
 }
@@ -353,6 +368,12 @@ pub fn invoke(client: &Client, name: &str, arguments: JsonObject) -> Result<Valu
         .ok_or_else(|| ApiError::new(ErrorCode::InvalidArguments, "Unknown tool."))?;
     match def.operation {
         None => Ok(instances(client)),
+        Some(ops::OPERATIONS_GET) => {
+            let mut arguments = arguments;
+            let patience = wait::take(&mut arguments)?;
+            let arguments = Value::Object(arguments);
+            wait::until_finished(patience, || client.call(ops::OPERATIONS_GET, &arguments))
+        }
         Some(operation) => client.call(operation, &Value::Object(arguments)),
     }
 }
@@ -489,8 +510,10 @@ mod tests {
                 serde_json::to_string_pretty(&tools).unwrap_or_default(),
             );
         }
+        // An alarm for bloat, raised when a tool is added on purpose (26 tools
+        // now); the remedy for a real squeeze is in ARCHITECTURE.md.
         assert!(
-            size < 48_000,
+            size < 50_000,
             "tools/list is {size} bytes; biggest schema {biggest:?}"
         );
     }

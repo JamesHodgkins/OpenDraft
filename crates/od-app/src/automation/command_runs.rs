@@ -8,6 +8,7 @@ use od_api::{ApiError, ErrorCode};
 use od_commands::{AutomationPolicy, Outcome, Registry};
 
 use super::file_ops::not_too_many;
+use super::file_state::Kind;
 use super::guard::{open_for_change, Caller};
 use super::read::parse;
 use crate::state::AppState;
@@ -17,14 +18,16 @@ const FIRST_PROMPT_WAIT: std::time::Duration = std::time::Duration::from_millis(
 /// Longest prompt passed on.
 const PROMPT_MAX: usize = 200;
 
-fn encode(value: &impl serde::Serialize) -> Result<serde_json::Value, ApiError> {
+pub(super) fn encode(value: &impl serde::Serialize) -> Result<serde_json::Value, ApiError> {
     serde_json::to_value(value)
         .map_err(|_| ApiError::new(ErrorCode::InternalError, "The result could not be encoded."))
 }
 
-/// Bring every running command operation up to date: what its command is
-/// asking now, or how it ended. Cheap; called wherever operations are read.
+/// Bring every running command operation (and selection request) up to
+/// date: what its command is asking now, or how it ended. Cheap; called
+/// wherever operations are read.
 pub(super) fn sync(state: &mut AppState) {
+    super::selection_request::expire(state);
     for (id, serial, uid) in state.file_ops.running_commands() {
         let running = state.command_serial == serial && state.command_running();
         if running {
@@ -50,7 +53,12 @@ pub(super) fn sync(state: &mut AppState) {
             op.waiting_for = None;
             op.revision = revision;
         }
+        let selection = state
+            .file_ops
+            .get(id)
+            .is_some_and(|op| op.kind == Kind::Selection);
         match outcome {
+            Some(Outcome::Completed) if selection => super::selection_request::settle(state, id),
             Some(Outcome::Completed) => state.file_ops.succeed(id, Vec::new()),
             Some(Outcome::Crashed) => state.file_ops.fail(
                 id,

@@ -141,6 +141,7 @@ fn it_initialises_and_lists_read_only_tools() {
             "opendraft_entities_apply_batch",
             "opendraft_layers_apply_batch",
             "opendraft_selection_set",
+            "opendraft_selection_request",
             "opendraft_history_undo",
             "opendraft_history_redo"
         ]
@@ -153,7 +154,8 @@ fn it_initialises_and_lists_read_only_tools() {
             || tool["name"].as_str().unwrap().contains("_files_")
             || tool["name"] == "opendraft_operations_cancel"
             || tool["name"].as_str().unwrap().contains("_history_")
-            || tool["name"] == "opendraft_selection_set";
+            || tool["name"] == "opendraft_selection_set"
+            || tool["name"] == "opendraft_selection_request";
         assert_eq!(
             tool["annotations"]["readOnlyHint"], !writes,
             "{}",
@@ -175,7 +177,7 @@ fn it_also_serves_the_stateless_2026_request_style() {
     let reply = sidecar.request("tools/list", json!({"_meta": meta}));
     assert_eq!(
         reply["result"]["tools"].as_array().unwrap().len(),
-        25,
+        26,
         "{reply}"
     );
     let _ = std::fs::remove_dir_all(&dir);

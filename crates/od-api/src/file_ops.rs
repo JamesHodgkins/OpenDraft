@@ -99,7 +99,7 @@ impl OperationState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationStatus {
     pub operation_id: String,
-    /// `open`, `save`, `save_as`, `export` or `command`.
+    /// `open`, `save`, `save_as`, `export`, `command` or `selection`.
     pub kind: String,
     pub state: OperationState,
     /// The file's name, without its folder (empty for a command).
@@ -113,12 +113,19 @@ pub struct OperationStatus {
     /// data. The answer is the user's to give, in the app.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub waiting_for: Option<String>,
-    /// For an open that succeeded: the new drawing.
+    /// For an open that succeeded: the new drawing. For a selection
+    /// request: the drawing it asked about.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub document_id: Option<String>,
-    /// For a write: the revision of the drawing that was written.
+    /// For a write: the revision of the drawing that was written. For a
+    /// selection request that succeeded: the revision the ids belong to.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub revision: Option<WireId>,
+    /// For a selection request that succeeded: what the user chose (possibly
+    /// none, if the request allowed it). Each exists in `document_id` at
+    /// `revision`; read again before relying on it after the drawing moves on.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub entity_ids: Option<Vec<WireId>>,
     /// What the format could not keep, or what an import left out.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub notes: Vec<String>,

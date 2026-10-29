@@ -35,6 +35,11 @@ impl OpenDraftApp {
                 self.automation = None;
                 // Nobody is left to use an answer.
                 self.state.file_ops.cancel_waiting();
+                crate::automation::withdraw_selection_requests(
+                    &mut self.state,
+                    |_| true,
+                    "Automation was turned off, so the request to select objects was dropped.",
+                );
             }
             _ => {}
         }

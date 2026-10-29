@@ -30,6 +30,7 @@ pub const VIEW_RENDER: &str = "view.render";
 pub const ENTITIES_APPLY_BATCH: &str = "entities.apply_batch";
 pub const LAYERS_APPLY_BATCH: &str = "layers.apply_batch";
 pub const SELECTION_SET: &str = "selection.set";
+pub const SELECTION_REQUEST: &str = "selection.request";
 pub const HISTORY_UNDO: &str = "history.undo";
 pub const HISTORY_REDO: &str = "history.redo";
 
@@ -54,7 +55,7 @@ pub fn required_scope(operation: &str) -> Option<Scope> {
         ENTITIES_APPLY_BATCH | LAYERS_APPLY_BATCH | HISTORY_UNDO | HISTORY_REDO => {
             Some(Scope::DrawingWrite)
         }
-        SELECTION_SET => Some(Scope::UiSelection),
+        SELECTION_SET | SELECTION_REQUEST => Some(Scope::UiSelection),
         COMMANDS_INVOKE | COMMANDS_START_INTERACTIVE => Some(Scope::CommandInvoke),
         FILES_OPEN => Some(Scope::FileRead),
         FILES_SAVE | FILES_SAVE_AS | FILES_EXPORT => Some(Scope::FileWrite),
@@ -254,6 +255,12 @@ mod tests {
             Some(Scope::DrawingWrite)
         );
         assert_eq!(required_scope("files.delete"), None);
+    }
+
+    #[test]
+    fn asking_the_user_to_select_needs_the_same_grant_as_setting_the_selection() {
+        assert_eq!(required_scope(SELECTION_REQUEST), Some(Scope::UiSelection));
+        assert_eq!(required_scope(SELECTION_SET), Some(Scope::UiSelection));
     }
 
     #[test]

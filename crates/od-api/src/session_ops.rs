@@ -29,6 +29,40 @@ pub struct SelectionSetArgs {
     pub ignore_unselectable: bool,
 }
 
+/// Ask the user to select objects in the app. They pick as usual and press
+/// Enter, or Esc to refuse; the operation then carries the ids.
+#[derive(Clone, Debug, PartialEq, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct SelectionRequestArgs {
+    /// The drawing in the active tab.
+    pub document_id: String,
+    /// What to ask, in a few words (200 characters at most, plain text). The
+    /// app labels it as the assistant's.
+    pub prompt: String,
+    /// Accept only these kinds, e.g. `["line", "circle"]`; other picks are
+    /// dropped from the selection.
+    #[serde(default)]
+    pub kinds: Option<Vec<String>>,
+    /// Accept only objects on this layer.
+    #[serde(default)]
+    pub layer_id: Option<WireId>,
+    /// Fewest to finish with: 1 by default; 0 allows none.
+    #[serde(default)]
+    pub min_count: Option<usize>,
+    /// Most to finish with: 1000 by default and at most.
+    #[serde(default)]
+    pub max_count: Option<usize>,
+    /// Start from the user's current selection (default: empty).
+    #[serde(default)]
+    pub keep_current_selection: bool,
+    /// Seconds to wait for the user: 300 by default, 900 at most.
+    #[serde(default)]
+    pub timeout_seconds: Option<u32>,
+    /// Refuse if the drawing has changed since this revision.
+    #[serde(default)]
+    pub expected_revision: Option<WireId>,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum HistoryDirection {
