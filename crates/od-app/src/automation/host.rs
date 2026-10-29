@@ -94,7 +94,9 @@ impl SocketServer {
         sweep_stale(dir);
         let instance_id = core.instance_id().to_owned();
         let token = random_hex(32)?;
-        let endpoint = endpoint_for(dir, &instance_id);
+        // Its own name each time: the core outlives the server, and a
+        // server just stopped may not have let go of the last name yet.
+        let endpoint = endpoint_for(dir, &format!("{instance_id}-{}", random_hex(3)?));
         std::fs::create_dir_all(dir)?;
         let listener = ListenerOptions::new()
             .name(socket_name(&endpoint)?)
