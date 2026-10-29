@@ -23,6 +23,7 @@ pub mod layer_ops;
 pub mod limits;
 pub mod measure;
 pub mod ops;
+pub mod parts_ops;
 pub mod paths;
 pub mod session_ops;
 pub mod version;
