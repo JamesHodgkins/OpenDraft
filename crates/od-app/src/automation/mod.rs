@@ -39,6 +39,8 @@ mod query;
 mod read;
 mod render;
 #[cfg(test)]
+mod render_png_tests;
+#[cfg(test)]
 mod run_tests;
 mod scope;
 #[cfg(test)]

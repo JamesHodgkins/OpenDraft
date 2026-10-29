@@ -2226,6 +2226,7 @@ name = "od-app"
 version = "0.1.3"
 dependencies = [
  "arboard",
+ "base64 0.23.1",
  "chrono",
  "eframe",
  "egui_dock",
@@ -2284,8 +2285,10 @@ dependencies = [
  "dxf",
  "od-core",
  "od-dwg",
+ "png",
  "serde",
  "serde_json",
+ "tiny-skia",
 ]
 
 [[package]]

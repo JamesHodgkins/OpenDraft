@@ -13,7 +13,16 @@ use od_api::instance::{self, Descriptor};
 use od_api::{ApiError, ErrorCode, Request, Response, Scope};
 use serde_json::json;
 
+mod sidecar;
+// Each test file uses some of what is shared here.
+#[allow(unused_imports)]
+pub use sidecar::{scratch, Sidecar};
+
 pub const TOKEN: &str = "fake-token";
+
+/// A real 1 by 1 PNG, as base64.
+pub const TINY_PNG: &str =
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4//8/AwAI/AL+XJ/P2QAAAABJRU5ErkJggg==";
 
 pub struct FakeApp {
     pub dir: PathBuf,
@@ -43,9 +52,14 @@ fn answer(request: &Request) -> Response {
             json!({"documents": [{"document_id": "doc_fake_1", "title": "Plan", "active": true,
                                    "modified": false, "available": true, "revision": "7"}]}),
         ),
+        "view.render" if request.arguments["format"] == "png" => Response::success(
+            id,
+            json!({"revision": "7", "format": "png", "png_base64": TINY_PNG,
+                   "width": 1.0, "height": 1.0, "vertices": 0}),
+        ),
         "view.render" => Response::success(
             id,
-            json!({"revision": "7", "svg": "<svg/>", "width": 10.0, "height": 5.0, "vertices": 0}),
+            json!({"revision": "7", "format": "svg", "svg": "<svg/>", "width": 10.0, "height": 5.0, "vertices": 0}),
         ),
         _ => match request.arguments["document_id"].as_str() {
             Some("doc_blocked") => Response::failure(id, ApiError::block_editor_open()),
