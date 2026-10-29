@@ -2,6 +2,7 @@
 
 use std::sync::Arc;
 
+use od_api::catalogue;
 use rmcp::model::{
     CallToolRequestParams, CallToolResponse, CallToolResult, ContentBlock, Implementation,
     ListToolsResult, PaginatedRequestParams, ResourceContents, ServerCapabilities, ServerConfig,
@@ -56,22 +57,16 @@ pub fn tool_result(name: &str, outcome: Result<Value, od_api::ApiError>) -> Call
 /// paid for twice: an SVG as an embedded text resource, a PNG as an image
 /// block (the form a model can look at).
 fn render_result(mut value: Value) -> CallToolResult {
-    let mut take = |key: &str| {
-        value
-            .as_object_mut()
-            .and_then(|map| map.remove(key))
-            .and_then(|v| v.as_str().map(str::to_owned))
-    };
-    let (svg, png) = (take("svg"), take("png_base64"));
+    let pictures = catalogue::take_pictures(&mut value);
     let revision = value["revision"].as_str().unwrap_or("0").to_owned();
     let mut result = CallToolResult::structured(value);
-    if let Some(svg) = svg {
+    if let Some(svg) = pictures.svg {
         let uri = format!("opendraft://render/revision-{revision}.svg");
         result.content.push(ContentBlock::resource(
             ResourceContents::text(svg, uri).with_mime_type("image/svg+xml"),
         ));
     }
-    if let Some(png) = png {
+    if let Some(png) = pictures.png_base64 {
         result.content.push(ContentBlock::image(png, "image/png"));
     }
     result
