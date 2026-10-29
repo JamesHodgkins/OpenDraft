@@ -13,6 +13,9 @@ mod command_runs;
 #[cfg(test)]
 mod command_tests;
 mod connection;
+mod core;
+#[cfg(test)]
+mod core_tests;
 mod events;
 #[cfg(test)]
 mod file_guard_tests;

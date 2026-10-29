@@ -56,6 +56,9 @@ impl OpenDraftApp {
             .map(|host| {
                 host.grants()
                     .into_iter()
+                    // The in-app assistant's permissions are chosen where it
+                    // is used, not in this list of outside programs.
+                    .filter(|(_, g)| !g.in_process)
                     .map(|(id, g)| crate::automation::ConnectionRow {
                         id,
                         client: g.client_name,
