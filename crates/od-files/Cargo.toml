@@ -12,9 +12,15 @@ workspace = true
 od-core.workspace = true
 od-dwg.workspace = true
 serde = { version = "1", features = ["derive"] }
+# Draws a plot sheet as a PNG (BSD-3-Clause, so fine under GPL-3.0-or-later). It is
+# the rasteriser `resvg` already brings into the program through od-ui, at the same
+# version, so this adds no crate; nothing here parses SVG.
+tiny-skia = "0.12"
 # Exact float parsing, so a value read back is the value written.
 serde_json = { version = "1", features = ["float_roundtrip"] }
 
 [dev-dependencies]
+# Reads the PNG we write back, to check it (MIT OR Apache-2.0; already in the lock file).
+png = "0.18.1"
 # An independent DXF parser, to check that what we write is well-formed.
 dxf = "0.6.2"

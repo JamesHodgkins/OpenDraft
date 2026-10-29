@@ -16,6 +16,8 @@ pub const LAYERS_LIST: &str = "layers.list";
 pub const SELECTION_GET: &str = "selection.get";
 pub const GEOMETRY_MEASURE: &str = "geometry.measure";
 pub const GEOMETRY_INTERSECTIONS: &str = "geometry.intersections";
+pub const DRAWING_AUDIT: &str = "drawing.audit";
+pub const DRAWING_SUMMARY: &str = "drawing.summary";
 pub const COMMANDS_LIST: &str = "commands.list";
 pub const COMMANDS_INVOKE: &str = "commands.invoke";
 pub const COMMANDS_START_INTERACTIVE: &str = "commands.start_interactive";
@@ -45,6 +47,8 @@ pub fn required_scope(operation: &str) -> Option<Scope> {
         | SELECTION_GET
         | GEOMETRY_MEASURE
         | GEOMETRY_INTERSECTIONS
+        | DRAWING_AUDIT
+        | DRAWING_SUMMARY
         | VIEW_RENDER
         | COMMANDS_LIST
         | EVENTS_POLL
@@ -247,6 +251,8 @@ mod tests {
             ENTITIES_GET,
             LAYERS_LIST,
             SELECTION_GET,
+            DRAWING_AUDIT,
+            DRAWING_SUMMARY,
         ] {
             assert_eq!(required_scope(op), Some(Scope::DrawingRead));
         }

@@ -1,14 +1,19 @@
-//! `view.render`: an SVG of model space (or a layout's sheet) through the
-//! plotting pipeline, with the specification's size limits.
+//! `view.render`: an SVG or PNG of model space (or a layout's sheet) through
+//! the plotting pipeline, with the specification's size limits.
 
 use std::collections::HashSet;
 
+use base64::engine::general_purpose::STANDARD;
+use base64::Engine;
 use od_api::entity::BoundsDto;
 use od_api::limits::{
-    RENDER_ENTITIES_MAX, RENDER_RESULT_BYTES, RENDER_SIDE_MAX, VECTOR_VERTICES_MAX,
+    RENDER_ENTITIES_MAX, RENDER_PIXELS_MAX, RENDER_RESULT_BYTES, RENDER_SIDE_MAX,
+    VECTOR_VERTICES_MAX,
 };
 use od_api::ops::SpaceFilter;
-use od_api::view::{RenderArgs, RenderResult, FIDELITY, WIDTH_DEFAULT, WIDTH_MIN};
+use od_api::view::{
+    RenderArgs, RenderFormat, RenderResult, FIDELITY, FIDELITY_PNG, WIDTH_DEFAULT, WIDTH_MIN,
+};
 use od_api::{ApiError, ErrorCode, WireId};
 use od_core::plot::{plot_layout, PlotError, PlotSheet};
 use od_core::plot_model::plot_region;
@@ -30,6 +35,65 @@ fn plot_error(error: PlotError) -> ApiError {
         PlotError::NoLayout => invalid("There is nothing to draw in that window."),
         other => ApiError::new(ErrorCode::ResultTooLarge, other.to_string()),
     }
+}
+
+/// The picture, in whichever form was asked for.
+struct Picture {
+    svg: Option<String>,
+    png_base64: Option<String>,
+    width: f64,
+    height: f64,
+}
+
+fn svg_picture(sheet: &PlotSheet) -> Result<Picture, ApiError> {
+    let svg = od_files::svg(sheet);
+    if svg.len() > RENDER_RESULT_BYTES {
+        return Err(too_big(
+            format!(
+                "The picture is {} bytes; at most {RENDER_RESULT_BYTES}.",
+                svg.len()
+            ),
+            RENDER_RESULT_BYTES,
+        ));
+    }
+    Ok(Picture {
+        svg: Some(svg),
+        png_base64: None,
+        width: sheet.width,
+        height: sheet.height,
+    })
+}
+
+/// The sheet as pixels, `width` of them across. The size is checked before
+/// anything is drawn: a picture is memory and time on the UI thread.
+fn png_picture(sheet: &PlotSheet, width: f64) -> Result<Picture, ApiError> {
+    let (w, h) = od_files::png_size(sheet, width.round() as u32);
+    if h > RENDER_SIDE_MAX || u64::from(w) * u64::from(h) > RENDER_PIXELS_MAX {
+        return Err(too_big(
+            format!(
+                "A picture {w} by {h} pixels is too large: at most {RENDER_SIDE_MAX} on a side and {RENDER_PIXELS_MAX} pixels. Use a smaller width or a wider window."
+            ),
+            RENDER_PIXELS_MAX,
+        ));
+    }
+    let bytes = od_files::png(sheet, w, h)
+        .map_err(|e| ApiError::new(ErrorCode::InternalError, e.to_string()))?;
+    let encoded = STANDARD.encode(bytes);
+    if encoded.len() > RENDER_RESULT_BYTES {
+        return Err(too_big(
+            format!(
+                "The picture is {} bytes; at most {RENDER_RESULT_BYTES}. Use a smaller width or window.",
+                encoded.len()
+            ),
+            RENDER_RESULT_BYTES,
+        ));
+    }
+    Ok(Picture {
+        svg: None,
+        png_base64: Some(encoded),
+        width: f64::from(w),
+        height: f64::from(h),
+    })
 }
 
 fn vertices(sheet: &PlotSheet) -> usize {
@@ -177,24 +241,25 @@ pub fn render(
             VECTOR_VERTICES_MAX,
         ));
     }
-    let svg = od_files::svg(&sheet);
-    if svg.len() > RENDER_RESULT_BYTES {
-        return Err(too_big(
-            format!(
-                "The picture is {} bytes; at most {RENDER_RESULT_BYTES}.",
-                svg.len()
-            ),
-            RENDER_RESULT_BYTES,
-        ));
-    }
+    let format = args.format.unwrap_or_default();
+    let picture = match format {
+        RenderFormat::Svg => svg_picture(&sheet)?,
+        RenderFormat::Png => png_picture(&sheet, width)?,
+    };
     let result = RenderResult {
         revision: WireId(revision),
-        svg,
-        width: sheet.width,
-        height: sheet.height,
+        format,
+        svg: picture.svg,
+        png_base64: picture.png_base64,
+        width: picture.width,
+        height: picture.height,
         region: region.map(BoundsDto::from),
         vertices: count,
-        fidelity: FIDELITY.to_owned(),
+        fidelity: match format {
+            RenderFormat::Svg => FIDELITY,
+            RenderFormat::Png => FIDELITY_PNG,
+        }
+        .to_owned(),
         notes: sheet.notes,
     };
     serde_json::to_value(&result)

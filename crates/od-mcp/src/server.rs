@@ -52,13 +52,17 @@ pub fn tool_result(name: &str, outcome: Result<Value, od_api::ApiError>) -> Call
     }
 }
 
-/// A picture is returned as an embedded SVG resource, once; the structured
-/// part keeps only its description, so the image is not paid for twice.
+/// A picture is returned once, outside the structured part, so it is not
+/// paid for twice: an SVG as an embedded text resource, a PNG as an image
+/// block (the form a model can look at).
 fn render_result(mut value: Value) -> CallToolResult {
-    let svg = value
-        .as_object_mut()
-        .and_then(|map| map.remove("svg"))
-        .and_then(|v| v.as_str().map(str::to_owned));
+    let mut take = |key: &str| {
+        value
+            .as_object_mut()
+            .and_then(|map| map.remove(key))
+            .and_then(|v| v.as_str().map(str::to_owned))
+    };
+    let (svg, png) = (take("svg"), take("png_base64"));
     let revision = value["revision"].as_str().unwrap_or("0").to_owned();
     let mut result = CallToolResult::structured(value);
     if let Some(svg) = svg {
@@ -66,6 +70,9 @@ fn render_result(mut value: Value) -> CallToolResult {
         result.content.push(ContentBlock::resource(
             ResourceContents::text(svg, uri).with_mime_type("image/svg+xml"),
         ));
+    }
+    if let Some(png) = png {
+        result.content.push(ContentBlock::image(png, "image/png"));
     }
     result
 }

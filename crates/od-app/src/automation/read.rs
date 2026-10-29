@@ -13,7 +13,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::Value;
 
-use super::{document_id, query, resolve};
+use super::{audit, document_id, query, resolve, summary};
 use crate::state::{AppState, Doc};
 
 pub(super) fn parse<T: DeserializeOwned>(arguments: Value) -> Result<T, ApiError> {
@@ -47,6 +47,8 @@ pub fn handle_read(
             to_value(&summary(state, instance, &args.document_id)?)
         }
         ops::ENTITIES_QUERY => to_value(&query::entities(state, instance, parse(arguments)?)?),
+        ops::DRAWING_AUDIT => audit::audit(state, instance, arguments),
+        ops::DRAWING_SUMMARY => summary::summary(state, instance, arguments),
         ops::ENTITIES_GET => to_value(&get(state, instance, parse(arguments)?)?),
         ops::LAYERS_LIST => {
             let args: DocumentArgs = parse(arguments)?;

@@ -5,93 +5,8 @@
 
 mod support;
 
-use std::io::{BufRead, BufReader, Write};
-use std::path::PathBuf;
-use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
-
-use serde_json::{json, Value};
-use support::{FakeApp, TOKEN};
-
-fn scratch(name: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("od-mcp-{name}-{}", std::process::id()));
-    let _ = std::fs::remove_dir_all(&dir);
-    dir
-}
-
-struct Sidecar {
-    child: Child,
-    stdin: ChildStdin,
-    stdout: BufReader<ChildStdout>,
-    next_id: u64,
-}
-
-impl Sidecar {
-    fn start(dir: &PathBuf, extra: &[&str]) -> Sidecar {
-        let mut child = Command::new(env!("CARGO_BIN_EXE_opendraft-mcp"))
-            .args(extra)
-            .env("OD_AUTOMATION_DIR", dir)
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::null())
-            .spawn()
-            .unwrap();
-        let stdin = child.stdin.take().unwrap();
-        let stdout = BufReader::new(child.stdout.take().unwrap());
-        Sidecar {
-            child,
-            stdin,
-            stdout,
-            next_id: 1,
-        }
-    }
-
-    fn send(&mut self, message: &Value) {
-        writeln!(self.stdin, "{message}").unwrap();
-        self.stdin.flush().unwrap();
-    }
-
-    /// Every line the server writes to stdout must be a JSON-RPC message.
-    fn receive(&mut self) -> Value {
-        let mut line = String::new();
-        self.stdout.read_line(&mut line).unwrap();
-        let message: Value = serde_json::from_str(line.trim()).unwrap_or_else(|e| {
-            panic!("stdout carried something that is not JSON ({e}): {line:?}")
-        });
-        assert_eq!(message["jsonrpc"], "2.0", "{message}");
-        message
-    }
-
-    fn request(&mut self, method: &str, params: Value) -> Value {
-        let id = self.next_id;
-        self.next_id += 1;
-        self.send(&json!({"jsonrpc": "2.0", "id": id, "method": method, "params": params}));
-        let reply = self.receive();
-        assert_eq!(reply["id"], id, "{reply}");
-        reply
-    }
-
-    fn initialise(&mut self) -> Value {
-        let reply = self.request(
-            "initialize",
-            json!({"protocolVersion": "2025-11-25", "capabilities": {},
-                   "clientInfo": {"name": "contract-test", "version": "0"}}),
-        );
-        self.send(&json!({"jsonrpc": "2.0", "method": "notifications/initialized"}));
-        reply
-    }
-
-    fn call(&mut self, tool: &str, arguments: Value) -> Value {
-        let reply = self.request("tools/call", json!({"name": tool, "arguments": arguments}));
-        reply["result"].clone()
-    }
-}
-
-impl Drop for Sidecar {
-    fn drop(&mut self) {
-        let _ = self.child.kill();
-        let _ = self.child.wait();
-    }
-}
+use serde_json::json;
+use support::{scratch, FakeApp, Sidecar, TOKEN};
 
 #[test]
 fn it_initialises_and_lists_read_only_tools() {
@@ -127,6 +42,8 @@ fn it_initialises_and_lists_read_only_tools() {
             "opendraft_selection_get",
             "opendraft_geometry_measure",
             "opendraft_geometry_intersections",
+            "opendraft_drawing_summary",
+            "opendraft_drawing_audit",
             "opendraft_view_render",
             "opendraft_commands_list",
             "opendraft_commands_invoke",
@@ -177,7 +94,7 @@ fn it_also_serves_the_stateless_2026_request_style() {
     let reply = sidecar.request("tools/list", json!({"_meta": meta}));
     assert_eq!(
         reply["result"]["tools"].as_array().unwrap().len(),
-        26,
+        28,
         "{reply}"
     );
     let _ = std::fs::remove_dir_all(&dir);
@@ -361,37 +278,6 @@ fn write_tools_ask_the_app_with_the_write_scope() {
             ("selection.set".to_owned(), json!("ui.selection")),
             ("documents.list".to_owned(), json!("drawing.read")),
         ]
-    );
-    let _ = std::fs::remove_dir_all(&dir);
-}
-
-#[test]
-fn a_picture_comes_back_once_as_an_svg_resource() {
-    let dir = scratch("render");
-    let _app = FakeApp::start(&dir, "hhhh", TOKEN);
-    let mut sidecar = Sidecar::start(&dir, &[]);
-    sidecar.initialise();
-    let result = sidecar.call(
-        "opendraft_view_render",
-        json!({"document_id": "doc_fake_1"}),
-    );
-    assert_ne!(result["isError"], true, "{result}");
-    assert!(
-        result["structuredContent"].get("svg").is_none(),
-        "the image is not repeated in the structured part: {result}"
-    );
-    assert_eq!(result["structuredContent"]["revision"], "7");
-    let resource = result["content"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|c| c["type"] == "resource")
-        .unwrap_or_else(|| panic!("no resource in {result}"));
-    assert_eq!(resource["resource"]["mimeType"], "image/svg+xml");
-    assert_eq!(resource["resource"]["text"], "<svg/>");
-    assert_eq!(
-        resource["resource"]["uri"],
-        "opendraft://render/revision-7.svg"
     );
     let _ = std::fs::remove_dir_all(&dir);
 }
