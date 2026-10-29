@@ -1,8 +1,10 @@
-//! The automation host: the local socket in front of the core. It listens,
-//! publishes where it is, and starts a thread per connection; each
+//! The socket server: the local socket in front of the app's core. It
+//! listens, publishes where it is, and starts a thread per connection; each
 //! connection authenticates, then hands its requests to the core's queue.
 //! Everything that decides what a request may do is in `core.rs`, which the
-//! in-app assistant uses too.
+//! in-app assistant uses too. The core outlives the server: turning the
+//! setting off stops the server and ends its connections, and leaves the
+//! in-app assistant's connection alone.
 
 use std::io::{self};
 use std::path::{Path, PathBuf};
@@ -12,11 +14,8 @@ use std::sync::Arc;
 use interprocess::local_socket::{prelude::*, ListenerOptions, Name, Stream};
 use od_api::instance::{self, Descriptor};
 use od_api::API_VERSION;
-use od_commands::Registry;
 
 use super::core::{AutomationCore, Link};
-use super::grants::Grant;
-use crate::state::AppState;
 
 /// Most connections served at once; each has a thread.
 const MAX_CONNECTIONS: usize = 8;
@@ -30,8 +29,15 @@ pub(super) struct Socket {
     shutdown: AtomicBool,
 }
 
-pub struct AutomationHost {
-    core: AutomationCore,
+impl Socket {
+    /// Whether the server has been stopped: a connection ends at its next
+    /// request.
+    pub(super) fn is_stopped(&self) -> bool {
+        self.shutdown.load(Ordering::Acquire)
+    }
+}
+
+pub struct SocketServer {
     socket: Arc<Socket>,
     dir: PathBuf,
     endpoint: String,
@@ -82,19 +88,19 @@ fn endpoint_for(dir: &Path, instance_id: &str) -> String {
     }
 }
 
-impl AutomationHost {
-    /// Start listening and publish the descriptor in `dir`. `waker` is
-    /// called whenever a request is queued, so the UI looks at it soon.
-    pub fn start(dir: &Path, waker: Box<dyn Fn() + Send + Sync>) -> io::Result<Self> {
+impl SocketServer {
+    /// Start listening and publish the descriptor in `dir`, feeding `core`.
+    pub fn start(dir: &Path, core: &AutomationCore) -> io::Result<Self> {
         sweep_stale(dir);
-        let instance_id = random_hex(8)?;
+        let instance_id = core.instance_id().to_owned();
         let token = random_hex(32)?;
-        let endpoint = endpoint_for(dir, &instance_id);
+        // Its own name each time: the core outlives the server, and a
+        // server just stopped may not have let go of the last name yet.
+        let endpoint = endpoint_for(dir, &format!("{instance_id}-{}", random_hex(3)?));
         std::fs::create_dir_all(dir)?;
         let listener = ListenerOptions::new()
             .name(socket_name(&endpoint)?)
             .create_sync()?;
-        let core = AutomationCore::new(instance_id.clone(), waker);
         let socket = Arc::new(Socket {
             link: core.link(),
             token: token.clone(),
@@ -117,55 +123,19 @@ impl AutomationHost {
             .name("automation-accept".into())
             .spawn(move || accept_loop(&accepting, &listener))?;
         Ok(Self {
-            core,
             socket,
             dir: dir.to_owned(),
             endpoint,
         })
     }
-
-    /// The core behind the socket: the same one an in-app connection uses.
-    #[allow(dead_code)]
-    pub fn core(&self) -> &AutomationCore {
-        &self.core
-    }
-
-    #[cfg(test)]
-    pub fn instance_id(&self) -> &str {
-        self.core.instance_id()
-    }
-
-    /// The connections now open, oldest first.
-    pub fn grants(&self) -> Vec<(u64, Grant)> {
-        self.core.grants()
-    }
-
-    /// See [`AutomationCore::set_write`].
-    pub fn set_write(&self, grant_id: u64, allow: bool) {
-        self.core.set_write(grant_id, allow);
-    }
-
-    /// See [`AutomationCore::set_files`].
-    pub fn set_files(&self, grant_id: u64, allow: bool) {
-        self.core.set_files(grant_id, allow);
-    }
-
-    /// See [`AutomationCore::set_commands`].
-    pub fn set_commands(&self, grant_id: u64, allow: bool) {
-        self.core.set_commands(grant_id, allow);
-    }
-
-    /// Answer the queued requests, as many as fit in this frame's budget.
-    /// Call once per frame from the UI thread.
-    pub fn poll(&self, state: &mut AppState, registry: &Registry<AppState>) {
-        self.core.poll(state, registry);
-    }
 }
 
-impl Drop for AutomationHost {
+impl Drop for SocketServer {
     fn drop(&mut self) {
         self.socket.shutdown.store(true, Ordering::Release);
-        instance::remove(&self.dir, self.core.instance_id());
+        instance::remove(&self.dir, self.socket.link.instance_id());
+        // Its connections are over; the in-app assistant's is not.
+        self.socket.link.release_outside();
         // Wake the accept loop so it sees the flag and ends.
         if let Ok(name) = socket_name(&self.endpoint) {
             let _ = Stream::connect(name);

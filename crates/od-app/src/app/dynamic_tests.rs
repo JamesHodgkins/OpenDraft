@@ -43,7 +43,7 @@ fn app() -> OpenDraftApp {
         ctrl_alone: false,
         ctrl_down: false,
         dynamic_keys: Vec::new(),
-        automation: None,
+        automation: super::automation_update::Automation::new(),
         automation_forced: false,
         home_scan: Default::default(),
         home_previews: Default::default(),

@@ -50,25 +50,22 @@ impl OpenDraftApp {
         let mut action = None;
         let dirty = draft != self.state.settings;
         let document = self.state.docs[self.state.active].title.clone();
+        // The in-app assistant's permissions are chosen where it is used,
+        // not in this list of outside programs.
         let mut connections: Vec<crate::automation::ConnectionRow> = self
             .automation
-            .as_ref()
-            .map(|host| {
-                host.grants()
-                    .into_iter()
-                    // The in-app assistant's permissions are chosen where it
-                    // is used, not in this list of outside programs.
-                    .filter(|(_, g)| !g.in_process)
-                    .map(|(id, g)| crate::automation::ConnectionRow {
-                        id,
-                        client: g.client_name,
-                        write: g.scopes.contains(&od_api::Scope::DrawingWrite),
-                        commands: g.scopes.contains(&od_api::Scope::CommandInvoke),
-                        files: g.scopes.contains(&od_api::Scope::FileWrite),
-                    })
-                    .collect()
+            .core
+            .grants()
+            .into_iter()
+            .filter(|(_, g)| !g.in_process)
+            .map(|(id, g)| crate::automation::ConnectionRow {
+                id,
+                client: g.client_name,
+                write: g.scopes.contains(&od_api::Scope::DrawingWrite),
+                commands: g.scopes.contains(&od_api::Scope::CommandInvoke),
+                files: g.scopes.contains(&od_api::Scope::FileWrite),
             })
-            .unwrap_or_default();
+            .collect();
         let shown: Vec<(bool, bool, bool)> = connections
             .iter()
             .map(|c| (c.write, c.commands, c.files))
@@ -132,7 +129,8 @@ impl OpenDraftApp {
 
         self.settings_tab = tab;
         // The write switch is the user's, and takes effect at once.
-        if let Some(host) = &self.automation {
+        {
+            let host = &self.automation.core;
             for (row, was) in connections.iter().zip(&shown) {
                 if row.write != was.0 {
                     host.set_write(row.id, row.write);

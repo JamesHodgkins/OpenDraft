@@ -58,6 +58,8 @@ mod selection_request;
 mod selection_tests;
 mod settings_page;
 mod setup;
+#[cfg(test)]
+mod socket_tests;
 mod summary;
 #[cfg(test)]
 mod summary_tests;
@@ -67,11 +69,13 @@ mod ui_mutate;
 #[cfg(test)]
 mod ui_tests;
 
+pub use self::core::{fresh_instance_id, AutomationCore, InProcess};
+pub use self::grants::Coverage;
 pub use events::EventLog;
 pub use file_ops::{answer_consent, consent_text};
 pub use file_state::FileOps;
 pub use guard::Caller;
-pub use host::AutomationHost;
+pub use host::SocketServer;
 pub use idempotency::Replays;
 pub use mutate::apply_batch;
 pub use policy::classified;

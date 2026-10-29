@@ -38,3 +38,4 @@ od-canvas = { path = "crates/od-canvas" }
 od-files = { path = "crates/od-files" }
 od-dwg = { path = "crates/od-dwg" }
 od-api = { path = "crates/od-api" }
+od-agent = { path = "crates/od-agent" }

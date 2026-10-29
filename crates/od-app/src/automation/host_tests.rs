@@ -12,12 +12,39 @@ use od_api::limits::QUEUED_REQUESTS_MAX;
 use od_api::{ErrorCode, Response, Scope};
 use serde_json::{json, Value};
 
-use super::host::{socket_name, AutomationHost};
+use super::core::AutomationCore;
+use super::host::{socket_name, SocketServer};
 use crate::state::AppState;
 
+/// A core with a socket in front of it, as the app has when the setting is
+/// on. It answers for the core, so a test calls `poll` and the like on it.
+pub(super) struct TestHost {
+    core: AutomationCore,
+    server: Option<SocketServer>,
+}
+
+impl TestHost {
+    pub(super) fn core(&self) -> &AutomationCore {
+        &self.core
+    }
+
+    /// Stop the socket, as turning the setting off does.
+    pub(super) fn stop_socket(&mut self) {
+        self.server = None;
+    }
+}
+
+impl std::ops::Deref for TestHost {
+    type Target = AutomationCore;
+
+    fn deref(&self) -> &AutomationCore {
+        &self.core
+    }
+}
+
 pub(super) struct Fixture {
-    pub(super) host: AutomationHost,
-    dir: PathBuf,
+    pub(super) host: TestHost,
+    pub(super) dir: PathBuf,
     pub(super) descriptor: Descriptor,
 }
 
@@ -30,7 +57,12 @@ impl Drop for Fixture {
 pub(super) fn start(name: &str) -> Fixture {
     let dir = std::env::temp_dir().join(format!("od-host-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
-    let host = AutomationHost::start(&dir, Box::new(|| {})).unwrap();
+    let core = AutomationCore::new(super::core::fresh_instance_id(), Box::new(|| {}));
+    let server = SocketServer::start(&dir, &core).unwrap();
+    let host = TestHost {
+        core,
+        server: Some(server),
+    };
     let descriptor = instance::list(&dir).pop().unwrap();
     Fixture {
         host,
@@ -39,11 +71,11 @@ pub(super) fn start(name: &str) -> Fixture {
     }
 }
 
-fn connect(descriptor: &Descriptor) -> Stream {
+pub(super) fn connect(descriptor: &Descriptor) -> Stream {
     Stream::connect(socket_name(&descriptor.endpoint).unwrap()).unwrap()
 }
 
-fn hello(stream: &mut Stream, token: &str, versions: &[u32]) -> HelloReply {
+pub(super) fn hello(stream: &mut Stream, token: &str, versions: &[u32]) -> HelloReply {
     let hello = Hello {
         token: token.to_owned(),
         api_versions: versions.to_vec(),
@@ -246,7 +278,8 @@ fn a_descriptor_left_by_a_crashed_run_is_swept_at_start() {
         token: "t".to_owned(),
     };
     instance::write(&dir, &stale).unwrap();
-    let host = AutomationHost::start(&dir, Box::new(|| {})).unwrap();
+    let core = AutomationCore::new(super::core::fresh_instance_id(), Box::new(|| {}));
+    let host = SocketServer::start(&dir, &core).unwrap();
     let left = instance::list(&dir);
     assert_eq!(left.len(), 1, "{left:?}");
     assert_ne!(left[0].instance_id, "deadbeef");

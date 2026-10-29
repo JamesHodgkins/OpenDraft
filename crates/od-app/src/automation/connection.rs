@@ -25,6 +25,9 @@ pub(super) fn serve<S: Read + Write>(socket: &Socket, stream: &mut S) {
         return;
     };
     while let Ok(frame) = read_frame(stream) {
+        if socket.is_stopped() {
+            break;
+        }
         let response = respond(socket, grant_id, &frame);
         let sent = match serde_json::to_vec(&response) {
             Ok(bytes) if bytes.len() <= IPC_FRAME_BYTES => write_frame(stream, &bytes).is_ok(),

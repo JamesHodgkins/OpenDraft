@@ -1,28 +1,58 @@
 //! Keeping the MCP automation endpoint in step with its setting.
 
+use std::sync::{Arc, OnceLock};
+
 use eframe::egui;
 
 use super::OpenDraftApp;
+
+/// The core every connection goes through, the socket in front of it while
+/// the setting is on, and the handle that lets the core's waker repaint the
+/// window once there is one (the core is made first).
+pub(super) struct Automation {
+    pub core: Arc<crate::automation::AutomationCore>,
+    pub socket: Option<crate::automation::SocketServer>,
+    repaint: Arc<OnceLock<egui::Context>>,
+}
+
+impl Automation {
+    pub fn new() -> Self {
+        let repaint: Arc<OnceLock<egui::Context>> = Arc::default();
+        let core = crate::automation::AutomationCore::new(
+            crate::automation::fresh_instance_id(),
+            Box::new({
+                let repaint = Arc::clone(&repaint);
+                move || {
+                    if let Some(ctx) = repaint.get() {
+                        ctx.request_repaint();
+                    }
+                }
+            }),
+        );
+        Self {
+            core: Arc::new(core),
+            socket: None,
+            repaint,
+        }
+    }
+}
 
 impl OpenDraftApp {
     /// Start or stop the automation endpoint to match the setting, and answer
     /// the requests waiting for this frame.
     pub(super) fn update_automation(&mut self, ctx: &egui::Context) {
+        let _ = self.automation.repaint.set(ctx.clone());
         let wanted = self.state.settings.automation_enabled || self.automation_forced;
-        match (wanted, self.automation.is_some()) {
+        match (wanted, self.automation.socket.is_some()) {
             (true, false) => {
-                let waker = {
-                    let ctx = ctx.clone();
-                    Box::new(move || ctx.request_repaint())
-                };
                 let started = od_api::instance::directory()
                     .ok_or_else(|| "no per-user runtime folder".to_owned())
                     .and_then(|dir| {
-                        crate::automation::AutomationHost::start(&dir, waker)
+                        crate::automation::SocketServer::start(&dir, &self.automation.core)
                             .map_err(|e| e.to_string())
                     });
                 match started {
-                    Ok(host) => self.automation = Some(host),
+                    Ok(server) => self.automation.socket = Some(server),
                     Err(reason) => {
                         // Do not retry every frame: the user turns it on again.
                         self.state.settings.automation_enabled = false;
@@ -32,19 +62,29 @@ impl OpenDraftApp {
                 }
             }
             (false, true) => {
-                self.automation = None;
+                // The outside programs go; the in-app assistant stays.
+                let outside: Vec<u64> = self
+                    .automation
+                    .core
+                    .grants()
+                    .into_iter()
+                    .filter(|(_, g)| !g.in_process)
+                    .map(|(id, _)| id)
+                    .collect();
+                self.automation.socket = None;
                 // Nobody is left to use an answer.
                 self.state.file_ops.cancel_waiting();
                 crate::automation::withdraw_selection_requests(
                     &mut self.state,
-                    |_| true,
+                    |grant| outside.contains(&grant),
                     "Automation was turned off, so the request to select objects was dropped.",
                 );
             }
             _ => {}
         }
-        if let Some(host) = &self.automation {
-            host.poll(&mut self.state, &self.registry);
+        // Nothing to answer and nobody to answer it: leave the frame alone.
+        if self.automation.socket.is_some() || !self.automation.core.grants().is_empty() {
+            self.automation.core.poll(&mut self.state, &self.registry);
         }
     }
 }
