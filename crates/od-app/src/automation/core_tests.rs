@@ -16,15 +16,15 @@ use super::document_id;
 use super::host_tests::{connected, start};
 use crate::state::AppState;
 
-const INSTANCE: &str = "inst1";
+pub(super) const INSTANCE: &str = "inst1";
 
-fn core() -> AutomationCore {
+pub(super) fn core() -> AutomationCore {
     AutomationCore::new(INSTANCE.to_owned(), Box::new(|| {}))
 }
 
 /// The call is made from its own thread while this one polls, as the app
 /// does between frames.
-fn serve<T: Send>(
+pub(super) fn serve<T: Send>(
     core: &AutomationCore,
     state: &mut AppState,
     registry: &Registry<AppState>,
@@ -40,7 +40,7 @@ fn serve<T: Send>(
     })
 }
 
-fn code(response: &Response) -> Option<ErrorCode> {
+pub(super) fn code(response: &Response) -> Option<ErrorCode> {
     response.error.as_ref().map(|e| e.code)
 }
 

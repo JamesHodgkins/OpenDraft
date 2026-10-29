@@ -26,6 +26,9 @@ mod file_tests;
 mod geometry;
 #[cfg(test)]
 mod geometry_tests;
+mod grants;
+#[cfg(test)]
+mod grants_tests;
 mod guard;
 mod host;
 #[cfg(test)]
