@@ -3,6 +3,7 @@
 //! It knows nothing of egui, MCP or the native `.odx` schema.
 
 pub mod audit_ops;
+pub mod catalogue;
 pub mod command_ops;
 pub mod convert;
 pub mod entity;
