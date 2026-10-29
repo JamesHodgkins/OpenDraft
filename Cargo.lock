@@ -2212,6 +2212,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "od-agent"
+version = "0.1.3"
+dependencies = [
+ "od-api",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "od-api"
 version = "0.1.3"
 dependencies = [
