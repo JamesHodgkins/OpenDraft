@@ -15,15 +15,19 @@
 #![allow(dead_code)]
 
 mod chat;
+mod describe;
 mod host;
 mod level;
 mod panel;
 mod prompter;
+mod undo;
 
 #[cfg(test)]
 mod chat_tests;
 #[cfg(test)]
 mod dev_run;
+#[cfg(test)]
+mod edit_tests;
 #[cfg(test)]
 mod host_tests;
 #[cfg(test)]
@@ -32,9 +36,9 @@ mod run_tests;
 mod support;
 
 #[allow(unused_imports)]
-pub use chat::{mistral, Ask, Assistant, Chat, Entry, Kind, Progress, Reply, Waker};
+pub use chat::{mistral, Ask, Assistant, Chat, Drawings, Entry, Kind, Progress, Reply, Waker};
 #[allow(unused_imports)]
-pub use host::AppHost;
+pub use host::{AppHost, Reach};
 #[allow(unused_imports)]
 pub use level::{ApprovalLevel, AUTO_APPROVE_CEILING};
 pub use panel::show as show_panel;

@@ -17,15 +17,15 @@ use crate::state::AppState;
 
 /// A chat whose model plays the next script each time one is asked for, and
 /// remembers the models it made so a test can read what they were sent.
-struct Rig {
-    chat: Assistant,
+pub(super) struct Rig {
+    pub(super) chat: Assistant,
     scripts: Arc<Mutex<VecDeque<Vec<Step>>>>,
     made: Arc<Mutex<Vec<Arc<FakeProvider>>>>,
-    core: Arc<AutomationCore>,
-    state: AppState,
+    pub(super) core: Arc<AutomationCore>,
+    pub(super) state: AppState,
 }
 
-fn rig(key: Option<&str>) -> Rig {
+pub(super) fn rig(key: Option<&str>) -> Rig {
     let scripts: Arc<Mutex<VecDeque<Vec<Step>>>> = Arc::default();
     let made: Arc<Mutex<Vec<Arc<FakeProvider>>>> = Arc::default();
     let (s, m) = (scripts.clone(), made.clone());
@@ -53,18 +53,18 @@ fn rig(key: Option<&str>) -> Rig {
 }
 
 impl Rig {
-    fn script(&self, steps: Vec<Step>) {
+    pub(super) fn script(&self, steps: Vec<Step>) {
         if let Ok(mut q) = self.scripts.lock() {
             q.push_back(steps);
         }
     }
 
-    fn send(&mut self, text: &str) -> bool {
+    pub(super) fn send(&mut self, text: &str) -> bool {
         self.chat.send(text, &self.state, &self.core)
     }
 
     /// Run frames until `done` says so (or five seconds pass).
-    fn pump(&mut self, mut done: impl FnMut(&mut Assistant) -> bool) {
+    pub(super) fn pump(&mut self, mut done: impl FnMut(&mut Assistant) -> bool) {
         let registry = crate::commands::build_registry();
         let until = Instant::now() + Duration::from_secs(5);
         loop {
@@ -78,15 +78,15 @@ impl Rig {
         }
     }
 
-    fn finish(&mut self) {
+    pub(super) fn finish(&mut self) {
         self.pump(|chat| !chat.chat().is_running());
     }
 
-    fn entries(&self) -> Vec<Entry> {
+    pub(super) fn entries(&self) -> Vec<Entry> {
         self.chat.chat().entries.clone()
     }
 
-    fn requests(&self, task: usize) -> Vec<od_agent::ModelRequest> {
+    pub(super) fn requests(&self, task: usize) -> Vec<od_agent::ModelRequest> {
         self.made
             .lock()
             .map(|m| m[task].requests())
@@ -281,14 +281,14 @@ fn the_status_line_names_what_the_assistant_is_doing() {
     assert!(seen.contains(&"Thinking...".to_owned()), "{seen:?}");
 }
 
-fn edit_rig(level: ApprovalLevel) -> Rig {
+pub(super) fn edit_rig(level: ApprovalLevel) -> Rig {
     let mut rig = rig(Some("k"));
     rig.chat.kind = Kind::Edit;
     rig.chat.level = level;
     rig
 }
 
-fn plan_then_draw(rig: &Rig) -> Vec<Step> {
+pub(super) fn plan_then_draw(rig: &Rig) -> Vec<Step> {
     vec![
         Step::call(
             "p",

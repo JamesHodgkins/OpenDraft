@@ -7,10 +7,20 @@ use od_agent::{Answer, PlanOutcome};
 use od_ui::Theme;
 
 use super::markdown;
+use crate::assistant::describe;
 use crate::assistant::{ApprovalLevel, Ask, Assistant, Decision, Entry, Progress, Reply};
+use crate::state::AppState;
+use crate::text::plural;
 
-pub fn show(ui: &mut egui::Ui, theme: &Theme, assistant: &mut Assistant) {
+pub fn show(
+    ui: &mut egui::Ui,
+    theme: &Theme,
+    assistant: &mut Assistant,
+    state: &mut AppState,
+    names: &[(String, String)],
+) {
     let mut reply = None;
+    let mut undo = None;
     egui::ScrollArea::vertical()
         .auto_shrink([false, false])
         .stick_to_bottom(true)
@@ -23,16 +33,21 @@ pub fn show(ui: &mut egui::Ui, theme: &Theme, assistant: &mut Assistant) {
                     if chat.entries.is_empty() && chat.pending.is_none() {
                         empty(ui, theme);
                     }
-                    for entry in &chat.entries {
-                        entry_ui(ui, theme, entry);
+                    for (index, entry) in chat.entries.iter().enumerate() {
+                        if entry_ui(ui, theme, entry) {
+                            undo = Some(index);
+                        }
                     }
                     if let Some(ask) = chat.pending.as_ref().map(|p| p.ask.clone()) {
-                        reply = card(ui, theme, &ask);
+                        reply = card(ui, theme, &ask, names);
                     }
                 });
         });
     if let Some(reply) = reply {
         assistant.answer(reply);
+    }
+    if let Some(index) = undo {
+        assistant.undo(index, state);
     }
 }
 
@@ -48,7 +63,9 @@ fn empty(ui: &mut egui::Ui, theme: &Theme) {
     );
 }
 
-fn entry_ui(ui: &mut egui::Ui, theme: &Theme, entry: &Entry) {
+/// One line of the transcript; `true` if its Undo button was pressed.
+fn entry_ui(ui: &mut egui::Ui, theme: &Theme, entry: &Entry) -> bool {
+    let mut undo = false;
     let c = &theme.colors;
     let small = theme.font_size_small;
     match entry {
@@ -106,11 +123,43 @@ fn entry_ui(ui: &mut egui::Ui, theme: &Theme, entry: &Entry) {
                     .color(c.text_weak),
             );
         }
+        Entry::Made {
+            changes, outcome, ..
+        } => match outcome {
+            Some(said) => {
+                ui.label(
+                    egui::RichText::new(said)
+                        .size(small)
+                        .italics()
+                        .color(c.text_weak),
+                );
+            }
+            None => {
+                ui.horizontal(|ui| {
+                    ui.label(
+                        egui::RichText::new(format!(
+                            "Made {}.",
+                            plural(*changes as usize, "change")
+                        ))
+                        .size(small)
+                        .color(c.text_weak),
+                    );
+                    if ui
+                        .small_button("Undo")
+                        .on_hover_text("Take back what this task changed")
+                        .clicked()
+                    {
+                        undo = true;
+                    }
+                });
+            }
+        },
     }
+    undo
 }
 
 /// The question on screen; `Some` once answered.
-fn card(ui: &mut egui::Ui, theme: &Theme, ask: &Ask) -> Option<Reply> {
+fn card(ui: &mut egui::Ui, theme: &Theme, ask: &Ask, names: &[(String, String)]) -> Option<Reply> {
     let c = &theme.colors;
     let mut reply = None;
     egui::Frame::new()
@@ -123,10 +172,27 @@ fn card(ui: &mut egui::Ui, theme: &Theme, ask: &Ask) -> Option<Reply> {
                 Ask::Change(request) => {
                     ui.label(
                         egui::RichText::new("The assistant wants to change the drawing")
+                            .color(c.text_weak),
+                    );
+                    ui.label(
+                        egui::RichText::new(describe::change(request))
                             .strong()
                             .color(c.text),
                     );
-                    egui::CollapsingHeader::new("Show the change")
+                    if let Some(title) = request
+                        .arguments
+                        .get("document_id")
+                        .and_then(|d| d.as_str())
+                        .and_then(|id| names.iter().find(|(n, _)| n == id))
+                        .filter(|_| names.len() > 1)
+                    {
+                        ui.label(
+                            egui::RichText::new(format!("In {}", title.1))
+                                .size(theme.font_size_small)
+                                .color(c.text_weak),
+                        );
+                    }
+                    egui::CollapsingHeader::new("Show exactly what will be sent")
                         .id_salt("assistant_change")
                         .show(ui, |ui| {
                             let text = serde_json::to_string_pretty(&request.arguments)

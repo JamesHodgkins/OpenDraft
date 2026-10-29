@@ -14,7 +14,7 @@ use od_agent::{
     TaskConfig, Workflow,
 };
 
-use crate::assistant::{AppHost, ApprovalLevel, ChangeRequest, Decision, Prompter};
+use crate::assistant::{AppHost, ApprovalLevel, ChangeRequest, Decision, Prompter, Reach};
 
 /// Called whenever there is something new for the UI to look at.
 pub type Waker = Arc<dyn Fn() + Send + Sync>;
@@ -105,21 +105,24 @@ pub(super) struct Job {
     pub core: Arc<crate::automation::AutomationCore>,
     pub workflow: Workflow,
     pub level: ApprovalLevel,
+    pub reach: Reach,
     pub prompt: String,
     pub config: TaskConfig,
     pub cancel: CancelToken,
     pub wake: Waker,
 }
 
-/// Start the task on its own thread. `Err` is why it could not start.
-pub(super) fn start(job: Job) -> Result<Receiver<Update>, String> {
+/// Start the task on its own thread; with its updates, the number of the
+/// connection it uses. `Err` is why it could not start.
+pub(super) fn start(job: Job) -> Result<(Receiver<Update>, u64), String> {
     let (updates, receiver) = mpsc::channel();
     let prompter = Arc::new(ChannelPrompter {
         updates: Mutex::new(updates.clone()),
         wake: Arc::clone(&job.wake),
     });
-    let host = AppHost::new(job.core, prompter, job.level)
+    let host = AppHost::new(job.core, prompter, job.level, job.reach.clone())
         .ok_or_else(|| "The assistant could not connect to the drawings.".to_owned())?;
+    let grant = host.id();
     thread::Builder::new()
         .name("assistant".to_owned())
         .spawn(move || {
@@ -141,5 +144,5 @@ pub(super) fn start(job: Job) -> Result<Receiver<Update>, String> {
             wake();
         })
         .map_err(|e| format!("The assistant could not start: {e}"))?;
-    Ok(receiver)
+    Ok((receiver, grant))
 }
