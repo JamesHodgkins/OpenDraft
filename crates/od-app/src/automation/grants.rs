@@ -180,6 +180,20 @@ impl Grant {
     }
 }
 
+/// Whether a request would be let through now, asked of a connection's
+/// grant without using anything up.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Coverage {
+    Covered,
+    /// Nothing covers it; the user could approve this exact request.
+    NeedsApproval,
+    /// A task covers it, but it has made all the changes it was allowed.
+    TaskFull(u32),
+    NoSuchConnection,
+    /// Not an operation the app knows.
+    Unknown,
+}
+
 /// Why an approval was not recorded.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ApprovalError {
@@ -241,6 +255,27 @@ impl AutomationCore {
             until: now + lasts,
         }));
         Ok(())
+    }
+
+    /// Whether `operation` with `arguments` would be let through for this
+    /// connection now. For the app side of the assistant, which asks the user
+    /// before approving what is not covered; the answer can change before the
+    /// request runs, and `execute` decides again.
+    pub fn coverage(&self, grant_id: u64, operation: &str, arguments: &Value) -> Coverage {
+        let Some(required) = ops::required_scope(operation) else {
+            return Coverage::Unknown;
+        };
+        let Ok(grants) = self.link.inner.grants.lock() else {
+            return Coverage::NoSuchConnection;
+        };
+        let Some(grant) = grants.get(&grant_id) else {
+            return Coverage::NoSuchConnection;
+        };
+        match grant.permit(required, operation, arguments, Instant::now()) {
+            Ok(_) => Coverage::Covered,
+            Err(Denial::Missing) => Coverage::NeedsApproval,
+            Err(Denial::TaskFull { limit }) => Coverage::TaskFull(limit),
+        }
     }
 
     /// Withdraw every approval not yet used.

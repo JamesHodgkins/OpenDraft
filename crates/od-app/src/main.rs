@@ -9,6 +9,7 @@ mod app;
 mod arc_cmd;
 mod array_cmd;
 mod array_path;
+mod assistant;
 mod attr_rows;
 mod automation;
 mod autosave;

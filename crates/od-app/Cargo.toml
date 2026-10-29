@@ -20,6 +20,7 @@ od-commands.workspace = true
 od-canvas.workspace = true
 od-files.workspace = true
 od-api.workspace = true
+od-agent.workspace = true
 # Carries a PNG picture in JSON (MIT OR Apache-2.0; 0.23 is already in the lock file).
 base64 = "0.23"
 serde_json = "1"

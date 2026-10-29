@@ -84,6 +84,13 @@ impl Link {
         }
     }
 
+    /// Give back every grant of an outside program (the socket has stopped).
+    pub(super) fn release_outside(&self) {
+        if let Ok(mut grants) = self.inner.grants.lock() {
+            grants.retain(|_, grant| grant.in_process);
+        }
+    }
+
     /// Check a request and queue it for the UI thread, then wait for the
     /// answer or the deadline. The checks here refuse early what could never
     /// run; the ones that matter are made again when it runs, against the
@@ -215,7 +222,21 @@ impl Drop for InProcess {
 
 pub struct AutomationCore {
     pub(super) link: Link,
-    jobs: Receiver<Job>,
+    // Behind a lock only so the core can be shared with the assistant's
+    // thread; `poll`, on the UI thread, is the one reader.
+    jobs: Mutex<Receiver<Job>>,
+}
+
+/// A name for this run of the app: 16 hex digits, unlikely to repeat.
+pub fn fresh_instance_id() -> String {
+    let mut bytes = [0u8; 8];
+    if getrandom::fill(&mut bytes).is_err() {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_or(0, |d| d.as_nanos());
+        bytes = (now as u64 ^ u64::from(std::process::id())).to_le_bytes();
+    }
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
 impl AutomationCore {
@@ -233,7 +254,7 @@ impl AutomationCore {
                     waker,
                 }),
             },
-            jobs,
+            jobs: Mutex::new(jobs),
         }
     }
 
@@ -304,7 +325,11 @@ impl AutomationCore {
         self.withdraw_orphaned_requests(state);
         let start = Instant::now();
         for _ in 0..FRAME_REQUESTS {
-            let Ok(job) = self.jobs.try_recv() else {
+            let job = match self.jobs.lock() {
+                Ok(jobs) => jobs.try_recv(),
+                Err(_) => return,
+            };
+            let Ok(job) = job else {
                 return;
             };
             if job.abandoned.load(Ordering::Acquire) || job.expires < Instant::now() {

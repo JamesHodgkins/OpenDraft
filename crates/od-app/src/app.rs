@@ -99,8 +99,8 @@ pub struct OpenDraftApp {
     ctrl_alone: bool,
     ctrl_down: bool,
     dynamic_keys: Vec<egui::Event>,
-    /// The MCP automation endpoint, while the setting is on.
-    automation: Option<crate::automation::AutomationHost>,
+    /// The automation core (always there) and the MCP socket in front of it.
+    automation: automation_update::Automation,
     /// `OD_AUTOMATION=1` turned the endpoint on for this run only (nothing
     /// is saved), for scripts and tests.
     automation_forced: bool,
@@ -173,7 +173,7 @@ impl OpenDraftApp {
             ctrl_alone: false,
             ctrl_down: false,
             dynamic_keys: Vec::new(),
-            automation: None,
+            automation: automation_update::Automation::new(),
             automation_forced: std::env::var_os("OD_AUTOMATION").is_some_and(|v| v == "1"),
             home_scan: Default::default(),
         }

@@ -2242,6 +2242,7 @@ dependencies = [
  "fontdb",
  "getrandom 0.3.4",
  "interprocess",
+ "od-agent",
  "od-api",
  "od-canvas",
  "od-commands",
