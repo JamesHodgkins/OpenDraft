@@ -17,6 +17,7 @@
 mod chat;
 mod host;
 mod level;
+mod panel;
 mod prompter;
 
 #[cfg(test)]
@@ -31,10 +32,11 @@ mod run_tests;
 mod support;
 
 #[allow(unused_imports)]
-pub use chat::{mistral, Ask, Assistant, Chat, Entry, Kind, Progress, Reply};
+pub use chat::{mistral, Ask, Assistant, Chat, Entry, Kind, Progress, Reply, Waker};
 #[allow(unused_imports)]
 pub use host::AppHost;
 #[allow(unused_imports)]
 pub use level::{ApprovalLevel, AUTO_APPROVE_CEILING};
+pub use panel::show as show_panel;
 #[allow(unused_imports)]
 pub use prompter::{ChangeRequest, Decision, Prompter};

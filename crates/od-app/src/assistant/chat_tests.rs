@@ -401,3 +401,27 @@ fn a_task_that_runs_out_of_its_budget_says_what_ran_out() {
     );
     assert_eq!(super::chat::words::ended(&TaskState::Completed), None);
 }
+
+#[test]
+fn a_refused_key_is_dropped_so_the_panel_asks_for_another() {
+    let mut rig = rig(Some("sk-bad"));
+    rig.script(vec![Step::Fail(ProviderError::Fatal(format!(
+        "{} (status 401)",
+        od_agent::KEY_REFUSED
+    )))]);
+    rig.send("hello");
+    rig.finish();
+    assert!(!rig.chat.has_key());
+    assert!(rig.entries().contains(&Entry::Notice(
+        "That key was refused. Add it again to go on.".to_owned()
+    )));
+}
+
+#[test]
+fn another_failure_keeps_the_key() {
+    let mut rig = rig(Some("sk-ok"));
+    rig.script(vec![Step::Fail(ProviderError::Fatal("bad request".into()))]);
+    rig.send("hello");
+    rig.finish();
+    assert!(rig.chat.has_key());
+}

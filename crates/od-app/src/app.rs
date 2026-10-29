@@ -380,11 +380,9 @@ impl CommandSource for Source<'_> {
     }
 
     fn is_active(&self, command: &str) -> bool {
-        match command {
-            "view.panel_properties" => dock::is_open(self.dock, PanelTab::Properties),
-            "view.panel_layers" | "layer.properties" => dock::is_open(self.dock, PanelTab::Layers),
-            "view.command_line" => dock::is_open(self.dock, PanelTab::CommandLine),
-            _ => self.registry.is_checked(command, self.state),
+        match dock::panel_of(command) {
+            Some(panel) => dock::is_open(self.dock, panel),
+            None => self.registry.is_checked(command, self.state),
         }
     }
 }

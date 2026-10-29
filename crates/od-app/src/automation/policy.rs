@@ -190,6 +190,7 @@ pub const TABLE: &[(&str, AutomationPolicy, CommandEffect)] = &[
     ("view.panel_properties", Denied, Ui),
     ("view.panel_layers", Denied, Ui),
     ("view.command_line", Denied, Ui),
+    ("view.assistant", Denied, Ui),
     ("view.reset_layout", Denied, Ui),
 ];
 

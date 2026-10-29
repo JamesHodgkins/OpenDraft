@@ -60,6 +60,12 @@ icons! {
     ANNOTATE_TABLESTYLE = '\u{e180}';
     ANNOTATE_TEXT = '\u{e264}';
     ANNOTATE_TEXTSTYLE = '\u{e3dc}';
+    ASSISTANT_ADD = '\u{e140}';
+    ASSISTANT_HISTORY = '\u{e1f4}';
+    ASSISTANT_MENU = '\u{e071}';
+    ASSISTANT_NEW_CHAT = '\u{e410}';
+    ASSISTANT_SEND = '\u{e04e}';
+    ASSISTANT_STOP = '\u{e16a}';
     BLOCK_ATTEDIT = '\u{e133}';
     BLOCK_CLOSE = '\u{e1b1}';
     BLOCK_CREATE = '\u{e2ac}';
@@ -267,6 +273,7 @@ icons! {
     TEXT_UNDO = '\u{e2a0}';
     TOOLS_QUICKCALC = '\u{e1bb}';
     TOOL_SELECT = '\u{e1c2}';
+    VIEW_ASSISTANT = '\u{e1ba}';
     VIEW_BASE_INVENTOR = '\u{e0c4}';
     VIEW_BASE_MODEL = '\u{e290}';
     VIEW_COMMAND_LINE = '\u{e379}';

@@ -101,6 +101,8 @@ pub struct Assistant {
     pub kind: Kind,
     /// The unsent text in the input box.
     pub draft: String,
+    /// Whether the list of earlier chats is showing in place of the chat.
+    pub history_open: bool,
     factory: ProviderFactory,
     wake: Waker,
 }
@@ -115,6 +117,7 @@ impl Assistant {
             level: ApprovalLevel::ReviewEach,
             kind: Kind::Review,
             draft: String::new(),
+            history_open: false,
             factory,
             wake,
         }
@@ -158,6 +161,7 @@ impl Assistant {
     pub fn select(&mut self, index: usize) {
         if index < self.chats.len() {
             self.current = index;
+            self.history_open = false;
         }
     }
 
@@ -165,6 +169,7 @@ impl Assistant {
     /// one). One that is still working is stopped.
     pub fn new_chat(&mut self) {
         self.stop();
+        self.history_open = false;
         if self.chats[self.current].entries.is_empty() {
             return;
         }
@@ -248,6 +253,7 @@ impl Assistant {
 
     /// Take in what the tasks have reported. Once a frame.
     pub fn poll(&mut self) {
+        let mut key_refused = false;
         for chat in &mut self.chats {
             let mut updates = Vec::new();
             let mut gone = false;
@@ -264,7 +270,7 @@ impl Assistant {
                 }
             }
             for update in updates {
-                chat.apply(update);
+                key_refused |= chat.apply(update);
             }
             if gone && chat.running.is_some() {
                 chat.entries.push(Entry::Notice(
@@ -275,11 +281,16 @@ impl Assistant {
                 chat.status.clear();
             }
         }
+        // A refused key is no use to keep: the panel asks for another.
+        if key_refused {
+            self.key = None;
+        }
     }
 }
 
 impl Chat {
-    fn apply(&mut self, update: Update) {
+    /// Take in one update; `true` if it says the key was refused.
+    fn apply(&mut self, update: Update) -> bool {
         match update {
             Update::Event(Event::State(state)) => {
                 let tool = self.running.as_ref().and_then(|r| r.tool.as_deref());
@@ -320,8 +331,16 @@ impl Chat {
                 self.running = None;
                 self.pending = None;
                 self.status.clear();
+                if matches!(&report.state, od_agent::TaskState::Failed(od_agent::Failure::Provider(m)) if m.contains(od_agent::KEY_REFUSED))
+                {
+                    self.entries.push(Entry::Notice(
+                        "That key was refused. Add it again to go on.".to_owned(),
+                    ));
+                    return true;
+                }
             }
         }
+        false
     }
 }
 

@@ -43,6 +43,7 @@ impl OpenDraftApp {
             snap_modes: self.state.settings.snap,
             registry: &self.registry,
             run: None,
+            automation: &mut self.automation,
             state: &mut self.state,
             cursor: None,
             click: None,
@@ -193,6 +194,7 @@ pub(super) struct PanelViewer<'a> {
     pub(super) dynamic_suppressed: bool,
     pub(super) registry: &'a Registry<AppState>,
     pub(super) run: Option<&'static str>,
+    pub(super) automation: &'a mut super::automation_update::Automation,
 }
 
 impl egui_dock::TabViewer for PanelViewer<'_> {
@@ -220,6 +222,13 @@ impl egui_dock::TabViewer for PanelViewer<'_> {
             PanelTab::Properties => self.properties(ui),
             PanelTab::Layers => self.layers(ui),
             PanelTab::CommandLine => self.command_line(ui),
+            PanelTab::Assistant => crate::assistant::show_panel(
+                ui,
+                self.theme,
+                &mut self.automation.assistant,
+                &self.automation.core,
+                self.state,
+            ),
         }
     }
 }

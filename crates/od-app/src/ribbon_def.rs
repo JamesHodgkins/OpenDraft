@@ -199,6 +199,11 @@ fn view() -> Tab {
                         icons::VIEW_COMMAND_LINE,
                     )),
                     Column::Large(Item::new(
+                        "view.assistant",
+                        "Assistant",
+                        icons::VIEW_ASSISTANT,
+                    )),
+                    Column::Large(Item::new(
                         "view.reset_layout",
                         "Reset Layout",
                         icons::VIEW_RESET_LAYOUT,
