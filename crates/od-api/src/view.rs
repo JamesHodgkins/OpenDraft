@@ -1,5 +1,5 @@
-//! `view.render`: a look at the drawing as SVG, labelled with the revision
-//! it shows.
+//! `view.render`: a look at the drawing as SVG or PNG, labelled with the
+//! revision it shows.
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -11,6 +11,18 @@ use crate::WireId;
 /// Default and bounds of the sheet width, in SVG units (about pixels).
 pub const WIDTH_DEFAULT: f64 = 800.0;
 pub const WIDTH_MIN: f64 = 50.0;
+
+/// What the picture is made of. (Plain comments on the variants: their text
+/// would be repeated in every tool listing; the tool description says it.)
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum RenderFormat {
+    // Exact vector drawing, as text.
+    #[default]
+    Svg,
+    // Anti-aliased pixels: a picture that can actually be looked at.
+    Png,
+}
 
 #[derive(Clone, Debug, PartialEq, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -26,9 +38,12 @@ pub struct RenderArgs {
     /// space, or the entities' bounds.
     #[serde(default)]
     pub bounds: Option<BoundsArg>,
-    /// Width of the picture in SVG units, 50 to 4096; default 800.
+    /// Width of the picture, 50 to 4096 (SVG units; pixels for png); default 800.
     #[serde(default)]
     pub width: Option<f64>,
+    /// `svg` (default) or `png`.
+    #[serde(default)]
+    pub format: Option<RenderFormat>,
     /// Refuse if the drawing is no longer at this revision.
     #[serde(default)]
     pub expected_revision: Option<WireId>,
@@ -38,7 +53,14 @@ pub struct RenderArgs {
 pub struct RenderResult {
     /// The revision that was drawn.
     pub revision: WireId,
-    pub svg: String,
+    pub format: RenderFormat,
+    /// The drawing as SVG, for `svg`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub svg: Option<String>,
+    /// The picture as a base64 PNG, for `png`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub png_base64: Option<String>,
+    /// SVG units, or pixels for a PNG.
     pub width: f64,
     pub height: f64,
     /// The part of model space shown; absent for a layout sheet.
@@ -52,6 +74,11 @@ pub struct RenderResult {
     pub notes: Vec<String>,
 }
 
-pub const FIDELITY: &str = "Drawn by the plotting pipeline, not the canvas: black and white \
-    ink on white paper, line weights in plot millimetres at the picture's scale, text as outlines, \
-    wide polylines as single lines. Entities on hidden or frozen layers are not drawn.";
+pub const FIDELITY_PNG: &str = "Drawn by the plotting pipeline, not the canvas, then rasterised and \
+    anti-aliased on white paper, in plot colours (white and the foreground colour print black), no line \
+    thinner than one pixel (so lineweights are not to scale), text as outlines, wide polylines as single \
+    lines. Entities on hidden or frozen layers are not drawn.";
+
+pub const FIDELITY: &str = "Drawn by the plotting pipeline, not the canvas: on white paper in plot colours \
+    (white and the foreground colour print black), line weights in plot millimetres at the picture's scale, \
+    text as outlines, wide polylines as single lines. Entities on hidden or frozen layers are not drawn.";

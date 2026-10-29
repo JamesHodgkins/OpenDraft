@@ -15,7 +15,9 @@ pub const POINTS_PER_BATCH_MAX: usize = 50_000;
 pub const KNOTS_PER_BATCH_MAX: usize = 100_000;
 pub const RENDER_ENTITIES_MAX: usize = 5_000;
 pub const RENDER_SIDE_MAX: u32 = 4_096;
-pub const RENDER_PIXELS_MAX: u64 = 16_000_000;
+/// Pixels in a PNG. A picture is time on the UI thread (about 35 ms at this
+/// size in a release build), and a model downscales a larger one anyway.
+pub const RENDER_PIXELS_MAX: u64 = 4_000_000;
 pub const RENDER_RESULT_BYTES: usize = 6 * 1024 * 1024;
 pub const VECTOR_VERTICES_MAX: usize = 500_000;
 pub const STRING_BYTES_MAX: usize = 64 * 1024;

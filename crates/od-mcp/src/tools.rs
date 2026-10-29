@@ -179,7 +179,7 @@ const DEFS: &[Def] = &[
     Def {
         effect: Effect::Read,
         name: "opendraft_view_render",
-        description: "Look at the drawing: an SVG of model space (a window, chosen entities, or everything) or of a layout sheet, labelled with the revision it shows. Black ink on white, as it would plot.",
+        description: "Look at the drawing: model space (a window, chosen entities, or everything) or a layout sheet, labelled with its revision. On white, in plot colours (white prints black), as it would plot. format png gives a picture you can look at (to judge layout and spacing; 800 to 1600 wide is plenty); svg (default) is exact vector text. For what is where, use drawing_summary or entities_query.",
         operation: Some(ops::VIEW_RENDER),
         schema: schema_of::<RenderArgs>,
     },
@@ -530,7 +530,7 @@ mod tests {
         // An alarm for bloat, raised when a tool is added on purpose (28 tools
         // now); the remedy for a real squeeze is in ARCHITECTURE.md.
         assert!(
-            size < 54_000,
+            size < 56_000,
             "tools/list is {size} bytes; biggest schema {biggest:?}"
         );
     }

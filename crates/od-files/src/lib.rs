@@ -11,6 +11,7 @@ mod error;
 mod linetype_import;
 mod native;
 mod plot;
+mod plot_png;
 mod template;
 
 use std::fs;
@@ -25,6 +26,7 @@ pub use dxf::DxfFormat;
 pub use error::FileError;
 pub use native::{NativeFormat, CURRENT_VERSION, NATIVE_EXTENSION};
 pub use plot::{pdf, plot_cancellable, plot_filter, svg};
+pub use plot_png::{png, png_size, PngError};
 pub use template::{
     is_template, template_filter, template_path, TemplateFormat, TEMPLATE_EXTENSION,
 };
