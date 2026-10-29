@@ -336,6 +336,12 @@ impl AppState {
             self.reply(Reply::Point(point));
             return Ok(());
         }
+        // Enter at the cursor, as anywhere else, accepts what is selected: a
+        // bare `Reply::Enter` would end a selection prompt as a cancel.
+        if text.trim().is_empty() && ask.wants == Wants::Selection {
+            self.answer_enter();
+            return Ok(());
+        }
         let origin = self
             .once
             .origin()
@@ -524,6 +530,44 @@ mod tests {
         state.add_entity(circle(0.0));
         state.add_entity(circle(10.0));
         state
+    }
+
+    /// A command that asks for a whole selection and says how many it got.
+    fn pick_objects(ed: &mut Editor) -> Result<(), Cancelled> {
+        let ids = ed.get_selection("Select objects")?;
+        ed.say(format!("{} chosen", ids.len()));
+        Ok(())
+    }
+
+    #[test]
+    fn enter_at_the_cursor_accepts_the_selection_instead_of_cancelling_the_prompt() {
+        let mut state = state_with_two_circles();
+        state.start_command("Pick", pick_objects);
+        state.settle_command();
+        state.select_all();
+        // Dynamic input at the pointer submits an empty line for Enter.
+        assert_eq!(state.answer_dynamic(""), Ok(()));
+        state.settle_command();
+        assert!(!state.command_running());
+        let log = &state.cmdline.log;
+        assert!(log.iter().any(|l| l == "2 chosen"), "{log:?}");
+        assert!(!log.iter().any(|l| l == "*Cancel*"), "{log:?}");
+    }
+
+    #[test]
+    fn enter_at_the_cursor_with_nothing_selected_keeps_asking() {
+        let mut state = state_with_two_circles();
+        state.start_command("Pick", pick_objects);
+        state.settle_command();
+        assert_eq!(state.answer_dynamic(""), Ok(()));
+        state.settle_command();
+        assert!(state.command_running(), "still waiting for objects");
+        assert!(state
+            .cmdline
+            .log
+            .iter()
+            .any(|l| l == "Select objects first."));
+        state.cancel_command();
     }
 
     #[test]

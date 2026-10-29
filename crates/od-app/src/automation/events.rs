@@ -33,9 +33,23 @@ pub struct EventLog {
     /// What each drawing looked like when last looked at: revision and
     /// whether it was modified.
     seen: HashMap<u64, (u64, bool)>,
+    /// A digest of each drawing's selection when last looked at.
+    selections: HashMap<u64, u64>,
     started: bool,
     /// The command serial last seen running, if any.
     running: Option<(u64, String)>,
+}
+
+/// FNV-1a over the selected ids (in their sorted order) and how many there
+/// are: equal selections have equal digests, and a change is told by it.
+fn selection_digest(selection: &std::collections::BTreeSet<od_core::EntityId>) -> u64 {
+    let start = 0xcbf2_9ce4_8422_2325u64 ^ selection.len() as u64;
+    selection
+        .iter()
+        .flat_map(|id| id.0.to_le_bytes())
+        .fold(start, |hash, b| {
+            (hash ^ u64::from(b)).wrapping_mul(0x0100_0000_01b3)
+        })
 }
 
 /// Text from the app or a caller, made safe to pass on: no control
@@ -110,6 +124,24 @@ impl EventLog {
                 }
                 _ => {}
             }
+            let digest = selection_digest(&doc.selection);
+            if self
+                .selections
+                .insert(doc.uid, digest)
+                .is_some_and(|d| d != digest)
+            {
+                let count = doc.selection.len();
+                let detail = match count {
+                    0 => "nothing selected".to_owned(),
+                    n => format!("{n} selected"),
+                };
+                self.push(
+                    EventKind::SelectionChanged,
+                    Some(doc.uid),
+                    Some(state.0),
+                    Some(detail),
+                );
+            }
         }
         let gone: Vec<u64> = self
             .seen
@@ -119,6 +151,7 @@ impl EventLog {
             .collect();
         for uid in gone {
             self.seen.remove(&uid);
+            self.selections.remove(&uid);
             self.push(EventKind::DocumentClosed, Some(uid), None, None);
         }
         match (&self.running, running) {

@@ -27,6 +27,7 @@ pub fn supports(operation: &str) -> bool {
             | ops::HISTORY_REDO
             | ops::COMMANDS_INVOKE
             | ops::COMMANDS_START_INTERACTIVE
+            | ops::SELECTION_REQUEST
             | ops::FILES_OPEN
             | ops::FILES_SAVE
             | ops::FILES_SAVE_AS
@@ -69,6 +70,10 @@ mod tests {
         assert!(supports(ops::ENTITIES_APPLY_BATCH));
         assert!(supports(ops::COMMANDS_INVOKE), "a toggle flips again");
         assert!(supports(ops::FILES_SAVE_AS));
+        assert!(
+            supports(ops::SELECTION_REQUEST),
+            "a retry must find its own prompt, not be refused as busy"
+        );
         for read in [
             ops::DOCUMENTS_LIST,
             ops::ENTITIES_QUERY,

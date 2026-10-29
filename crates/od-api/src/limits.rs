@@ -20,6 +20,13 @@ pub const RENDER_RESULT_BYTES: usize = 6 * 1024 * 1024;
 pub const VECTOR_VERTICES_MAX: usize = 500_000;
 pub const STRING_BYTES_MAX: usize = 64 * 1024;
 pub const QUEUED_REQUESTS_MAX: usize = 64;
+/// Longest prompt a caller can put in front of the user.
+pub const SELECTION_PROMPT_MAX: usize = 200;
+/// How long a selection request waits for the user, by default and at most.
+pub const SELECTION_WAIT_DEFAULT_S: u32 = 300;
+pub const SELECTION_WAIT_MAX_S: u32 = 900;
+/// Longest a caller may be asked to wait inside one poll of an operation.
+pub const OPERATION_WAIT_MAX_S: u32 = 30;
 pub const REQUEST_DEADLINE_MS: u64 = 30_000;
 
 /// The page size to use for a caller's `limit`: the default when absent,

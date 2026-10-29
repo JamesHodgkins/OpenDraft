@@ -10,6 +10,7 @@ use od_api::{ApiError, ErrorCode, WireId};
 use od_core::LayoutId;
 
 use super::document_id;
+use super::selection_request::Slot;
 use crate::files::same_file;
 
 /// Operations kept for polling; the oldest finished ones go first.
@@ -25,6 +26,8 @@ pub enum Kind {
     Export,
     /// An interactive command the user is finishing in the app.
     Command,
+    /// The user choosing objects in the app for the caller.
+    Selection,
 }
 
 impl Kind {
@@ -35,6 +38,7 @@ impl Kind {
             Kind::SaveAs => "save_as",
             Kind::Export => "export",
             Kind::Command => "command",
+            Kind::Selection => "selection",
         }
     }
 }
@@ -69,6 +73,12 @@ pub struct Op {
     pub error: Option<ApiError>,
     pub command_id: Option<&'static str>,
     pub waiting_for: Option<String>,
+    /// For a selection request: when the user's time is up.
+    pub deadline: Option<Instant>,
+    /// Where the request's command leaves what the user chose.
+    pub answer: Option<Slot>,
+    /// What the user chose, once they have.
+    pub selected: Option<Vec<u64>>,
     asked: Instant,
 }
 
@@ -81,10 +91,17 @@ impl Op {
             file_name: od_api::paths::file_name(&self.path),
             command_id: self.command_id.map(str::to_owned),
             waiting_for: self.waiting_for.clone(),
-            document_id: (self.state == OperationState::Succeeded && self.kind == Kind::Open)
-                .then(|| self.document.map(|uid| document_id(instance, uid)))
-                .flatten(),
+            document_id: match self.kind {
+                Kind::Open if self.state == OperationState::Succeeded => self.document,
+                Kind::Selection => self.document,
+                _ => None,
+            }
+            .map(|uid| document_id(instance, uid)),
             revision: self.revision.map(WireId),
+            entity_ids: self
+                .selected
+                .as_ref()
+                .map(|ids| ids.iter().copied().map(WireId).collect()),
             notes: self.notes.clone(),
             error: self.error.clone(),
             cancellable: matches!(
@@ -148,6 +165,9 @@ impl FileOps {
             error: None,
             command_id: None,
             waiting_for: None,
+            deadline: None,
+            answer: None,
+            selected: None,
             asked: Instant::now(),
         });
         id
@@ -177,15 +197,70 @@ impl FileOps {
         id
     }
 
-    /// Every running command operation, as (id, serial, document).
+    /// Note a selection request whose command has just been started. It
+    /// ends at `deadline` if the user has not finished by then.
+    pub fn add_selection(
+        &mut self,
+        grant_id: u64,
+        client: &str,
+        (uid, serial): (u64, u64),
+        deadline: Instant,
+        answer: Slot,
+    ) -> u64 {
+        let id = self.add(
+            grant_id,
+            client,
+            Kind::Selection,
+            Plan::Command { uid, serial },
+            PathBuf::new(),
+            None,
+        );
+        if let Some(op) = self.get_mut(id) {
+            op.document = Some(uid);
+            op.deadline = Some(deadline);
+            op.answer = Some(answer);
+        }
+        id
+    }
+
+    /// Every running command or selection request, as (id, serial,
+    /// document): the operations that follow a command in the app.
     pub fn running_commands(&self) -> Vec<(u64, u64, u64)> {
         self.ops
             .iter()
-            .filter(|o| o.kind == Kind::Command && o.state == OperationState::Running)
+            .filter(|o| matches!(o.kind, Kind::Command | Kind::Selection))
+            .filter(|o| o.state == OperationState::Running)
             .filter_map(|o| match o.plan {
                 Plan::Command { uid, serial } => Some((o.id, serial, uid)),
                 _ => None,
             })
+            .collect()
+    }
+
+    /// The selection requests still going, as (id, owner grant, serial of
+    /// the command showing the prompt).
+    pub fn running_selections(&self) -> Vec<(u64, u64, u64)> {
+        self.ops
+            .iter()
+            .filter(|o| o.kind == Kind::Selection && o.state == OperationState::Running)
+            .filter_map(|o| match o.plan {
+                Plan::Command { serial, .. } => Some((o.id, o.grant_id, serial)),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// The selection requests whose time is up, as (id, serial).
+    pub fn overdue_selections(&self) -> Vec<(u64, u64)> {
+        let now = Instant::now();
+        self.running_selections()
+            .into_iter()
+            .filter(|(id, ..)| {
+                self.get(*id)
+                    .and_then(|o| o.deadline)
+                    .is_some_and(|deadline| deadline <= now)
+            })
+            .map(|(id, _, serial)| (id, serial))
             .collect()
     }
 
@@ -232,10 +307,13 @@ impl FileOps {
         }
     }
 
-    /// The user gave up on all file work from the status bar.
+    /// The user gave up on all file work from the status bar. Commands the
+    /// user is answering are not file work and go on.
     pub fn cancel_running(&mut self) {
         for op in &mut self.ops {
-            if op.state == OperationState::Running {
+            if op.state == OperationState::Running
+                && !matches!(op.kind, Kind::Command | Kind::Selection)
+            {
                 op.state = OperationState::Cancelled;
             }
         }

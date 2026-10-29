@@ -104,6 +104,15 @@ impl Editor {
         self.run(move |session| read(&session.document))
     }
 
+    /// Like [`Self::read`], and also hands over the revision the drawing is
+    /// at, so what the closure works out belongs to exactly that revision.
+    pub fn read_revision<R: Send + 'static>(
+        &self,
+        read: impl FnOnce(&Document, u64) -> R + Send + 'static,
+    ) -> Result<R, Cancelled> {
+        self.run(move |session| read(&session.document, session.revision()))
+    }
+
     /// Edit the drawing as one undo step named `name`. If the closure returns
     /// an error, every edit it made is reverted and nothing is recorded.
     pub fn transaction<T: Send + 'static>(

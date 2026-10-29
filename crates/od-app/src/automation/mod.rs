@@ -37,6 +37,13 @@ mod read;
 mod render;
 #[cfg(test)]
 mod run_tests;
+#[cfg(test)]
+mod selection_guard_tests;
+#[cfg(test)]
+mod selection_host_tests;
+mod selection_request;
+#[cfg(test)]
+mod selection_tests;
 mod settings_page;
 mod setup;
 #[cfg(test)]
@@ -54,6 +61,7 @@ pub use idempotency::Replays;
 pub use mutate::apply_batch;
 pub use policy::classified;
 pub use read::handle_read;
+pub(crate) use selection_request::withdraw as withdraw_selection_requests;
 pub use settings_page::{page as settings_page, ConnectionRow};
 
 use od_api::{ops, ApiError};
@@ -114,6 +122,7 @@ fn route(
         ops::ENTITIES_APPLY_BATCH => apply_batch(state, instance, caller, arguments),
         ops::LAYERS_APPLY_BATCH => layer_mutate::apply_layers(state, instance, caller, arguments),
         ops::SELECTION_SET => ui_mutate::set_selection(state, instance, arguments),
+        ops::SELECTION_REQUEST => selection_request::start(state, instance, caller, arguments),
         ops::HISTORY_UNDO => ui_mutate::step_history(state, instance, caller, Undo, arguments),
         ops::HISTORY_REDO => ui_mutate::step_history(state, instance, caller, Redo, arguments),
         ops::GEOMETRY_MEASURE => geometry::measure_entities(state, instance, arguments),

@@ -15,10 +15,10 @@ use serde_json::{json, Value};
 use super::host::{socket_name, AutomationHost};
 use crate::state::AppState;
 
-struct Fixture {
-    host: AutomationHost,
+pub(super) struct Fixture {
+    pub(super) host: AutomationHost,
     dir: PathBuf,
-    descriptor: Descriptor,
+    pub(super) descriptor: Descriptor,
 }
 
 impl Drop for Fixture {
@@ -27,7 +27,7 @@ impl Drop for Fixture {
     }
 }
 
-fn start(name: &str) -> Fixture {
+pub(super) fn start(name: &str) -> Fixture {
     let dir = std::env::temp_dir().join(format!("od-host-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     let host = AutomationHost::start(&dir, Box::new(|| {})).unwrap();
@@ -53,7 +53,7 @@ fn hello(stream: &mut Stream, token: &str, versions: &[u32]) -> HelloReply {
     serde_json::from_slice(&read_frame(stream).unwrap()).unwrap()
 }
 
-fn request(op: &str, scope: &str, args: Value, deadline_ms: u64) -> Vec<u8> {
+pub(super) fn request(op: &str, scope: &str, args: Value, deadline_ms: u64) -> Vec<u8> {
     serde_json::to_vec(&json!({
         "api_version": "1", "request_id": "r1", "deadline_ms": deadline_ms,
         "scope": scope, "operation": op, "arguments": args,
@@ -62,7 +62,7 @@ fn request(op: &str, scope: &str, args: Value, deadline_ms: u64) -> Vec<u8> {
 }
 
 /// Send `frame` and wait for the answer while the "UI" polls.
-fn call(
+pub(super) fn call(
     mut stream: Stream,
     fixture: &Fixture,
     state: &mut AppState,
@@ -81,7 +81,7 @@ fn call(
     (stream, serde_json::from_slice(&bytes).unwrap())
 }
 
-fn connected(fixture: &Fixture) -> Stream {
+pub(super) fn connected(fixture: &Fixture) -> Stream {
     let mut stream = connect(&fixture.descriptor);
     let reply = hello(&mut stream, &fixture.descriptor.token, &[1]);
     assert!(reply.ok, "{reply:?}");

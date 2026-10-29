@@ -7,6 +7,7 @@ mod client;
 mod doctor;
 mod server;
 mod tools;
+mod wait;
 
 use std::io::Write;
 use std::process::ExitCode;
