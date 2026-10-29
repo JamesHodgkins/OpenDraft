@@ -9,10 +9,10 @@
 //! Changing a rule is a decision: edit the table in ARCHITECTURE.md and the
 //! table below together.
 //!
-//! The `od-agent` crate does not exist yet. Its rule is here, and applies
-//! the day it is added: it may depend on `od-api` and nothing else of ours,
-//! so the assistant can reach a drawing only through the operations that
-//! outside programs use, with the same scopes, checks and limits.
+//! The `od-agent` crate (the in-app assistant's harness) may depend on
+//! `od-api` and nothing else of ours, so the assistant can reach a drawing
+//! only through the operations that outside programs use, with the same
+//! scopes, checks and limits.
 
 use std::collections::HashMap;
 use std::process::Command;
@@ -271,10 +271,9 @@ fn the_checker_notices_each_kind_of_breakage() {
 
 #[test]
 fn the_in_app_assistant_crate_may_reach_the_drawing_only_through_the_api() {
-    // The day `od-agent` is added, these are what must hold. A crate that
-    // reached the document, the commands, the files or the app could change
-    // a drawing without the grants, revisions and limits every outside call
-    // meets.
+    // These are what must hold for `od-agent`. A crate that reached the
+    // document, the commands, the files or the app could change a drawing
+    // without the grants, revisions and limits every outside call meets.
     let ok = |deps: &[&str]| {
         violations(&graph(vec![
             package("od-core", &[]),
