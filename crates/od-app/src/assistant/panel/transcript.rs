@@ -56,7 +56,8 @@ fn empty(ui: &mut egui::Ui, theme: &Theme) {
     ui.label(
         egui::RichText::new(
             "Ask about the drawing in view. The assistant can read it, check it for \
-             problems and tell you what it finds.",
+             problems, and change layers and existing objects. Generating new objects is \
+             experimental and it will warn you first.",
         )
         .size(theme.font_size_small)
         .color(theme.colors.text_weak),
