@@ -46,7 +46,12 @@ impl Automation {
             core: Arc::new(core),
             socket: None,
             repaint,
-            assistant: crate::assistant::Assistant::new(crate::assistant::mistral(), wake, key),
+            assistant: crate::assistant::Assistant::new(
+                crate::assistant::mistral(),
+                wake,
+                key,
+                crate::assistant::os_key_store(),
+            ),
         }
     }
 }

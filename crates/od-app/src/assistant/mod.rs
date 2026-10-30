@@ -17,6 +17,7 @@
 mod chat;
 mod describe;
 mod host;
+mod keystore;
 mod level;
 mod panel;
 mod prompter;
@@ -31,6 +32,8 @@ mod edit_tests;
 #[cfg(test)]
 mod host_tests;
 #[cfg(test)]
+mod key_tests;
+#[cfg(test)]
 mod run_tests;
 #[cfg(test)]
 mod support;
@@ -39,6 +42,8 @@ mod support;
 pub use chat::{mistral, Ask, Assistant, Chat, Drawings, Entry, Kind, Progress, Reply, Waker};
 #[allow(unused_imports)]
 pub use host::{AppHost, Reach};
+#[allow(unused_imports)]
+pub use keystore::{os_key_store, KeyStore, NoStore};
 #[allow(unused_imports)]
 pub use level::{ApprovalLevel, AUTO_APPROVE_CEILING};
 pub use panel::show as show_panel;
