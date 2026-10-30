@@ -8,6 +8,8 @@ mod audit;
 mod audit_tests;
 #[cfg(test)]
 mod budget_tests;
+#[cfg(test)]
+mod calculate_tests;
 mod command_ops;
 mod command_runs;
 #[cfg(test)]
@@ -152,6 +154,7 @@ fn route(
         ops::ENTITIES_APPLY_BATCH => apply_batch(state, instance, caller, arguments),
         ops::LAYERS_APPLY_BATCH => layer_mutate::apply_layers(state, instance, caller, arguments),
         ops::ENTITIES_CONSTRUCT => construct::construct(state, instance, caller, arguments),
+        ops::CALCULATE => read::calculate(arguments),
         ops::SELECTION_SET => ui_mutate::set_selection(state, instance, arguments),
         ops::SELECTION_REQUEST => selection_request::start(state, instance, caller, arguments),
         ops::HISTORY_UNDO => ui_mutate::step_history(state, instance, caller, Undo, arguments),

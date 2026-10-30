@@ -80,6 +80,7 @@ If more than one OpenDraft is running, add `"args": ["--instance", "<id>"]` with
 | `opendraft_drawing_summary` | an overview without reading every entity: counts by kind and layer, block names, the text on the drawing, the box round it all and a grid of where the objects are | nothing |
 | `opendraft_drawing_audit` | housekeeping checks that change nothing: duplicates, overlaps, zero-length objects, empty text, unused blocks, layers and styles, and layers that are not on a standard you give | nothing |
 | `opendraft_view_render` | a picture of a window, some entities or a layout sheet, as an SVG or (so the assistant can actually look at it) a PNG | nothing |
+| `opendraft_calculate` | exact arithmetic and trigonometry for dimensions: named steps, each an expression that may use the steps before it (numbers, `+ - * / ^`, brackets, `pi`, `tau`, `e`, and functions such as `sin`, `atan2`, `sqrt`, `hypot`, `rad`, `deg`); a division by zero or the root of a negative is refused with the step named; changes nothing | none beyond reading |
 | `opendraft_commands_list` | which commands automation may run or start | nothing |
 | `opendraft_events_poll` | what changed in the app since the last look (drawings, commands, the selection) | nothing |
 | `opendraft_operations_get`, `_operations_cancel` | watch (optionally waiting up to 30 seconds for the end) or stop a file operation, started command or selection request of its own | nothing |

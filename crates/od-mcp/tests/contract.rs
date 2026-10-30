@@ -45,6 +45,7 @@ fn it_initialises_and_lists_read_only_tools() {
             "opendraft_drawing_summary",
             "opendraft_drawing_audit",
             "opendraft_view_render",
+            "opendraft_calculate",
             "opendraft_commands_list",
             "opendraft_commands_invoke",
             "opendraft_commands_start_interactive",
@@ -96,7 +97,7 @@ fn it_also_serves_the_stateless_2026_request_style() {
     let reply = sidecar.request("tools/list", json!({"_meta": meta}));
     assert_eq!(
         reply["result"]["tools"].as_array().unwrap().len(),
-        29,
+        30,
         "{reply}"
     );
     let _ = std::fs::remove_dir_all(&dir);

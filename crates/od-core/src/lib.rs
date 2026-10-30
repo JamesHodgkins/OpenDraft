@@ -8,6 +8,7 @@ pub mod array;
 pub mod block;
 mod breaking;
 pub mod bulge;
+pub mod calc;
 pub mod closed_pair;
 mod corner;
 mod corner_infinite;

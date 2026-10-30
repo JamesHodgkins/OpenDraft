@@ -12,6 +12,7 @@ use schemars::JsonSchema;
 use serde_json::{json, Map, Value};
 
 use crate::audit_ops::{AuditArgs, SummaryArgs};
+use crate::calc_ops::CalculateArgs;
 use crate::command_ops::{InvokeArgs, ListArgs, StartArgs};
 use crate::construct_ops::ConstructArgs;
 use crate::event_ops::EventsArgs;
@@ -242,6 +243,13 @@ const DEFS: &[ToolDef] = &[
         description: "Look at the drawing: model space (a window, chosen entities, or everything) or a layout sheet, labelled with its revision. On white, in plot colours (white prints black), as it would plot. format png gives a picture you can look at (to judge layout and spacing; 800 to 1600 wide is plenty); svg (default) is exact vector text. For what is where, use drawing_summary or entities_query.",
         operation: ops::VIEW_RENDER,
         schema: schema_of::<RenderArgs>,
+    },
+    ToolDef {
+        effect: Effect::Read,
+        name: "opendraft_calculate",
+        description: "Exact arithmetic and trigonometry for dimensions: use it instead of working numbers out yourself. Give steps, each a name and an expression that may use the names before it; you get every value back. Numbers, + - * / ^ and brackets, constants pi, tau, e, and functions sin cos tan asin acos atan atan2 sqrt abs floor ceil round round_to min max pow hypot exp ln log10 rad deg. Angles are in radians: rad(45) turns degrees into radians, deg(x) back. A division by zero or the root of a negative is refused with the step named. Changes nothing.",
+        operation: ops::CALCULATE,
+        schema: schema_of::<CalculateArgs>,
     },
     ToolDef {
         effect: Effect::Read,

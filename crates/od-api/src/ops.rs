@@ -31,6 +31,7 @@ pub const OPERATIONS_CANCEL: &str = "operations.cancel";
 pub const VIEW_RENDER: &str = "view.render";
 pub const ENTITIES_APPLY_BATCH: &str = "entities.apply_batch";
 pub const LAYERS_APPLY_BATCH: &str = "layers.apply_batch";
+pub const CALCULATE: &str = "calculate.evaluate";
 pub const ENTITIES_CONSTRUCT: &str = "entities.construct";
 pub const SELECTION_SET: &str = "selection.set";
 pub const SELECTION_REQUEST: &str = "selection.request";
@@ -51,6 +52,7 @@ pub fn required_scope(operation: &str) -> Option<Scope> {
         | DRAWING_AUDIT
         | DRAWING_SUMMARY
         | VIEW_RENDER
+        | CALCULATE
         | COMMANDS_LIST
         | EVENTS_POLL
         // Operations are private to the connection that started them, and
