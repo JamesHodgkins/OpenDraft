@@ -100,17 +100,19 @@ fn input(
         );
         // Send is placed first from the right, so a narrow panel clips the
         // options and never the button.
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            let empty = assistant.draft.trim().is_empty();
-            if round_button(ui, theme, running, empty && !running) {
-                if running {
-                    assistant.stop();
-                } else {
-                    send = true;
+        ui.horizontal(|ui| {
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                let empty = assistant.draft.trim().is_empty();
+                if round_button(ui, theme, running, empty && !running) {
+                    if running {
+                        assistant.stop();
+                    } else {
+                        send = true;
+                    }
                 }
-            }
-            ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-                options(ui, theme, assistant);
+                ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                    options(ui, theme, assistant);
+                });
             });
         });
     });
