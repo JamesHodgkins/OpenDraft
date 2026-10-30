@@ -13,6 +13,14 @@ mod command_runs;
 #[cfg(test)]
 mod command_tests;
 mod connection;
+mod construct;
+#[cfg(test)]
+mod construct_compose_tests;
+#[cfg(test)]
+mod construct_guard_tests;
+mod construct_support;
+#[cfg(test)]
+mod construct_tests;
 mod core;
 #[cfg(test)]
 mod core_tests;
@@ -143,6 +151,7 @@ fn route(
     match operation {
         ops::ENTITIES_APPLY_BATCH => apply_batch(state, instance, caller, arguments),
         ops::LAYERS_APPLY_BATCH => layer_mutate::apply_layers(state, instance, caller, arguments),
+        ops::ENTITIES_CONSTRUCT => construct::construct(state, instance, caller, arguments),
         ops::SELECTION_SET => ui_mutate::set_selection(state, instance, arguments),
         ops::SELECTION_REQUEST => selection_request::start(state, instance, caller, arguments),
         ops::HISTORY_UNDO => ui_mutate::step_history(state, instance, caller, Undo, arguments),

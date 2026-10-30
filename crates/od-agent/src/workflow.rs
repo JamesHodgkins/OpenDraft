@@ -52,6 +52,7 @@ const EDIT_TOOLS: &[&str] = &[
     "opendraft_drawing_audit",
     "opendraft_view_render",
     "opendraft_selection_request",
+    "opendraft_entities_construct",
     "opendraft_entities_apply_batch",
     "opendraft_layers_apply_batch",
 ];
@@ -104,7 +105,10 @@ pub fn edit() -> Workflow {
              against a standard: never say a drawing matches or complies with one. Say which \
              numbers the user gave and which you recall from the standard (unverified). For \
              anything else, build from the simplest exact shapes and keep every number you use \
-             in the plan. To move something to another layer or change its colour, use patch \
+             in the plan. Do not type coordinates you worked out by hand for something a \
+             drafter would copy, array, mirror, offset or draw as a regular polygon: use \
+             opendraft_entities_construct, which does those exactly (make one bolt hole and \
+             polar-array it; draw half a symmetrical part and mirror it). To move something to another layer or change its colour, use patch \
              with attributes, not replace. Use hatch to fill a section, never lines drawn one \
              by one. If you cannot do what is asked with your tools, say so and ask; do not \
              fake it.",

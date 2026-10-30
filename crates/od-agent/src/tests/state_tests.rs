@@ -93,6 +93,7 @@ fn the_edit_workflow_holds_back_exactly_the_tools_that_change_the_drawing() {
     assert_eq!(
         held,
         [
+            "opendraft_entities_construct",
             "opendraft_entities_apply_batch",
             "opendraft_layers_apply_batch"
         ]

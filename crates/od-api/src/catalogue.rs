@@ -13,6 +13,7 @@ use serde_json::{json, Map, Value};
 
 use crate::audit_ops::{AuditArgs, SummaryArgs};
 use crate::command_ops::{InvokeArgs, ListArgs, StartArgs};
+use crate::construct_ops::ConstructArgs;
 use crate::event_ops::EventsArgs;
 use crate::file_ops::{ExportArgs, OpenArgs, OperationArgs, SaveArgs, SaveAsArgs};
 use crate::idempotency;
@@ -128,14 +129,28 @@ fn schema_of<T: JsonSchema>() -> Schema {
     }
 }
 
-/// Drop what costs tokens and tells a model nothing: titles, and `default:
-/// null` on every optional field.
+/// Drop what costs tokens and tells a model nothing: titles, `default: null`
+/// on every optional field, and the number formats (`double`, `uint32`...)
+/// with the `minimum: 0` that goes with an unsigned one.
 fn compact(value: &mut Value) {
     match value {
         Value::Object(map) => {
             map.remove("title");
             if map.get("default") == Some(&Value::Null) {
                 map.remove("default");
+            }
+            let format = map.get("format").and_then(Value::as_str).map(str::to_owned);
+            if let Some(format) = format {
+                let numeric = matches!(
+                    format.as_str(),
+                    "double" | "float" | "int8" | "int16" | "int32" | "int64"
+                ) || format.starts_with("uint");
+                if numeric {
+                    map.remove("format");
+                    if format.starts_with("uint") && map.get("minimum") == Some(&json!(0)) {
+                        map.remove("minimum");
+                    }
+                }
             }
             for child in map.values_mut() {
                 compact(child);
@@ -307,6 +322,13 @@ const DEFS: &[ToolDef] = &[
     },
     ToolDef {
         effect: Effect::Destructive,
+        name: "opendraft_entities_construct",
+        description: "Exact drafting operations on shapes, in one undoable step, so you never work out a coordinate: a regular polygon (from its centre, sides and radius), move, rotate, scale, mirror (across a line), offset, and rectangular and polar arrays (polar: the holes of a bolt circle from one hole). Each step says what to do and to which shapes (existing ids, or shapes made earlier in the request by name); with copy_as the originals stay and copies are added. Prefer this to typing positions in opendraft_entities_apply_batch. Works on the kinds the batch tool can write. Needs the user's Allow changes switch.",
+        operation: ops::ENTITIES_CONSTRUCT,
+        schema: schema_of::<ConstructArgs>,
+    },
+    ToolDef {
+        effect: Effect::Destructive,
         name: "opendraft_layers_apply_batch",
         description: "Create layers, change their name, colour, linetype, lineweight or visible/frozen/locked flags, and set the current layer, in one undoable step. Layers cannot be deleted through this API.",
         operation: ops::LAYERS_APPLY_BATCH,
@@ -402,6 +424,20 @@ mod tests {
             let text = serde_json::to_string(&schema).unwrap();
             assert_eq!(schema.get("type"), Some(&json!("object")), "{}", tool.name);
             assert!(!text.contains("$ref"), "{}: {text}", tool.name);
+        }
+    }
+
+    #[test]
+    fn schemas_carry_no_number_formats_a_model_cannot_use() {
+        for tool in tools() {
+            let text = serde_json::to_string(&tool.input_schema()).unwrap();
+            for noise in [
+                "\"format\":\"double\"",
+                "\"format\":\"uint32\"",
+                "\"format\":\"uint64\"",
+            ] {
+                assert!(!text.contains(noise), "{}: {noise}", tool.name);
+            }
         }
     }
 
