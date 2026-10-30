@@ -18,9 +18,9 @@ pub fn draw(
     arguments: serde_json::Value,
 ) -> Result<serde_json::Value, ApiError> {
     let args: PartArgs = parse(arguments)?;
-    let shapes = args
+    let drawing = args
         .part
-        .shapes()
+        .drawing()
         .map_err(|e| ApiError::new(ErrorCode::InvalidGeometry, e.0))?;
-    apply_batch(state, instance, caller, batch(&args, &shapes))
+    apply_batch(state, instance, caller, batch(&args, &drawing))
 }

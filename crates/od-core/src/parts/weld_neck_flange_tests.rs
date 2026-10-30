@@ -1,7 +1,7 @@
 //! The flange recipe, to the number. The sample is a made-up flange chosen
 //! so the arithmetic is easy to check; it is not a standard's flange.
 
-use super::{Shape, WeldNeckFlange};
+use super::{Role, Shape, WeldNeckFlange};
 use crate::Point;
 
 fn sample() -> WeldNeckFlange {
@@ -303,6 +303,34 @@ fn numbers_that_cannot_make_a_flange_are_refused_saying_which() {
         let error = flange.shapes().expect_err(mentions);
         assert!(error.0.contains(mentions), "{mentions}: {error}");
     }
+}
+
+#[test]
+fn the_bolt_circle_and_centrelines_are_centre_work_and_the_rest_outline() {
+    let drawing = sample().drawing().unwrap();
+    assert_eq!(drawing.roles.len(), drawing.shapes.len());
+    for (shape, role) in drawing.shapes.iter().zip(&drawing.roles) {
+        let expected = match shape {
+            Shape::Line(..) => Role::Centre,
+            Shape::Circle { radius, .. } if near(*radius, 37.5) => Role::Centre,
+            _ => Role::Outline,
+        };
+        assert_eq!(*role, expected, "{shape:?}");
+    }
+    assert_eq!(
+        drawing.roles.iter().filter(|r| **r == Role::Centre).count(),
+        3
+    );
+}
+
+#[test]
+fn the_section_hatch_fills_the_two_section_outlines() {
+    let drawing = sample().drawing().unwrap();
+    assert_eq!(drawing.hatched, [0, 1]);
+    for &at in &drawing.hatched {
+        assert!(matches!(drawing.shapes[at], Shape::Outline(_)));
+    }
+    assert!(near(drawing.hatch_spacing, 14.0 / 8.0));
 }
 
 #[test]

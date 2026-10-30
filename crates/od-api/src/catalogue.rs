@@ -302,7 +302,7 @@ const DEFS: &[ToolDef] = &[
     ToolDef {
         effect: Effect::Destructive,
         name: "opendraft_entities_apply_batch",
-        description: "Add, patch, replace and delete entities in one atomic, undoable step. Pass the revision you last read as expected_revision; on stale_revision, re-read and rebuild the batch. Writable kinds: line, circle, arc, rectangle, polyline, ellipse, mtext. Needs the user's Allow changes switch.",
+        description: "Add, patch, replace and delete entities in one atomic, undoable step. Pass the revision you last read as expected_revision; on stale_revision, re-read and rebuild the batch. Writable kinds: line, circle, arc, rectangle, polyline, ellipse, mtext, and hatch (add only, after its boundary shapes). To change layer or colour use patch with attributes. Needs the user's Allow changes switch.",
         operation: ops::ENTITIES_APPLY_BATCH,
         schema: schema_of::<BatchArgs>,
     },

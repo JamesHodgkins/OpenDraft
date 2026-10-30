@@ -103,15 +103,23 @@ pub fn edit() -> Workflow {
              it and give it the dimensions: it computes the geometry exactly, so never work out \
              that part's coordinates yourself. In your plan, state the dimensions you will use and \
              where each comes from (the standard, or the user). If you are not certain of a \
-             number in a standard, ask the user instead of guessing. For anything else, build \
-             from the simplest exact shapes and keep every number you use in the plan.",
+             number in a standard, ask the user instead of guessing. You cannot check a number \
+             against a standard: never say a drawing matches or complies with one. Say which \
+             numbers the user gave and which you recall from the standard (unverified). For \
+             anything else, build from the simplest exact shapes and keep every number you use \
+             in the plan. To move something to another layer or change its colour, use patch \
+             with attributes, not replace. Use hatch to fill a section, never lines drawn one \
+             by one. If you cannot do what is asked with your tools, say so and ask; do not \
+             fake it.",
             preamble()
         ),
         tools: EDIT_TOOLS,
         plan_first: true,
         verify: Some(
-            "Check your work now: read back what you changed and confirm it is what was asked. \
-             Report anything that is not.",
+            "Check your work now, against the request and not against your own numbers: read \
+             back what you changed, look at a picture of it if the shape matters, and report \
+             anything that is not what was asked. Also list every number you took from memory \
+             and not from the user or a source you were given: those are unverified.",
         ),
     }
 }

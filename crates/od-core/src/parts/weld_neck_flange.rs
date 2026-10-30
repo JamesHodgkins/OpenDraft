@@ -19,7 +19,7 @@
 
 use std::f64::consts::{FRAC_PI_2, TAU};
 
-use super::{positive, PartError, Shape};
+use super::{positive, PartDrawing, PartError, Role, Shape};
 use crate::Point;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -124,11 +124,29 @@ impl WeldNeckFlange {
 
     /// The section and the face view, as exact shapes about the origin.
     pub fn shapes(&self) -> Result<Vec<Shape>, PartError> {
+        self.drawing().map(|d| d.shapes)
+    }
+
+    /// The shapes with what each is for: the section outlines (which a
+    /// section hatch fills, with lines spaced an eighth of the flange
+    /// thickness apart), the face view's circles, and the centre lines with
+    /// the bolt circle.
+    pub fn drawing(&self) -> Result<PartDrawing, PartError> {
         self.validate()?;
-        let mut shapes = self.section();
-        shapes.extend(self.face_view());
-        shapes.extend(self.centrelines());
-        Ok(shapes)
+        let mut pieces: Vec<(Role, Shape)> = self
+            .section()
+            .into_iter()
+            .map(|s| (Role::Outline, s))
+            .collect();
+        pieces.extend(self.face_view());
+        pieces.extend(self.centrelines().into_iter().map(|s| (Role::Centre, s)));
+        let (roles, shapes) = pieces.into_iter().unzip();
+        Ok(PartDrawing {
+            shapes,
+            roles,
+            hatched: vec![0, 1],
+            hatch_spacing: self.thickness / 8.0,
+        })
     }
 
     /// Where the face view's centre is: left of the section by a quarter of
@@ -163,15 +181,15 @@ impl WeldNeckFlange {
 
     /// The circles seen from the face: the edge, the raised face, the bore
     /// and the bolt holes (and the circle they sit on).
-    fn face_view(&self) -> Vec<Shape> {
+    fn face_view(&self) -> Vec<(Role, Shape)> {
         let c = p(self.face_centre(), 0.0);
         let circle = |radius: f64| Shape::Circle { center: c, radius };
-        let mut shapes = vec![circle(self.outside_diameter / 2.0)];
+        let mut shapes = vec![(Role::Outline, circle(self.outside_diameter / 2.0))];
         if self.raised_face_height > 0.0 {
-            shapes.push(circle(self.raised_face_diameter / 2.0));
+            shapes.push((Role::Outline, circle(self.raised_face_diameter / 2.0)));
         }
-        shapes.push(circle(self.bore / 2.0));
-        shapes.push(circle(self.bolt_circle_diameter / 2.0));
+        shapes.push((Role::Outline, circle(self.bore / 2.0)));
+        shapes.push((Role::Centre, circle(self.bolt_circle_diameter / 2.0)));
         let n = f64::from(self.bolt_count);
         // An even count straddles both centrelines (half a step either side
         // of the vertical). An odd count cannot, so one hole is at the top
@@ -184,10 +202,13 @@ impl WeldNeckFlange {
         for k in 0..self.bolt_count {
             let angle = first + TAU * f64::from(k) / n;
             let r = self.bolt_circle_diameter / 2.0;
-            shapes.push(Shape::Circle {
-                center: p(c.x + r * angle.cos(), r * angle.sin()),
-                radius: self.bolt_hole_diameter / 2.0,
-            });
+            shapes.push((
+                Role::Outline,
+                Shape::Circle {
+                    center: p(c.x + r * angle.cos(), r * angle.sin()),
+                    radius: self.bolt_hole_diameter / 2.0,
+                },
+            ));
         }
         shapes
     }

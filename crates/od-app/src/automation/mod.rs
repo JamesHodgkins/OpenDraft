@@ -30,6 +30,9 @@ mod grants;
 #[cfg(test)]
 mod grants_tests;
 mod guard;
+#[cfg(test)]
+mod hatch_batch_tests;
+mod hatch_mutate;
 mod host;
 #[cfg(test)]
 mod host_tests;

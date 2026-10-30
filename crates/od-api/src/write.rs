@@ -74,6 +74,41 @@ pub enum NewGeometry {
         #[serde(default)]
         style_id: Option<WireId>,
     },
+    /// Fill closed shapes with a hatch pattern (a section is hatched). Each
+    /// `boundary` is an existing closed entity (by `entity_id`) or one added
+    /// earlier in this batch (by `client_ref`), so add the shapes first and the
+    /// hatch after them. A hatch can only be added: it cannot be patched or
+    /// replaced.
+    Hatch {
+        boundary: Vec<Target>,
+        pattern: HatchPattern,
+        /// Whether it follows its boundary when that is edited. Default false.
+        #[serde(default)]
+        associative: bool,
+    },
+}
+
+fn one() -> f64 {
+    1.0
+}
+
+/// How a hatch is filled.
+#[derive(Clone, Debug, PartialEq, Deserialize, JsonSchema)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+pub enum HatchPattern {
+    /// A built-in pattern by name: ANSI31 (the usual section hatch), ANSI32
+    /// (steel), ANSI37, ANGLE, LINE, NET, NET3. `angle` (radians) turns it
+    /// from its own direction (ANSI31 is 45 degrees at angle 0). At scale 1
+    /// ANSI31's lines are 0.125 drawing units apart, so scale = the spacing
+    /// you want / 0.125.
+    Named {
+        name: String,
+        #[serde(default = "one")]
+        scale: f64,
+        #[serde(default)]
+        angle: f64,
+    },
+    Solid,
 }
 
 /// Changes to named fields of an existing entity of the same kind.
