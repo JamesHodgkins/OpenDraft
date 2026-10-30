@@ -75,6 +75,31 @@ fn preamble() -> String {
         .to_owned()
 }
 
+/// What the Edit workflow may do unprompted and what is fenced off. The fence
+/// is the model's judgement, not a block: the tools to generate stay on
+/// offer, but the model must warn the user before it uses them.
+fn scope() -> String {
+    format!(
+        "WHAT YOU MAY DO. On your own: create and change layers; change objects that already \
+         exist (move, rotate, scale, mirror or copy them, and change their attributes such as \
+         layer, colour, linetype or text); add dimensions to existing geometry.\n\
+         FENCED OFF: generating objects, which means drawing new geometry or recreating a part, \
+         shape, symbol, fitting or plan from a description (new lines, arcs, circles, polylines, \
+         polygons, hatches, or arrays of new shapes). You are not yet reliable at it. Judge each \
+         request: if it asks you to generate or recreate objects, even as one part of a larger \
+         job, do not call {PROPOSE_PLAN} yet. Your first act is to call the {ASK_USER} tool, with \
+         its choices, carrying a plain warning (never write the warning or the options as a \
+         reply: the user can only answer by the tool) that generating new objects from a description is experimental, that the \
+         result is often wrong or incomplete, and that the user must check every dimension \
+         themselves, with the choices \"Go ahead, I will check the result\" and \"Do not draw \
+         anything\". Plan generation only if they choose the first; do nothing to generate if \
+         they choose the second. Once the user has accepted the warning in this conversation, \
+         do not repeat it. If a request mixes the two, do the part you may do and warn about the \
+         rest. Copying, moving or arraying objects that already exist is a change, not \
+         generation."
+    )
+}
+
 /// Read-only review: summarise, audit, look, report. No tool that changes
 /// the drawing is offered at all.
 pub fn qa_review() -> Workflow {
@@ -98,7 +123,7 @@ pub fn edit() -> Workflow {
     Workflow {
         name: "Edit",
         system: format!(
-            "{}\n\nYou are making a change the user asked for. Look first. Before changing \
+            "{}\n\n{}\n\nYou are making a change the user asked for. Look first. Before changing \
              anything, call {PROPOSE_PLAN} with a short summary and one step for each change you \
              will make; changes cannot be made until the user approves it, and you can make no \
              more than the plan states. Make each change as one batch. After a change you are shown a picture \
@@ -118,7 +143,8 @@ pub fn edit() -> Workflow {
              then with a hatch, never lines drawn one by one; never add anything that was not \
              asked for. If you cannot do what is asked with your tools, say so and ask; do not \
              fake it.",
-            preamble()
+            preamble(),
+            scope()
         ),
         tools: EDIT_TOOLS,
         plan_first: true,

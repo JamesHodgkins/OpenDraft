@@ -2,7 +2,7 @@
 
 use od_api::catalogue;
 
-use crate::{changes_drawing, edit, qa_review, BudgetKind, Failure, TaskState};
+use crate::{changes_drawing, edit, qa_review, BudgetKind, Failure, TaskState, ASK_USER};
 use TaskState::*;
 
 fn all() -> Vec<TaskState> {
@@ -145,4 +145,24 @@ fn both_workflows_offer_the_calculator_and_say_to_use_it() {
         let tool = catalogue::find("opendraft_calculate");
         assert!(tool.is_some_and(|t| !changes_drawing(t.operation) && !t.reaches_files()));
     }
+}
+
+#[test]
+fn generating_objects_is_fenced_by_a_warning_and_not_by_removing_tools() {
+    let workflow = edit();
+    assert!(workflow.system.contains("FENCED OFF"));
+    assert!(
+        workflow.system.contains(ASK_USER) && workflow.system.contains("experimental"),
+        "the model is told to warn through a question first"
+    );
+    for kept in [
+        "opendraft_entities_construct",
+        "opendraft_entities_apply_batch",
+    ] {
+        assert!(workflow.tools.contains(&kept), "{kept} stays on offer");
+    }
+    assert!(
+        !qa_review().system.contains("FENCED OFF"),
+        "review changes nothing"
+    );
 }
