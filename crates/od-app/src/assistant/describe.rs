@@ -13,30 +13,10 @@ pub fn change(request: &ChangeRequest) -> String {
     let said = match request.operation.as_str() {
         "entities.apply_batch" => operations.map(|o| entities(o)),
         "layers.apply_batch" => operations.map(|o| layers(o)),
-        "parts.draw" => part(&request.arguments),
         _ => None,
     };
     said.filter(|s| !s.is_empty())
         .unwrap_or_else(|| "Change the drawing".to_owned())
-}
-
-/// "Draw a weld neck flange (outside diameter 100, 4 bolt holes)".
-fn part(arguments: &Value) -> Option<String> {
-    let part = arguments.get("part")?;
-    let kind = part.get("kind")?.as_str()?.replace('_', " ");
-    let number = |field: &str| part.get(field).and_then(Value::as_f64);
-    let mut details = Vec::new();
-    if let Some(d) = number("outside_diameter") {
-        details.push(format!("outside diameter {d}"));
-    }
-    if let Some(n) = number("bolt_count") {
-        details.push(plural(n as usize, "bolt hole"));
-    }
-    Some(if details.is_empty() {
-        format!("Draw a {kind}")
-    } else {
-        format!("Draw a {kind} ({})", details.join(", "))
-    })
 }
 
 fn tally(operations: &[Value], op: &str) -> usize {
@@ -186,25 +166,6 @@ mod tests {
             arguments: json!("not an object"),
         };
         assert_eq!(change(&odd), "Change the drawing");
-    }
-
-    #[test]
-    fn a_part_is_named_with_its_main_numbers() {
-        let r = ChangeRequest {
-            tool: "t".to_owned(),
-            operation: "parts.draw".to_owned(),
-            arguments: json!({"part": {"kind": "weld_neck_flange", "outside_diameter": 273.0,
-                                       "bolt_count": 8}}),
-        };
-        assert_eq!(
-            change(&r),
-            "Draw a weld neck flange (outside diameter 273, 8 bolt holes)"
-        );
-        let bare = ChangeRequest {
-            arguments: json!({"part": {"kind": "weld_neck_flange"}}),
-            ..r
-        };
-        assert_eq!(change(&bare), "Draw a weld neck flange");
     }
 
     #[test]

@@ -19,7 +19,6 @@ use crate::idempotency;
 use crate::layer_ops::LayersBatchArgs;
 use crate::measure::{IntersectArgs, MeasureArgs};
 use crate::ops::{self, DocumentArgs, GetArgs, QueryArgs};
-use crate::parts_ops::PartArgs;
 use crate::session_ops::{HistoryArgs, SelectionRequestArgs, SelectionSetArgs};
 use crate::view::RenderArgs;
 use crate::write::BatchArgs;
@@ -305,13 +304,6 @@ const DEFS: &[ToolDef] = &[
         description: "Add, patch, replace and delete entities in one atomic, undoable step. Pass the revision you last read as expected_revision; on stale_revision, re-read and rebuild the batch. Writable kinds: line, circle, arc, rectangle, polyline, ellipse, mtext, and hatch (add only, after its boundary shapes). To change layer or colour use patch with attributes. Needs the user's Allow changes switch.",
         operation: ops::ENTITIES_APPLY_BATCH,
         schema: schema_of::<BatchArgs>,
-    },
-    ToolDef {
-        effect: Effect::Adds,
-        name: "opendraft_parts_draw",
-        description: "Draw a standard part from its dimensions, exactly, in one undoable step, so you never work out a coordinate. Use this instead of opendraft_entities_apply_batch whenever the part is available. Now: weld_neck_flange (a section and the face view). You must supply every dimension, in the drawing's units, from the standard or the user: the tool does not know any standard and refuses numbers that cannot make the part. Needs the user's Allow changes switch.",
-        operation: ops::PARTS_DRAW,
-        schema: schema_of::<PartArgs>,
     },
     ToolDef {
         effect: Effect::Destructive,

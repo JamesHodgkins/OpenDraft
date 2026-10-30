@@ -31,7 +31,6 @@ pub const OPERATIONS_CANCEL: &str = "operations.cancel";
 pub const VIEW_RENDER: &str = "view.render";
 pub const ENTITIES_APPLY_BATCH: &str = "entities.apply_batch";
 pub const LAYERS_APPLY_BATCH: &str = "layers.apply_batch";
-pub const PARTS_DRAW: &str = "parts.draw";
 pub const SELECTION_SET: &str = "selection.set";
 pub const SELECTION_REQUEST: &str = "selection.request";
 pub const HISTORY_UNDO: &str = "history.undo";
@@ -57,7 +56,7 @@ pub fn required_scope(operation: &str) -> Option<Scope> {
         // that needed its own grant already.
         | OPERATIONS_GET
         | OPERATIONS_CANCEL => Some(Scope::DrawingRead),
-        ENTITIES_APPLY_BATCH | LAYERS_APPLY_BATCH | PARTS_DRAW | HISTORY_UNDO | HISTORY_REDO => {
+        ENTITIES_APPLY_BATCH | LAYERS_APPLY_BATCH | HISTORY_UNDO | HISTORY_REDO => {
             Some(Scope::DrawingWrite)
         }
         SELECTION_SET | SELECTION_REQUEST => Some(Scope::UiSelection),

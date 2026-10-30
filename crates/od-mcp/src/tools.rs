@@ -172,10 +172,10 @@ mod tests {
                 serde_json::to_string_pretty(&tools).unwrap_or_default(),
             );
         }
-        // An alarm for bloat, raised when a tool is added on purpose (29 tools
+        // An alarm for bloat, raised when a tool is added on purpose (28 tools
         // now); the remedy for a real squeeze is in ARCHITECTURE.md.
         assert!(
-            size < 64_000,
+            size < 60_000,
             "tools/list is {size} bytes; biggest schema {biggest:?}"
         );
     }
