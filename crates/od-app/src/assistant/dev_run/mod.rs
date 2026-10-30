@@ -13,6 +13,8 @@
 //!   OD_DEV_LEVEL     `each` (the default), `plan` or `auto`
 //!   OD_DEV_PROVIDER  `fake` (a scripted model) or `mistral`; by default
 //!                    Mistral if a key is found (see `key.rs`), else fake
+//!   OD_DEV_TRANSCRIPT a folder for a text file of every call and result, and
+//!                    each picture the model was shown
 //!   OD_DEV_SAVE      where to save the drawing afterwards (an edit is made
 //!                    in memory only; open this file to see it)
 //!
@@ -21,6 +23,7 @@
 
 mod console;
 mod key;
+mod transcript;
 
 use std::io::BufRead;
 use std::path::PathBuf;
@@ -213,8 +216,17 @@ fn dev_run() {
     };
     let out: Sink = Arc::new(Mutex::new(Box::new(std::io::stdout())));
     let input = Box::new(std::io::BufReader::new(std::io::stdin()));
-    if let Err(message) = run(settings, input, out) {
-        panic!("{message}");
+    match run(settings, input, out) {
+        Ok(outcome) => {
+            if let Some(folder) = env("OD_DEV_TRANSCRIPT") {
+                if let Err(message) =
+                    transcript::write(&PathBuf::from(folder), &outcome.report.messages)
+                {
+                    panic!("{message}");
+                }
+            }
+        }
+        Err(message) => panic!("{message}"),
     }
 }
 
