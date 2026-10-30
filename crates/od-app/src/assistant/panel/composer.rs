@@ -1,6 +1,7 @@
 //! The bottom of the panel: what the assistant is doing, then a rounded box
-//! with the text field and, under it, the options and the send button (which
-//! is Stop while a task runs). With no key, the box asks for one instead.
+//! with the text field and, under it, one row: the menu, how much to ask
+//! about, which drawings, and the send button (which is Stop while a task
+//! runs). With no key, the box asks for one instead.
 
 use std::sync::Arc;
 
@@ -14,6 +15,8 @@ use crate::state::AppState;
 
 const INPUT_ID: &str = "assistant_input";
 const KEY_ID: &str = "assistant_key";
+/// Changes a task may make at "Never ask" (the core holds its own ceiling).
+const AUTO_LIMIT: u32 = 20;
 
 pub fn show(
     ui: &mut egui::Ui,
@@ -91,28 +94,25 @@ fn input(
             egui::TextEdit::multiline(&mut assistant.draft)
                 .id(id)
                 .hint_text("Ask about this drawing...")
-                .desired_rows(3)
+                .desired_rows(2)
                 .desired_width(f32::INFINITY)
                 .frame(false),
         );
-        ui.horizontal(|ui| {
-            options(ui, theme, assistant);
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                let empty = assistant.draft.trim().is_empty();
-                if round_button(ui, theme, running, empty && !running) {
-                    if running {
-                        assistant.stop();
-                    } else {
-                        send = true;
-                    }
+        // Send is placed first from the right, so a narrow panel clips the
+        // options and never the button.
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            let empty = assistant.draft.trim().is_empty();
+            if round_button(ui, theme, running, empty && !running) {
+                if running {
+                    assistant.stop();
+                } else {
+                    send = true;
                 }
+            }
+            ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                options(ui, theme, assistant);
             });
         });
-        // How much to ask about has a row of its own, so the row above keeps
-        // room for the send button in a narrow panel.
-        if assistant.kind == Kind::Edit {
-            ui.horizontal(|ui| level(ui, theme, assistant));
-        }
     });
     if send && !running {
         let text = std::mem::take(&mut assistant.draft);
@@ -124,19 +124,23 @@ fn input(
     }
 }
 
-/// The row under the text: which drawing, what kind of help, how much to
-/// ask about. Only what works is offered.
+/// The row under the text: the menu, how much to ask about (only when the
+/// assistant may change things) and which drawings.
 fn options(ui: &mut egui::Ui, theme: &Theme, assistant: &mut Assistant) {
     let small = theme.font_size_small;
     let weak = theme.colors.text_weak;
     ui.spacing_mut().item_spacing.x = 4.0;
+    burger(ui, small, weak, assistant);
+    if assistant.kind == Kind::Edit {
+        level(ui, small, weak, assistant);
+    }
     let drawings = match assistant.drawings {
-        Drawings::Current => "Current drawing",
-        Drawings::All => "All drawings",
+        Drawings::Current => "Current",
+        Drawings::All => "All open",
     };
     chip(ui, drawings, small, weak, |ui| {
         if ui
-            .selectable_label(assistant.drawings == Drawings::Current, "Current drawing")
+            .selectable_label(assistant.drawings == Drawings::Current, "This drawing")
             .clicked()
         {
             assistant.drawings = Drawings::Current;
@@ -151,55 +155,67 @@ fn options(ui: &mut egui::Ui, theme: &Theme, assistant: &mut Assistant) {
             ui.close_menu();
         }
     });
-    chip(ui, "Key", small, weak, |ui| {
-        if ui
-            .button("Forget this key")
-            .on_hover_text("Removes it from this session and from the computer's credential store")
-            .clicked()
-        {
-            assistant.forget_key();
-            ui.close_menu();
-        }
-    });
-    let kind = match assistant.kind {
-        Kind::Review => "Review",
-        Kind::Edit => "Edit",
-    };
-    chip(ui, kind, small, weak, |ui| {
-        if ui
-            .selectable_label(assistant.kind == Kind::Review, "Review: reads and reports")
-            .clicked()
-        {
-            assistant.kind = Kind::Review;
-            ui.close_menu();
-        }
-        if ui
-            .selectable_label(assistant.kind == Kind::Edit, "Edit: plans, then changes")
-            .clicked()
-        {
-            assistant.kind = Kind::Edit;
-            ui.close_menu();
-        }
+}
+
+/// The menu of things that are not needed on every message.
+fn burger(ui: &mut egui::Ui, size: f32, colour: egui::Color32, assistant: &mut Assistant) {
+    ui.scope(|ui| {
+        let widgets = &mut ui.visuals_mut().widgets;
+        widgets.inactive.weak_bg_fill = egui::Color32::TRANSPARENT;
+        widgets.inactive.bg_stroke = egui::Stroke::NONE;
+        let icon = egui::RichText::new(od_ui::icons::glyph(icons::ASSISTANT_BURGER).to_string())
+            .font(egui::FontId::new(size + 3.0, od_ui::icon_family()))
+            .color(colour);
+        ui.menu_button(icon, |ui| {
+            let mut review_only = assistant.kind == Kind::Review;
+            if ui
+                .checkbox(&mut review_only, "Review only")
+                .on_hover_text("The assistant reads and reports, and cannot change the drawing")
+                .changed()
+            {
+                assistant.kind = if review_only {
+                    Kind::Review
+                } else {
+                    Kind::Edit
+                };
+            }
+            ui.separator();
+            if ui
+                .button("Forget this key")
+                .on_hover_text(
+                    "Removes it from this session and from the computer's credential store",
+                )
+                .clicked()
+            {
+                assistant.forget_key();
+                ui.close_menu();
+            }
+        })
+        .response
+        .on_hover_text("Options");
     });
 }
 
-/// The approval level, shown when the assistant may change things.
-fn level(ui: &mut egui::Ui, theme: &Theme, assistant: &mut Assistant) {
-    let small = theme.font_size_small;
-    let weak = theme.colors.text_weak;
-    ui.spacing_mut().item_spacing.x = 4.0;
+/// The approval level: how much the assistant asks before it changes things.
+fn level(ui: &mut egui::Ui, size: f32, colour: egui::Color32, assistant: &mut Assistant) {
     let label = match assistant.level {
-        ApprovalLevel::ReviewEach => "Review each change",
-        ApprovalLevel::ApprovePlan => "Approve the plan",
-        ApprovalLevel::AutoApprove { .. } => "Auto-approve",
+        ApprovalLevel::ReviewEach => "Each change",
+        ApprovalLevel::ApprovePlan => "Plan",
+        ApprovalLevel::AutoApprove { .. } => "Never ask",
     };
-    chip(ui, label, small, weak, |ui| {
+    chip(ui, label, size, colour, |ui| {
         let levels = [
-            (ApprovalLevel::ReviewEach, "Review each change"),
-            (ApprovalLevel::ApprovePlan, "Approve the plan"),
             (
-                ApprovalLevel::AutoApprove { limit: 5 },
-                "Auto-approve (up to 5)",
+                ApprovalLevel::ReviewEach,
+                "Each change: ask before each one",
+            ),
+            (
+                ApprovalLevel::ApprovePlan,
+                "Plan: ask once, then carry it out",
+            ),
+            (
+                ApprovalLevel::AutoApprove { limit: AUTO_LIMIT },
+                "Never ask: up to 20 changes, then stop",
             ),
         ];
         for (value, name) in levels {
