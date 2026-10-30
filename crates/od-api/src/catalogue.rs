@@ -324,14 +324,14 @@ const DEFS: &[ToolDef] = &[
     ToolDef {
         effect: Effect::Destructive,
         name: "opendraft_entities_apply_batch",
-        description: "Add, patch, replace and delete entities in one atomic, undoable step. Pass the revision you last read as expected_revision; on stale_revision, re-read and rebuild the batch. Writable kinds: line, circle, arc, rectangle, polyline, ellipse, mtext, and hatch (add only, after its boundary shapes). To change layer or colour use patch with attributes. Needs the user's Allow changes switch.",
+        description: "Add, patch, replace and delete entities in one atomic, undoable step. Pass the revision you last read as expected_revision; on stale_revision, re-read and rebuild the batch. Writable kinds: line, circle, arc, rectangle, polyline, ellipse, mtext, and hatch (add only, after its boundary shapes). Layer and colour go in an entity's attributes (layer_id, colour), on add or in a patch. Needs the user's Allow changes switch.",
         operation: ops::ENTITIES_APPLY_BATCH,
         schema: schema_of::<BatchArgs>,
     },
     ToolDef {
         effect: Effect::Destructive,
         name: "opendraft_entities_construct",
-        description: "Exact drafting operations on shapes, in one undoable step, so you never work out a coordinate: a regular polygon (from its centre, sides and radius), move, rotate, scale, mirror (across a line), offset, and rectangular and polar arrays (polar: the holes of a bolt circle from one hole). Each step says what to do and to which shapes (existing ids, or shapes made earlier in the request by name); with copy_as the originals stay and copies are added. Prefer this to typing positions in opendraft_entities_apply_batch. Works on the kinds the batch tool can write. Needs the user's Allow changes switch.",
+        description: "Exact drafting operations on shapes, in one undoable step, so you never work out a coordinate: a regular polygon (from its centre, sides and radius), move, rotate, scale, mirror (across a line), offset, and rectangular and polar arrays (polar: the holes of a bolt circle from one hole). Each step says what to do and to which shapes (existing ids, or shapes made earlier in the request by name); with copy_as the originals stay and copies are added. Prefer this to typing positions in opendraft_entities_apply_batch. Only a polygon takes client_ref; the others name copies with copy_as or ref_prefix. Works on the kinds the batch tool can write. Needs the user's Allow changes switch.",
         operation: ops::ENTITIES_CONSTRUCT,
         schema: schema_of::<ConstructArgs>,
     },
