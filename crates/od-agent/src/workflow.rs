@@ -52,7 +52,6 @@ const EDIT_TOOLS: &[&str] = &[
     "opendraft_drawing_audit",
     "opendraft_view_render",
     "opendraft_selection_request",
-    "opendraft_parts_draw",
     "opendraft_entities_apply_batch",
     "opendraft_layers_apply_batch",
 ];
@@ -99,11 +98,9 @@ pub fn edit() -> Workflow {
              anything, call {PROPOSE_PLAN} with a short summary and one step for each change you \
              will make; changes cannot be made until the user approves it, and you can make no \
              more than the plan states. Make each change as one batch, then check the result.\n\n\
-             Dimensions are in the drawing's units. For any part opendraft_parts_draw offers, use \
-             it and give it the dimensions: it computes the geometry exactly, so never work out \
-             that part's coordinates yourself. In your plan, state the dimensions you will use and \
-             where each comes from (the standard, or the user). If you are not certain of a \
-             number in a standard, ask the user instead of guessing. You cannot check a number \
+             Dimensions are in the drawing's units. In your plan, state the dimensions you will \
+             use and where each comes from (the standard, or the user). If you are not certain of \
+             a number in a standard, ask the user instead of guessing. You cannot check a number \
              against a standard: never say a drawing matches or complies with one. Say which \
              numbers the user gave and which you recall from the standard (unverified). For \
              anything else, build from the simplest exact shapes and keep every number you use \

@@ -87,8 +87,8 @@ mod tests {
                 Part::Text("Planning.".to_owned()),
                 Part::ToolCall(ToolCall {
                     id: "c1".to_owned(),
-                    name: "opendraft_parts_draw".to_owned(),
-                    arguments: json!({"part": {"kind": "weld_neck_flange"}}),
+                    name: "opendraft_entities_apply_batch".to_owned(),
+                    arguments: json!({"operations": []}),
                 }),
             ]),
             Message {
@@ -118,11 +118,9 @@ mod tests {
         };
         assert!(said.starts_with("HEADER"));
         assert!(at("--- You") < at("--- Assistant"));
-        assert!(
-            at("-> opendraft_parts_draw {\"part\":{\"kind\":\"weld_neck_flange\"}}")
-                < at("--- Results")
-        );
-        assert!(said.contains("<- opendraft_parts_draw {\"changed\":true}[picture: the sheet]"));
+        assert!(at("-> opendraft_entities_apply_batch {\"operations\":[]}") < at("--- Results"));
+        assert!(said
+            .contains("<- opendraft_entities_apply_batch {\"changed\":true}[picture: the sheet]"));
         assert!(!said.contains("AAAA"), "a picture's data is not pasted");
     }
 
@@ -132,7 +130,7 @@ mod tests {
         if let Part::ToolResult(r) = &mut messages[2].parts[0] {
             r.is_error = true;
         }
-        assert!(text("", &messages).contains("<- opendraft_parts_draw (error)"));
+        assert!(text("", &messages).contains("<- opendraft_entities_apply_batch (error)"));
     }
 
     #[test]
