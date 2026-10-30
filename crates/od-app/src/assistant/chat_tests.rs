@@ -44,7 +44,12 @@ pub(super) fn rig(key: Option<&str>) -> Rig {
         Ok(provider)
     });
     Rig {
-        chat: Assistant::new(factory, Arc::new(|| {}), key.map(str::to_owned)),
+        chat: Assistant::new(
+            factory,
+            Arc::new(|| {}),
+            key.map(str::to_owned),
+            Arc::new(super::NoStore),
+        ),
         scripts,
         made,
         core: core(),
@@ -217,7 +222,7 @@ fn without_a_key_nothing_is_sent_and_the_reason_is_shown() {
         rig.entries(),
         [Entry::Notice("Add your Mistral key to start.".to_owned())]
     );
-    rig.chat.set_key("sk-x");
+    rig.chat.set_key("sk-x", false);
     rig.script(vec![Step::say("hi")]);
     assert!(rig.send("hello"));
     rig.finish();

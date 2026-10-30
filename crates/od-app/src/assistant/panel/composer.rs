@@ -151,6 +151,16 @@ fn options(ui: &mut egui::Ui, theme: &Theme, assistant: &mut Assistant) {
             ui.close_menu();
         }
     });
+    chip(ui, "Key", small, weak, |ui| {
+        if ui
+            .button("Forget this key")
+            .on_hover_text("Removes it from this session and from the computer's credential store")
+            .clicked()
+        {
+            assistant.forget_key();
+            ui.close_menu();
+        }
+    });
     let kind = match assistant.kind {
         Kind::Review => "Review",
         Kind::Edit => "Edit",
@@ -272,7 +282,8 @@ fn round_button(ui: &mut egui::Ui, theme: &Theme, running: bool, dim: bool) -> b
         && !dim
 }
 
-/// Where a key goes when there is none: kept for this session only.
+/// Where a key goes when there is none: used for the session, and kept in
+/// the computer's credential store if the box is ticked.
 fn key_card(ui: &mut egui::Ui, theme: &Theme, assistant: &mut Assistant) {
     let id = egui::Id::new(KEY_ID);
     let small = theme.font_size_small;
@@ -284,7 +295,7 @@ fn key_card(ui: &mut egui::Ui, theme: &Theme, assistant: &mut Assistant) {
         );
         ui.label(
             egui::RichText::new(
-                "It is kept in memory until you close OpenDraft, and is never saved to disk.",
+                "It is used until you close OpenDraft. Tick the box to keep it in this                  computer's credential store (never in a file of ours) so you are not asked again.",
             )
             .size(small)
             .color(theme.colors.text_weak),
@@ -296,16 +307,24 @@ fn key_card(ui: &mut egui::Ui, theme: &Theme, assistant: &mut Assistant) {
                 .hint_text("Paste the key")
                 .desired_width(f32::INFINITY),
         );
+        let remember_id = id.with("remember");
+        let mut remember: bool = ui.data_mut(|d| d.get_temp(remember_id).unwrap_or(true));
+        ui.checkbox(&mut remember, "Remember on this computer");
+        ui.data_mut(|d| d.insert_temp(remember_id, remember));
         let submitted = edit.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
         let clicked = ui
-            .add_enabled(
-                !text.trim().is_empty(),
-                egui::Button::new("Use for this session"),
-            )
+            .add_enabled(!text.trim().is_empty(), egui::Button::new("Use this key"))
             .clicked();
         if (submitted || clicked) && !text.trim().is_empty() {
-            assistant.set_key(&text);
+            assistant.set_key(&text, remember);
             text.clear();
+        }
+        if let Some(note) = &assistant.key_note {
+            ui.label(
+                egui::RichText::new(note)
+                    .size(small)
+                    .color(theme.colors.text_weak),
+            );
         }
         ui.data_mut(|d| d.insert_temp(id, text));
     });

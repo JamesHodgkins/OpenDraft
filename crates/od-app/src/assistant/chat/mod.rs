@@ -9,6 +9,7 @@
 
 mod briefing;
 mod export;
+mod keys;
 pub(super) mod words;
 mod worker;
 
@@ -19,6 +20,7 @@ use od_agent::{
     edit, qa_review, CancelToken, Event, Message, MistralProvider, Provider, TaskConfig, Workflow,
 };
 
+use super::keystore::KeyStore;
 use super::ApprovalLevel;
 use crate::automation::AutomationCore;
 use crate::state::AppState;
@@ -119,6 +121,9 @@ pub struct Assistant {
     current: usize,
     tasks: u64,
     key: Option<String>,
+    store: Arc<dyn KeyStore>,
+    /// Something to tell the user about keeping the key.
+    pub key_note: Option<String>,
     pub level: ApprovalLevel,
     pub kind: Kind,
     /// Which drawings it may use.
@@ -132,12 +137,24 @@ pub struct Assistant {
 }
 
 impl Assistant {
-    pub fn new(factory: ProviderFactory, wake: Waker, key: Option<String>) -> Self {
+    /// `key` is one the user gave the program (the environment); without it
+    /// the one kept in `store`, if any, is used.
+    pub fn new(
+        factory: ProviderFactory,
+        wake: Waker,
+        key: Option<String>,
+        store: Arc<dyn KeyStore>,
+    ) -> Self {
+        let key = key
+            .filter(|k| !k.trim().is_empty())
+            .or_else(|| store.load());
         Self {
             chats: vec![Chat::default()],
             current: 0,
             tasks: 0,
-            key: key.filter(|k| !k.trim().is_empty()),
+            key,
+            store,
+            key_note: None,
             level: ApprovalLevel::ReviewEach,
             kind: Kind::Review,
             drawings: Drawings::Current,
@@ -158,11 +175,6 @@ impl Assistant {
 
     pub fn has_key(&self) -> bool {
         self.key.is_some()
-    }
-
-    /// Keep the key for this session only.
-    pub fn set_key(&mut self, key: &str) {
-        self.key = Some(key.trim().to_owned()).filter(|k| !k.is_empty());
     }
 
     /// The conversations of this run, newest first, as (index, title).
@@ -348,7 +360,7 @@ impl Assistant {
         }
         // A refused key is no use to keep: the panel asks for another.
         if key_refused {
-            self.key = None;
+            self.drop_refused_key();
         }
     }
 }
