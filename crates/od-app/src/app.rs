@@ -8,6 +8,7 @@ mod chrome;
 mod command_line;
 mod consent_dialog;
 mod context_menu;
+mod ctrl_watch;
 mod dim_manager;
 mod dim_preview;
 mod dim_style_dialog;
@@ -18,6 +19,7 @@ mod dynamic_overlay;
 #[cfg(test)]
 mod dynamic_tests;
 mod file_dialogs;
+mod history_keys;
 mod home_page;
 mod linetype_dialog;
 mod mleader_manager;
@@ -188,6 +190,7 @@ impl OpenDraftApp {
                     let name = crate::cmdline::echo_name(command.id, command.label);
                     self.state.cmdline.echo_command(name);
                     self.state.cmdline.note_recent(command.id);
+                    self.state.cmdline.note_typed(&name.to_uppercase());
                 }
             }
             Err(ExecuteError::Disabled(_)) => {}
@@ -201,7 +204,7 @@ impl OpenDraftApp {
     /// line, as in AutoCAD. So does a bare Enter: it answers the current
     /// prompt (finishes Copy, accepts a default) or repeats the last command.
     fn route_typing_to_command_line(&mut self, ctx: &egui::Context) {
-        if self.route_dynamic_input(ctx) {
+        if self.route_dynamic_input(ctx) || self.browse_command_history(ctx) {
             return;
         }
         if self.state.home
@@ -263,30 +266,6 @@ impl OpenDraftApp {
         }
     }
 
-    /// Ctrl pressed and released on its own cycles the options of a grip being
-    /// edited (Stretch, Lengthen). Ctrl with a key or a click is a shortcut.
-    fn watch_ctrl(&mut self, ctx: &egui::Context) {
-        let (down, other) = ctx.input(|i| {
-            let other = i.events.iter().any(|e| {
-                matches!(
-                    e,
-                    egui::Event::Key { pressed: true, key, .. } if !matches!(key, egui::Key::Escape)
-                ) || matches!(e, egui::Event::PointerButton { pressed: true, .. })
-            });
-            (i.modifiers.ctrl, other)
-        });
-        if down && !self.ctrl_down {
-            self.ctrl_alone = true;
-        }
-        if other {
-            self.ctrl_alone = false;
-        }
-        if !down && self.ctrl_down && self.ctrl_alone {
-            self.state.cycle_grip_option();
-        }
-        self.ctrl_down = down;
-    }
-
     /// Drawings dropped on the window open; closing the window (or the Exit
     /// command) first asks about unsaved changes.
     fn handle_files_and_exit(&mut self, ctx: &egui::Context) {
@@ -343,6 +322,13 @@ impl OpenDraftApp {
             || !self.state.cmdline.input.is_empty()
             || ctx.wants_keyboard_input()
         {
+            return;
+        }
+        // Escape closes an open context menu before it cancels anything else.
+        if self.state.context_menu.is_some()
+            && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape))
+        {
+            self.state.context_menu = None;
             return;
         }
         let clipboard = crate::clipboard::shortcut(ctx);

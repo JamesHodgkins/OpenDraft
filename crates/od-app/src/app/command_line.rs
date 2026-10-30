@@ -166,6 +166,7 @@ impl PanelViewer<'_> {
                         });
                         if response.changed() {
                             self.state.cmdline.selected = 0;
+                            self.state.cmdline.history_at = None;
                             // Space acts like Enter, except inside "x, y" or "d<a",
                             // or when text is being typed.
                             submit |= !wants_text
@@ -208,6 +209,7 @@ impl PanelViewer<'_> {
                 picked = Some("edit.cancel");
             }
             input.clear();
+            self.state.cmdline.history_at = None;
         }
         if submit && !escape {
             let text = std::mem::take(&mut input);
@@ -230,7 +232,8 @@ impl PanelViewer<'_> {
             ui.input(|i| i.pointer.interact_pos())
                 .is_some_and(|p| r.contains(p))
         });
-        if (owns_keyboard || on_popup) && !suggestions.is_empty() && !submit {
+        let browsing = self.state.cmdline.history_at.is_some();
+        if (owns_keyboard || on_popup) && !suggestions.is_empty() && !submit && !browsing {
             if let Some(command) =
                 suggestion_popup(ui.ctx(), theme, &suggestions, selected, panel, text_rect)
             {

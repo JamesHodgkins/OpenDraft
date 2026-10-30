@@ -419,6 +419,8 @@ while cursor input is relative at prompts with a base. `#` forces absolute and
   The raw-input hook captures navigation before egui applies spatial focus
   movement, so Tab follows semantic fields and Down opens options. The docked
   command line and other text fields keep their normal keyboard ownership.
+  With no command running the same hook takes Up and Down for the command
+  history (`app/history_keys.rs`), which egui would turn into focus movement.
 - `app/dynamic_overlay.rs` draws compact rectangular foreground tooltips with
   stable TextEdit IDs. At a prompt with a base point the fields sit on ghost
   dimensions, as in AutoCAD (`dynamic_input/dimensions.rs`, pure screen-space
