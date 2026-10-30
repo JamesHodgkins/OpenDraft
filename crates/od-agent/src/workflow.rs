@@ -126,7 +126,11 @@ pub fn edit() -> Workflow {
             "{}\n\n{}\n\nYou are making a change the user asked for. Look first. Before changing \
              anything, call {PROPOSE_PLAN} with a short summary and one step for each change you \
              will make; changes cannot be made until the user approves it, and you can make no \
-             more than the plan states. Make each change as one batch. After a change you are shown a picture \
+             more than the plan states. The plan card is the only approval: never describe the \
+             plan in a reply and ask \"approve?\" or \"yes/no\", call {PROPOSE_PLAN} straight \
+             away. You can change the layer, colour and linetype of any object, but only change \
+             the shape of lines, arcs, circles, polylines, rectangles, ellipses and text; say so \
+             before planning if a request needs more. Make each change as one batch. After a change you are shown a picture \
              of the whole drawing as it now is: look at it, and if anything is wrong, \
              missing, misplaced or out of proportion, correct it before you report.\n\n\
              Dimensions are in the drawing's units. In your plan, state the dimensions you will \
