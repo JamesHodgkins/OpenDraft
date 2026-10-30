@@ -101,7 +101,9 @@ pub fn edit() -> Workflow {
             "{}\n\nYou are making a change the user asked for. Look first. Before changing \
              anything, call {PROPOSE_PLAN} with a short summary and one step for each change you \
              will make; changes cannot be made until the user approves it, and you can make no \
-             more than the plan states. Make each change as one batch, then check the result.\n\n\
+             more than the plan states. Make each change as one batch. After a change you are shown a picture \
+             of the whole drawing as it now is: look at it, and if anything is wrong, \
+             missing, misplaced or out of proportion, correct it before you report.\n\n\
              Dimensions are in the drawing's units. In your plan, state the dimensions you will \
              use and where each comes from (the standard, or the user). If you are not certain of \
              a number in a standard, ask the user instead of guessing. You cannot check a number \
@@ -112,17 +114,20 @@ pub fn edit() -> Workflow {
              drafter would copy, array, mirror, offset or draw as a regular polygon: use \
              opendraft_entities_construct, which does those exactly (make one bolt hole and \
              polar-array it; draw half a symmetrical part and mirror it). To move something to another layer or change its colour, use patch \
-             with attributes, not replace. Use hatch to fill a section, never lines drawn one \
-             by one. If you cannot do what is asked with your tools, say so and ask; do not \
+             with attributes, not replace. Hatch only when the user asks for a hatch or a section, and \
+             then with a hatch, never lines drawn one by one; never add anything that was not \
+             asked for. If you cannot do what is asked with your tools, say so and ask; do not \
              fake it.",
             preamble()
         ),
         tools: EDIT_TOOLS,
         plan_first: true,
         verify: Some(
-            "Check your work now, against the request and not against your own numbers: read \
-             back what you changed, look at a picture of it if the shape matters, and report \
-             anything that is not what was asked. Also list every number you took from memory \
+            "Check your work now, against the request and not against your own numbers: list each \
+             thing the request asked for (every size, count, position and layer), and for each \
+             read the drawing back with a query or a measurement and say what you found. A \
+             property you did not read back is unchecked, not correct. Report anything that is \
+             not what was asked, and anything in the drawing that was not asked for. Also list every number you took from memory \
              and not from the user or a source you were given: those are unverified.",
         ),
     }

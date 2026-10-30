@@ -23,6 +23,9 @@ use crate::automation::{AutomationCore, Coverage, InProcess};
 /// How often an unfinished operation is looked at while waiting for it.
 const LOOK_EVERY: Duration = Duration::from_millis(250);
 
+/// How wide the look after a change is, in pixels.
+const LOOK_WIDTH: u32 = 640;
+
 /// Which drawings a task may reach. The choice is the user's, made in the
 /// panel before it starts, and it holds for the whole task: the host refuses
 /// any call that names another drawing, and the list of drawings it is shown
@@ -158,6 +161,44 @@ impl AppHost {
         }
     }
 
+    /// After a change, a picture of the whole drawing as it now is, so the
+    /// model sees what it drew in the company of the rest, not only that it
+    /// drew. A look that cannot be had (a layer-only change, a drawing that
+    /// moved on) leaves the result as it was; it never fails the change.
+    fn with_a_look(&self, mut result: Value) -> Value {
+        let drew = ["added", "changed"].iter().any(|key| {
+            result["changes"][key]
+                .as_array()
+                .is_some_and(|a| !a.is_empty())
+        });
+        let (true, Some(document), Some(revision)) = (
+            drew,
+            result.get("document_id").cloned(),
+            result.get("revision_after").cloned(),
+        ) else {
+            return result;
+        };
+        let asked = json!({
+            "document_id": document,
+            "format": "png",
+            "width": LOOK_WIDTH,
+            "expected_revision": revision,
+        });
+        let Ok(mut picture) = self.ask(ops::VIEW_RENDER, asked) else {
+            return result;
+        };
+        let png = picture["png_base64"].take();
+        if let (Some(map), true) = (result.as_object_mut(), png.is_string()) {
+            map.insert("png_base64".to_owned(), png);
+            map.insert(
+                "picture_of".to_owned(),
+                json!("the whole drawing as it is after this change"),
+            );
+            map.insert("picture_region".to_owned(), picture["region"].take());
+        }
+        result
+    }
+
     /// A request that starts something the user must finish (a selection)
     /// is waited for here, where the model cannot be handed a half-made
     /// answer or left to poll for it. Stop withdraws the prompt.
@@ -212,6 +253,9 @@ impl Host for AppHost {
             Ok(result) if tool.operation == ops::SELECTION_REQUEST => self.settle(result, cancel),
             Ok(result) if tool.operation == ops::DOCUMENTS_LIST => {
                 ToolOutcome::Done(self.within_reach(result))
+            }
+            Ok(result) if od_agent::changes_drawing(tool.operation) => {
+                ToolOutcome::Done(self.with_a_look(result))
             }
             Ok(result) => ToolOutcome::Done(result),
             Err(error) => ToolOutcome::Failed(error),
