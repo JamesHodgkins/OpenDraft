@@ -34,6 +34,14 @@ fn to_value<T: Serialize>(result: &T) -> Result<Value, ApiError> {
 
 /// Answer a read operation for `instance`. Unknown operations are an error:
 /// the transport has already checked the caller's scope.
+/// `calculate.evaluate`: pure arithmetic, nothing of the drawing is read.
+pub(super) fn calculate(arguments: Value) -> Result<Value, ApiError> {
+    let args: od_api::calc_ops::CalculateArgs = parse(arguments)?;
+    let result = od_api::calc_ops::evaluate(&args)
+        .map_err(|why| ApiError::new(ErrorCode::InvalidArguments, why.0))?;
+    to_value(&result)
+}
+
 pub fn handle_read(
     state: &AppState,
     instance: &str,

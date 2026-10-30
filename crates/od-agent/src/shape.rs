@@ -25,30 +25,41 @@ pub fn cut(text: String, max: usize) -> String {
     )
 }
 
-/// A finished call as the model is told of it. A full conversation is an
-/// error, not a cut: the task ends with the reason rather than carrying on
-/// blind.
-pub fn done(tool: &str, mut result: Value, meter: &mut Meter) -> Result<Vec<Content>, BudgetKind> {
+/// A finished call as the model is told of it. A picture in any result (a
+/// render, or the look the app attaches to a change) is taken out and passed
+/// as a picture, named by the result's `picture_of` if it has one. A full
+/// conversation is an error, not a cut: the task ends with the reason rather
+/// than carrying on blind.
+pub fn done(mut result: Value, meter: &mut Meter) -> Result<Vec<Content>, BudgetKind> {
     let each = meter.budgets().result_bytes_each;
     let mut content = Vec::new();
     let mut images = Vec::new();
-    if tool == catalogue::RENDER {
-        let pictures = catalogue::take_pictures(&mut result);
-        if let Some(svg) = pictures.svg {
-            content.push(Content::Text(cut(format!("SVG of the view:\n{svg}"), each)));
-        }
-        if let Some(base64) = pictures.png_base64 {
-            if meter.take_picture() {
-                images.push(Content::Image(Image {
-                    media_type: "image/png".to_owned(),
-                    base64,
-                    label: "the drawing as it looks on the sheet".to_owned(),
-                }));
-            } else {
-                content.push(Content::Text(
-                    "[picture not shown: this task has used all the pictures it may]".to_owned(),
-                ));
-            }
+    let label = result
+        .as_object_mut()
+        .and_then(|map| map.remove("picture_of"))
+        .and_then(|v| v.as_str().map(str::to_owned))
+        .unwrap_or_else(|| "the drawing as it looks on the sheet".to_owned());
+    let pictures = catalogue::take_pictures(&mut result);
+    if let Some(svg) = pictures.svg {
+        content.push(Content::Text(cut(
+            format!(
+                "SVG of the view:
+{svg}"
+            ),
+            each,
+        )));
+    }
+    if let Some(base64) = pictures.png_base64 {
+        if meter.take_picture() {
+            images.push(Content::Image(Image {
+                media_type: "image/png".to_owned(),
+                base64,
+                label,
+            }));
+        } else {
+            content.push(Content::Text(
+                "[picture not shown: this task has used all the pictures it may]".to_owned(),
+            ));
         }
     }
     let text = serde_json::to_string(&result).unwrap_or_else(|_| "null".to_owned());

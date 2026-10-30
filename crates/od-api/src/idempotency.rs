@@ -23,6 +23,7 @@ pub fn supports(operation: &str) -> bool {
         operation,
         ops::ENTITIES_APPLY_BATCH
             | ops::LAYERS_APPLY_BATCH
+            | ops::ENTITIES_CONSTRUCT
             | ops::HISTORY_UNDO
             | ops::HISTORY_REDO
             | ops::COMMANDS_INVOKE

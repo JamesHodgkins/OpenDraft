@@ -12,7 +12,7 @@ use serde_json::{json, Value};
 
 use super::support::*;
 use super::{AppHost, ApprovalLevel, Decision, Reach, AUTO_APPROVE_CEILING};
-use crate::automation::{AutomationCore, Coverage};
+use crate::automation::{document_id, AutomationCore, Coverage};
 use crate::state::AppState;
 
 const WRITE: &str = "opendraft_entities_apply_batch";
@@ -313,4 +313,69 @@ fn stop_withdraws_a_prompt_the_user_has_not_answered() {
         core.poll(&mut state, &registry);
     }
     assert!(!state.command_running(), "the prompt is gone");
+}
+
+#[test]
+fn a_change_comes_back_with_a_picture_of_what_it_changed() {
+    let (core, _user, host, mut state) = setup(ApprovalLevel::ReviewEach);
+    let args = add_a_line(&core, &state, 0.0);
+    let ToolOutcome::Done(result) = run(&host, &core, &mut state, call(WRITE, args)) else {
+        panic!("not done");
+    };
+    assert!(result["png_base64"].as_str().is_some_and(|p| p.len() > 100));
+    assert!(result["picture_of"].as_str().is_some());
+    assert!(result["picture_region"].is_object());
+    assert_eq!(
+        result["changed"], true,
+        "the change itself is still reported"
+    );
+}
+
+#[test]
+fn the_picture_shows_the_whole_drawing_not_only_what_the_change_added() {
+    let (core, _user, host, mut state) = setup(ApprovalLevel::ReviewEach);
+    let first = add_a_line(&core, &state, 0.0);
+    run(&host, &core, &mut state, call(WRITE, first));
+    let second = add_a_line(&core, &state, 100.0);
+    let ToolOutcome::Done(result) = run(&host, &core, &mut state, call(WRITE, second)) else {
+        panic!("not done");
+    };
+    let region = &result["picture_region"];
+    assert!(region["min"]["x"].as_f64().unwrap() <= 0.0, "{region}");
+    assert!(region["max"]["x"].as_f64().unwrap() >= 101.0, "{region}");
+}
+
+#[test]
+fn a_read_gets_no_picture_it_did_not_ask_for() {
+    let (core, _user, host, mut state) = setup(ApprovalLevel::ReviewEach);
+    let ToolOutcome::Done(result) = run(
+        &host,
+        &core,
+        &mut state,
+        call("opendraft_documents_list", json!({})),
+    ) else {
+        panic!("not done");
+    };
+    assert!(result.get("png_base64").is_none());
+}
+
+#[test]
+fn a_change_to_layers_alone_gets_no_picture() {
+    let (core, _user, host, mut state) = setup(ApprovalLevel::ReviewEach);
+    let args = json!({
+        "document_id": document_id(core.instance_id(), state.docs[0].uid),
+        "expected_revision": state.session().revision().to_string(),
+        "operations": [{"op": "create", "client_ref": "k", "name": "Holes"}],
+    });
+    let outcome = run(
+        &host,
+        &core,
+        &mut state,
+        call("opendraft_layers_apply_batch", args),
+    );
+    let ToolOutcome::Done(result) = outcome else {
+        panic!("{outcome:?}");
+    };
+    assert_eq!(result["changed"], true);
+    assert!(result.get("png_base64").is_none(), "{result}");
 }

@@ -45,6 +45,7 @@ fn it_initialises_and_lists_read_only_tools() {
             "opendraft_drawing_summary",
             "opendraft_drawing_audit",
             "opendraft_view_render",
+            "opendraft_calculate",
             "opendraft_commands_list",
             "opendraft_commands_invoke",
             "opendraft_commands_start_interactive",
@@ -56,6 +57,7 @@ fn it_initialises_and_lists_read_only_tools() {
             "opendraft_operations_get",
             "opendraft_operations_cancel",
             "opendraft_entities_apply_batch",
+            "opendraft_entities_construct",
             "opendraft_layers_apply_batch",
             "opendraft_selection_set",
             "opendraft_selection_request",
@@ -66,6 +68,7 @@ fn it_initialises_and_lists_read_only_tools() {
     for tool in tools.as_array().unwrap() {
         assert_eq!(tool["inputSchema"]["type"], "object");
         let writes = tool["name"].as_str().unwrap().ends_with("_batch")
+            || tool["name"] == "opendraft_entities_construct"
             || tool["name"] == "opendraft_commands_invoke"
             || tool["name"] == "opendraft_commands_start_interactive"
             || tool["name"].as_str().unwrap().contains("_files_")
@@ -94,7 +97,7 @@ fn it_also_serves_the_stateless_2026_request_style() {
     let reply = sidecar.request("tools/list", json!({"_meta": meta}));
     assert_eq!(
         reply["result"]["tools"].as_array().unwrap().len(),
-        28,
+        30,
         "{reply}"
     );
     let _ = std::fs::remove_dir_all(&dir);

@@ -13,10 +13,54 @@ pub fn change(request: &ChangeRequest) -> String {
     let said = match request.operation.as_str() {
         "entities.apply_batch" => operations.map(|o| entities(o)),
         "layers.apply_batch" => operations.map(|o| layers(o)),
+        "entities.construct" => request.arguments["steps"].as_array().map(|s| steps(s)),
         _ => None,
     };
     said.filter(|s| !s.is_empty())
         .unwrap_or_else(|| "Change the drawing".to_owned())
+}
+
+/// What each construction step does, in order.
+fn steps(steps: &[Value]) -> String {
+    const SHOWN: usize = 6;
+    let mut phrases: Vec<String> = steps.iter().take(SHOWN).map(step).collect();
+    if steps.len() > SHOWN {
+        phrases.push(format!("{} more steps", steps.len() - SHOWN));
+    }
+    capital(&list(&phrases))
+}
+
+fn step(step: &Value) -> String {
+    let shapes = |key: &str| {
+        let n = step[key].as_array().map_or(1, Vec::len);
+        plural(n, "shape")
+    };
+    let copies = if step["copy_as"].is_string() {
+        " as copies"
+    } else {
+        ""
+    };
+    let number = |key: &str| step[key].as_u64().unwrap_or(0) as usize;
+    match step["op"].as_str().unwrap_or("") {
+        "polygon" => format!("draw a {}-sided polygon", number("sides")),
+        "move" => format!("move {}{copies}", shapes("targets")),
+        "rotate" => format!("rotate {}{copies}", shapes("targets")),
+        "scale" => format!("scale {}{copies}", shapes("targets")),
+        "mirror" => format!("mirror {}{copies}", shapes("targets")),
+        "rect_array" => format!(
+            "array {} in {} columns by {} rows",
+            shapes("targets"),
+            number("columns"),
+            number("rows")
+        ),
+        "polar_array" => format!(
+            "array {} {} times round a centre",
+            shapes("targets"),
+            number("count")
+        ),
+        "offset" => "offset a shape".to_owned(),
+        _ => "make a construction step".to_owned(),
+    }
 }
 
 fn tally(operations: &[Value], op: &str) -> usize {
@@ -166,6 +210,32 @@ mod tests {
             arguments: json!("not an object"),
         };
         assert_eq!(change(&odd), "Change the drawing");
+    }
+
+    #[test]
+    fn construction_steps_are_put_in_words() {
+        let r = ChangeRequest {
+            tool: "t".to_owned(),
+            operation: "entities.construct".to_owned(),
+            arguments: json!({"steps": [
+                {"op": "polygon", "sides": 6},
+                {"op": "polar_array", "targets": ["h"], "count": 8},
+                {"op": "mirror", "targets": ["a", "b"], "copy_as": "m"},
+            ]}),
+        };
+        assert_eq!(
+            change(&r),
+            "Draw a 6-sided polygon, array 1 shape 8 times round a centre and mirror 2 shapes as copies"
+        );
+        let many = ChangeRequest {
+            arguments: json!({"steps": vec![json!({"op": "move", "targets": ["a"]}); 9]}),
+            ..r
+        };
+        assert!(
+            change(&many).ends_with("and 3 more steps"),
+            "{}",
+            change(&many)
+        );
     }
 
     #[test]

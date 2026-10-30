@@ -93,6 +93,7 @@ fn the_edit_workflow_holds_back_exactly_the_tools_that_change_the_drawing() {
     assert_eq!(
         held,
         [
+            "opendraft_entities_construct",
             "opendraft_entities_apply_batch",
             "opendraft_layers_apply_batch"
         ]
@@ -126,4 +127,22 @@ fn the_review_workflows_tool_list_is_a_fraction_of_the_whole() {
         })
         .sum();
     assert!(review * 3 < all_tools * 2, "{review} of {all_tools}");
+}
+
+#[test]
+fn both_workflows_offer_the_calculator_and_say_to_use_it() {
+    for workflow in [qa_review(), edit()] {
+        assert!(
+            workflow.tools.contains(&"opendraft_calculate"),
+            "{}",
+            workflow.name
+        );
+        assert!(
+            workflow.system.contains("opendraft_calculate"),
+            "{} is told to use it",
+            workflow.name
+        );
+        let tool = catalogue::find("opendraft_calculate");
+        assert!(tool.is_some_and(|t| !changes_drawing(t.operation) && !t.reaches_files()));
+    }
 }

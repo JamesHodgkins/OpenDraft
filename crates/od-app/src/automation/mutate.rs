@@ -320,30 +320,64 @@ pub fn apply_batch(
     caller: &Caller,
     arguments: serde_json::Value,
 ) -> Result<serde_json::Value, ApiError> {
-    let grant_id = caller.grant_id;
     let args: BatchArgs = parse(arguments)?;
     check_shape(&args)?;
-    let index = open_for_change(
+    run_edit(
         state,
         instance,
-        &args.document_id,
-        Some(args.expected_revision.0),
-    )?;
-    let doc = &mut state.docs[index];
-    let uid = doc.uid;
-    let before = doc.session.revision();
-    check_targets(doc.session.document(), &args.operations)?;
-
-    let name = step_name(args.label.as_deref());
-    let outcome = doc
-        .session
-        .checked_transaction(&name, Provenance::Automation(grant_id), |tx| {
+        caller,
+        Edit {
+            document_id: &args.document_id,
+            expected_revision: args.expected_revision.0,
+            label: args.label.as_deref(),
+        },
+        |document| check_targets(document, &args.operations),
+        |tx| {
             let mut added = HashMap::new();
             for (index, op) in args.operations.iter().enumerate() {
                 run_operation(tx, op, &mut added).map_err(|e| e.detail("operation", index))?;
             }
-            Ok::<_, ApiError>(added)
-        });
+            Ok(added)
+        },
+    )
+}
+
+/// Which drawing an edit is for, the revision the caller saw, and the name
+/// of the undo step.
+pub(super) struct Edit<'a> {
+    pub document_id: &'a str,
+    pub expected_revision: u64,
+    pub label: Option<&'a str>,
+}
+
+/// An edit made as one checked, undoable step by the caller: the drawing is
+/// found and its revision checked, `check` looks at it before anything
+/// changes, `edit` makes the changes (and returns the names it gave new
+/// entities), and the result says what changed. A refusal at any point
+/// leaves the drawing as it was.
+pub(super) fn run_edit(
+    state: &mut AppState,
+    instance: &str,
+    caller: &Caller,
+    edit: Edit<'_>,
+    check: impl FnOnce(&Document) -> Result<(), ApiError>,
+    make: impl FnOnce(&mut od_commands::Transaction) -> Result<HashMap<String, EntityId>, ApiError>,
+) -> Result<serde_json::Value, ApiError> {
+    let index = open_for_change(
+        state,
+        instance,
+        edit.document_id,
+        Some(edit.expected_revision),
+    )?;
+    let doc = &mut state.docs[index];
+    let uid = doc.uid;
+    let before = doc.session.revision();
+    check(doc.session.document())?;
+
+    let name = step_name(edit.label);
+    let outcome =
+        doc.session
+            .checked_transaction(&name, Provenance::Automation(caller.grant_id), make);
     let (added, changes) = match outcome {
         Ok(done) => done,
         Err(CheckedError::Edit(error)) => return Err(error),

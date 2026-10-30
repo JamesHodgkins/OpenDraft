@@ -55,7 +55,7 @@ impl Default for Budgets {
             model_call: Duration::from_secs(120),
             result_bytes: 400_000,
             result_bytes_each: 30_000,
-            pictures: 6,
+            pictures: 10,
             tokens: None,
             max_output_tokens: 4096,
         }

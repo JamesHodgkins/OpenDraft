@@ -12,7 +12,9 @@ use schemars::JsonSchema;
 use serde_json::{json, Map, Value};
 
 use crate::audit_ops::{AuditArgs, SummaryArgs};
+use crate::calc_ops::CalculateArgs;
 use crate::command_ops::{InvokeArgs, ListArgs, StartArgs};
+use crate::construct_ops::ConstructArgs;
 use crate::event_ops::EventsArgs;
 use crate::file_ops::{ExportArgs, OpenArgs, OperationArgs, SaveArgs, SaveAsArgs};
 use crate::idempotency;
@@ -128,14 +130,28 @@ fn schema_of<T: JsonSchema>() -> Schema {
     }
 }
 
-/// Drop what costs tokens and tells a model nothing: titles, and `default:
-/// null` on every optional field.
+/// Drop what costs tokens and tells a model nothing: titles, `default: null`
+/// on every optional field, and the number formats (`double`, `uint32`...)
+/// with the `minimum: 0` that goes with an unsigned one.
 fn compact(value: &mut Value) {
     match value {
         Value::Object(map) => {
             map.remove("title");
             if map.get("default") == Some(&Value::Null) {
                 map.remove("default");
+            }
+            let format = map.get("format").and_then(Value::as_str).map(str::to_owned);
+            if let Some(format) = format {
+                let numeric = matches!(
+                    format.as_str(),
+                    "double" | "float" | "int8" | "int16" | "int32" | "int64"
+                ) || format.starts_with("uint");
+                if numeric {
+                    map.remove("format");
+                    if format.starts_with("uint") && map.get("minimum") == Some(&json!(0)) {
+                        map.remove("minimum");
+                    }
+                }
             }
             for child in map.values_mut() {
                 compact(child);
@@ -230,6 +246,13 @@ const DEFS: &[ToolDef] = &[
     },
     ToolDef {
         effect: Effect::Read,
+        name: "opendraft_calculate",
+        description: "Exact arithmetic and trigonometry for dimensions: use it instead of working numbers out yourself. Give steps, each a name and an expression that may use the names before it; you get every value back. Numbers, + - * / ^ and brackets, constants pi, tau, e, and functions sin cos tan asin acos atan atan2 sqrt abs floor ceil round round_to min max pow hypot exp ln log10 rad deg. Angles are in radians: rad(45) turns degrees into radians, deg(x) back. A division by zero or the root of a negative is refused with the step named. Changes nothing.",
+        operation: ops::CALCULATE,
+        schema: schema_of::<CalculateArgs>,
+    },
+    ToolDef {
+        effect: Effect::Read,
         name: "opendraft_commands_list",
         description: "List app commands automation may run (view, zoom, grid, snap, select all) or that only the user can drive in the app (draw and modify commands ask for points, so use the entity tools to make changes instead). Shows which can run right now.",
         operation: ops::COMMANDS_LIST,
@@ -301,9 +324,16 @@ const DEFS: &[ToolDef] = &[
     ToolDef {
         effect: Effect::Destructive,
         name: "opendraft_entities_apply_batch",
-        description: "Add, patch, replace and delete entities in one atomic, undoable step. Pass the revision you last read as expected_revision; on stale_revision, re-read and rebuild the batch. Writable kinds: line, circle, arc, rectangle, polyline, ellipse, mtext, and hatch (add only, after its boundary shapes). To change layer or colour use patch with attributes. Needs the user's Allow changes switch.",
+        description: "Add, patch, replace and delete entities in one atomic, undoable step. Pass the revision you last read as expected_revision; on stale_revision, re-read and rebuild the batch. Writable kinds: line, circle, arc, rectangle, polyline, ellipse, mtext, and hatch (add only, after its boundary shapes). Layer and colour go in an entity's attributes (layer_id, colour), on add or in a patch. Needs the user's Allow changes switch.",
         operation: ops::ENTITIES_APPLY_BATCH,
         schema: schema_of::<BatchArgs>,
+    },
+    ToolDef {
+        effect: Effect::Destructive,
+        name: "opendraft_entities_construct",
+        description: "Exact drafting operations on shapes, in one undoable step, so you never work out a coordinate: a regular polygon (from its centre, sides and radius), move, rotate, scale, mirror (across a line), offset, and rectangular and polar arrays (polar: the holes of a bolt circle from one hole). Each step says what to do and to which shapes (existing ids, or shapes made earlier in the request by name); with copy_as the originals stay and copies are added. Prefer this to typing positions in opendraft_entities_apply_batch. Only a polygon takes client_ref; the others name copies with copy_as or ref_prefix. Works on the kinds the batch tool can write. Needs the user's Allow changes switch.",
+        operation: ops::ENTITIES_CONSTRUCT,
+        schema: schema_of::<ConstructArgs>,
     },
     ToolDef {
         effect: Effect::Destructive,
@@ -402,6 +432,20 @@ mod tests {
             let text = serde_json::to_string(&schema).unwrap();
             assert_eq!(schema.get("type"), Some(&json!("object")), "{}", tool.name);
             assert!(!text.contains("$ref"), "{}: {text}", tool.name);
+        }
+    }
+
+    #[test]
+    fn schemas_carry_no_number_formats_a_model_cannot_use() {
+        for tool in tools() {
+            let text = serde_json::to_string(&tool.input_schema()).unwrap();
+            for noise in [
+                "\"format\":\"double\"",
+                "\"format\":\"uint32\"",
+                "\"format\":\"uint64\"",
+            ] {
+                assert!(!text.contains(noise), "{}: {noise}", tool.name);
+            }
         }
     }
 
