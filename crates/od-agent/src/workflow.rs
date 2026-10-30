@@ -138,7 +138,10 @@ pub fn edit() -> Workflow {
              in the plan. Do not type coordinates you worked out by hand for something a \
              drafter would copy, array, mirror, offset or draw as a regular polygon: use \
              opendraft_entities_construct, which does those exactly (make one bolt hole and \
-             polar-array it; draw half a symmetrical part and mirror it). To move something to another layer or change its colour, use patch \
+             polar-array it; draw half a symmetrical part and mirror it; join straights with a \
+             tangent_arc, and make the two sides of a pipe or slot by offsetting the centreline, \
+             never by working out arc angles; never replace a curve with straight lines to make \
+             it fit). To move something to another layer or change its colour, use patch \
              with attributes, not replace. Hatch only when the user asks for a hatch or a section, and \
              then with a hatch, never lines drawn one by one; never add anything that was not \
              asked for. If you cannot do what is asked with your tools, say so and ask; do not \
@@ -151,7 +154,8 @@ pub fn edit() -> Workflow {
         verify: Some(
             "Check your work now, against the request and not against your own numbers: list each \
              thing the request asked for (every size, count, position and layer), and for each \
-             read the drawing back with a query or a measurement and say what you found. A \
+             read the drawing back with a query or a measurement and say what you found (for an \
+             arc, its radius and sweep in degrees; for shapes that should meet, both ends). A \
              property you did not read back is unchecked, not correct. Report anything that is \
              not what was asked, and anything in the drawing that was not asked for. Also list every number you took from memory \
              and not from the user or a source you were given: those are unverified.",

@@ -303,3 +303,110 @@ fn a_step_can_use_what_an_earlier_step_made() {
     .unwrap();
     assert_eq!(entities(&state).len(), 2);
 }
+
+#[test]
+fn a_tangent_arc_bends_off_the_end_of_a_line_and_its_walls_follow() {
+    let mut state = AppState::new();
+    let ids = draw(&mut state, json!([line("pipe", (0.0, 0.0), (2000.0, 0.0))]));
+    let pipe = ids["pipe"].as_str().unwrap().to_owned();
+    construct(
+        &mut state,
+        json!([
+            {"op": "tangent_arc", "target": pipe, "at": "end", "radius": 229.0,
+             "sweep": std::f64::consts::FRAC_PI_2, "client_ref": "bend"},
+            {"op": "offset", "target": "bend", "distance": 84.15,
+             "toward": {"x": 2000.0, "y": 229.0}, "client_ref": "inner"},
+            {"op": "offset", "target": "bend", "distance": 84.15,
+             "toward": {"x": 2400.0, "y": -400.0}, "client_ref": "outer"},
+        ]),
+    )
+    .unwrap();
+    let arcs: Vec<(Point, f64)> = entities(&state)
+        .into_iter()
+        .filter_map(|e| match e {
+            Entity::Arc { center, radius, .. } => Some((center, radius)),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(arcs.len(), 3);
+    for (c, _) in &arcs {
+        assert!(near(c.x, 2000.0) && near(c.y, 229.0), "{c:?}");
+    }
+    let mut radii: Vec<f64> = arcs.iter().map(|a| a.1).collect();
+    radii.sort_by(f64::total_cmp);
+    assert!(near(radii[0], 144.85) && near(radii[1], 229.0) && near(radii[2], 313.15));
+}
+
+#[test]
+fn a_tangent_arc_off_a_circle_or_with_no_sweep_is_refused() {
+    let mut state = AppState::new();
+    let ids = draw(&mut state, json!([circle("c", 0.0, 0.0, 5.0)]));
+    let target = ids["c"].as_str().unwrap().to_owned();
+    for sweep in [1.0, 0.0] {
+        let step = json!([{"op": "tangent_arc", "target": target, "at": "end", "radius": 5.0,
+                           "sweep": sweep, "client_ref": "b"}]);
+        let error = construct(&mut state, step).unwrap_err();
+        assert_eq!(error.code, ErrorCode::InvalidGeometry);
+    }
+}
+
+#[test]
+fn a_whole_pipe_bend_is_one_request_with_its_walls_on_their_own_layer() {
+    let mut state = AppState::new();
+    let layers = call(
+        &mut state,
+        "layers.apply_batch",
+        json!({"operations": [{"op": "create", "client_ref": "w", "name": "Walls"}]}),
+    )
+    .unwrap();
+    let walls = layers["ids"]["w"].clone();
+    construct(
+        &mut state,
+        json!([
+            {"op": "line", "client_ref": "axis", "start": {"x": 0, "y": 0}, "end": {"x": 2000, "y": 0}},
+            {"op": "tangent_arc", "target": "axis", "at": "end", "radius": 229.0,
+             "sweep": std::f64::consts::FRAC_PI_2, "client_ref": "bend"},
+            {"op": "offset", "target": "axis", "distance": 84.15, "toward": {"x": 100, "y": 50},
+             "client_ref": "wall_a", "layer_id": walls},
+            {"op": "offset", "target": "bend", "distance": 84.15, "toward": {"x": 2000, "y": 229},
+             "client_ref": "wall_b", "layer_id": walls},
+        ]),
+    )
+    .unwrap();
+    let objects = state.session().document().objects().to_vec();
+    assert_eq!(objects.len(), 4);
+    let on_walls = objects
+        .iter()
+        .filter(|o| o.attrs.layer.0.to_string() == walls.as_str().unwrap())
+        .count();
+    assert_eq!(on_walls, 2, "only the two offset walls moved layer");
+}
+
+#[test]
+fn a_line_needs_two_different_points() {
+    let mut state = AppState::new();
+    let step = json!([{"op": "line", "client_ref": "a",
+                       "start": {"x": 1, "y": 1}, "end": {"x": 1, "y": 1}}]);
+    let error = construct(&mut state, step).unwrap_err();
+    assert_eq!(error.code, ErrorCode::InvalidGeometry);
+}
+
+#[test]
+fn a_tangent_arc_can_leave_the_start_of_a_line() {
+    let mut state = AppState::new();
+    let ids = draw(&mut state, json!([line("pipe", (0.0, 0.0), (10.0, 0.0))]));
+    let pipe = ids["pipe"].as_str().unwrap().to_owned();
+    construct(
+        &mut state,
+        json!([{"op": "tangent_arc", "target": pipe, "at": "start", "radius": 5.0,
+                "sweep": std::f64::consts::FRAC_PI_2, "client_ref": "b"}]),
+    )
+    .unwrap();
+    // Heading left from the origin and turning left: the centre is below.
+    let centre = entities(&state).into_iter().find_map(|e| match e {
+        Entity::Arc { center, .. } => Some(center),
+        _ => None,
+    });
+    let c = centre.unwrap();
+    assert!(near(c.x, 0.0) && near(c.y, -5.0), "{c:?}");
+}

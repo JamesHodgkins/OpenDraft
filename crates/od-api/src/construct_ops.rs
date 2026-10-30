@@ -35,6 +35,13 @@ pub enum PolygonFit {
     Circumscribed,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ArcEnd {
+    Start,
+    End,
+}
+
 /// Angles are radians, counter-clockwise. A target is a string: the id of an
 /// entity in the drawing (digits only) or the name of a shape made earlier in
 /// this request (never all digits).
@@ -119,12 +126,38 @@ pub enum Step {
         rotate_items: Option<bool>,
         ref_prefix: String,
     },
+    /// A straight line between two points.
+    Line {
+        client_ref: String,
+        start: PointDto,
+        end: PointDto,
+        /// Default the current layer.
+        #[serde(default)]
+        layer_id: Option<WireId>,
+    },
+    /// An arc that leaves the `at` end of a line or arc without a corner (a
+    /// pipe bend, a smooth turn), of `radius`, turning through `sweep`:
+    /// positive turns left of the way the shape is going, negative right.
+    /// It starts exactly at that end.
+    TangentArc {
+        target: String,
+        at: ArcEnd,
+        radius: f64,
+        sweep: f64,
+        client_ref: String,
+        /// Default the layer of `target`.
+        #[serde(default)]
+        layer_id: Option<WireId>,
+    },
     /// A copy of `target` `distance` away, on the side `toward` is on.
     Offset {
         target: String,
         distance: f64,
         toward: PointDto,
         client_ref: String,
+        /// Default the layer of `target`.
+        #[serde(default)]
+        layer_id: Option<WireId>,
     },
 }
 

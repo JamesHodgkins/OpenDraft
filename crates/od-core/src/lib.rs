@@ -57,6 +57,7 @@ pub mod spline;
 mod split;
 mod stretch;
 mod tangent;
+mod tangent_arc;
 pub mod text;
 pub mod text_style;
 mod transform;

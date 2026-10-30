@@ -54,6 +54,9 @@ pub struct Measurement {
     pub center: Option<PointDto>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub radius: Option<f64>,
+    /// How far an arc turns, in degrees.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sweep_degrees: Option<f64>,
     /// Of an open curve.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub start: Option<PointDto>,
@@ -104,6 +107,7 @@ fn base(id: WireId, entity: &Entity) -> Measurement {
         area: None,
         center: None,
         radius: None,
+        sweep_degrees: None,
         start: None,
         end: None,
         exactness: Exactness::Exact,
@@ -145,6 +149,7 @@ pub fn measure(id: WireId, entity: &Entity) -> Measurement {
             m.length = entity.curve_length();
             m.center = Some(pt(*center));
             m.radius = Some(radius.abs());
+            m.sweep_degrees = Some(od_core::arc::sweep(*start, *end).to_degrees());
             m.start = Some(pt(od_core::arc::point_at(*center, radius.abs(), *start)));
             m.end = Some(pt(od_core::arc::point_at(*center, radius.abs(), *end)));
         }
@@ -252,6 +257,7 @@ mod tests {
             end: PI / 2.0,
         });
         near(quarter.length, PI);
+        near(quarter.sweep_degrees, 90.0);
         let end = quarter.end.unwrap();
         assert!((end.x).abs() < 1e-12 && (end.y - 2.0).abs() < 1e-12);
     }
