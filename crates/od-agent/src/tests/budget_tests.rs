@@ -163,6 +163,48 @@ fn a_picture_comes_through_as_a_picture_and_not_as_text() {
 }
 
 #[test]
+fn a_picture_in_any_result_is_passed_on_under_the_name_the_result_gives_it() {
+    let host = FakeHost::new();
+    host.answers_tool(
+        "opendraft_entities_query",
+        ToolOutcome::Done(json!({
+            "png_base64": "iVBORw0KGgo=",
+            "picture_of": "the shapes this change added",
+            "ids": ["1"],
+        })),
+    );
+    let run = go(
+        vec![
+            Step::call("c1", "opendraft_entities_query", json!({"document": "d1"})),
+            Step::say("I see it."),
+        ],
+        &host,
+        &qa_review(),
+    );
+    assert_eq!(images_in(&run), 1);
+    let label = run
+        .report
+        .messages
+        .iter()
+        .flat_map(|m| m.parts.iter())
+        .filter_map(|p| match p {
+            Part::ToolResult(r) => Some(r),
+            _ => None,
+        })
+        .flat_map(|r| r.content.iter())
+        .find_map(|c| match c {
+            Content::Image(image) => Some(image.label.clone()),
+            _ => None,
+        });
+    assert_eq!(label.as_deref(), Some("the shapes this change added"));
+    let text = &last_results(&run)[0].0;
+    assert!(
+        text.contains("ids") && !text.contains("picture_of"),
+        "{text}"
+    );
+}
+
+#[test]
 fn pictures_beyond_the_limit_are_not_passed_on_and_the_model_is_told() {
     let host = FakeHost::new();
     for _ in 0..3 {

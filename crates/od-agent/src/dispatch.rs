@@ -115,7 +115,7 @@ impl Task<'_> {
                 if changes_drawing(def.operation) {
                     self.wrote = true;
                 }
-                match shape::done(&call.name, result, &mut self.meter) {
+                match shape::done(result, &mut self.meter) {
                     Ok(content) => Step::Result(content, false),
                     Err(kind) => Step::End(TaskState::Failed(Failure::Budget(kind))),
                 }

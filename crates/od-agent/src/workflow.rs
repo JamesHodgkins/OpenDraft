@@ -101,7 +101,9 @@ pub fn edit() -> Workflow {
             "{}\n\nYou are making a change the user asked for. Look first. Before changing \
              anything, call {PROPOSE_PLAN} with a short summary and one step for each change you \
              will make; changes cannot be made until the user approves it, and you can make no \
-             more than the plan states. Make each change as one batch, then check the result.\n\n\
+             more than the plan states. Make each change as one batch. After a change you are shown a picture \
+             of the shapes it added or changed: look at it, and if anything is wrong, \
+             missing, misplaced or out of proportion, correct it before you report.\n\n\
              Dimensions are in the drawing's units. In your plan, state the dimensions you will \
              use and where each comes from (the standard, or the user). If you are not certain of \
              a number in a standard, ask the user instead of guessing. You cannot check a number \
