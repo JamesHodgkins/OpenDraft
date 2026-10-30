@@ -8,6 +8,7 @@
 //! type has no `Debug` so it cannot be printed by accident.
 
 mod briefing;
+mod export;
 pub(super) mod words;
 mod worker;
 
@@ -267,6 +268,24 @@ impl Assistant {
                 false
             }
         }
+    }
+
+    /// The conversation on screen as text, with every tool call, for pasting
+    /// where a bad run can be looked at.
+    pub fn transcript(&self) -> String {
+        let chat = self.chat();
+        let header = format!(
+            "OpenDraft assistant chat: {}\nKind: {:?}   Approval: {:?}   Drawings: {:?}\n",
+            if chat.title.is_empty() {
+                "(new)"
+            } else {
+                &chat.title
+            },
+            self.kind,
+            self.level,
+            self.drawings
+        );
+        export::text(&header, &chat.messages)
     }
 
     /// Take back what a task changed, as far as it is still on top of the

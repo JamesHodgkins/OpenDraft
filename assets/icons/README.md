@@ -45,11 +45,12 @@ The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
 | ![](annotate-text.svg) | `annotate-text.svg` | text-cursor-input | Single Line |
 | ![](annotate-textstyle.svg) | `annotate-textstyle.svg` | case-sensitive | Text Style |
 | ![](assistant-add.svg) | `assistant-add.svg` | plus | (not used) |
-| ![](assistant-history.svg) | `assistant-history.svg` | history | (not used) |
-| ![](assistant-menu.svg) | `assistant-menu.svg` | chevron-down | (not used) |
-| ![](assistant-new-chat.svg) | `assistant-new-chat.svg` | message-square-plus | (not used) |
-| ![](assistant-send.svg) | `assistant-send.svg` | arrow-up | (not used) |
-| ![](assistant-stop.svg) | `assistant-stop.svg` | square | (not used) |
+| ![](assistant-copy.svg) | `assistant-copy.svg` | copy | assistant/panel/mod.rs |
+| ![](assistant-history.svg) | `assistant-history.svg` | history | assistant/panel/mod.rs |
+| ![](assistant-menu.svg) | `assistant-menu.svg` | chevron-down | assistant/panel/composer.rs |
+| ![](assistant-new-chat.svg) | `assistant-new-chat.svg` | message-square-plus | assistant/panel/mod.rs |
+| ![](assistant-send.svg) | `assistant-send.svg` | arrow-up | assistant/panel/composer.rs |
+| ![](assistant-stop.svg) | `assistant-stop.svg` | square | assistant/panel/composer.rs |
 | ![](block-attedit.svg) | `block-attedit.svg` | pen-line | Single |
 | ![](block-close.svg) | `block-close.svg` | x | Close Block Editor |
 | ![](block-create.svg) | `block-create.svg` | component | Create |
@@ -249,7 +250,7 @@ The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
 | ![](text-undo.svg) | `text-undo.svg` | undo-2 | mtext_editor/toolbar.rs |
 | ![](tools-quickcalc.svg) | `tools-quickcalc.svg` | calculator | Calculator |
 | ![](tool-select.svg) | `tool-select.svg` | mouse-pointer-2 | Select |
-| ![](view-assistant.svg) | `view-assistant.svg` | bot | (not used) |
+| ![](view-assistant.svg) | `view-assistant.svg` | bot | Assistant |
 | ![](view-base-inventor.svg) | `view-base-inventor.svg` | file | From Inventor |
 | ![](view-base-model.svg) | `view-base-model.svg` | frame | From Model Space |
 | ![](view-command-line.svg) | `view-command-line.svg` | rectangle-horizontal | Command Line |

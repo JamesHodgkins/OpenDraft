@@ -16,7 +16,7 @@ use eframe::egui;
 use od_ui::icon_set::Icon;
 use od_ui::{icons, Theme};
 
-use super::Assistant;
+use super::{Assistant, Entry};
 use crate::automation::AutomationCore;
 use crate::state::AppState;
 
@@ -90,6 +90,21 @@ fn header(ui: &mut egui::Ui, theme: &Theme, assistant: &mut Assistant) {
                         .on_hover_cursor(egui::CursorIcon::PointingHand);
                     if new_chat.clicked() {
                         assistant.new_chat();
+                    }
+                    let copy = ui
+                        .add(
+                            Icon::new(icons::ASSISTANT_COPY, 15.0)
+                                .clickable()
+                                .color(weak),
+                        )
+                        .on_hover_text("Copy this chat as text, with every tool call")
+                        .on_hover_cursor(egui::CursorIcon::PointingHand);
+                    if copy.clicked() {
+                        let text = assistant.transcript();
+                        ui.ctx().copy_text(text);
+                        assistant.chat_mut().entries.push(Entry::Notice(
+                            "Copied this chat to the clipboard.".to_owned(),
+                        ));
                     }
                     let history = ui
                         .add(

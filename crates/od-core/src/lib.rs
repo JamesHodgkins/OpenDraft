@@ -40,6 +40,7 @@ mod offset;
 pub mod ortho;
 pub mod outline;
 pub mod overkill;
+pub mod parts;
 pub mod pedit;
 pub mod plot;
 mod plot_hatch;
