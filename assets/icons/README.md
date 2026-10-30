@@ -45,7 +45,7 @@ The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
 | ![](annotate-text.svg) | `annotate-text.svg` | text-cursor-input | Single Line |
 | ![](annotate-textstyle.svg) | `annotate-textstyle.svg` | case-sensitive | Text Style |
 | ![](assistant-add.svg) | `assistant-add.svg` | plus | (not used) |
-| ![](assistant-copy.svg) | `assistant-copy.svg` | copy | assistant/panel/mod.rs |
+| ![](assistant-burger.svg) | `assistant-burger.svg` | menu | assistant/panel/composer.rs |
 | ![](assistant-history.svg) | `assistant-history.svg` | history | assistant/panel/mod.rs |
 | ![](assistant-menu.svg) | `assistant-menu.svg` | chevron-down | assistant/panel/composer.rs |
 | ![](assistant-new-chat.svg) | `assistant-new-chat.svg` | message-square-plus | assistant/panel/mod.rs |

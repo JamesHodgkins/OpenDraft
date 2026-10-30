@@ -127,3 +127,10 @@ fn a_refused_key_is_taken_out_of_the_store_too() {
     assert!(!rig.chat.has_key());
     assert_eq!(store.load(), None, "a refused key is not kept");
 }
+
+#[test]
+fn a_new_assistant_may_edit_and_asks_once_for_a_plan() {
+    let chat = with_store(Arc::new(Memory::default()), None);
+    assert_eq!(chat.kind, super::Kind::Edit);
+    assert_eq!(chat.level, super::ApprovalLevel::ApprovePlan);
+}

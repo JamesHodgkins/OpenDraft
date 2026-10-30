@@ -61,7 +61,8 @@ icons! {
     ANNOTATE_TEXT = '\u{e264}';
     ANNOTATE_TEXTSTYLE = '\u{e3dc}';
     ASSISTANT_ADD = '\u{e140}';
-    ASSISTANT_COPY = '\u{e0a2}';
+    ASSISTANT_BURGER = '\u{e118}';
+    ASSISTANT_COPY ='\u{e0a2}';
     ASSISTANT_HISTORY = '\u{e1f4}';
     ASSISTANT_MENU = '\u{e071}';
     ASSISTANT_NEW_CHAT = '\u{e410}';
