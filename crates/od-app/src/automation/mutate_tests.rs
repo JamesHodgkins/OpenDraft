@@ -1,7 +1,7 @@
 use od_api::ErrorCode;
 use od_commands::{AddEntity, Provenance};
 use od_core::hatch::{loops_from_entities, BoundarySource, HatchEntity, HatchFill, HatchPattern};
-use od_core::{Entity, EntityId, Point};
+use od_core::{Attr, Color, Entity, EntityId, Point};
 use serde_json::{json, Value};
 
 use super::{dispatch_test, document_id, Caller};
@@ -307,13 +307,24 @@ fn an_associative_hatch_pins_the_kind_of_its_boundary() {
         panic!("hatch");
     };
     assert_eq!(h.bounds().unwrap().min, Point::new(50.0, 0.0));
-    // Hatches themselves are read-only through the API.
-    let patch_hatch =
-        json!([{"op": "patch", "target": {"entity_id": hatch_id.to_string()}, "patch": {}}]);
+    // The shape of a hatch is read-only through the API, though its colour
+    // is not.
+    let reshape_hatch = json!([{"op": "patch", "target": {"entity_id": hatch_id.to_string()},
+        "patch": {"geometry": {"type": "circle", "center": {"x": 0.0, "y": 0.0}, "radius": 4.0}}}]);
     assert_eq!(
-        code(batch(&mut state, patch_hatch)),
+        code(batch(&mut state, reshape_hatch)),
         ErrorCode::UnsupportedEntityWrite
     );
+    let recolour_hatch = json!([{"op": "patch", "target": {"entity_id": hatch_id.to_string()},
+        "patch": {"attributes": {"color": {"mode": "rgb", "r": 255, "g": 255, "b": 0}}}}]);
+    batch(&mut state, recolour_hatch).unwrap();
+    let object = state
+        .session()
+        .document()
+        .object(EntityId(hatch_id))
+        .unwrap();
+    assert_eq!(object.attrs.color, Attr::Set(Color::Rgb(255, 255, 0)));
+    state.docs[0].session.undo();
     state.docs[0].session.undo();
     let Some(Entity::Rectangle { min, .. }) = state.session().document().get(EntityId(boundary))
     else {

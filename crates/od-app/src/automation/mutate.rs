@@ -228,7 +228,9 @@ fn run_operation(
                 return Err(refuse(ErrorCode::EntityNotFound, "No such entity."));
             };
             let (old, old_attrs) = (object.entity.clone(), object.attrs.clone());
-            if !is_writable(&old) {
+            // Layer, colour and the like are the same on every kind; only a
+            // change of shape needs a kind the API can build.
+            if patch.geometry.is_some() && !is_writable(&old) {
                 return Err(unsupported(&old));
             }
             if let Some(geometry) = &patch.geometry {
