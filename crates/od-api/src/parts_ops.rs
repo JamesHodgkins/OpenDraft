@@ -4,7 +4,7 @@
 //! adds the shapes through the same path as `entities.apply_batch`, so the
 //! revision check, the one undo step and the attribution are that tool's.
 
-use od_core::parts::{PartError, Shape, WeldNeckFlange};
+use od_core::parts::{PartDrawing, PartError, Role, Shape, WeldNeckFlange};
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -24,7 +24,33 @@ pub struct PartArgs {
     /// The undo step's name. Default names the part.
     #[serde(default)]
     pub label: Option<String>,
+    /// Hatch the section (a section is hatched). Default true.
+    #[serde(default = "yes")]
+    pub hatch: bool,
+    /// Layers to put the part on, by layer id (from the layers list); what is
+    /// left out goes on the current layer.
+    #[serde(default)]
+    pub layers: Option<PartLayers>,
     pub part: Part,
+}
+
+fn yes() -> bool {
+    true
+}
+
+/// Where each kind of line of a part goes.
+#[derive(Clone, Debug, Default, PartialEq, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct PartLayers {
+    /// The part's outline and the circles of its face view.
+    #[serde(default)]
+    pub outline: Option<WireId>,
+    /// Centre lines and the bolt circle.
+    #[serde(default)]
+    pub centre: Option<WireId>,
+    /// The section hatching. Default: the outline's layer.
+    #[serde(default)]
+    pub hatch: Option<WireId>,
 }
 
 /// A part and its dimensions, all in the drawing's units.
@@ -69,6 +95,11 @@ impl Part {
 
     /// The shapes that draw it, about its own origin, or why they cannot.
     pub fn shapes(&self) -> Result<Vec<Shape>, PartError> {
+        self.drawing().map(|d| d.shapes)
+    }
+
+    /// The shapes with what each is for, and what a section hatch fills.
+    pub fn drawing(&self) -> Result<PartDrawing, PartError> {
         match self {
             Part::WeldNeckFlange {
                 outside_diameter,
@@ -95,25 +126,35 @@ impl Part {
                 bolt_count: *bolt_count,
                 bolt_hole_diameter: *bolt_hole_diameter,
             }
-            .shapes(),
+            .drawing(),
         }
     }
 }
 
-/// `entities.apply_batch` arguments that add `shapes` at the origin the
-/// caller asked for.
-pub fn batch(args: &PartArgs, shapes: &[Shape]) -> Value {
+/// The hatch's ANSI31 scale for lines `spacing` apart: at scale 1 they are
+/// 0.125 drawing units apart.
+fn hatch_scale(spacing: f64) -> f64 {
+    ((spacing / 0.125) * 1000.0).round() / 1000.0
+}
+
+/// `entities.apply_batch` arguments that add the part at the origin the
+/// caller asked for, each shape on the layer for what it is, and the section
+/// hatch last, over the outlines it fills.
+pub fn batch(args: &PartArgs, drawing: &PartDrawing) -> Value {
     let (dx, dy) = args.origin.map_or((0.0, 0.0), |o| (o.x, o.y));
+    let layers = args.layers.clone().unwrap_or_default();
+    let attributes = |layer: Option<WireId>| layer.map(|id| json!({"layer_id": id}));
     let point = |p: &od_core::Point| json!({"x": p.x, "y": p.y});
-    let operations: Vec<Value> = shapes
+    let mut operations: Vec<Value> = drawing
+        .shapes
         .iter()
-        .map(|shape| shape.moved(dx, dy))
+        .zip(&drawing.roles)
         .enumerate()
-        .map(|(n, shape)| {
-            let geometry = match &shape {
-                Shape::Line(a, b) => json!({"type": "line", "start": point(a), "end": point(b)}),
+        .map(|(n, (shape, role))| {
+            let geometry = match shape.moved(dx, dy) {
+                Shape::Line(a, b) => json!({"type": "line", "start": point(&a), "end": point(&b)}),
                 Shape::Circle { center, radius } => {
-                    json!({"type": "circle", "center": point(center), "radius": radius})
+                    json!({"type": "circle", "center": point(&center), "radius": radius})
                 }
                 Shape::Outline(points) => json!({
                     "type": "polyline",
@@ -121,9 +162,39 @@ pub fn batch(args: &PartArgs, shapes: &[Shape]) -> Value {
                     "closed": true,
                 }),
             };
-            json!({"op": "add", "client_ref": format!("p{n}"), "entity": {"geometry": geometry}})
+            let layer = match role {
+                Role::Outline => layers.outline,
+                Role::Centre => layers.centre,
+            };
+            let mut entity = json!({"geometry": geometry});
+            if let Some(a) = attributes(layer) {
+                entity["attributes"] = a;
+            }
+            json!({"op": "add", "client_ref": format!("p{n}"), "entity": entity})
         })
         .collect();
+    if args.hatch && !drawing.hatched.is_empty() {
+        let boundary: Vec<Value> = drawing
+            .hatched
+            .iter()
+            .map(|n| json!({"client_ref": format!("p{n}")}))
+            .collect();
+        let mut entity = json!({"geometry": {
+            "type": "hatch",
+            "boundary": boundary,
+            "pattern": {
+                "type": "named",
+                "name": "ANSI31",
+                "scale": hatch_scale(drawing.hatch_spacing),
+                "angle": 0.0,
+            },
+            "associative": true,
+        }});
+        if let Some(a) = attributes(layers.hatch.or(layers.outline)) {
+            entity["attributes"] = a;
+        }
+        operations.push(json!({"op": "add", "client_ref": "hatch", "entity": entity}));
+    }
     json!({
         "document_id": args.document_id,
         "expected_revision": args.expected_revision,
@@ -173,11 +244,15 @@ mod tests {
     fn the_batch_adds_each_shape_and_names_the_step() {
         let a = args(None);
         let shapes = a.part.shapes().unwrap();
-        let b = batch(&a, &shapes);
+        let b = batch(&a, &a.part.drawing().unwrap());
         assert_eq!(b["label"], "Weld neck flange");
         assert_eq!(b["expected_revision"], "4");
         let operations = b["operations"].as_array().unwrap();
-        assert_eq!(operations.len(), shapes.len());
+        assert_eq!(
+            operations.len(),
+            shapes.len() + 1,
+            "each shape, then the hatch"
+        );
         assert_eq!(operations[0]["op"], "add");
         assert_eq!(operations[0]["entity"]["geometry"]["type"], "polyline");
         assert_eq!(operations[0]["entity"]["geometry"]["closed"], true);
@@ -194,8 +269,7 @@ mod tests {
             x: 1000.0,
             y: 500.0,
         }));
-        let shapes = a.part.shapes().unwrap();
-        let b = batch(&a, &shapes);
+        let b = batch(&a, &a.part.drawing().unwrap());
         let first = &b["operations"][0]["entity"]["geometry"]["points"][0];
         assert_eq!(
             (first["x"].as_f64(), first["y"].as_f64()),
@@ -207,7 +281,7 @@ mod tests {
     fn a_label_overrides_the_part_name() {
         let mut a = args(None);
         a.label = Some("Flange A".to_owned());
-        let b = batch(&a, &a.part.shapes().unwrap());
+        let b = batch(&a, &a.part.drawing().unwrap());
         assert_eq!(b["label"], "Flange A");
     }
 

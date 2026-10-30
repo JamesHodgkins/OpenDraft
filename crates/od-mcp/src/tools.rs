@@ -175,7 +175,7 @@ mod tests {
         // An alarm for bloat, raised when a tool is added on purpose (29 tools
         // now); the remedy for a real squeeze is in ARCHITECTURE.md.
         assert!(
-            size < 58_000,
+            size < 64_000,
             "tools/list is {size} bytes; biggest schema {biggest:?}"
         );
     }

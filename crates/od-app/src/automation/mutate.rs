@@ -9,12 +9,15 @@ use std::mem::discriminant;
 use od_api::convert::{attributes_from, entity_from_new, is_writable, patch_entity, unsupported};
 use od_api::limits::{BATCH_OPERATIONS_MAX, POINTS_PER_BATCH_MAX};
 use od_api::ops::SpaceFilter;
-use od_api::write::{BatchArgs, BatchResult, ChangesDto, NewEntity, Operation, Target};
+use od_api::write::{
+    BatchArgs, BatchResult, ChangesDto, NewEntity, NewGeometry, Operation, Target,
+};
 use od_api::{ApiError, ErrorCode, WireId};
 use od_commands::{AddCopies, Changes, CheckedError, ModifyAttributes, ModifyEntities, Provenance};
 use od_core::{Document, Entity, EntityId, LayoutId};
 
 use super::guard::{open_for_change, Caller};
+use super::hatch_mutate;
 use super::{document_id, read::parse};
 use crate::state::AppState;
 
@@ -68,12 +71,39 @@ fn check_targets(document: &Document, ops: &[Operation]) -> Result<(), ApiError>
     for (index, op) in ops.iter().enumerate() {
         let at = |e: ApiError| e.detail("operation", index);
         let target = match op {
-            Operation::Add { client_ref, .. } => {
+            Operation::Add { client_ref, entity } => {
                 if client_ref.is_empty() || client_ref.len() > 64 {
                     return Err(at(refuse(
                         ErrorCode::InvalidArguments,
                         "client_ref must be 1 to 64 characters.",
                     )));
+                }
+                if let NewGeometry::Hatch { boundary, .. } = &entity.geometry {
+                    for target in boundary {
+                        match target {
+                            Target::Id { entity_id }
+                                if document.object(EntityId(entity_id.0)).is_none() =>
+                            {
+                                return Err(at(refuse(
+                                    ErrorCode::EntityNotFound,
+                                    "A boundary entity is not there.",
+                                )
+                                .detail("entity_id", entity_id)));
+                            }
+                            Target::Ref { client_ref: named }
+                                if !refs.contains(named.as_str())
+                                    || gone_refs.contains(named.as_str()) =>
+                            {
+                                return Err(at(refuse(
+                                    ErrorCode::InvalidReference,
+                                    format!(
+                                        "client_ref {named:?} is not added earlier in this batch."
+                                    ),
+                                )));
+                            }
+                            _ => {}
+                        }
+                    }
                 }
                 if !refs.insert(client_ref) {
                     return Err(at(refuse(
@@ -140,7 +170,10 @@ fn layout_of(
     }
 }
 
-fn resolve(target: &Target, added: &HashMap<String, EntityId>) -> Result<EntityId, ApiError> {
+pub(super) fn resolve(
+    target: &Target,
+    added: &HashMap<String, EntityId>,
+) -> Result<EntityId, ApiError> {
     match target {
         Target::Id { entity_id } => Ok(EntityId(entity_id.0)),
         Target::Ref { client_ref } => added
@@ -150,9 +183,20 @@ fn resolve(target: &Target, added: &HashMap<String, EntityId>) -> Result<EntityI
     }
 }
 
-fn add(tx: &mut od_commands::Transaction, entity: &NewEntity) -> Result<EntityId, ApiError> {
+fn add(
+    tx: &mut od_commands::Transaction,
+    entity: &NewEntity,
+    added: &HashMap<String, EntityId>,
+) -> Result<EntityId, ApiError> {
     let document = tx.document();
-    let built = entity_from_new(document, &entity.geometry)?;
+    let built = match &entity.geometry {
+        NewGeometry::Hatch {
+            boundary,
+            pattern,
+            associative,
+        } => hatch_mutate::build(document, boundary, pattern, *associative, added)?,
+        geometry => entity_from_new(document, geometry)?,
+    };
     let base = document.new_object_attributes();
     let attrs = match &entity.attributes {
         Some(input) => attributes_from(document, base, input)?,
@@ -174,7 +218,7 @@ fn run_operation(
 ) -> Result<(), ApiError> {
     match op {
         Operation::Add { client_ref, entity } => {
-            let id = add(tx, entity)?;
+            let id = add(tx, entity, added)?;
             added.insert(client_ref.clone(), id);
         }
         Operation::Patch { target, patch } => {

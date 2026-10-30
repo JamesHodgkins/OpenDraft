@@ -83,8 +83,8 @@ If more than one OpenDraft is running, add `"args": ["--instance", "<id>"]` with
 | `opendraft_commands_list` | which commands automation may run or start | nothing |
 | `opendraft_events_poll` | what changed in the app since the last look (drawings, commands, the selection) | nothing |
 | `opendraft_operations_get`, `_operations_cancel` | watch (optionally waiting up to 30 seconds for the end) or stop a file operation, started command or selection request of its own | nothing |
-| `opendraft_entities_apply_batch` | add, patch, replace and delete lines, circles, arcs, rectangles, polylines, ellipses and text, as one undo step | Allow changes |
-| `opendraft_parts_draw` | draw a standard part from its dimensions, exactly, as one undo step (now: a weld neck flange, as a section and a face view); you supply the numbers, it refuses numbers that cannot make the part | Allow changes |
+| `opendraft_entities_apply_batch` | add, patch, replace and delete lines, circles, arcs, rectangles, polylines, ellipses and text, and add hatches (filled from closed shapes by id or added just before, with a named pattern or solid), as one undo step | Allow changes |
+| `opendraft_parts_draw` | draw a standard part from its dimensions, exactly, as one undo step (now: a weld neck flange, as a section, hatched, and a face view); you supply the numbers, it refuses numbers that cannot make the part; it can put outlines, centre lines and hatching on layers you name | Allow changes |
 | `opendraft_layers_apply_batch` | create layers, change them, set the current one | Allow changes |
 | `opendraft_selection_set` | change what is selected | Allow changes |
 | `opendraft_selection_request` | **ask you** to pick objects in the app and get their ids back | Allow changes |

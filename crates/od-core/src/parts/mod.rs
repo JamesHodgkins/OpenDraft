@@ -25,6 +25,29 @@ pub enum Shape {
     Outline(Vec<Point>),
 }
 
+/// What a shape is for, so a drawing can put it on the layer that suits it
+/// (the part's outline, its centre lines, its section hatching).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Role {
+    Outline,
+    /// Centre lines and the circles that are only construction, such as a
+    /// bolt circle.
+    Centre,
+}
+
+/// A part ready to draw: its shapes, what each is for, and which of them are
+/// section outlines to be hatched.
+#[derive(Clone, Debug, PartialEq)]
+pub struct PartDrawing {
+    pub shapes: Vec<Shape>,
+    /// One per shape, in order.
+    pub roles: Vec<Role>,
+    /// Indexes into `shapes` of the closed outlines a section hatch fills.
+    pub hatched: Vec<usize>,
+    /// How far apart the hatch lines look best, in drawing units.
+    pub hatch_spacing: f64,
+}
+
 impl Shape {
     /// The same shape moved by (`dx`, `dy`).
     pub fn moved(&self, dx: f64, dy: f64) -> Shape {

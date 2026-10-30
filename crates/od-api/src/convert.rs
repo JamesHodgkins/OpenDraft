@@ -223,6 +223,10 @@ pub fn entity_from_new(doc: &Document, geometry: &NewGeometry) -> Result<Entity,
             start_param.unwrap_or(0.0),
             end_param.unwrap_or(std::f64::consts::TAU),
         ),
+        NewGeometry::Hatch { .. } => Err(ApiError::new(
+            ErrorCode::InvalidArguments,
+            "A hatch can only be added, with its boundary; it cannot replace another entity.",
+        )),
         NewGeometry::Mtext {
             insertion,
             contents,
