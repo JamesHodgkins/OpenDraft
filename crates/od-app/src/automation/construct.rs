@@ -6,12 +6,13 @@
 use std::collections::HashMap;
 
 use od_api::construct_ops::{ConstructArgs, PolygonFit, Step, STEPS_MAX};
-use od_api::convert::{attributes_from, is_writable, unsupported};
+use od_api::convert::{is_writable, unsupported};
 use od_api::limits::BATCH_OPERATIONS_MAX;
-use od_api::write::AttributesInput;
 use od_api::{ApiError, ErrorCode};
 use od_commands::{AddCopies, ModifyEntities, Transaction};
-use od_core::{array, polygon, Attributes, Entity, EntityId, LayoutId, Point};
+use od_core::{array, Attributes, Entity, EntityId, LayoutId, Point};
+
+mod shapes;
 
 use super::construct_support::{name_ok, number, point, refuse, Source};
 use super::guard::Caller;
@@ -77,10 +78,19 @@ impl Run {
                 *radius,
                 fit.unwrap_or(PolygonFit::Inscribed),
                 number("rotation", rotation.unwrap_or(0.0))?,
-                layer_id.map(|l| AttributesInput {
-                    layer_id: Some(l),
-                    ..Default::default()
-                }),
+                layer_id,
+            ),
+            Step::Line {
+                client_ref,
+                start,
+                end,
+                layer_id,
+            } => self.line(
+                tx,
+                client_ref,
+                point("start", start)?,
+                point("end", end)?,
+                layer_id,
             ),
             Step::Move {
                 targets,
@@ -193,11 +203,20 @@ impl Run {
                 })?;
                 self.place_sources(tx, sources, &placements, ref_prefix)
             }
+            Step::TangentArc {
+                target,
+                at,
+                radius,
+                sweep,
+                client_ref,
+                layer_id,
+            } => self.tangent_arc(tx, target, *at, *radius, *sweep, client_ref, layer_id),
             Step::Offset {
                 target,
                 distance,
                 toward,
                 client_ref,
+                layer_id,
             } => {
                 let source = self.sources(tx, std::slice::from_ref(target))?.remove(0);
                 let made = source
@@ -210,7 +229,8 @@ impl Run {
                              the side must not be on the outline, and an inward offset must fit.",
                         )
                     })?;
-                self.add(tx, client_ref, made, source.attrs, source.layout)
+                let attrs = self.on_layer(tx, source.attrs, layer_id)?;
+                self.add(tx, client_ref, made, attrs, source.layout)
             }
         }
     }
@@ -333,52 +353,6 @@ impl Run {
             }
         }
         Ok(())
-    }
-
-    #[allow(clippy::too_many_arguments)]
-    fn polygon(
-        &mut self,
-        tx: &mut Transaction,
-        client_ref: &str,
-        center: Point,
-        sides: u32,
-        radius: f64,
-        fit: PolygonFit,
-        rotation: f64,
-        attributes: Option<AttributesInput>,
-    ) -> Result<(), ApiError> {
-        let fit = match fit {
-            PolygonFit::Inscribed => polygon::Fit::Inscribed,
-            PolygonFit::Circumscribed => polygon::Fit::Circumscribed,
-        };
-        let points =
-            polygon::about_radius(center, radius, sides as usize, fit).ok_or_else(|| {
-                refuse(
-                    ErrorCode::InvalidArguments,
-                    format!(
-                        "A polygon has from {} to {} sides and a radius above 0.",
-                        polygon::MIN_SIDES,
-                        polygon::MAX_SIDES
-                    ),
-                )
-            })?;
-        let points = points
-            .into_iter()
-            .map(|p| p.rotated(center, rotation))
-            .collect();
-        let document = tx.document();
-        let base = document.new_object_attributes();
-        let attrs = match &attributes {
-            Some(input) => attributes_from(document, base, input)?,
-            None => base,
-        };
-        let entity = Entity::Polyline {
-            points,
-            closed: true,
-            bulges: Vec::new(),
-            widths: Vec::new(),
-        };
-        self.add(tx, client_ref, entity, attrs, None)
     }
 
     /// Add one new entity and remember it by `name`.

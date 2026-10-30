@@ -16,9 +16,10 @@ use od_api::{ApiError, ErrorCode, WireId};
 use od_commands::{AddCopies, Changes, CheckedError, ModifyAttributes, ModifyEntities, Provenance};
 use od_core::{Document, Entity, EntityId, LayoutId};
 
+use super::document_id;
 use super::guard::{open_for_change, Caller};
 use super::hatch_mutate;
-use super::{document_id, read::parse};
+use super::mutate_parse::parse_batch;
 use crate::state::AppState;
 
 fn refuse(code: ErrorCode, message: impl Into<String>) -> ApiError {
@@ -320,7 +321,7 @@ pub fn apply_batch(
     caller: &Caller,
     arguments: serde_json::Value,
 ) -> Result<serde_json::Value, ApiError> {
-    let args: BatchArgs = parse(arguments)?;
+    let args: BatchArgs = parse_batch(arguments)?;
     check_shape(&args)?;
     run_edit(
         state,

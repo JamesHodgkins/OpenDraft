@@ -51,6 +51,7 @@ mod idempotency;
 mod key_tests;
 mod layer_mutate;
 mod mutate;
+mod mutate_parse;
 #[cfg(test)]
 mod mutate_tests;
 mod policy;
