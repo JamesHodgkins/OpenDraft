@@ -113,6 +113,27 @@ impl AppState {
 impl OpenDraftApp {
     /// Remove navigation keys before egui derives its spatial focus movement.
     pub(super) fn capture_dynamic_keys(&mut self, ctx: &egui::Context, raw: &mut egui::RawInput) {
+        // With no command running, Up and Down browse the typed lines; egui
+        // would move focus between the controls instead.
+        if self.state.dynamic_ask().is_none()
+            && !self.state.command_running()
+            && !self.state.mtext_editing()
+            && !self.state.modal_open()
+            && self.state.confirm.is_none()
+            && (!ctx.wants_keyboard_input()
+                || ctx.memory(|m| m.has_focus(egui::Id::new("command_line_input"))))
+        {
+            raw.events.retain(|event| {
+                if matches!(event, Event::Key { key: Key::ArrowDown | Key::ArrowUp, modifiers, .. }
+                    if !modifiers.ctrl && !modifiers.alt && !modifiers.command)
+                {
+                    self.dynamic_keys.push(event.clone());
+                    false
+                } else {
+                    true
+                }
+            });
+        }
         if !self.state.settings.dynamic_input.enabled()
             || self.state.mtext_editing()
             || self.state.dynamic_ask().is_none()

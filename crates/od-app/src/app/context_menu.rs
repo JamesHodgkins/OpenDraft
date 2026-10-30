@@ -190,7 +190,12 @@ impl OpenDraftApp {
         let Some((x, y)) = self.state.context_menu else {
             return;
         };
-        if self.state.command_running() || self.state.modal_open() {
+        let unfocused = ctx.input(|i| i.viewport().focused == Some(false));
+        if self.state.command_running()
+            || self.state.modal_open()
+            || self.state.confirm.is_some()
+            || unfocused
+        {
             self.state.context_menu = None;
             return;
         }
@@ -253,6 +258,23 @@ impl OpenDraftApp {
                 egui::Frame::popup(ui.style())
                     .inner_margin(egui::Margin::symmetric(2, 4))
                     .show(ui, |ui| {
+                        // Grow past the nominal width for a long label (Repeat ...).
+                        let font = egui::FontId::proportional(self.theme.font_size_body);
+                        let widest = rows
+                            .iter()
+                            .filter(|row| !matches!(row.kind, Kind::Rule))
+                            .map(|row| {
+                                ui.painter()
+                                    .layout_no_wrap(
+                                        row.label.to_string(),
+                                        font.clone(),
+                                        colors.text,
+                                    )
+                                    .size()
+                                    .x
+                            })
+                            .fold(0.0_f32, f32::max);
+                        let width = width.max(ICON_COLUMN + 6.0 + widest + 28.0);
                         ui.set_width(width);
                         ui.spacing_mut().item_spacing.y = 0.0;
                         for (i, row) in rows.iter().enumerate() {

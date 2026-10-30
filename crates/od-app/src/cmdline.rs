@@ -37,11 +37,52 @@ pub struct CommandLine {
     pub last_command: Option<&'static str>,
     /// Commands run lately, newest first, for the context menu's Recent Input.
     pub recent: Vec<&'static str>,
+    /// Commands run (typed or from the ribbon), oldest first, for the
+    /// Up and Down keys when no command is running.
+    pub history: Vec<String>,
+    /// The history line now in the input, while Up and Down are browsing.
+    pub history_at: Option<usize>,
     /// A system variable prompt in progress (`SETVAR` or a variable name).
     pub(crate) sysvar: Option<crate::sysvar_line::SysVarPrompt>,
 }
 
 impl CommandLine {
+    /// Remember a submitted line; a repeat of the last one is kept once.
+    pub fn note_typed(&mut self, text: &str) {
+        const KEPT: usize = 100;
+        let text = text.trim();
+        self.history_at = None;
+        if text.is_empty() || self.history.last().is_some_and(|last| last == text) {
+            return;
+        }
+        self.history.push(text.to_owned());
+        if self.history.len() > KEPT {
+            self.history.remove(0);
+        }
+    }
+
+    /// Up (`older`) or Down moves through the typed lines, putting the line in
+    /// `input`. Down past the newest line empties it. Returns false when there
+    /// is nothing to show.
+    pub fn browse_history(&mut self, older: bool, input: &mut String) -> bool {
+        let last = self.history.len().checked_sub(1);
+        let at = match (self.history_at, older) {
+            (None, true) => last,
+            (Some(i), true) => Some(i.saturating_sub(1)),
+            (Some(i), false) if Some(i) < last => Some(i + 1),
+            (Some(_), false) => None,
+            (None, false) => return false,
+        };
+        let Some(line) = at.and_then(|i| self.history.get(i)) else {
+            self.history_at = None;
+            input.clear();
+            return older && last.is_some();
+        };
+        self.history_at = at;
+        input.clone_from(line);
+        true
+    }
+
     pub fn say(&mut self, line: impl Into<String>) {
         self.log.push(line.into());
         if self.log.len() > LOG_LIMIT {
@@ -163,7 +204,7 @@ pub fn suggestions(text: &str, enabled: impl Fn(&str) -> bool) -> Vec<Suggestion
         .iter()
         .filter(|(_, _, command)| enabled(command))
         .filter_map(|&(alias, name, command)| {
-            let rank = if alias == t {
+            let rank = if alias == t || name.eq_ignore_ascii_case(&t) {
                 0
             } else if alias.starts_with(&t) {
                 1
@@ -322,6 +363,38 @@ mod tests {
     fn entities(state: &AppState) -> Vec<Entity> {
         let objects = state.session().document().objects();
         objects.iter().map(|o| o.entity.clone()).collect()
+    }
+
+    #[test]
+    fn a_full_command_name_ranks_first_among_longer_matches() {
+        // History brings back names such as LINE, which LINETYPE also starts with.
+        for (_, name, command) in ALIASES {
+            let found = suggestions(name, |_| true);
+            assert_eq!(found.first().map(|s| s.command), Some(*command), "{name}");
+        }
+    }
+
+    #[test]
+    fn up_and_down_walk_the_typed_lines() {
+        let mut line = CommandLine::default();
+        let mut input = String::new();
+        assert!(!line.browse_history(true, &mut input));
+        for text in ["L", "C", "C", "M"] {
+            line.note_typed(text);
+        }
+        assert_eq!(line.history, ["L", "C", "M"]);
+        line.browse_history(true, &mut input);
+        assert_eq!(input, "M");
+        line.browse_history(true, &mut input);
+        line.browse_history(true, &mut input);
+        line.browse_history(true, &mut input);
+        assert_eq!(input, "L", "stops at the oldest");
+        line.browse_history(false, &mut input);
+        assert_eq!(input, "C");
+        line.browse_history(false, &mut input);
+        line.browse_history(false, &mut input);
+        assert_eq!(input, "", "Down past the newest empties the line");
+        assert_eq!(line.history_at, None);
     }
 
     #[test]
