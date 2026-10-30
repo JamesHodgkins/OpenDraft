@@ -23,8 +23,7 @@ use crate::automation::{AutomationCore, Coverage, InProcess};
 /// How often an unfinished operation is looked at while waiting for it.
 const LOOK_EVERY: Duration = Duration::from_millis(250);
 
-/// The look after a change: how many shapes it frames, and how wide it is.
-const LOOK_AT_MOST: usize = 400;
+/// How wide the look after a change is, in pixels.
 const LOOK_WIDTH: u32 = 640;
 
 /// Which drawings a task may reach. The choice is the user's, made in the
@@ -162,30 +161,25 @@ impl AppHost {
         }
     }
 
-    /// After a change, a picture of the shapes it added or changed, so the
-    /// model sees what it drew and not only that it drew. A look that cannot
-    /// be had (a layer-only change, a drawing that moved on) leaves the
-    /// result as it was; it never fails the change.
+    /// After a change, a picture of the whole drawing as it now is, so the
+    /// model sees what it drew in the company of the rest, not only that it
+    /// drew. A look that cannot be had (a layer-only change, a drawing that
+    /// moved on) leaves the result as it was; it never fails the change.
     fn with_a_look(&self, mut result: Value) -> Value {
-        let ids: Vec<Value> = ["added", "changed"]
-            .iter()
-            .filter_map(|key| result["changes"][key].as_array())
-            .flatten()
-            .take(LOOK_AT_MOST)
-            .cloned()
-            .collect();
-        let (Some(document), Some(revision)) = (
+        let drew = ["added", "changed"].iter().any(|key| {
+            result["changes"][key]
+                .as_array()
+                .is_some_and(|a| !a.is_empty())
+        });
+        let (true, Some(document), Some(revision)) = (
+            drew,
             result.get("document_id").cloned(),
             result.get("revision_after").cloned(),
         ) else {
             return result;
         };
-        if ids.is_empty() {
-            return result;
-        }
         let asked = json!({
             "document_id": document,
-            "entity_ids": ids,
             "format": "png",
             "width": LOOK_WIDTH,
             "expected_revision": revision,
@@ -198,7 +192,7 @@ impl AppHost {
             map.insert("png_base64".to_owned(), png);
             map.insert(
                 "picture_of".to_owned(),
-                json!("the shapes this change added or changed, framed to fit"),
+                json!("the whole drawing as it is after this change"),
             );
             map.insert("picture_region".to_owned(), picture["region"].take());
         }

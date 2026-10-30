@@ -332,6 +332,20 @@ fn a_change_comes_back_with_a_picture_of_what_it_changed() {
 }
 
 #[test]
+fn the_picture_shows_the_whole_drawing_not_only_what_the_change_added() {
+    let (core, _user, host, mut state) = setup(ApprovalLevel::ReviewEach);
+    let first = add_a_line(&core, &state, 0.0);
+    run(&host, &core, &mut state, call(WRITE, first));
+    let second = add_a_line(&core, &state, 100.0);
+    let ToolOutcome::Done(result) = run(&host, &core, &mut state, call(WRITE, second)) else {
+        panic!("not done");
+    };
+    let region = &result["picture_region"];
+    assert!(region["min"]["x"].as_f64().unwrap() <= 0.0, "{region}");
+    assert!(region["max"]["x"].as_f64().unwrap() >= 101.0, "{region}");
+}
+
+#[test]
 fn a_read_gets_no_picture_it_did_not_ask_for() {
     let (core, _user, host, mut state) = setup(ApprovalLevel::ReviewEach);
     let ToolOutcome::Done(result) = run(
