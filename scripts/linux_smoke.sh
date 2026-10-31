@@ -46,9 +46,9 @@ status=0
 python3 "$here/linux_smoke.py" "${args[@]}" --scenario drawing || status=1
 # Starting with no drawing and quitting needs no repeat at every scale.
 if [ -z "$scale" ]; then
-  home_args=(--binary "$bin/opendraft" --mcp "$bin/opendraft-mcp"
-             --sample "$repo/crates/od-files/tests/fixtures/ezdxf_sample.dxf"
-             --out "$out" --fbdir "$fb" --label "$label-home")
-  python3 "$here/linux_smoke.py" "${home_args[@]}" --scenario home || status=1
+  sample="$repo/crates/od-files/tests/fixtures/ezdxf_sample.dxf"
+  python3 "$here/linux_smoke.py" --binary "$bin/opendraft" --mcp "$bin/opendraft-mcp"     --sample "$sample" --out "$out" --fbdir "$fb" --label "$label-home" --scenario home || status=1
+  # A session with no XDG_RUNTIME_DIR (a plain ssh or su login, some containers).
+  python3 "$here/linux_smoke.py" --binary "$bin/opendraft" --mcp "$bin/opendraft-mcp"     --sample "$sample" --out "$out" --fbdir "$fb" --label "$label-norun" --scenario home     --no-runtime-dir || status=1
 fi
 exit $status

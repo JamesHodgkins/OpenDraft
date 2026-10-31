@@ -425,6 +425,8 @@ def main():
     parser.add_argument("--scale", help="set WINIT_X11_SCALE_FACTOR (for example 2; X11)")
     parser.add_argument("--label", default="smoke", help="names the artifacts")
     parser.add_argument("--scenario", choices=["drawing", "home"], default="drawing")
+    parser.add_argument("--no-runtime-dir", action="store_true",
+                        help="start with XDG_RUNTIME_DIR unset, as in a plain ssh or su session (X11)")
     args = parser.parse_args()
 
     display = X11Session(args) if args.session == "x11" else WaylandSession(args)
@@ -455,6 +457,10 @@ def main():
         "OD_AUTOMATION": "1",
     })
     env.update(display.environment(args))
+    # Without XDG_RUNTIME_DIR the program keeps its socket under the cache folder.
+    socket_root = os.path.join(home, ".cache") if args.no_runtime_dir else runtime
+    if args.no_runtime_dir:
+        env.pop("XDG_RUNTIME_DIR", None)
     if args.session == "wayland":
         # The program's own runtime folder is private to the test, so the
         # compositor's socket is linked into it, and X11 is out of reach.
@@ -477,7 +483,8 @@ def main():
 
     try:
         # 1. The program starts and the automation socket appears.
-        pattern = os.path.join(runtime, "OpenDraft", "automation", "*.json")
+        folder = os.path.join(socket_root, "OpenDraft", "automation")
+        pattern = os.path.join(folder, "*.json")
         descriptor_file = wait_for(
             lambda: (glob.glob(pattern) or [None])[0] if app.poll() is None else "gone", 90)
         if descriptor_file in (None, "gone"):
@@ -486,7 +493,11 @@ def main():
                          f"it exited with code {code}" if descriptor_file == "gone" else "no socket after 90 s")
             diagnose(args, work, shot, app, display)
             return finish(report, app, log, log_path, args, work)
-        report.check("the program starts and offers the automation socket", True)
+        report.check("the program starts and offers the automation socket", True,
+                     "in the cache folder, as XDG_RUNTIME_DIR is unset" if args.no_runtime_dir else "")
+        mode = os.stat(folder).st_mode & 0o777
+        report.check("the folder holding the socket and token is private to the user", mode & 0o077 == 0,
+                     f"mode {mode:o}")
         with open(descriptor_file) as handle:
             descriptor = json.load(handle)
         client = Client(descriptor)
