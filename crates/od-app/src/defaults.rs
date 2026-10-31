@@ -8,8 +8,8 @@ use std::sync::{Arc, Mutex};
 use od_commands::Editor;
 
 use crate::{
-    corner_memory, overkill_memory, pedit_memory, purge_memory, rect_memory, spline_memory,
-    text_memory,
+    corner_memory, donut_cmd, hatch_memory, overkill_memory, pedit_memory, polygon_cmd,
+    purge_memory, rect_memory, spline_memory, text_memory,
 };
 
 /// One remembered section, shared between the application and the commands
@@ -37,8 +37,11 @@ impl<T: Clone> Slot<T> {
 #[derive(Default)]
 pub struct CommandDefaults {
     pub corner: Slot<corner_memory::Memory>,
+    pub donut: Slot<donut_cmd::Memory>,
+    pub hatch: Slot<hatch_memory::Memory>,
     pub overkill: Slot<od_core::overkill::Settings>,
     pub pedit: Slot<pedit_memory::Memory>,
+    pub polygon: Slot<polygon_cmd::Memory>,
     pub purge: Slot<purge_memory::Memory>,
     pub rect: Slot<rect_memory::Memory>,
     pub spline: Slot<spline_memory::Memory>,
@@ -50,8 +53,11 @@ impl CommandDefaults {
     pub fn load(storage: Option<&dyn eframe::Storage>) -> Self {
         Self {
             corner: Slot::new(corner_memory::load(storage)),
+            donut: Slot::default(),
+            hatch: Slot::new(hatch_memory::load(storage)),
             overkill: Slot::new(overkill_memory::load(storage)),
             pedit: Slot::new(pedit_memory::load(storage)),
+            polygon: Slot::default(),
             purge: Slot::new(purge_memory::load(storage)),
             rect: Slot::new(rect_memory::load(storage)),
             spline: Slot::new(spline_memory::load(storage)),
@@ -62,6 +68,7 @@ impl CommandDefaults {
     /// Write the sections for the next run.
     pub fn save(&self, storage: &mut dyn eframe::Storage) {
         corner_memory::save(&self.corner.get(), storage);
+        hatch_memory::save(&self.hatch.get(), storage);
         overkill_memory::save(&self.overkill.get(), storage);
         pedit_memory::save(&self.pedit.get(), storage);
         purge_memory::save(&self.purge.get(), storage);

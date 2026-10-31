@@ -2,33 +2,28 @@
 //! about a circle, or on an edge, as a closed polyline. The geometry is
 //! `od_core::polygon`.
 
-use std::sync::Mutex;
-
 use od_commands::{Answer, Cancelled, Editor, NumberOptions, NumberOrPoint, Options, PointOptions};
 use od_core::polygon::{about_point, about_radius, on_edge, Fit, MAX_SIDES, MIN_SIDES};
 use od_core::{Entity, Point};
 
+use crate::defaults::EditorDefaults;
 use crate::draw::add;
 
 /// What POLYGON remembers between uses this session: the number of sides
 /// (`POLYSIDES`) and whether the last one was inscribed.
-static MEMORY: Mutex<(usize, Fit)> = Mutex::new((4, Fit::Inscribed));
-
-/// `POLYSIDES`: the number of sides POLYGON offers first.
-pub fn sides() -> usize {
-    MEMORY.lock().unwrap_or_else(|e| e.into_inner()).0
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Memory {
+    pub sides: usize,
+    pub fit: Fit,
 }
 
-pub fn set_sides(sides: usize) {
-    MEMORY.lock().unwrap_or_else(|e| e.into_inner()).0 = sides;
-}
-
-fn last_fit() -> Fit {
-    MEMORY.lock().unwrap_or_else(|e| e.into_inner()).1
-}
-
-fn set_fit(fit: Fit) {
-    MEMORY.lock().unwrap_or_else(|e| e.into_inner()).1 = fit;
+impl Default for Memory {
+    fn default() -> Self {
+        Self {
+            sides: 4,
+            fit: Fit::Inscribed,
+        }
+    }
 }
 
 const INSCRIBED: &str = "Inscribed in circle";
@@ -65,12 +60,13 @@ pub fn draw_polygon(ed: &mut Editor) -> Result<(), Cancelled> {
 
 fn ask_sides(ed: &Editor) -> Result<usize, Cancelled> {
     loop {
-        let options = NumberOptions::new("Enter number of sides").default(sides() as f64);
+        let options = NumberOptions::new("Enter number of sides")
+            .default(ed.defaults().polygon.get().sides as f64);
         let typed = ed.get_number(options)?;
         let whole = typed.round();
         if (typed - whole).abs() < 1e-9 && (MIN_SIDES as f64..=MAX_SIDES as f64).contains(&whole) {
             let sides = whole as usize;
-            set_sides(sides);
+            ed.defaults().polygon.change(|m| m.sides = sides);
             return Ok(sides);
         }
         ed.say(format!(
@@ -80,7 +76,7 @@ fn ask_sides(ed: &Editor) -> Result<usize, Cancelled> {
 }
 
 fn about_center(ed: &Editor, center: Point, sides: usize) -> Result<Vec<Point>, Cancelled> {
-    let default = match last_fit() {
+    let default = match ed.defaults().polygon.get().fit {
         Fit::Inscribed => INSCRIBED,
         Fit::Circumscribed => CIRCUMSCRIBED,
     };
@@ -95,7 +91,7 @@ fn about_center(ed: &Editor, center: Point, sides: usize) -> Result<Vec<Point>, 
     } else {
         Fit::Inscribed
     };
-    set_fit(fit);
+    ed.defaults().polygon.change(|m| m.fit = fit);
     loop {
         let options = NumberOptions::new("Specify radius of circle")
             .base(center)

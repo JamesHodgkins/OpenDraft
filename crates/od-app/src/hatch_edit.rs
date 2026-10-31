@@ -12,23 +12,23 @@ use od_commands::{Answer, Cancelled, Editor, Options, Picked, PointOptions};
 use od_core::hatch::{HatchEntity, HatchFill, HatchLimits, PatternType};
 use od_core::{Entity, EntityId};
 
+use crate::defaults::{CommandDefaults, EditorDefaults};
 use crate::hatch_cmd::{adjust, check_tolerance, summary, with_keywords};
-use crate::hatch_memory::{memory, remember, FillChoice, Memory};
+use crate::hatch_memory::{FillChoice, Memory};
 
 /// Puts HATCH's settings back when the command ends, however it ends.
-struct Restore(Memory);
+struct Restore(std::sync::Arc<CommandDefaults>, Memory);
 
 impl Drop for Restore {
     fn drop(&mut self) {
-        let saved = self.0.clone();
-        remember(|m| *m = saved);
+        let saved = self.1.clone();
+        self.0.hatch.change(|m| *m = saved);
     }
 }
 
 /// The settings that describe `h`, or why they cannot (a pattern that is not
 /// in the catalog cannot be rebuilt from its name).
-fn settings_of(h: &HatchEntity) -> Result<Memory, String> {
-    let mut m = memory();
+fn settings_of(h: &HatchEntity, mut m: Memory) -> Result<Memory, String> {
     m.style = h.style;
     match &h.fill {
         HatchFill::Solid => m.fill = FillChoice::Solid,
@@ -103,16 +103,16 @@ fn choose(ed: &Editor) -> Result<(EntityId, HatchEntity), Cancelled> {
 /// HATCHEDIT. See the module notes.
 pub fn hatch_edit(ed: &mut Editor) -> Result<(), Cancelled> {
     let (id, hatch) = choose(ed)?;
-    let _restore = Restore(memory());
-    match settings_of(&hatch) {
-        Ok(m) => remember(|now| *now = m),
+    let _restore = Restore(ed.defaults(), ed.defaults().hatch.get());
+    match settings_of(&hatch, ed.defaults().hatch.get()) {
+        Ok(m) => ed.defaults().hatch.change(|now| *now = m),
         Err(why) => {
             ed.say(why);
             return Ok(());
         }
     }
     loop {
-        let settings = memory();
+        let settings = ed.defaults().hatch.get();
         let new = match edited(&hatch, &settings) {
             Ok(h) => h,
             Err(why) => {
@@ -127,7 +127,7 @@ pub fn hatch_edit(ed: &mut Editor) -> Result<(), Cancelled> {
         if let Some(why) = &problem {
             ed.say(format!("The hatch cannot be drawn: {why}."));
         }
-        ed.say(summary());
+        ed.say(summary(&ed.defaults().hatch.get()));
         let shown = new.clone();
         let options = with_keywords(
             PointOptions::new("Press Enter or click to apply the change")
@@ -159,7 +159,6 @@ mod tests {
 
     use super::*;
     use crate::hatch_cmd::hatch_objects;
-    use crate::hatch_memory::take_turn_for_tests;
     use crate::state::AppState;
 
     fn hatched() -> AppState {
@@ -192,7 +191,6 @@ mod tests {
 
     #[test]
     fn a_hatch_is_edited_in_place_keeping_its_boundary_and_association() {
-        let _turn = take_turn_for_tests();
         let mut state = hatched();
         let (id, before) = the_hatch(&state);
         assert!(before.associative);
@@ -219,8 +217,8 @@ mod tests {
         };
         assert_eq!(p.scale_or_spacing, 3.0);
         // HATCH's own settings are what they were.
-        assert_eq!(memory().scale, 1.0);
-        assert_eq!(memory().style, HatchStyle::Normal);
+        assert_eq!(state.defaults().hatch.get().scale, 1.0);
+        assert_eq!(state.defaults().hatch.get().style, HatchStyle::Normal);
         state.undo();
         assert_eq!(the_hatch(&state).1, before);
     }

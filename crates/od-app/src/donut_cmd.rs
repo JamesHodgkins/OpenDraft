@@ -1,29 +1,34 @@
 //! DONUT: a filled ring, from an inside and an outside diameter, placed as
 //! often as wanted. The geometry is `od_core::donut`.
 
-use std::sync::Mutex;
-
 use od_commands::{Answer, Cancelled, Editor, NumberOptions, PointOptions};
 use od_core::donut::donut;
 use od_core::{Entity, Point};
 
+use crate::defaults::EditorDefaults;
 use crate::draw::add;
 
-/// The diameters DONUT offers first (inside, outside); they last the session.
-static MEMORY: Mutex<(f64, f64)> = Mutex::new((0.5, 1.0));
-
-fn remembered() -> (f64, f64) {
-    *MEMORY.lock().unwrap_or_else(|e| e.into_inner())
+/// The diameters DONUT offers first; they last the session.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Memory {
+    pub inside: f64,
+    pub outside: f64,
 }
 
-fn remember(inside: f64, outside: f64) {
-    *MEMORY.lock().unwrap_or_else(|e| e.into_inner()) = (inside, outside);
+impl Default for Memory {
+    fn default() -> Self {
+        Self {
+            inside: 0.5,
+            outside: 1.0,
+        }
+    }
 }
 
 /// DONUT: the diameters, then centres until Enter or Esc, one undo step each.
 pub fn draw_donut(ed: &mut Editor) -> Result<(), Cancelled> {
     let (inside, outside) = loop {
-        let (was_inside, was_outside) = remembered();
+        let was = ed.defaults().donut.get();
+        let (was_inside, was_outside) = (was.inside, was.outside);
         let inside = ed.get_distance(
             NumberOptions::new("Specify inside diameter of donut").default(was_inside),
         )?;
@@ -31,7 +36,9 @@ pub fn draw_donut(ed: &mut Editor) -> Result<(), Cancelled> {
             NumberOptions::new("Specify outside diameter of donut").default(was_outside),
         )?;
         if donut(Point::default(), inside, outside).is_some() {
-            remember(inside, outside);
+            ed.defaults()
+                .donut
+                .change(|m| *m = Memory { inside, outside });
             break (inside, outside);
         }
         ed.say("Requires a non-negative inside diameter and an outside diameter above zero.");

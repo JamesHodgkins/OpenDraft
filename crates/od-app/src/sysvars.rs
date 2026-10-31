@@ -183,9 +183,10 @@ fn build() -> Vec<SysVar<AppState>> {
             "POLYSIDES",
             "Number of sides POLYGON offers first",
             (3, 1024),
-            |_| Value::Int(crate::polygon_cmd::sides() as i64),
-            |_, v| {
-                crate::polygon_cmd::set_sides(usize::try_from(int(v)).unwrap_or(4));
+            |st| Value::Int(st.defaults().polygon.get().sides as i64),
+            |st, v| {
+                let sides = usize::try_from(int(v)).unwrap_or(4);
+                st.defaults().polygon.change(|m| m.sides = sides);
                 Ok(())
             },
         ),

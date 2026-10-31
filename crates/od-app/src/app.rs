@@ -425,7 +425,6 @@ impl eframe::App for OpenDraftApp {
         self.state.settings.save(storage);
         self.updates.save(storage);
         self.state.defaults().save(storage);
-        crate::hatch_memory::save(storage);
         dock::save(&self.dock, storage);
         self.state.recent.save(storage);
         crate::window_memory::save(storage);

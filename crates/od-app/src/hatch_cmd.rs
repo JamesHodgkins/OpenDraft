@@ -21,7 +21,8 @@ use od_core::hatch::{
 };
 use od_core::{Entity, EntityId, Point};
 
-use crate::hatch_memory::{memory, remember, FillChoice, Memory};
+use crate::defaults::EditorDefaults;
+use crate::hatch_memory::{FillChoice, Memory};
 use crate::text::plural;
 
 /// Ends closer than this count as meeting, as for JOIN.
@@ -30,8 +31,7 @@ const GAP: f64 = 1e-6;
 const SELECT: &str = "Select objects";
 
 /// What the current settings are, as a line for the command line.
-pub(crate) fn summary() -> String {
-    let m = memory();
+pub(crate) fn summary(m: &Memory) -> String {
     let style = m.style.label();
     let style = format!(
         "{style}   Associative={}",
@@ -84,7 +84,7 @@ fn ask_pattern(ed: &Editor) -> Result<(), Cancelled> {
     loop {
         let typed = ed.get_string(
             Options::<String>::new("Enter a pattern name, SOLID, USER, or ? to list")
-                .default(memory().name()),
+                .default(ed.defaults().hatch.get().name()),
         )?;
         let text = typed.trim();
         if text == "?" {
@@ -99,7 +99,7 @@ fn ask_pattern(ed: &Editor) -> Result<(), Cancelled> {
         };
         match Memory::choice_named(name) {
             Some(choice) => {
-                remember(|m| m.fill = choice);
+                ed.defaults().hatch.change(|m| m.fill = choice);
                 return Ok(());
             }
             None => ed.say(format!("Pattern \"{text}\" not found. Enter ? to list.")),
@@ -123,14 +123,14 @@ fn ask_style(ed: &Editor) -> Result<(), Cancelled> {
             .keyword("Normal", "N")
             .keyword("Outer", "O")
             .keyword("Ignore", "I")
-            .default(memory().style.label().to_owned()),
+            .default(ed.defaults().hatch.get().style.label().to_owned()),
     )?;
     let style = match answer.as_str() {
         "Outer" => HatchStyle::Outer,
         "Ignore" => HatchStyle::Ignore,
         _ => HatchStyle::Normal,
     };
-    remember(|m| m.style = style);
+    ed.defaults().hatch.change(|m| m.style = style);
     Ok(())
 }
 
@@ -139,27 +139,43 @@ pub(crate) fn adjust(ed: &Editor, keyword: &str) -> Result<(), Cancelled> {
     match keyword {
         "Pattern" => ask_pattern(ed)?,
         "Scale" => {
-            let scale = positive(ed, "Specify a scale for the pattern", memory().scale)?;
-            remember(|m| m.scale = scale);
+            let scale = positive(
+                ed,
+                "Specify a scale for the pattern",
+                ed.defaults().hatch.get().scale,
+            )?;
+            ed.defaults().hatch.change(|m| m.scale = scale);
         }
         "Angle" => {
             let angle = ed.get_angle(
-                NumberOptions::new("Specify an angle for the pattern").default(memory().angle),
+                NumberOptions::new("Specify an angle for the pattern")
+                    .default(ed.defaults().hatch.get().angle),
             )?;
-            remember(|m| m.angle = angle);
+            ed.defaults().hatch.change(|m| m.angle = angle);
         }
         "Spacing" => {
-            let spacing = positive(ed, "Specify the spacing between lines", memory().spacing)?;
-            remember(|m| m.spacing = spacing);
+            let spacing = positive(
+                ed,
+                "Specify the spacing between lines",
+                ed.defaults().hatch.get().spacing,
+            )?;
+            ed.defaults().hatch.change(|m| m.spacing = spacing);
         }
         "Double" => {
             let answer = ed.get_keyword(
                 Options::<String>::new("Double hatch area")
                     .keyword("Yes", "Y")
                     .keyword("No", "N")
-                    .default(if memory().double { "Yes" } else { "No" }.to_owned()),
+                    .default(
+                        if ed.defaults().hatch.get().double {
+                            "Yes"
+                        } else {
+                            "No"
+                        }
+                        .to_owned(),
+                    ),
             )?;
-            remember(|m| m.double = answer == "Yes");
+            ed.defaults().hatch.change(|m| m.double = answer == "Yes");
         }
         "Style" => ask_style(ed)?,
         "Associativity" => {
@@ -167,13 +183,22 @@ pub(crate) fn adjust(ed: &Editor, keyword: &str) -> Result<(), Cancelled> {
                 Options::<String>::new("Associate the hatch with its boundary")
                     .keyword("Yes", "Y")
                     .keyword("No", "N")
-                    .default(if memory().associative { "Yes" } else { "No" }.to_owned()),
+                    .default(
+                        if ed.defaults().hatch.get().associative {
+                            "Yes"
+                        } else {
+                            "No"
+                        }
+                        .to_owned(),
+                    ),
             )?;
-            remember(|m| m.associative = answer == "Yes");
+            ed.defaults()
+                .hatch
+                .change(|m| m.associative = answer == "Yes");
         }
         "Origin" => {
             let origin = ed.get_point(PointOptions::new("Specify an origin point"))?;
-            remember(|m| m.origin = origin);
+            ed.defaults().hatch.change(|m| m.origin = origin);
         }
         _ => {}
     }
@@ -280,10 +305,10 @@ pub fn hatch_objects(ed: &mut Editor) -> Result<(), Cancelled> {
     }
     loop {
         let Some(current) = &found else {
-            ed.say(summary());
+            ed.say(summary(&ed.defaults().hatch.get()));
             let options = with_keywords(
                 PointOptions::new("Pick internal point"),
-                &memory().fill,
+                &ed.defaults().hatch.get().fill,
                 true,
             )
             .keyword(SELECT, "SE");
@@ -298,7 +323,7 @@ pub fn hatch_objects(ed: &mut Editor) -> Result<(), Cancelled> {
             }
             continue;
         };
-        let mut hatch = match memory().hatch(current.loops.clone()) {
+        let mut hatch = match ed.defaults().hatch.get().hatch(current.loops.clone()) {
             Ok(h) => h,
             Err(why) => {
                 ed.say(format!("Unable to hatch: {why}"));
@@ -307,7 +332,7 @@ pub fn hatch_objects(ed: &mut Editor) -> Result<(), Cancelled> {
             }
         };
         hatch.seed_points = current.seed.into_iter().collect();
-        hatch.associative = memory().associative;
+        hatch.associative = ed.defaults().hatch.get().associative;
         if !hatch.associative {
             hatch = hatch.detached();
         }
@@ -317,7 +342,7 @@ pub fn hatch_objects(ed: &mut Editor) -> Result<(), Cancelled> {
         if let Some(why) = &problem {
             ed.say(format!("The hatch cannot be drawn: {why}."));
         }
-        ed.say(summary());
+        ed.say(summary(&ed.defaults().hatch.get()));
         let shown = hatch.clone();
         let options = with_keywords(
             PointOptions::new(if problem.is_some() {
@@ -326,7 +351,7 @@ pub fn hatch_objects(ed: &mut Editor) -> Result<(), Cancelled> {
                 "Press Enter or click to accept the hatch"
             })
             .ghost(move |_| vec![Entity::Hatch(Box::new(shown.clone()))]),
-            &memory().fill,
+            &ed.defaults().hatch.get().fill,
             true,
         )
         .keyword(SELECT, "SE");
@@ -366,7 +391,6 @@ mod tests {
     use od_core::hatch::HatchFill;
 
     use super::*;
-    use crate::hatch_memory::take_turn_for_tests;
     use crate::state::AppState;
 
     fn rectangle(min: f64, max: f64) -> Entity {
@@ -382,7 +406,13 @@ mod tests {
     }
 
     fn started(items: &[Entity]) -> AppState {
+        started_with(items, |_| {})
+    }
+
+    /// As `started`, with the remembered settings changed first.
+    fn started_with(items: &[Entity], remembered: impl FnOnce(&mut Memory)) -> AppState {
         let mut state = AppState::new();
+        state.defaults().hatch.change(remembered);
         for e in items {
             state.add_entity(e.clone());
         }
@@ -404,7 +434,6 @@ mod tests {
 
     #[test]
     fn selected_objects_are_hatched_behind_them_in_one_undo_step() {
-        let _turn = take_turn_for_tests();
         let mut state = started(&[rectangle(0.0, 10.0), rectangle(3.0, 7.0)]);
         assert!(state.is_running("Hatch"), "the preview waits for Enter");
         state.answer_enter();
@@ -427,7 +456,6 @@ mod tests {
 
     #[test]
     fn the_options_change_the_hatch_and_are_remembered() {
-        let _turn = take_turn_for_tests();
         let mut state = started(&[rectangle(0.0, 10.0), rectangle(3.0, 7.0)]);
         state.answer_keyword("Style");
         state.settle_command();
@@ -446,13 +474,12 @@ mod tests {
             panic!("pattern");
         };
         assert_eq!(p.scale_or_spacing, 4.0);
-        assert_eq!(memory().scale, 4.0);
-        assert_eq!(memory().style, HatchStyle::Ignore);
+        assert_eq!(state.defaults().hatch.get().scale, 4.0);
+        assert_eq!(state.defaults().hatch.get().style, HatchStyle::Ignore);
     }
 
     #[test]
     fn solid_and_user_defined_fills_come_from_the_pattern_option() {
-        let _turn = take_turn_for_tests();
         let mut state = started(&[rectangle(0.0, 10.0)]);
         state.answer_keyword("Pattern");
         state.settle_command();
@@ -483,7 +510,6 @@ mod tests {
 
     #[test]
     fn objects_that_do_not_close_are_refused_and_nothing_is_added() {
-        let _turn = take_turn_for_tests();
         let line = Entity::Line {
             start: Point::new(0.0, 0.0),
             end: Point::new(5.0, 0.0),
@@ -502,9 +528,7 @@ mod tests {
 
     #[test]
     fn a_pattern_too_dense_to_draw_cannot_be_accepted() {
-        let _turn = take_turn_for_tests();
-        remember(|m| m.scale = 1e-7);
-        let mut state = started(&[rectangle(0.0, 1000.0)]);
+        let mut state = started_with(&[rectangle(0.0, 1000.0)], |m| m.scale = 1e-7);
         assert!(state
             .cmdline
             .log
@@ -529,7 +553,6 @@ mod tests {
 
     #[test]
     fn an_internal_point_finds_the_boundary_and_the_islands_inside_it() {
-        let _turn = take_turn_for_tests();
         let circle = Entity::Circle {
             center: Point::new(10.0, 10.0),
             radius: 3.0,
@@ -552,7 +575,6 @@ mod tests {
 
     #[test]
     fn a_point_that_nothing_surrounds_says_so_and_asks_again() {
-        let _turn = take_turn_for_tests();
         let mut state = picking(&[rectangle(0.0, 10.0)]);
         state.answer_point(Point::new(50.0, 50.0));
         state.settle_command();
@@ -572,7 +594,6 @@ mod tests {
 
     #[test]
     fn a_new_hatch_follows_its_boundary_when_that_is_moved_and_undo_puts_both_back() {
-        let _turn = take_turn_for_tests();
         let mut state = started(&[rectangle(0.0, 10.0), rectangle(3.0, 7.0)]);
         state.answer_enter();
         state.settle_command();
@@ -596,9 +617,7 @@ mod tests {
 
     #[test]
     fn with_associativity_off_the_hatch_is_independent() {
-        let _turn = take_turn_for_tests();
-        remember(|m| m.associative = false);
-        let mut state = started(&[rectangle(0.0, 10.0)]);
+        let mut state = started_with(&[rectangle(0.0, 10.0)], |m| m.associative = false);
         state.answer_enter();
         state.settle_command();
         let h = the_hatch(&state);
@@ -607,7 +626,6 @@ mod tests {
 
     #[test]
     fn a_picked_point_hatch_follows_a_boundary_made_of_lines() {
-        let _turn = take_turn_for_tests();
         let line = |a: (f64, f64), b: (f64, f64)| Entity::Line {
             start: Point::new(a.0, a.1),
             end: Point::new(b.0, b.1),
