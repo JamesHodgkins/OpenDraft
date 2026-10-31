@@ -1,7 +1,7 @@
 //! Finding a running app. Each run writes a descriptor file naming its
 //! endpoint and a fresh token into a per-user directory; the sidecar reads
-//! it. The file is readable only by the user (mode 0600 on Linux; the
-//! per-user profile folder on Windows) and removed on a clean exit. A stale
+//! it. The file is readable only by the user (mode 0600 on Linux; on Windows
+//! the permissions of the per-user profile folder) and removed on a clean exit. A stale
 //! file is discovered by failing to connect, not by guessing from the pid.
 
 use std::fs;
@@ -96,6 +96,10 @@ fn write_private(path: &Path, bytes: &[u8]) -> io::Result<()> {
     file.write_all(bytes)
 }
 
+/// Windows has no mode bits: the file takes the permissions of its folder.
+/// Under `%LOCALAPPDATA%` (the default) those allow only the user,
+/// administrators and the system, so no other account can read the token. A
+/// folder chosen with `OD_AUTOMATION_DIR` is the chooser's to protect.
 #[cfg(not(unix))]
 fn write_private(path: &Path, bytes: &[u8]) -> io::Result<()> {
     fs::write(path, bytes)

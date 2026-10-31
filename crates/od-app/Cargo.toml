@@ -27,6 +27,8 @@ keyring = "4"
 serde_json = "1"
 interprocess = "2"
 getrandom = "0.3"
+# Tells whether a retried request carries the same arguments (MIT OR Apache-2.0; already in the lock file).
+sha2 = "0.11"
 egui_dock = { version = "0.16", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 ron = "0.8"
