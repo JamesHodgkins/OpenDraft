@@ -180,7 +180,7 @@ mod tests {
     fn the_hatch(state: &AppState) -> (EntityId, HatchEntity) {
         state
             .session()
-            .document
+            .document()
             .objects()
             .iter()
             .find_map(|o| match &o.entity {

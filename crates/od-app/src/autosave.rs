@@ -37,7 +37,7 @@ impl AppState {
         let mut writes = Vec::new();
         let mut removals = Vec::new();
         for doc in &mut self.docs {
-            let position = doc.drawing().history.position();
+            let position = doc.drawing().history().position();
             match (doc.is_modified(), doc.autosaved) {
                 (true, last) if last != Some(position) => writes.push((
                     doc.uid,
@@ -45,7 +45,7 @@ impl AppState {
                     doc.title.clone(),
                     // A recovered drawing is still "from" where it was.
                     doc.path.clone().or_else(|| doc.recovery_origin.clone()),
-                    doc.drawing().document.clone(),
+                    doc.drawing().document().clone(),
                 )),
                 (false, Some(_)) => {
                     removals.push(doc.uid);

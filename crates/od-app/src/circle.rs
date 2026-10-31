@@ -302,7 +302,7 @@ mod tests {
         state.add_entity(line(p(0.0, 0.0), p(0.0, 10.0)));
         let ids: Vec<_> = state
             .session()
-            .document
+            .document()
             .objects()
             .iter()
             .map(|o| o.id)
@@ -332,7 +332,7 @@ mod tests {
         state.add_entity(line(p(0.0, 10.0), p(10.0, 10.0)));
         let ids: Vec<_> = state
             .session()
-            .document
+            .document()
             .objects()
             .iter()
             .map(|o| o.id)

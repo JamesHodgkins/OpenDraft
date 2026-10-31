@@ -142,7 +142,7 @@ impl crate::state::AppState {
     /// is selected.
     pub fn select_similar(&mut self) {
         let doc = &mut self.docs[self.active];
-        let document = &doc.session.document;
+        let document = &doc.session.document();
         let kinds: Vec<_> = doc
             .selection
             .iter()

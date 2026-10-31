@@ -159,7 +159,7 @@ fn edits(n: usize) {
         start.elapsed().as_secs_f64() * 1e3
     };
     let changes: Vec<_> = session
-        .document
+        .document()
         .objects()
         .iter()
         .map(|o| (o.id, o.entity.translated(5.0, 5.0)))

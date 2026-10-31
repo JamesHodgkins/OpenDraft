@@ -386,7 +386,7 @@ impl AppState {
         let doc = &mut self.docs[self.active];
         doc.selection = doc
             .session
-            .document
+            .document()
             .selectable_objects()
             .map(|o| o.id)
             .collect();
@@ -524,7 +524,7 @@ mod tests {
     fn radii(state: &AppState) -> Vec<f64> {
         state
             .session()
-            .document
+            .document()
             .objects()
             .iter()
             .map(|o| properties::value(&o.entity, Field::Radius))

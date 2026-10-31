@@ -953,7 +953,7 @@ mod tests {
         draw(&mut other);
         let ids: Vec<_> = other.docs[0]
             .session
-            .document
+            .document()
             .objects()
             .iter()
             .map(|o| o.id)

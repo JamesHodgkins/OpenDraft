@@ -39,3 +39,8 @@ od-files = { path = "crates/od-files" }
 od-dwg = { path = "crates/od-dwg" }
 od-api = { path = "crates/od-api" }
 od-agent = { path = "crates/od-agent" }
+
+# Dependencies (egui especially) are slow unoptimised; our own crates keep fast
+# incremental debug builds.
+[profile.dev.package."*"]
+opt-level = 2

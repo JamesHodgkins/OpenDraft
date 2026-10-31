@@ -351,7 +351,7 @@ mod tests {
         }
         let ids: Vec<EntityId> = state
             .session()
-            .document
+            .document()
             .objects()
             .iter()
             .map(|o| o.id)

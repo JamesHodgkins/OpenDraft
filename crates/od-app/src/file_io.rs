@@ -232,8 +232,8 @@ impl AppState {
             self.message = format!("{} is already being saved", doc.title);
             return None;
         }
-        let (uid, position) = (doc.uid, doc.drawing().history.position());
-        let copy = doc.drawing().document.clone();
+        let (uid, position) = (doc.uid, doc.drawing().history().position());
+        let copy = doc.drawing().document().clone();
         self.saving.push(uid);
         self.message = format!("Saving {}...", display_name(path));
         let path = path.to_owned();
