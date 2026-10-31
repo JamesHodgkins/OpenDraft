@@ -39,6 +39,7 @@
 
 use od_core::{Attr, Color, Document};
 use serde::{Deserialize, Serialize};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::{Encoded, FileError, FileFormat, Loaded};
 
@@ -50,6 +51,7 @@ mod hatch;
 mod hatch_fill;
 mod layout;
 mod leader;
+mod limits;
 mod linetype;
 mod load;
 mod mleader;
@@ -102,6 +104,16 @@ impl FileFormat for NativeFormat {
     }
 
     fn read(&self, bytes: &[u8]) -> Result<Loaded, FileError> {
+        self.read_cancellable(bytes, &AtomicBool::new(false))
+    }
+
+    /// Parsing is one quick pass that cannot be interrupted; building the
+    /// drawing from it, which takes as long again on a big file, looks at
+    /// `cancelled` as it goes.
+    fn read_cancellable(&self, bytes: &[u8], cancelled: &AtomicBool) -> Result<Loaded, FileError> {
+        if cancelled.load(Ordering::Relaxed) {
+            return Err(FileError::Cancelled);
+        }
         // One pass over the file. Only when the whole body does not parse is
         // the start of the file read on its own, to say why.
         let file: FileDto = match serde_json::from_slice(bytes) {
@@ -118,7 +130,7 @@ impl FileFormat for NativeFormat {
                 saved_by: file.saved_by,
             });
         }
-        let document = file.drawing.into_document()?;
+        let document = file.drawing.into_document(cancelled)?;
         document
             .validate()
             .map_err(|e| FileError::Invalid(e.to_string()))?;
@@ -215,14 +227,21 @@ struct DrawingDto {
     /// The dimension styles, in full: see `dimension_style.rs`.
     #[serde(flatten)]
     dim_styles: DimStylesDto,
+    #[serde(deserialize_with = "limits::table_rows")]
     layers: Vec<LayerDto>,
     /// In draw order.
+    #[serde(deserialize_with = "limits::objects")]
     objects: Vec<ObjectDto>,
     /// Sheets in tab order; counters keep deleted ids retired.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        skip_serializing_if = "Vec::is_empty",
+        deserialize_with = "limits::table_rows"
+    )]
     layouts: Vec<LayoutDto>,
     next_layout_id: u64,
     next_viewport_id: u64,
+    #[serde(deserialize_with = "limits::table_rows")]
     text_styles: Vec<TextStyleDto>,
     current_text_style: u64,
     next_text_style_id: u64,
@@ -230,7 +249,11 @@ struct DrawingDto {
     #[serde(flatten)]
     mleader_styles: mleader_style::TableDto,
     /// Block definitions in table order.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        skip_serializing_if = "Vec::is_empty",
+        deserialize_with = "limits::table_rows"
+    )]
     blocks: Vec<BlockDto>,
     next_block_id: u64,
     /// The linetype table and `LTSCALE`.
@@ -1406,5 +1429,85 @@ mod tests {
         records.retain(|r| r["name"] != "BYLAYER");
         let text = serde_json::to_string(&json).unwrap();
         assert!(matches!(read(&text), Err(FileError::Invalid(_))));
+    }
+
+    /// `MINIMAL` with the given list in place of its `drawing[key]`.
+    fn with_list(key: &str, entries: Vec<serde_json::Value>) -> String {
+        let mut json: serde_json::Value = serde_json::from_str(&with_dim_styles(MINIMAL)).unwrap();
+        json["drawing"][key] = serde_json::Value::Array(entries);
+        serde_json::to_string(&json).unwrap()
+    }
+
+    #[test]
+    fn a_table_with_more_rows_than_any_drawing_is_refused_while_it_is_read() {
+        let layer = serde_json::json!({
+            "id": 0, "name": "0", "color": "foreground", "linetype": 1,
+            "lineweight": 25, "on": true, "frozen": false, "locked": false
+        });
+        let layers = vec![layer; limits::TABLE_ROWS + 1];
+        match NativeFormat
+            .read(with_list("layers", layers).as_bytes())
+            .map(|l| l.document)
+        {
+            Err(FileError::Unreadable(why)) => {
+                assert!(why.contains("more than 100000 table entries"), "{why}");
+            }
+            other => panic!("expected Unreadable, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn a_polyline_with_more_points_than_any_shape_is_refused() {
+        let object = serde_json::json!({
+            "id": 0, "layer": 0, "color": "by_layer", "linetype": "by_layer",
+            "lineweight": "by_layer",
+            "entity": {
+                "type": "polyline", "closed": false,
+                "points": vec![[0.0, 0.0]; limits::VERTICES + 1]
+            }
+        });
+        let text = with_list("objects", vec![object]);
+        match NativeFormat.read(text.as_bytes()).map(|l| l.document) {
+            Err(FileError::Unreadable(why)) => {
+                assert!(why.contains("more than 1000000 points in a shape"), "{why}");
+            }
+            other => panic!("expected Unreadable, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn a_read_that_was_cancelled_stops_before_building_the_drawing() {
+        let cancelled = AtomicBool::new(true);
+        let bytes = with_dim_styles(MINIMAL);
+        assert!(matches!(
+            NativeFormat.read_cancellable(bytes.as_bytes(), &cancelled),
+            Err(FileError::Cancelled)
+        ));
+        cancelled.store(false, Ordering::Relaxed);
+        assert!(NativeFormat
+            .read_cancellable(bytes.as_bytes(), &cancelled)
+            .is_ok());
+    }
+
+    #[test]
+    fn a_cancel_during_a_big_drawing_is_noticed_between_objects() {
+        use od_core::{Entity, Point};
+        let mut document = Document::default();
+        for i in 0..3000 {
+            document.add(Entity::Line {
+                start: Point::new(f64::from(i), 0.0),
+                end: Point::new(f64::from(i), 1.0),
+            });
+        }
+        let bytes = NativeFormat.write(&document).unwrap().bytes;
+        // Set before the read starts, so the very first check sees it.
+        let cancelled = AtomicBool::new(true);
+        assert!(matches!(
+            NativeFormat.read_cancellable(&bytes, &cancelled),
+            Err(FileError::Cancelled)
+        ));
+        let never = AtomicBool::new(false);
+        let loaded = NativeFormat.read_cancellable(&bytes, &never).unwrap();
+        assert_eq!(loaded.document.len(), 3000);
     }
 }
