@@ -7,13 +7,13 @@ and installs it with its desktop entry, icons, file types and AppStream descript
 
 ## Build it yourself
 
-You need `flatpak`, `flatpak-builder` and the Freedesktop 24.08 platform, SDK and
+You need `flatpak`, `flatpak-builder` and the Freedesktop 26.08 platform, SDK and
 Rust extension from Flathub:
 
 ```bash
 flatpak remote-add --if-not-exists --user flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-flatpak install --user flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08 \
-    org.freedesktop.Sdk.Extension.rust-stable//24.08
+flatpak install --user flathub org.freedesktop.Platform//26.08 org.freedesktop.Sdk//26.08 \
+    org.freedesktop.Sdk.Extension.rust-stable//26.08
 
 # Flatpak builds have no network, so every crate is listed in a file made from Cargo.lock.
 git clone --depth 1 https://github.com/flatpak/flatpak-builder-tools
