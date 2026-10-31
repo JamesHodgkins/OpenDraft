@@ -7,6 +7,7 @@ use std::sync::{Arc, Mutex};
 
 use od_commands::Editor;
 
+use crate::state::AppState;
 use crate::{
     corner_memory, donut_cmd, hatch_memory, overkill_memory, pedit_memory, polygon_cmd,
     purge_memory, rect_memory, spline_memory, text_memory,
@@ -75,6 +76,18 @@ impl CommandDefaults {
         rect_memory::save(&self.rect.get(), storage);
         spline_memory::save(&self.spline.get(), storage);
         text_memory::save(&self.text.get(), storage);
+    }
+}
+
+impl AppState {
+    /// What commands remember between uses.
+    pub fn defaults(&self) -> &Arc<CommandDefaults> {
+        &self.defaults
+    }
+
+    /// Use `defaults` (read from the saved settings) from now on.
+    pub fn set_defaults(&mut self, defaults: Arc<CommandDefaults>) {
+        self.defaults = defaults;
     }
 }
 

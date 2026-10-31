@@ -140,7 +140,7 @@ pub struct AppState {
     /// The command in progress that asks through the `Editor`, if any.
     pub(crate) runner: Option<Runner>,
     /// What commands remember between uses, shared with every command run.
-    defaults: Arc<CommandDefaults>,
+    pub(crate) defaults: Arc<CommandDefaults>,
     /// Index of the drawing that command works on.
     pub(crate) run_doc: usize,
     pub(crate) next_doc_number: usize,
@@ -201,16 +201,6 @@ pub struct AppState {
 }
 
 impl AppState {
-    /// What commands remember between uses.
-    pub fn defaults(&self) -> &Arc<CommandDefaults> {
-        &self.defaults
-    }
-
-    /// Use `defaults` (read from the saved settings) from now on.
-    pub fn set_defaults(&mut self, defaults: Arc<CommandDefaults>) {
-        self.defaults = defaults;
-    }
-
     pub fn new() -> Self {
         let mut state = Self {
             docs: Vec::new(),
