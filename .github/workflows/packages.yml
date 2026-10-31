@@ -105,7 +105,8 @@ jobs:
           flatpak run --command=flatpak-builder-lint org.flatpak.Builder appstream             installer/linux/share/uk.openengineering.opendraft.metainfo.xml || true
       - name: It starts and stays open in a virtual display
         run: |
-          apt-get update && apt-get install -y --no-install-recommends xvfb xauth
+          # The image has no package manager of the usual kind, but brings xvfb-run.
+          command -v xvfb-run >/dev/null || { echo "xvfb-run is not in this image"; exit 1; }
           set +e
           timeout 30 xvfb-run -a flatpak run --env=OPENDRAFT_PROFILE=ci-smoke --env=LIBGL_ALWAYS_SOFTWARE=1 uk.openengineering.opendraft
           code=$?
