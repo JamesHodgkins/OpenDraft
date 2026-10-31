@@ -94,9 +94,19 @@ jobs:
             if ldd /app/libexec/opendraft | grep "not found"; then exit 1; fi
             echo "the Flatpak holds the programs, desktop entry, icons, file types and metadata"
           '
+      - name: Flathub's own linter, on the manifest (a reviewer's first check)
+        run: |
+          flatpak install --user --noninteractive -y flathub org.flatpak.Builder
+          flatpak run --command=flatpak-builder-lint org.flatpak.Builder manifest             installer/linux/flatpak/uk.openengineering.opendraft.yml
+      - name: Flathub's linter on the AppStream file (information only)
+        # Its one expected complaint, that the screenshot is not yet on Flathub's
+        # mirror, goes away when Flathub builds the app; the rest is worth reading.
+        run: |
+          flatpak run --command=flatpak-builder-lint org.flatpak.Builder appstream             installer/linux/share/uk.openengineering.opendraft.metainfo.xml || true
       - name: It starts and stays open in a virtual display
         run: |
-          apt-get update && apt-get install -y --no-install-recommends xvfb xauth
+          # The image has no package manager of the usual kind, but brings xvfb-run.
+          command -v xvfb-run >/dev/null || { echo "xvfb-run is not in this image"; exit 1; }
           set +e
           timeout 30 xvfb-run -a flatpak run --env=OPENDRAFT_PROFILE=ci-smoke --env=LIBGL_ALWAYS_SOFTWARE=1 uk.openengineering.opendraft
           code=$?

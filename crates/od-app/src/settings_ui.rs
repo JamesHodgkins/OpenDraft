@@ -42,6 +42,16 @@ pub fn page(
 /// as the Updates card on Home. Nothing is sent until the box is ticked.
 fn updates(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
     widgets::group_box(ui, theme, "Updates", |ui| {
+        if crate::updates::handled_by_the_store() {
+            ui.label(
+                egui::RichText::new(
+                    "This copy of OpenDraft comes from Flathub, which updates it. It never checks \
+                     for new versions itself.",
+                )
+                .color(theme.colors.text_weak),
+            );
+            return;
+        }
         let mut on = draft.update_checks == Some(true);
         if ui
             .checkbox(&mut on, "Check for new versions automatically")

@@ -2,7 +2,7 @@
 # and what changes for Flathub. Built in CI by .github/workflows/packages.yml.
 app-id: uk.openengineering.opendraft
 runtime: org.freedesktop.Platform
-runtime-version: '24.08'
+runtime-version: '26.08'
 sdk: org.freedesktop.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.rust-stable

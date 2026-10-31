@@ -47,7 +47,12 @@ pub(super) fn updates_section(
             let version = crate::build_info::display();
             match view {
                 View::Disabled => {
-                    weak(ui, "Update checks are off in development builds.".into());
+                    let why = if crate::updates::handled_by_the_store() {
+                        "Flathub keeps OpenDraft up to date."
+                    } else {
+                        "Update checks are off in development builds."
+                    };
+                    weak(ui, why.into());
                 }
                 View::Unasked => {
                     strong(ui, "Check for new versions?".into());
