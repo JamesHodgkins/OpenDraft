@@ -575,6 +575,12 @@ def main():
         client.close()
         client = None
         if args.scenario == "home":
+            # Open asks the desktop for a file dialog. This session has no
+            # desktop portal and no zenity, so none can be shown and the status
+            # bar should say why (see picker.rs); the picture is kept to look at.
+            display.key("ctrl+o")
+            time.sleep(2)
+            shot("open-without-a-dialog")
             display.key("ctrl+q")
             try:
                 code = app.wait(timeout=20)
