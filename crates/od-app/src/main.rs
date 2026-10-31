@@ -164,6 +164,40 @@ fn app_icon() -> Option<egui::IconData> {
     })
 }
 
+/// How many samples per pixel the window asks for, best first. Filled glyph
+/// meshes have no feathered edge of their own, so 4 smooths them; but some
+/// graphics setups offer no such configuration (software rendering on a recent
+/// Mesa, a few virtual machines and remote desktops), and without a fallback
+/// the program would not open at all. 0 draws the same picture with harder
+/// edges.
+const MULTISAMPLES: [u16; 2] = [4, 0];
+
+/// Builds the application once the window and its OpenGL context exist.
+fn app_creator() -> eframe::AppCreator<'static> {
+    Box::new(|cc| {
+        let settings = settings::Settings::load(cc.storage);
+        let defaults = std::sync::Arc::new(defaults::CommandDefaults::load(cc.storage));
+        let theme = od_ui::Theme::with_palette(settings.palette);
+        theme.apply(&cc.egui_ctx);
+        cc.egui_ctx.set_zoom_factor(settings.zoom_factor());
+        let dock = dock::load(cc.storage);
+        let recent = recent::RecentFiles::load(cc.storage);
+        let updates = updates::Updates::new(updates::Updates::load(cc.storage));
+        // Drawings named on the command line (or handed over by a file
+        // association) open at start.
+        let open: Vec<std::path::PathBuf> = std::env::args_os().skip(1).map(Into::into).collect();
+        Ok(Box::new(app::OpenDraftApp::new(
+            theme, settings, defaults, dock, recent, updates, open,
+        )))
+    })
+}
+
+/// Whether `error` is the graphics system having no configuration like the one
+/// asked for, which a plainer request may still get.
+fn is_no_matching_config(error: &eframe::Error) -> bool {
+    matches!(error, eframe::Error::NoGlutinConfigs(..))
+}
+
 fn main() -> eframe::Result {
     profile::seed_beta_from_release();
     crash_log::install();
@@ -176,34 +210,34 @@ fn main() -> eframe::Result {
     if let Some(icon) = app_icon() {
         viewport = viewport.with_icon(icon);
     }
-    let options = eframe::NativeOptions {
-        viewport,
-        // window_memory keeps the restore size that eframe loses when maximised.
-        persist_window: false,
-        // Filled glyph meshes have no feathered edge of their own.
-        multisampling: 4,
-        ..Default::default()
-    };
+    let mut result = Ok(());
+    for samples in MULTISAMPLES {
+        let options = eframe::NativeOptions {
+            viewport: viewport.clone(),
+            // window_memory keeps the restore size that eframe loses when maximised.
+            persist_window: false,
+            multisampling: samples,
+            ..Default::default()
+        };
+        result = eframe::run_native(profile::name(), options, app_creator());
+        if !result.as_ref().is_err_and(is_no_matching_config) {
+            break;
+        }
+    }
+    result
+}
 
-    eframe::run_native(
-        profile::name(),
-        options,
-        Box::new(|cc| {
-            let settings = settings::Settings::load(cc.storage);
-            let defaults = std::sync::Arc::new(defaults::CommandDefaults::load(cc.storage));
-            let theme = od_ui::Theme::with_palette(settings.palette);
-            theme.apply(&cc.egui_ctx);
-            cc.egui_ctx.set_zoom_factor(settings.zoom_factor());
-            let dock = dock::load(cc.storage);
-            let recent = recent::RecentFiles::load(cc.storage);
-            let updates = updates::Updates::new(updates::Updates::load(cc.storage));
-            // Drawings named on the command line (or handed over by a file
-            // association) open at start.
-            let open: Vec<std::path::PathBuf> =
-                std::env::args_os().skip(1).map(Into::into).collect();
-            Ok(Box::new(app::OpenDraftApp::new(
-                theme, settings, defaults, dock, recent, updates, open,
-            )))
-        }),
-    )
+#[cfg(test)]
+mod tests {
+    use super::MULTISAMPLES;
+
+    #[test]
+    fn the_window_asks_for_smooth_edges_first_and_can_settle_for_none() {
+        assert_eq!(MULTISAMPLES.first(), Some(&4));
+        assert_eq!(
+            MULTISAMPLES.last(),
+            Some(&0),
+            "without a plain last choice the program would not open on a graphics setup that has no multisampled configuration"
+        );
+    }
 }

@@ -243,6 +243,7 @@ def main():
         "OPENDRAFT_PROFILE": PROFILE,
         "LIBGL_ALWAYS_SOFTWARE": "1",
         "RUST_BACKTRACE": "1",
+        "RUST_LOG": "info",
     })
     if args.scale:
         env["WINIT_X11_SCALE_FACTOR"] = args.scale
@@ -272,8 +273,10 @@ def main():
         descriptor_file = wait_for(
             lambda: (glob.glob(pattern) or [None])[0] if app.poll() is None else "gone", 90)
         if descriptor_file in (None, "gone"):
+            code = app.poll()
             report.check("the program starts and offers the automation socket", False,
-                         "it exited" if descriptor_file == "gone" else "no socket after 90 s")
+                         f"it exited with code {code}" if descriptor_file == "gone" else "no socket after 90 s")
+            diagnose(args, work, shot, app)
             return finish(report, app, log, log_path, args, work)
         report.check("the program starts and offers the automation socket", True)
         with open(descriptor_file) as handle:
@@ -384,6 +387,33 @@ def main():
         if client:
             client.close()
     return finish(report, app, log, log_path, args, work)
+
+
+def diagnose(args, work, shot, app):
+    """Leave what is needed to understand a program that did not come up: the
+    screen, the folders it should have written to, the windows and the
+    process."""
+    try:
+        shot("failed-start")
+    except Exception as error:  # noqa: BLE001
+        print(f"no screenshot: {error!r}")
+    lines = []
+    for folder in ("run", "data"):
+        lines.append(f"--- find {folder}")
+        for root, _dirs, files in os.walk(os.path.join(work, folder)):
+            lines.append(root)
+            lines.extend("    " + name for name in files)
+    lines.append("--- windows")
+    lines.append(xdotool("search", "--name", ".", check=False).stdout)
+    lines.append(f"--- process: pid {app.pid}, returncode {app.poll()}")
+    try:
+        with open(f"/proc/{app.pid}/status") as handle:
+            lines.append(handle.read())
+    except OSError:
+        lines.append("(no /proc entry: it has gone)")
+    with open(os.path.join(args.out, f"{args.label}-diagnosis.txt"), "w") as handle:
+        handle.write("\n".join(lines))
+    print("\n".join(lines))
 
 
 def finish(report, app, log, log_path, args, work):
