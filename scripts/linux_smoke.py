@@ -222,6 +222,7 @@ class X11Session:
     xdotool; the screen is read from the server's framebuffer file."""
 
     name = "x11"
+    has_input = True
 
     def __init__(self, args):
         self.fbdir = args.fbdir
@@ -267,15 +268,27 @@ class X11Session:
         """A key or a chord such as "Return" or "ctrl+q"."""
         run(["xdotool", "key", chord])
 
+    def end(self):
+        """Ask the program to quit the way a person does: Ctrl+Q."""
+        self.key("ctrl+q")
+
     def diagnostics(self):
         return run(["xdotool", "search", "--name", "."], check=False, text=True).stdout
 
 
 class WaylandSession:
-    """A headless sway. Input is sent with wtype (keys) and swaymsg (pointer);
-    the screen is read with grim."""
+    """A headless sway; the screen is read with grim.
+
+    Keyboard and mouse input is not sent. A seat only has a keyboard or a
+    pointer while a device of that kind exists, and a headless sway has none;
+    wtype and swaymsg make one for the length of one command, so the program
+    sees its keyboard and pointer come and go and the keys are lost. Instead the
+    program is shown, loaded, read through the automation socket and asked to
+    close by the compositor, which is what a window manager's close button does.
+    """
 
     name = "wayland"
+    has_input = False
 
     def __init__(self, args):
         pass
@@ -328,6 +341,10 @@ class WaylandSession:
         for modifier in reversed(modifiers):
             command += ["-m", modifier]
         run(command)
+
+    def end(self):
+        """Ask the program to close its window, as a close button does."""
+        run(["swaymsg", f'[title="{WINDOW_TITLE}"] kill'], check=False)
 
     def diagnostics(self):
         return run(["swaymsg", "-t", "get_tree"], check=False, text=True).stdout
@@ -527,10 +544,13 @@ def main():
                          f"{window['width']}x{window['height']}")
             cx = window["x"] + window["width"] // 2
             cy = window["y"] + int(window["height"] * 0.55)
-            display.move(cx, cy)
-            display.focus(window)
-            time.sleep(0.5)
-            if args.scenario == "drawing":
+            if display.has_input:
+                display.move(cx, cy)
+                display.focus(window)
+                time.sleep(0.5)
+            else:
+                report.notes["input"] = "not exercised on this session"
+            if args.scenario == "drawing" and display.has_input:
                 display.type_text("L")
                 display.key("Return")
                 time.sleep(1.0)
@@ -578,16 +598,18 @@ def main():
             # Open asks the desktop for a file dialog. This session has no
             # desktop portal and no zenity, so none can be shown and the status
             # bar should say why (see picker.rs); the picture is kept to look at.
-            display.key("ctrl+o")
-            time.sleep(2)
-            shot("open-without-a-dialog")
-            display.key("ctrl+q")
+            if display.has_input:
+                display.key("ctrl+o")
+                time.sleep(2)
+                shot("open-without-a-dialog")
+            way = "Ctrl+Q" if display.has_input else "closing the window"
+            display.end()
             try:
                 code = app.wait(timeout=20)
-                report.check("Ctrl+Q ends the program with exit code 0", code == 0, f"exit code {code}")
+                report.check(f"{way} ends the program with exit code 0", code == 0, f"exit code {code}")
             except subprocess.TimeoutExpired:
                 shot("quit-stuck")
-                report.check("Ctrl+Q ends the program with exit code 0", False, "still running after 20 s")
+                report.check(f"{way} ends the program with exit code 0", False, "still running after 20 s")
     except Exception as error:  # noqa: BLE001 - the report must still be written
         report.check("the run finished without an error", False, repr(error))
         try:

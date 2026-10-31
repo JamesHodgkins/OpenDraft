@@ -84,7 +84,8 @@ jobs:
         run: mkdir -p build && tar -C build -xf linux-build.tar
       - name: OpenDraft on ${{ matrix.image }}, Wayland
         run: |
-          docker run --rm -v "$PWD:/w" -w /w -e SMOKE_SESSION=wayland ${{ matrix.image }}             bash scripts/linux_smoke_container.sh build "out/${{ matrix.name }}"
+          # sway is installed with a file capability that a container must be allowed to hold.
+          docker run --rm --cap-add=SYS_NICE -v "$PWD:/w" -w /w -e SMOKE_SESSION=wayland ${{ matrix.image }}             bash scripts/linux_smoke_container.sh build "out/${{ matrix.name }}"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
