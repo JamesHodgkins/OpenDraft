@@ -16,6 +16,7 @@ use crate::FileError;
 pub(super) struct HatchDto {
     #[serde(default, skip_serializing_if = "is_zero")]
     elevation: f64,
+    #[serde(deserialize_with = "super::limits::vertices")]
     loops: Vec<LoopDto>,
     /// `normal`, `outer` or `ignore`.
     style: String,
@@ -51,12 +52,18 @@ enum SourceDto {
 #[serde(tag = "type", rename_all = "snake_case")]
 enum BoundaryDto {
     Polyline {
+        #[serde(deserialize_with = "super::limits::vertices")]
         vertices: Vec<PointDto>,
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            skip_serializing_if = "Vec::is_empty",
+            deserialize_with = "super::limits::vertices"
+        )]
         bulges: Vec<f64>,
         closed: bool,
     },
     Edges {
+        #[serde(deserialize_with = "super::limits::vertices")]
         edges: Vec<EdgeDto>,
     },
 }

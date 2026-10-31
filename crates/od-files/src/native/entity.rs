@@ -60,16 +60,25 @@ pub(super) enum EntityDto {
         max: PointDto,
     },
     Polyline {
+        #[serde(deserialize_with = "super::limits::vertices")]
         points: Vec<PointDto>,
         #[serde(default)]
         closed: bool,
         /// One bulge per point (see `Entity::Polyline`), left out when every
         /// segment is straight.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            skip_serializing_if = "Vec::is_empty",
+            deserialize_with = "super::limits::vertices"
+        )]
         bulges: Vec<f64>,
         /// One `[start, end]` width per point (see `Entity::Polyline`), left
         /// out when every segment is a hairline.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            skip_serializing_if = "Vec::is_empty",
+            deserialize_with = "super::limits::vertices"
+        )]
         widths: Vec<[f64; 2]>,
     },
     Dimension(DimensionDto),

@@ -1,6 +1,7 @@
 //! Building a [`Document`] from the file's drawing, refusing what cannot exist.
 
 use std::collections::HashSet;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use od_core::{
     Attributes, Document, Entity, EntityId, Layer, LayerId, LayoutId, LinetypeId, Lineweight,
@@ -14,7 +15,10 @@ use super::{attr_from_dto, text, Color, DrawingDto};
 use crate::FileError;
 
 impl DrawingDto {
-    pub(super) fn into_document(self) -> Result<Document, FileError> {
+    /// How many objects are built between looks at `cancelled`.
+    const CANCEL_CHECK_EVERY: usize = 1024;
+
+    pub(super) fn into_document(self, cancelled: &AtomicBool) -> Result<Document, FileError> {
         let mut document = Document::default();
         document.begin_bulk_load();
 
@@ -67,7 +71,10 @@ impl DrawingDto {
         document.reserve_block_ids(self.next_block_id);
         let layout_ids: HashSet<u64> = self.layouts.iter().map(LayoutDto::id).collect();
         let mut object_ids = HashSet::new();
-        for object in self.objects {
+        for (index, object) in self.objects.into_iter().enumerate() {
+            if index % Self::CANCEL_CHECK_EVERY == 0 && cancelled.load(Ordering::Relaxed) {
+                return Err(FileError::Cancelled);
+            }
             if object.layout.is_some_and(|l| !layout_ids.contains(&l)) {
                 return invalid(format!(
                     "object {} is on a layout that does not exist",
