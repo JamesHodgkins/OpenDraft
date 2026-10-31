@@ -5,7 +5,7 @@ use od_commands::{Answer, Cancelled, Editor, NumberOptions, Options};
 use od_core::pedit::{JoinType, PolyData, MAX_JOIN_CANDIDATES};
 use od_core::{Attributes, Entity, EntityId, LayoutId};
 
-use crate::pedit_memory::{memory, remember};
+use crate::defaults::EditorDefaults;
 use crate::text::plural;
 
 /// An object that may take part in a join, as the drawing holds it.
@@ -141,10 +141,12 @@ pub(crate) fn ask_fuzz(ed: &Editor) -> Result<(f64, JoinType), Cancelled> {
             .keyword("Jointype", "J")
             .default(0.0);
         match ed.ask_distance(options)? {
-            Answer::Value(fuzz) if fuzz >= 0.0 => return Ok((fuzz, memory().join_type)),
+            Answer::Value(fuzz) if fuzz >= 0.0 => {
+                return Ok((fuzz, ed.defaults().pedit.get().join_type))
+            }
             Answer::Value(_) => ed.say("Requires a value of zero or more."),
             Answer::Keyword(_) => {
-                let current = match memory().join_type {
+                let current = match ed.defaults().pedit.get().join_type {
                     JoinType::Extend => "Extend",
                     JoinType::Add => "Add",
                     JoinType::Both => "Both",
@@ -156,7 +158,7 @@ pub(crate) fn ask_fuzz(ed: &Editor) -> Result<(f64, JoinType), Cancelled> {
                         .keyword("Both", "B")
                         .default(current.to_owned()),
                 )?;
-                remember(|m| {
+                ed.defaults().pedit.change(|m| {
                     m.join_type = match answer.as_str() {
                         "Add" => JoinType::Add,
                         "Both" => JoinType::Both,
@@ -164,7 +166,7 @@ pub(crate) fn ask_fuzz(ed: &Editor) -> Result<(f64, JoinType), Cancelled> {
                     }
                 });
             }
-            Answer::Enter => return Ok((0.0, memory().join_type)),
+            Answer::Enter => return Ok((0.0, ed.defaults().pedit.get().join_type)),
         }
     }
 }

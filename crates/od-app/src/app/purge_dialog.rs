@@ -16,7 +16,7 @@ use purge_tree::{blocked_list, purgeable_tree};
 
 use super::OpenDraftApp;
 use crate::purge_cmd::{block_picture, purge_run, Dialog, Purge, Tab};
-use crate::purge_memory::{memory, remember, Memory};
+use crate::purge_memory::Memory;
 
 const WIDTH: f32 = 700.0;
 const LEFT: f32 = 310.0;
@@ -106,7 +106,7 @@ impl OpenDraftApp {
             self.state.refresh_purge();
         }
         let mut dialog = std::mem::take(&mut self.state.purge);
-        let mut o = memory();
+        let mut o = self.state.defaults().purge.get();
         let (mut open, mut clicks) = (true, Clicks::default());
         let mut picked = None;
         let theme = &self.theme;
@@ -174,7 +174,7 @@ impl OpenDraftApp {
                 });
             });
         });
-        remember(|m| *m = o);
+        self.state.defaults().purge.change(|m| *m = o);
         open &= !clicks.close;
         if let Some(item) = picked {
             self.show_preview(ctx, &mut dialog, item);

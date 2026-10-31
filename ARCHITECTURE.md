@@ -267,6 +267,19 @@ Rules that follow:
 The command model follows the AutoCAD .NET SDK, using the same words so people
 who know it find their way, minus its ceremony.
 
+**What commands remember.** The values a command offers again (the last
+rectangle rounding, text height, hatch pattern, polygon sides...) are not
+globals. `od-app/src/defaults.rs` holds one `CommandDefaults`, a `Slot` per
+section, owned by `AppState` and saved with the user's settings. `AppState`
+hands it to each command it starts as a `od_commands::Context` (a typed bag
+`od-commands` only carries), and a command reads it with `ed.defaults()`
+(`EditorDefaults`); system variables and dialogs reach it through
+`AppState::defaults()`. Two `AppState`s therefore never share defaults, and
+tests need no turn-taking locks. A new remembered value is a `Memory` struct
+with `load(storage)` and `save(&memory, storage)` in its own `*_memory.rs`,
+plus a field on `CommandDefaults`. The one remaining global is
+`window_memory.rs`, the window size, which is the shell's, not a command's.
+
 **Status.** Every interactive command is written this way: Move, Copy, Rotate,
 Mirror (`od-app/src/modify.rs`), Scale and Rotate with Copy and Reference
 (`scale_rotate.rs`), Line (`draw.rs`), Circle (`circle.rs`), Arc (`arc_cmd.rs`),
@@ -490,8 +503,8 @@ variables with their values. Names are upper case and matched ignoring case.
   saved with the user's settings for free. Built: `GRIDMODE`, `GRIDUNIT`,
   `OSMODE`, `SNAPMODE`, `SAVETIME`, `CURSORSIZE`, `PICKBOX`, `APERTURE`, `GRIPSIZE` (pixel radii of the pick, snap and grip targets; see `PointerSizes` in `od-canvas`), `FILLETRAD`, `CHAMFERA`, `CHAMFERB`,
   `CHAMFERC`, `CHAMFERD`, `CHAMMODE`, `TRIMMODE` (the last seven live in the
-  global `corner_memory.rs` and are saved with the user's settings, not the
-  drawing), and read-only `CMDACTIVE`, `DWGNAME`.
+  `CommandDefaults` (`corner_memory.rs`) and are saved with the user's
+  settings, not the drawing), and read-only `CMDACTIVE`, `DWGNAME`.
 - **Use AutoCAD's names and values** where the feature matches, so people and
   scripts carry over. `OSMODE` is a bit code (1 endpoint, 2 midpoint,
   4 centre, 8 node, 16 quadrant, 32 intersection, 64 insertion, 128 perpendicular, 256 tangent,

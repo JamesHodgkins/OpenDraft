@@ -13,7 +13,7 @@ use od_core::EntityId;
 
 use crate::editor::Request;
 use crate::prompt::{Cancelled, Prompt, Reply};
-use crate::{Editor, Session};
+use crate::{Context, Editor, Session};
 
 /// How a command ended.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -51,13 +51,24 @@ impl Runner {
         pickset: Vec<EntityId>,
         command: impl FnOnce(&mut Editor) -> Result<(), Cancelled> + Send + 'static,
     ) -> Self {
+        Self::start_with(name, pickset, Context::default(), command)
+    }
+
+    /// As [`start`](Self::start), giving the command `context` to reach
+    /// through [`Editor::context`].
+    pub fn start_with(
+        name: impl Into<String>,
+        pickset: Vec<EntityId>,
+        context: Context,
+        command: impl FnOnce(&mut Editor) -> Result<(), Cancelled> + Send + 'static,
+    ) -> Self {
         let name = name.into();
         let (request_tx, requests) = channel();
         let (replies, reply_rx) = channel();
         let thread = std::thread::Builder::new()
             .name(format!("command {name}"))
             .spawn(move || {
-                let mut editor = Editor::new(request_tx, reply_rx, pickset);
+                let mut editor = Editor::new(request_tx, reply_rx, pickset, context);
                 let result = command(&mut editor);
                 editor.finish(result);
             })

@@ -7,7 +7,7 @@ use od_commands::{Cancelled, Editor, ModifyEntities, RemoveEntities};
 use od_core::overkill::{overkill, prepare, Settings};
 use od_core::EntityId;
 
-use crate::overkill_memory::{memory, remember};
+use crate::defaults::EditorDefaults;
 use crate::text::plural;
 
 /// OVERKILL: select the objects (or use those already selected), then the
@@ -16,8 +16,8 @@ use crate::text::plural;
 /// and lineweight unless those are ignored.
 pub fn overkill_objects(ed: &mut Editor) -> Result<(), Cancelled> {
     let chosen = ed.pickset_or_select("Select objects")?;
-    let settings = ed.ask_overkill(memory())?;
-    remember(settings);
+    let settings = ed.ask_overkill(ed.defaults().overkill.get())?;
+    ed.defaults().overkill.change(|m| *m = settings);
     run(ed, chosen, settings)
 }
 

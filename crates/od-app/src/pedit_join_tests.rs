@@ -1,6 +1,5 @@
 use super::tests::{at, click, enter, entities, fresh, key, number, p, polyline, said};
 use super::*;
-use crate::pedit_memory::memory;
 use crate::state::AppState;
 use od_commands::{ModifyAttributes, ModifyLayers, Reply};
 use od_core::hatch::{loops_from_entities, BoundarySource, HatchEntity, HatchFill, HatchPattern};
@@ -37,7 +36,10 @@ fn the_join_type_can_be_changed_and_is_remembered() {
     key(&mut state, "Join");
     key(&mut state, "Jointype");
     key(&mut state, "Add");
-    assert_eq!(memory().join_type, od_core::pedit::JoinType::Add);
+    assert_eq!(
+        state.defaults().pedit.get().join_type,
+        od_core::pedit::JoinType::Add
+    );
     number(&mut state, 1.0);
     let Entity::Polyline { points, .. } = &entities(&state)[0] else {
         panic!("a polyline");

@@ -1,24 +1,7 @@
 //! What OVERKILL last ran with, offered again next time and saved with the
 //! user's settings (never with a drawing).
 
-use std::sync::Mutex;
-
 use od_core::overkill::Settings;
-
-static MEMORY: Mutex<Option<Settings>> = Mutex::new(None);
-
-/// The settings as they are now.
-pub fn memory() -> Settings {
-    MEMORY
-        .lock()
-        .unwrap_or_else(|e| e.into_inner())
-        .unwrap_or_default()
-}
-
-/// Remember `settings` for the next run.
-pub fn remember(settings: Settings) {
-    *MEMORY.lock().unwrap_or_else(|e| e.into_inner()) = Some(settings);
-}
 
 const KEYS: [&str; 9] = [
     "overkill_tolerance",
@@ -35,10 +18,10 @@ const ASSOCIATIVE: &str = "overkill_maintain_associative";
 
 /// Take the saved settings, keeping the default for anything missing or not
 /// a sensible value.
-pub fn load(storage: Option<&dyn eframe::Storage>) {
-    let Some(storage) = storage else { return };
+pub fn load(storage: Option<&dyn eframe::Storage>) -> Settings {
+    let mut s = Settings::default();
+    let Some(storage) = storage else { return s };
     let flag = |key: &str| storage.get_string(key).and_then(|v| v.parse::<bool>().ok());
-    let mut s = memory();
     let tolerance = storage
         .get_string(KEYS[0])
         .and_then(|v| v.parse::<f64>().ok());
@@ -54,12 +37,11 @@ pub fn load(storage: Option<&dyn eframe::Storage>) {
     s.overlapping = flag(KEYS[7]).unwrap_or(s.overlapping);
     s.end_to_end = flag(KEYS[8]).unwrap_or(s.end_to_end);
     s.maintain_associative = flag(ASSOCIATIVE).unwrap_or(s.maintain_associative);
-    remember(s);
+    s
 }
 
 /// Write the settings for the next run.
-pub fn save(storage: &mut dyn eframe::Storage) {
-    let s = memory();
+pub fn save(s: &Settings, storage: &mut dyn eframe::Storage) {
     storage.set_string(KEYS[0], s.tolerance.to_string());
     let flags = [
         s.ignore.layer,
@@ -75,16 +57,6 @@ pub fn save(storage: &mut dyn eframe::Storage) {
         storage.set_string(key, on.to_string());
     }
     storage.set_string(ASSOCIATIVE, s.maintain_associative.to_string());
-}
-
-/// Tests that run OVERKILL or check the saved settings share them, so they
-/// take turns, each starting from the defaults.
-#[cfg(test)]
-pub(crate) fn take_turn_for_tests() -> std::sync::MutexGuard<'static, ()> {
-    static TURN: Mutex<()> = Mutex::new(());
-    let guard = TURN.lock().unwrap_or_else(|e| e.into_inner());
-    remember(Settings::default());
-    guard
 }
 
 #[cfg(test)]
@@ -108,7 +80,6 @@ mod tests {
 
     #[test]
     fn the_settings_round_trip_and_bad_values_keep_the_default() {
-        let _turn = take_turn_for_tests();
         let mut wanted = Settings {
             tolerance: 0.25,
             optimize_polylines: false,
@@ -117,19 +88,13 @@ mod tests {
         };
         wanted.ignore.color = true;
         wanted.ignore.linetype_scale = true;
-        remember(wanted);
         let mut saved = Saved::default();
-        save(&mut saved);
-        remember(Settings::default());
-        load(Some(&saved));
-        assert_eq!(memory(), wanted);
+        save(&wanted, &mut saved);
+        assert_eq!(load(Some(&saved)), wanted);
         saved.set_string(KEYS[0], "-3".to_owned());
         saved.set_string(KEYS[6], "maybe".to_owned());
-        remember(Settings::default());
-        load(Some(&saved));
-        let now = memory();
+        let now = load(Some(&saved));
         assert_eq!(now.tolerance, Settings::default().tolerance);
         assert!(now.optimize_polylines);
-        remember(Settings::default());
     }
 }

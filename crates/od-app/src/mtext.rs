@@ -5,8 +5,8 @@ use od_commands::{Answer, Cancelled, Editor, NumberOptions, Options, Picked, Poi
 use od_core::mtext::{place_in_corners, MTextAttachment};
 use od_core::{Entity, MText, Point};
 
+use crate::defaults::EditorDefaults;
 use crate::draw::{add, MIN_SIZE};
-use crate::text_memory::{memory, remember};
 
 /// Justification names and the attachments they stand for.
 const JUSTIFY: [(&str, MTextAttachment); 9] = [
@@ -60,7 +60,10 @@ fn drag_height(first: Point, second: Point, rotation: f64) -> f64 {
 /// nothing.
 pub fn draw_mtext(ed: &mut Editor) -> Result<(), Cancelled> {
     let first = ed.get_point("Specify first corner")?;
-    let (mut height, mut attachment) = (memory().height, memory().attachment);
+    let (mut height, mut attachment) = (
+        ed.defaults().text.get().height,
+        ed.defaults().text.get().attachment,
+    );
     let (mut rotation, mut width) = (0.0, None);
     let second = loop {
         let options = PointOptions::new(format!("Specify opposite corner or (height {height})"))
@@ -77,7 +80,7 @@ pub fn draw_mtext(ed: &mut Editor) -> Result<(), Cancelled> {
                     let value = ed.get_distance(options)?;
                     if value > MIN_SIZE {
                         height = value;
-                        remember(|m| m.height = value);
+                        ed.defaults().text.change(|m| m.height = value);
                     } else {
                         ed.say("Requires a positive value.");
                     }
@@ -90,7 +93,7 @@ pub fn draw_mtext(ed: &mut Editor) -> Result<(), Cancelled> {
                     let name = ed.get_keyword(options)?;
                     if let Some((_, chosen)) = JUSTIFY.iter().find(|(n, _)| *n == name) {
                         attachment = *chosen;
-                        remember(|m| m.attachment = *chosen);
+                        ed.defaults().text.change(|m| m.attachment = *chosen);
                     }
                 }
                 "Rotation" => {
@@ -174,7 +177,6 @@ mod tests {
     use super::*;
     use crate::mtext_editor::Outcome;
     use crate::state::AppState;
-    use crate::text_memory::take_turn_for_tests;
 
     fn start(state: &mut AppState, command: fn(&mut Editor) -> Result<(), Cancelled>) {
         state.start_command("Test", command);
@@ -224,7 +226,6 @@ mod tests {
 
     #[test]
     fn two_corners_then_the_editor_make_one_wrapping_text_in_one_undo_step() {
-        let _turn = take_turn_for_tests();
         let mut state = AppState::new();
         start(&mut state, draw_mtext);
         submit(&mut state, &["10,50", "50,20"]);
@@ -246,7 +247,6 @@ mod tests {
 
     #[test]
     fn the_opposite_corner_is_a_corner_prompt_with_no_rubber_band() {
-        let _turn = take_turn_for_tests();
         let mut state = AppState::new();
         start(&mut state, draw_mtext);
         submit(&mut state, &["10,50"]);
@@ -262,7 +262,6 @@ mod tests {
 
     #[test]
     fn the_options_set_height_justification_rotation_and_width() {
-        let _turn = take_turn_for_tests();
         let mut state = AppState::new();
         start(&mut state, draw_mtext);
         submit(
@@ -280,13 +279,15 @@ mod tests {
         type_and_close(&mut state, "Tilted", Outcome::Accept);
         assert_eq!(texts(&state).len(), 1);
         // The settings are remembered for the next text.
-        assert_eq!(memory().height, 5.0);
-        assert_eq!(memory().attachment, MTextAttachment::BottomLeft);
+        assert_eq!(state.defaults().text.get().height, 5.0);
+        assert_eq!(
+            state.defaults().text.get().attachment,
+            MTextAttachment::BottomLeft
+        );
     }
 
     #[test]
     fn an_empty_editor_adds_nothing_and_escape_cancels() {
-        let _turn = take_turn_for_tests();
         let mut state = AppState::new();
         start(&mut state, draw_mtext);
         submit(&mut state, &["0,0", "10,10"]);
@@ -305,7 +306,6 @@ mod tests {
 
     #[test]
     fn a_dragged_box_sets_the_attachment_corner() {
-        let _turn = take_turn_for_tests();
         let mut state = AppState::new();
         start(&mut state, draw_mtext);
         submit(&mut state, &["0,0", "j", "mc", "20,10"]);
@@ -318,7 +318,6 @@ mod tests {
 
     #[test]
     fn cancelling_before_the_editor_leaves_nothing() {
-        let _turn = take_turn_for_tests();
         let mut state = AppState::new();
         start(&mut state, draw_mtext);
         submit(&mut state, &["0,0", "10,10"]);

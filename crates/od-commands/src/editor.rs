@@ -5,7 +5,7 @@ use od_core::{overkill, Document, EntityId, MText, Point};
 use crate::prompt::{
     Answer, Cancelled, Hint, NumberOrPoint, Options, Picked, Prompt, Reply, Wants,
 };
-use crate::{Session, Transaction};
+use crate::{Context, Session, Transaction};
 
 /// What a running command sends the UI thread.
 pub(crate) enum Request {
@@ -47,6 +47,7 @@ pub struct Editor {
     requests: Sender<Request>,
     replies: Receiver<Reply>,
     pickset: Vec<EntityId>,
+    context: Context,
 }
 
 impl Editor {
@@ -54,11 +55,13 @@ impl Editor {
         requests: Sender<Request>,
         replies: Receiver<Reply>,
         pickset: Vec<EntityId>,
+        context: Context,
     ) -> Self {
         Self {
             requests,
             replies,
             pickset,
+            context,
         }
     }
 
@@ -67,6 +70,12 @@ impl Editor {
     }
 
     /// The objects that were selected when the command started.
+    /// What the command was started with: values of the caller's own types,
+    /// shared with every command it starts.
+    pub fn context(&self) -> &Context {
+        &self.context
+    }
+
     pub fn pickset(&self) -> &[EntityId] {
         &self.pickset
     }

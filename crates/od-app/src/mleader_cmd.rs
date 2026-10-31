@@ -98,7 +98,6 @@ mod tests {
     use super::*;
     use crate::mtext_editor::Outcome;
     use crate::state::AppState;
-    use crate::text_memory::take_turn_for_tests;
 
     fn start(state: &mut AppState) {
         state.start_command("MLEADER", draw_mleader);
@@ -139,7 +138,6 @@ mod tests {
 
     #[test]
     fn two_points_then_the_editor_make_one_multileader_in_one_undo_step() {
-        let _turn = take_turn_for_tests();
         let mut state = AppState::new();
         start(&mut state);
         submit(&mut state, &["0,0", "20,10"]);
@@ -160,7 +158,6 @@ mod tests {
 
     #[test]
     fn cancelling_the_editor_or_leaving_it_empty_adds_nothing() {
-        let _turn = take_turn_for_tests();
         let mut state = AppState::new();
         start(&mut state);
         submit(&mut state, &["0,0", "20,10"]);
@@ -174,7 +171,6 @@ mod tests {
 
     #[test]
     fn a_style_allowing_more_points_takes_them_until_enter() {
-        let _turn = take_turn_for_tests();
         let mut state = AppState::new();
         let mut style = state.mleader_style();
         style.max_points = None;
@@ -204,7 +200,6 @@ mod tests {
 
     #[test]
     fn restyling_follows_a_style_change_and_comes_back_on_undo() {
-        let _turn = take_turn_for_tests();
         let mut state = AppState::new();
         start(&mut state);
         submit(&mut state, &["0,0", "20,10"]);

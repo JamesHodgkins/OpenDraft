@@ -9,8 +9,8 @@ use od_commands::{Answer, Cancelled, Editor, ModifyAttributes, NumberOptions, Op
 use od_core::pedit::{JoinType, PolyData};
 use od_core::{Entity, EntityId};
 
+use crate::defaults::EditorDefaults;
 use crate::pedit_join::{ask_fuzz, join_group};
-use crate::pedit_memory::memory;
 use crate::pedit_vertex::edit_vertices;
 
 /// PEDIT: pick a polyline (or use the selection), then choose what to do
@@ -90,7 +90,7 @@ fn edit_one(ed: &mut Editor, id: EntityId) -> Result<(), Cancelled> {
     let mut steps = 0usize;
     if !is_polyline(ed, id)? {
         // PEDITACCEPT 1 turns it into one without asking.
-        let turn = if memory().accept {
+        let turn = if ed.defaults().pedit.get().accept {
             "Yes".to_owned()
         } else {
             ed.get_keyword(
@@ -241,7 +241,7 @@ fn edit_many(ed: &mut Editor, chosen: Vec<EntityId>) -> Result<(), Cancelled> {
         ed.say("No polylines or objects that can become polylines were selected.");
         return Ok(());
     }
-    if others > 0 && !memory().accept {
+    if others > 0 && !ed.defaults().pedit.get().accept {
         let turn = ed.get_keyword(
             Options::new("Convert lines, arcs and rectangles to polylines?")
                 .keyword("Yes", "Y")

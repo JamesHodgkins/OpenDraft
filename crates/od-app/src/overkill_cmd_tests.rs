@@ -43,7 +43,6 @@ fn killing(items: &[Entity]) -> AppState {
 
 #[test]
 fn duplicates_go_and_overlaps_merge_in_one_undo_step() {
-    let _turn = crate::overkill_memory::take_turn_for_tests();
     let mut state = killing(&[
         line(0.0, 6.0),
         line(0.0, 6.0),
@@ -59,7 +58,6 @@ fn duplicates_go_and_overlaps_merge_in_one_undo_step() {
 
 #[test]
 fn nothing_to_tidy_changes_nothing_and_adds_no_undo_step() {
-    let _turn = crate::overkill_memory::take_turn_for_tests();
     let mut state = killing(&[line(0.0, 1.0), line(5.0, 6.0)]);
     assert_eq!(entities(&state).len(), 2);
     assert!(said(&state, "No duplicate or overlapping objects found."));
@@ -73,7 +71,6 @@ fn nothing_to_tidy_changes_nothing_and_adds_no_undo_step() {
 
 #[test]
 fn running_it_again_finds_nothing() {
-    let _turn = crate::overkill_memory::take_turn_for_tests();
     let mut state = killing(&[line(0.0, 6.0), line(0.0, 6.0), line(4.0, 10.0)]);
     killing_with(&mut state, Settings::default());
     assert!(said(&state, "No duplicate or overlapping objects found."));
@@ -81,7 +78,6 @@ fn running_it_again_finds_nothing() {
 
 #[test]
 fn objects_on_a_locked_layer_are_left_alone() {
-    let _turn = crate::overkill_memory::take_turn_for_tests();
     let mut state = AppState::new();
     state.add_entity(line(0.0, 6.0));
     state.add_entity(line(0.0, 6.0));
@@ -126,7 +122,6 @@ fn tied_pair() -> AppState {
 
 #[test]
 fn an_object_a_dimension_is_tied_to_is_kept_and_its_copy_goes() {
-    let _turn = crate::overkill_memory::take_turn_for_tests();
     let mut state = tied_pair();
     let second = state.session().document().objects()[1].id;
     killing_with(&mut state, Settings::default());
@@ -141,7 +136,6 @@ fn an_object_a_dimension_is_tied_to_is_kept_and_its_copy_goes() {
 
 #[test]
 fn without_maintaining_associative_objects_the_first_survives_as_usual() {
-    let _turn = crate::overkill_memory::take_turn_for_tests();
     let mut state = tied_pair();
     let second = state.session().document().objects()[1].id;
     let settings = Settings {
@@ -154,7 +148,6 @@ fn without_maintaining_associative_objects_the_first_survives_as_usual() {
 
 #[test]
 fn a_bad_tolerance_does_nothing_and_says_so() {
-    let _turn = crate::overkill_memory::take_turn_for_tests();
     let mut state = AppState::new();
     state.add_entity(line(0.0, 6.0));
     state.add_entity(line(0.0, 6.0));
@@ -172,7 +165,6 @@ fn a_bad_tolerance_does_nothing_and_says_so() {
 
 #[test]
 fn the_command_line_form_takes_options_and_shares_the_settings() {
-    let _turn = crate::overkill_memory::take_turn_for_tests();
     let mut state = AppState::new();
     state.add_entity(line(0.0, 6.0));
     state.add_entity(line(0.0, 6.0));

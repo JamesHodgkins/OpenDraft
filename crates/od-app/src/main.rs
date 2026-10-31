@@ -30,6 +30,7 @@ mod coordinates;
 mod corner_memory;
 mod corners;
 mod crash_log;
+mod defaults;
 mod dialogs;
 mod dim_override_cmd;
 mod dim_style_draft;
@@ -189,11 +190,7 @@ fn main() -> eframe::Result {
         options,
         Box::new(|cc| {
             let settings = settings::Settings::load(cc.storage);
-            corner_memory::load(cc.storage);
-            rect_memory::load(cc.storage);
-            spline_memory::load(cc.storage);
-            hatch_memory::load(cc.storage);
-            text_memory::load(cc.storage);
+            let defaults = std::sync::Arc::new(defaults::CommandDefaults::load(cc.storage));
             let theme = od_ui::Theme::with_palette(settings.palette);
             theme.apply(&cc.egui_ctx);
             cc.egui_ctx.set_zoom_factor(settings.zoom_factor());
@@ -205,7 +202,7 @@ fn main() -> eframe::Result {
             let open: Vec<std::path::PathBuf> =
                 std::env::args_os().skip(1).map(Into::into).collect();
             Ok(Box::new(app::OpenDraftApp::new(
-                theme, settings, dock, recent, updates, open,
+                theme, settings, defaults, dock, recent, updates, open,
             )))
         }),
     )

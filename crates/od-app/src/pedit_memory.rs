@@ -2,8 +2,6 @@
 //! variable and the saved settings: whether it turns lines and arcs into
 //! polylines without asking (`PEDITACCEPT`), and the Join type.
 
-use std::sync::Mutex;
-
 use od_core::pedit::JoinType;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -26,19 +24,6 @@ impl Default for Memory {
     }
 }
 
-static MEMORY: Mutex<Memory> = Mutex::new(DEFAULT);
-
-/// The settings as they are now.
-pub fn memory() -> Memory {
-    *MEMORY.lock().unwrap_or_else(|e| e.into_inner())
-}
-
-/// Change the settings; used by the command, the system variable and
-/// loading the user's settings.
-pub fn remember(change: impl FnOnce(&mut Memory)) {
-    change(&mut MEMORY.lock().unwrap_or_else(|e| e.into_inner()));
-}
-
 const KEYS: [&str; 2] = ["pedit_accept", "pedit_join_type"];
 
 fn join_name(kind: JoinType) -> &'static str {
@@ -51,8 +36,9 @@ fn join_name(kind: JoinType) -> &'static str {
 
 /// Take the saved settings, keeping the default for anything missing or not
 /// a sensible value.
-pub fn load(storage: Option<&dyn eframe::Storage>) {
-    let Some(storage) = storage else { return };
+pub fn load(storage: Option<&dyn eframe::Storage>) -> Memory {
+    let mut m = DEFAULT;
+    let Some(storage) = storage else { return m };
     let accept = storage
         .get_string(KEYS[0])
         .and_then(|v| v.parse::<bool>().ok());
@@ -62,27 +48,15 @@ pub fn load(storage: Option<&dyn eframe::Storage>) {
         "Both" => Some(JoinType::Both),
         _ => None,
     });
-    remember(|m| {
-        m.accept = accept.unwrap_or(m.accept);
-        m.join_type = kind.unwrap_or(m.join_type);
-    });
+    m.accept = accept.unwrap_or(m.accept);
+    m.join_type = kind.unwrap_or(m.join_type);
+    m
 }
 
 /// Write the settings for the next run.
-pub fn save(storage: &mut dyn eframe::Storage) {
-    let m = memory();
+pub fn save(m: &Memory, storage: &mut dyn eframe::Storage) {
     storage.set_string(KEYS[0], m.accept.to_string());
     storage.set_string(KEYS[1], join_name(m.join_type).to_owned());
-}
-
-/// The settings are shared by every test that uses them, so those tests take
-/// turns, each starting from the defaults.
-#[cfg(test)]
-pub(crate) fn take_turn_for_tests() -> std::sync::MutexGuard<'static, ()> {
-    static TURN: Mutex<()> = Mutex::new(());
-    let guard = TURN.lock().unwrap_or_else(|e| e.into_inner());
-    remember(|m| *m = Memory::default());
-    guard
 }
 
 #[cfg(test)]
@@ -106,26 +80,15 @@ mod tests {
 
     #[test]
     fn the_settings_round_trip_and_bad_values_keep_the_default() {
-        let _turn = take_turn_for_tests();
-        remember(|m| {
-            m.accept = true;
-            m.join_type = JoinType::Both;
-        });
+        let kept = Memory {
+            accept: true,
+            join_type: JoinType::Both,
+        };
         let mut saved = Saved::default();
-        save(&mut saved);
-        remember(|m| *m = Memory::default());
-        load(Some(&saved));
-        assert_eq!(
-            memory(),
-            Memory {
-                accept: true,
-                join_type: JoinType::Both
-            }
-        );
+        save(&kept, &mut saved);
+        assert_eq!(load(Some(&saved)), kept);
         saved.set_string(KEYS[1], "Sideways".to_owned());
         saved.set_string(KEYS[0], "maybe".to_owned());
-        remember(|m| *m = Memory::default());
-        load(Some(&saved));
-        assert_eq!(memory(), Memory::default());
+        assert_eq!(load(Some(&saved)), Memory::default());
     }
 }

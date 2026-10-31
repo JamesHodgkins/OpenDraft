@@ -1,19 +1,10 @@
 use super::*;
-use crate::pedit_memory::remember;
 use crate::state::AppState;
 use od_commands::Reply;
 use od_core::Point;
 
-thread_local! {
-    /// The settings PEDIT remembers are shared, so a test holds its turn at
-    /// them until its thread ends.
-    static TURN: std::cell::RefCell<Option<std::sync::MutexGuard<'static, ()>>> =
-        const { std::cell::RefCell::new(None) };
-}
-
-/// A new drawing, after taking this test's turn at the settings.
+/// A new drawing, with the settings PEDIT remembers at their defaults.
 pub(super) fn fresh() -> AppState {
-    TURN.with(|t| *t.borrow_mut() = Some(crate::pedit_memory::take_turn_for_tests()));
     AppState::new()
 }
 
@@ -266,7 +257,7 @@ fn a_spline_is_refused_by_name_and_the_pick_prompt_stays() {
 fn peditaccept_turns_a_line_into_a_polyline_without_asking() {
     let mut state = fresh();
     state.add_entity(line(p(0.0, 0.0), p(4.0, 0.0)));
-    remember(|m| m.accept = true);
+    state.defaults().pedit.change(|m| m.accept = true);
     state.start_command("PEDIT", pedit_objects);
     state.settle_command();
     click(&mut state, 0);

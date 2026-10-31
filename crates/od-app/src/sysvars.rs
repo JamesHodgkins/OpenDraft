@@ -10,14 +10,11 @@ use std::sync::OnceLock;
 
 use od_commands::{Kind, SysVar, SysVarTable, Value};
 
-use crate::corner_memory::{memory, remember};
-use crate::rect_memory;
 use crate::settings::{
     AUTOSAVE_CHOICES, CROSSHAIR_SIZE_RANGE, GRID_SPACING_RANGE, GRIP_SIZE_RANGE, PICK_SIZE_RANGE,
     SNAP_APERTURE_RANGE,
 };
 use crate::state::AppState;
-use crate::text_memory;
 
 fn flag(on: bool) -> Value {
     Value::Int(i64::from(on))
@@ -152,10 +149,10 @@ fn build() -> Vec<SysVar<AppState>> {
             "FILLETRAD",
             "Fillet radius",
             (0.0, 1.0e9),
-            |_| Value::Real(memory().radius),
-            |_, v| {
+            |st| Value::Real(st.defaults().corner.get().radius),
+            |st, v| {
                 if let Value::Real(n) = v {
-                    remember(|m| m.radius = n);
+                    st.defaults().corner.change(|m| m.radius = n);
                 }
                 Ok(())
             },
@@ -164,9 +161,9 @@ fn build() -> Vec<SysVar<AppState>> {
             "PEDITACCEPT",
             "1 to turn lines and arcs into polylines in PEDIT without asking",
             (0, 1),
-            |_| Value::Int(i64::from(crate::pedit_memory::memory().accept)),
-            |_, v| {
-                crate::pedit_memory::remember(|m| m.accept = int(v) == 1);
+            |st| Value::Int(i64::from(st.defaults().pedit.get().accept)),
+            |st, v| {
+                st.defaults().pedit.change(|m| m.accept = int(v) == 1);
                 Ok(())
             },
         ),
@@ -174,10 +171,10 @@ fn build() -> Vec<SysVar<AppState>> {
             "TEXTSIZE",
             "Height of new text",
             (1.0e-6, 1.0e9),
-            |_| Value::Real(text_memory::memory().height),
-            |_, v| {
+            |st| Value::Real(st.defaults().text.get().height),
+            |st, v| {
                 if let Value::Real(n) = v {
-                    text_memory::remember(|m| m.height = n);
+                    st.defaults().text.change(|m| m.height = n);
                 }
                 Ok(())
             },
@@ -186,9 +183,10 @@ fn build() -> Vec<SysVar<AppState>> {
             "POLYSIDES",
             "Number of sides POLYGON offers first",
             (3, 1024),
-            |_| Value::Int(crate::polygon_cmd::sides() as i64),
-            |_, v| {
-                crate::polygon_cmd::set_sides(usize::try_from(int(v)).unwrap_or(4));
+            |st| Value::Int(st.defaults().polygon.get().sides as i64),
+            |st, v| {
+                let sides = usize::try_from(int(v)).unwrap_or(4);
+                st.defaults().polygon.change(|m| m.sides = sides);
                 Ok(())
             },
         ),
@@ -196,10 +194,10 @@ fn build() -> Vec<SysVar<AppState>> {
             "PLINEWID",
             "Width of the next rectangles",
             (0.0, 1.0e9),
-            |_| Value::Real(rect_memory::memory().width),
-            |_, v| {
+            |st| Value::Real(st.defaults().rect.get().width),
+            |st, v| {
                 if let Value::Real(n) = v {
-                    rect_memory::remember(|m| m.width = n);
+                    st.defaults().rect.change(|m| m.width = n);
                 }
                 Ok(())
             },
@@ -208,10 +206,10 @@ fn build() -> Vec<SysVar<AppState>> {
             "ELEVATION",
             "Elevation of the next rectangles (kept, not drawn: 2D only)",
             (-1.0e9, 1.0e9),
-            |_| Value::Real(rect_memory::memory().elevation),
-            |_, v| {
+            |st| Value::Real(st.defaults().rect.get().elevation),
+            |st, v| {
                 if let Value::Real(n) = v {
-                    rect_memory::remember(|m| m.elevation = n);
+                    st.defaults().rect.change(|m| m.elevation = n);
                 }
                 Ok(())
             },
@@ -220,10 +218,10 @@ fn build() -> Vec<SysVar<AppState>> {
             "THICKNESS",
             "Thickness of the next rectangles (kept, not drawn: 2D only)",
             (-1.0e9, 1.0e9),
-            |_| Value::Real(rect_memory::memory().thickness),
-            |_, v| {
+            |st| Value::Real(st.defaults().rect.get().thickness),
+            |st, v| {
                 if let Value::Real(n) = v {
-                    rect_memory::remember(|m| m.thickness = n);
+                    st.defaults().rect.change(|m| m.thickness = n);
                 }
                 Ok(())
             },
@@ -232,10 +230,10 @@ fn build() -> Vec<SysVar<AppState>> {
             "CHAMFERA",
             "First chamfer distance",
             (0.0, 1.0e9),
-            |_| Value::Real(memory().first),
-            |_, v| {
+            |st| Value::Real(st.defaults().corner.get().first),
+            |st, v| {
                 if let Value::Real(n) = v {
-                    remember(|m| m.first = n);
+                    st.defaults().corner.change(|m| m.first = n);
                 }
                 Ok(())
             },
@@ -244,10 +242,10 @@ fn build() -> Vec<SysVar<AppState>> {
             "CHAMFERB",
             "Second chamfer distance",
             (0.0, 1.0e9),
-            |_| Value::Real(memory().second),
-            |_, v| {
+            |st| Value::Real(st.defaults().corner.get().second),
+            |st, v| {
                 if let Value::Real(n) = v {
-                    remember(|m| m.second = n);
+                    st.defaults().corner.change(|m| m.second = n);
                 }
                 Ok(())
             },
@@ -256,10 +254,10 @@ fn build() -> Vec<SysVar<AppState>> {
             "CHAMFERC",
             "Chamfer length when measured by length and angle",
             (0.0, 1.0e9),
-            |_| Value::Real(memory().length),
-            |_, v| {
+            |st| Value::Real(st.defaults().corner.get().length),
+            |st, v| {
                 if let Value::Real(n) = v {
-                    remember(|m| m.length = n);
+                    st.defaults().corner.change(|m| m.length = n);
                 }
                 Ok(())
             },
@@ -268,10 +266,10 @@ fn build() -> Vec<SysVar<AppState>> {
             "CHAMFERD",
             "Chamfer angle in degrees when measured by length and angle",
             (0.0, 180.0),
-            |_| Value::Real(memory().angle),
-            |_, v| {
+            |st| Value::Real(st.defaults().corner.get().angle),
+            |st, v| {
                 if let Value::Real(n) = v {
-                    remember(|m| m.angle = n);
+                    st.defaults().corner.change(|m| m.angle = n);
                 }
                 Ok(())
             },
@@ -280,9 +278,9 @@ fn build() -> Vec<SysVar<AppState>> {
             "CHAMMODE",
             "Chamfer measured by: 0 two distances, 1 length and angle",
             (0, 1),
-            |_| flag(memory().by_angle),
-            |_, v| {
-                remember(|m| m.by_angle = int(v) == 1);
+            |st| flag(st.defaults().corner.get().by_angle),
+            |st, v| {
+                st.defaults().corner.change(|m| m.by_angle = int(v) == 1);
                 Ok(())
             },
         ),
@@ -290,9 +288,9 @@ fn build() -> Vec<SysVar<AppState>> {
             "TRIMMODE",
             "Fillet and chamfer trim the lines: 0 no, 1 yes",
             (0, 1),
-            |_| flag(memory().trim),
-            |_, v| {
-                remember(|m| m.trim = int(v) == 1);
+            |st| flag(st.defaults().corner.get().trim),
+            |st, v| {
+                st.defaults().corner.change(|m| m.trim = int(v) == 1);
                 Ok(())
             },
         ),
@@ -392,16 +390,15 @@ mod tests {
     #[test]
     fn the_fillet_and_chamfer_settings_are_variables() {
         let (table, mut state) = (table(), AppState::new());
-        let _turn = crate::corner_memory::take_turn_for_tests();
         table.set("FILLETRAD", "4.5", &mut state).unwrap();
         assert_eq!(table.get("FILLETRAD", &state), Ok(Value::Real(4.5)));
-        assert_eq!(crate::corner_memory::memory().radius, 4.5);
+        assert_eq!(state.defaults().corner.get().radius, 4.5);
         table.set("CHAMMODE", "1", &mut state).unwrap();
-        assert!(crate::corner_memory::memory().by_angle);
+        assert!(state.defaults().corner.get().by_angle);
         table.set("CHAMFERD", "30", &mut state).unwrap();
-        assert_eq!(crate::corner_memory::memory().angle, 30.0);
+        assert_eq!(state.defaults().corner.get().angle, 30.0);
         table.set("TRIMMODE", "0", &mut state).unwrap();
-        assert!(!crate::corner_memory::memory().trim);
+        assert!(!state.defaults().corner.get().trim);
         assert!(
             table.set("CHAMFERD", "200", &mut state).is_err(),
             "out of range"
@@ -413,10 +410,9 @@ mod tests {
     #[test]
     fn peditaccept_is_a_variable() {
         let (table, mut state) = (table(), AppState::new());
-        let _turn = crate::pedit_memory::take_turn_for_tests();
         assert_eq!(table.get("PEDITACCEPT", &state), Ok(Value::Int(0)));
         table.set("PEDITACCEPT", "1", &mut state).unwrap();
-        assert!(crate::pedit_memory::memory().accept);
+        assert!(state.defaults().pedit.get().accept);
         assert!(table.set("PEDITACCEPT", "2", &mut state).is_err());
     }
 }
