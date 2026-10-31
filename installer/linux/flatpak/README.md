@@ -73,6 +73,10 @@ two changes:
 2. `cargo-sources.json` (made as above, for that tag's `Cargo.lock`) is committed beside
    the manifest.
 
+The application id is `uk.openengineering.opendraft`, which Flathub only lists as "verified" if the project proves it controls `openengineering.uk`. After the app is accepted, open it in the Flathub developer portal and follow its verification steps: it gives a token to publish as a plain file under `https://openengineering.uk/.well-known/` (the portal shows the exact file name and contents, which are the authority). Until then the app is installable but unverified. An id on a domain nobody can prove ownership of would have to be `io.github.JamesHodgkins.OpenDraft` instead, which is why the id was checked with the project's owner first.
+
+The in-app update check is switched off inside a Flatpak (`FLATPAK_ID` is set), as Flathub asks, because Flathub updates the app.
+
 Also check that the AppStream file passes `flatpak run --command=flatpak-builder-lint
 org.flatpak.Builder appstream <file>` and that the screenshot URL in it is reachable.
 The reviewers will ask about `--filesystem=home` and `--share=network`; the table above
