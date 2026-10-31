@@ -20,6 +20,15 @@ pub struct Note {
 
 const NOTES: &[Note] = &[
     Note {
+        version: "0.1.4",
+        title: "Opens on more Linux systems, and safer edits",
+        changes: &[
+            "OpenDraft now opens on Linux systems whose graphics setup has no smooth-edge mode, where it used to fail to start.",
+            "Up and Down on the command line bring back earlier commands.",
+            "A command that fails part-way no longer leaves half its changes in your drawing.",
+        ],
+    },
+    Note {
         version: "0.1.3",
         title: "A cleaner Windows start, and crash records",
         changes: &[

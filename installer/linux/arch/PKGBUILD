@@ -7,7 +7,7 @@
 # user's own machine redistributes nothing.) On a new release: set pkgver, run
 # `updpkgsums`, and rebuild with `makepkg -s`.
 pkgname=opendraft
-pkgver=0.1.3
+pkgver=0.1.4
 pkgrel=1
 pkgdesc='Free, open-source 2D CAD with an AutoCAD-style command line'
 arch=('x86_64')
