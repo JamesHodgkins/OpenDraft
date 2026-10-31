@@ -20,6 +20,17 @@ here=$(cd "$(dirname "$0")" && pwd)
 . /etc/os-release
 echo "distribution: ${PRETTY_NAME:-$ID} (glibc $(ldd --version | head -1 | awk '{print $NF}')), session: $session"
 
+# A package mirror that fails now and then is not a failure of OpenDraft: try
+# an install up to three times before giving up.
+retry() {
+  for attempt in 1 2 3; do
+    "$@" && return 0
+    echo "attempt $attempt of \"$*\" failed"
+    sleep $((attempt * 10))
+  done
+  return 1
+}
+
 # The test's tools: a virtual X server and xdotool, or sway with grim and wtype.
 case "$session" in
   x11) apt_tools="xvfb xauth xdotool"; dnf_tools="xorg-x11-server-Xvfb xorg-x11-xauth xdotool";
@@ -32,26 +43,26 @@ esac
 case "$ID" in
   ubuntu | debian)
     export DEBIAN_FRONTEND=noninteractive
-    apt-get update
+    retry apt-get update
     # shellcheck disable=SC2086
-    apt-get install -y --no-install-recommends $apt_tools python3 fonts-dejavu-core \
+    retry apt-get install -y --no-install-recommends $apt_tools python3 fonts-dejavu-core \
       libgl1-mesa-dri libegl1 libgl1 libx11-6 libx11-xcb1 libxcb1 libxcursor1 libxi6 \
       libxkbcommon0 libxkbcommon-x11-0 libwayland-client0 libwayland-cursor0 libwayland-egl1
     ;;
   fedora)
     # shellcheck disable=SC2086
-    dnf install -y --setopt=install_weak_deps=False $dnf_tools python3 dejavu-sans-fonts \
+    retry dnf install -y --setopt=install_weak_deps=False --setopt=retries=5 $dnf_tools python3 dejavu-sans-fonts \
       mesa-dri-drivers mesa-libEGL mesa-libGL libX11 libX11-xcb libxcb libXcursor libXi \
       libxkbcommon libxkbcommon-x11 libwayland-client libwayland-cursor libwayland-egl
     ;;
   arch)
     # shellcheck disable=SC2086
-    pacman -Syu --noconfirm --needed $pacman_tools python ttf-dejavu \
+    retry pacman -Syu --noconfirm --needed $pacman_tools python ttf-dejavu \
       mesa libglvnd libx11 libxcb libxcursor libxi libxkbcommon libxkbcommon-x11 wayland
     ;;
   opensuse* | sles)
     # shellcheck disable=SC2086
-    zypper --non-interactive install --no-recommends $zypper_tools python3 dejavu-fonts \
+    retry zypper --non-interactive install --no-recommends $zypper_tools python3 dejavu-fonts \
       Mesa-dri Mesa-libEGL1 Mesa-libGL1 libX11-6 libX11-xcb1 libxcb1 libXcursor1 libXi6 \
       libxkbcommon0 libxkbcommon-x11-0 libwayland-client0 libwayland-cursor0 libwayland-egl1
     ;;
