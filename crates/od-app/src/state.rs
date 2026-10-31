@@ -2,8 +2,10 @@
 
 use std::collections::BTreeSet;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use crate::cmdline::CommandLine;
+use crate::defaults::CommandDefaults;
 use crate::dock::LayoutRequest;
 use crate::files::Confirm;
 use crate::io::Io;
@@ -137,6 +139,8 @@ pub struct AppState {
     pub cmdline: CommandLine,
     /// The command in progress that asks through the `Editor`, if any.
     pub(crate) runner: Option<Runner>,
+    /// What commands remember between uses, shared with every command run.
+    defaults: Arc<CommandDefaults>,
     /// Index of the drawing that command works on.
     pub(crate) run_doc: usize,
     pub(crate) next_doc_number: usize,
@@ -197,6 +201,16 @@ pub struct AppState {
 }
 
 impl AppState {
+    /// What commands remember between uses.
+    pub fn defaults(&self) -> &Arc<CommandDefaults> {
+        &self.defaults
+    }
+
+    /// Use `defaults` (read from the saved settings) from now on.
+    pub fn set_defaults(&mut self, defaults: Arc<CommandDefaults>) {
+        self.defaults = defaults;
+    }
+
     pub fn new() -> Self {
         let mut state = Self {
             docs: Vec::new(),
@@ -222,6 +236,7 @@ impl AppState {
             layout_request: None,
             cmdline: CommandLine::default(),
             runner: None,
+            defaults: Arc::default(),
             run_doc: 0,
             next_doc_number: 1,
             next_doc_uid: 1,

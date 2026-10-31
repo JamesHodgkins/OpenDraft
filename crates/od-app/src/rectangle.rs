@@ -5,12 +5,12 @@ use od_commands::{Answer, Cancelled, Editor, NumberOptions, Options, PointOption
 use od_core::rect::{outline, Corners};
 use od_core::{Entity, Point};
 
+use crate::defaults::EditorDefaults;
 use crate::draw::{add, MIN_SIZE};
-use crate::rect_memory::{memory, remember};
+use crate::rect_memory::Memory;
 
 /// The corner style the remembered settings call for.
-fn corners() -> Corners {
-    let m = memory();
+fn corners(m: &Memory) -> Corners {
     if m.radius > 0.0 {
         Corners::Fillet(m.radius)
     } else {
@@ -41,7 +41,8 @@ fn extent(first: Point, angle: f64, size: Option<Size>, at: Point) -> (f64, f64)
 
 /// The remembered value changed by a first-corner option.
 fn set_option(ed: &Editor, option: &str) -> Result<(), Cancelled> {
-    let m = memory();
+    let defaults = ed.defaults();
+    let m = defaults.rect.get();
     let size = |message: &str, default: f64| {
         ed.get_distance(NumberOptions::new(message).default(default))
             .map(|v| v.max(0.0))
@@ -51,27 +52,31 @@ fn set_option(ed: &Editor, option: &str) -> Result<(), Cancelled> {
             let first = size("Specify first chamfer distance for rectangles", m.first)?;
             let second = size("Specify second chamfer distance for rectangles", first)?;
             // Bevels and rounding exclude each other.
-            remember(|m| (m.first, m.second, m.radius) = (first, second, 0.0));
+            defaults
+                .rect
+                .change(|m| (m.first, m.second, m.radius) = (first, second, 0.0));
         }
         "Fillet" => {
             let radius = size("Specify fillet radius for rectangles", m.radius)?;
-            remember(|m| (m.radius, m.first, m.second) = (radius, 0.0, 0.0));
+            defaults
+                .rect
+                .change(|m| (m.radius, m.first, m.second) = (radius, 0.0, 0.0));
         }
         "Width" => {
             let width = size("Specify line width for rectangles", m.width)?;
-            remember(|m| m.width = width);
+            defaults.rect.change(|m| m.width = width);
         }
         "Elevation" => {
             let value = ed.get_number(
                 NumberOptions::new("Specify the elevation for rectangles").default(m.elevation),
             )?;
-            remember(|m| m.elevation = value);
+            defaults.rect.change(|m| m.elevation = value);
         }
         _ => {
             let value = ed.get_number(
                 NumberOptions::new("Specify the thickness for rectangles").default(m.thickness),
             )?;
-            remember(|m| m.thickness = value);
+            defaults.rect.change(|m| m.thickness = value);
         }
     }
     Ok(())
@@ -147,7 +152,8 @@ pub fn draw_rectangle(ed: &mut Editor) -> Result<(), Cancelled> {
             Answer::Enter => return Err(Cancelled),
         }
     };
-    let (style, width) = (corners(), memory().width);
+    let m = ed.defaults().rect.get();
+    let (style, width) = (corners(&m), m.width);
     let (mut angle, mut size): (f64, Option<Size>) = (0.0, None);
     let (dx, dy) = loop {
         let options = PointOptions::new("Specify other corner point")
@@ -183,7 +189,6 @@ pub fn draw_rectangle(ed: &mut Editor) -> Result<(), Cancelled> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rect_memory::take_turn_for_tests as take_turn;
     use crate::state::AppState;
 
     fn p(x: f64, y: f64) -> Point {
@@ -226,7 +231,6 @@ mod tests {
 
     #[test]
     fn the_prompts_offer_the_options_of_each_stage() {
-        let _turn = take_turn();
         let mut state = AppState::new();
         run(&mut state, &[]);
         assert_eq!(
@@ -239,7 +243,6 @@ mod tests {
 
     #[test]
     fn rectangle_takes_corners_in_any_order() {
-        let _turn = take_turn();
         let mut state = AppState::new();
         run(&mut state, &["10,10", "2,20"]);
         assert_eq!(entities(&state), [rect(p(2.0, 10.0), p(10.0, 20.0))]);
@@ -247,7 +250,6 @@ mod tests {
 
     #[test]
     fn dimensions_ask_for_length_and_width_then_the_pointer_picks_the_quadrant() {
-        let _turn = take_turn();
         let mut state = AppState::new();
         run(&mut state, &["2,3", "d"]);
         assert_eq!(state.cmd_prompt().text, "Specify length for rectangles");
@@ -263,7 +265,6 @@ mod tests {
 
     #[test]
     fn area_and_a_length_give_the_width() {
-        let _turn = take_turn();
         let mut state = AppState::new();
         run(&mut state, &["0,0", "a", "40"]);
         assert!(state.cmd_prompt().text.contains("<Length>"));
@@ -275,7 +276,6 @@ mod tests {
 
     #[test]
     fn rotation_turns_the_rectangle_about_the_first_corner() {
-        let _turn = take_turn();
         let mut state = AppState::new();
         run(&mut state, &["0,0", "r", "90", "-2,4"]);
         let points = points_of(&entities(&state)[0]);
@@ -285,7 +285,6 @@ mod tests {
 
     #[test]
     fn rotation_by_picking_two_points() {
-        let _turn = take_turn();
         let mut state = AppState::new();
         run(&mut state, &["0,0", "r", "p", "0,0", "0,5", "-2,4"]);
         let points = points_of(&entities(&state)[0]);
@@ -294,7 +293,6 @@ mod tests {
 
     #[test]
     fn fillet_and_chamfer_are_remembered_and_exclude_each_other() {
-        let _turn = take_turn();
         let mut state = AppState::new();
         run(&mut state, &["f", "1", "0,0", "10,6"]);
         let Entity::Polyline { points, bulges, .. } = &entities(&state)[0] else {
@@ -316,12 +314,11 @@ mod tests {
         };
         assert_eq!(points.len(), 8);
         assert!(bulges.is_empty(), "straight bevels, no arcs");
-        assert_eq!(memory().radius, 0.0);
+        assert_eq!(state.defaults().rect.get().radius, 0.0);
     }
 
     #[test]
     fn width_makes_a_wide_polyline_and_is_remembered() {
-        let _turn = take_turn();
         let mut state = AppState::new();
         run(&mut state, &["w", "0.5", "0,0", "4,2"]);
         let Entity::Polyline { widths, closed, .. } = &entities(&state)[0] else {
@@ -338,16 +335,15 @@ mod tests {
 
     #[test]
     fn elevation_and_thickness_are_kept_for_the_variables_but_draw_nothing() {
-        let _turn = take_turn();
         let mut state = AppState::new();
         run(&mut state, &["e", "-2", "t", "3", "0,0", "4,2"]);
         assert_eq!(entities(&state), [rect(p(0.0, 0.0), p(4.0, 2.0))]);
-        assert_eq!((memory().elevation, memory().thickness), (-2.0, 3.0));
+        let kept = state.defaults().rect.get();
+        assert_eq!((kept.elevation, kept.thickness), (-2.0, 3.0));
     }
 
     #[test]
     fn a_flat_rectangle_is_refused() {
-        let _turn = take_turn();
         let mut state = AppState::new();
         run(&mut state, &["0,0", "5,0"]);
         assert!(entities(&state).is_empty());

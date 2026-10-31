@@ -118,6 +118,7 @@ impl OpenDraftApp {
     pub fn new(
         theme: Theme,
         settings: Settings,
+        defaults: std::sync::Arc<crate::defaults::CommandDefaults>,
         dock: DockState<PanelTab>,
         recent: RecentFiles,
         updates: crate::updates::Updates,
@@ -126,6 +127,7 @@ impl OpenDraftApp {
         crate::system_fonts::start_scan();
         let registry = commands::build_registry();
         let mut state = AppState::new();
+        state.set_defaults(defaults);
         // Read fresh each launch, so redrawn icons show without a rebuild.
         crate::icon_library::load(&mut state.cmdline);
         state.recent = recent;
@@ -423,7 +425,7 @@ impl eframe::App for OpenDraftApp {
         self.state.settings.save(storage);
         self.updates.save(storage);
         crate::corner_memory::save(storage);
-        crate::rect_memory::save(storage);
+        self.state.defaults().save(storage);
         crate::spline_memory::save(storage);
         crate::hatch_memory::save(storage);
         crate::text_memory::save(storage);

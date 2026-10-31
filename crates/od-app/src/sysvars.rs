@@ -11,7 +11,6 @@ use std::sync::OnceLock;
 use od_commands::{Kind, SysVar, SysVarTable, Value};
 
 use crate::corner_memory::{memory, remember};
-use crate::rect_memory;
 use crate::settings::{
     AUTOSAVE_CHOICES, CROSSHAIR_SIZE_RANGE, GRID_SPACING_RANGE, GRIP_SIZE_RANGE, PICK_SIZE_RANGE,
     SNAP_APERTURE_RANGE,
@@ -196,10 +195,10 @@ fn build() -> Vec<SysVar<AppState>> {
             "PLINEWID",
             "Width of the next rectangles",
             (0.0, 1.0e9),
-            |_| Value::Real(rect_memory::memory().width),
-            |_, v| {
+            |st| Value::Real(st.defaults().rect.get().width),
+            |st, v| {
                 if let Value::Real(n) = v {
-                    rect_memory::remember(|m| m.width = n);
+                    st.defaults().rect.change(|m| m.width = n);
                 }
                 Ok(())
             },
@@ -208,10 +207,10 @@ fn build() -> Vec<SysVar<AppState>> {
             "ELEVATION",
             "Elevation of the next rectangles (kept, not drawn: 2D only)",
             (-1.0e9, 1.0e9),
-            |_| Value::Real(rect_memory::memory().elevation),
-            |_, v| {
+            |st| Value::Real(st.defaults().rect.get().elevation),
+            |st, v| {
                 if let Value::Real(n) = v {
-                    rect_memory::remember(|m| m.elevation = n);
+                    st.defaults().rect.change(|m| m.elevation = n);
                 }
                 Ok(())
             },
@@ -220,10 +219,10 @@ fn build() -> Vec<SysVar<AppState>> {
             "THICKNESS",
             "Thickness of the next rectangles (kept, not drawn: 2D only)",
             (-1.0e9, 1.0e9),
-            |_| Value::Real(rect_memory::memory().thickness),
-            |_, v| {
+            |st| Value::Real(st.defaults().rect.get().thickness),
+            |st, v| {
                 if let Value::Real(n) = v {
-                    rect_memory::remember(|m| m.thickness = n);
+                    st.defaults().rect.change(|m| m.thickness = n);
                 }
                 Ok(())
             },
