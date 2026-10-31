@@ -111,7 +111,7 @@ impl SocketServer {
         // Its own name each time: the core outlives the server, and a
         // server just stopped may not have let go of the last name yet.
         let endpoint = endpoint_for(dir, &format!("{instance_id}-{}", random_hex(3)?));
-        std::fs::create_dir_all(dir)?;
+        instance::create_private_dir(dir)?;
         let listener = ListenerOptions::new()
             .name(socket_name(&endpoint)?)
             .create_sync()?;

@@ -59,8 +59,30 @@ pub fn name() -> &'static str {
 /// The window's application id, which a Linux desktop matches against the menu
 /// entry (`opendraft.desktop`, `StartupWMClass=opendraft`) to give the window
 /// its icon and group it: the profile name in lower case, with `-` for spaces.
+/// In a Flatpak the menu entry is named after the Flatpak's id, which the
+/// sandbox puts in `FLATPAK_ID`, so the window takes that instead.
 pub fn app_id() -> String {
-    id_of(name())
+    app_id_for(
+        name(),
+        std::env::var_os("FLATPAK_ID").as_deref(),
+        std::env::var_os(PROFILE_ENV).is_some(),
+    )
+}
+
+fn app_id_for(name: &str, flatpak: Option<&OsStr>, profile_chosen: bool) -> String {
+    // A profile chosen by hand is for trying things beside the installed one,
+    // so it must not take the installed program's id.
+    let plain = |id: &&str| {
+        !id.is_empty()
+            && id.len() <= 128
+            && id
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'))
+    };
+    flatpak
+        .and_then(OsStr::to_str)
+        .filter(|id| !profile_chosen && plain(id))
+        .map_or_else(|| id_of(name), str::to_owned)
 }
 
 fn id_of(name: &str) -> String {
@@ -120,6 +142,29 @@ mod tests {
         assert_eq!(id_of("OpenDraft"), "opendraft");
         assert_eq!(id_of("OpenDraft Dev"), "opendraft-dev");
         assert_eq!(id_of("OpenDraft Test 1"), "opendraft-test-1");
+    }
+
+    #[test]
+    fn in_a_flatpak_the_window_is_the_flatpaks_id() {
+        let flatpak = os("uk.openengineering.opendraft");
+        assert_eq!(
+            app_id_for("OpenDraft", flatpak, false),
+            "uk.openengineering.opendraft"
+        );
+        // Not in a Flatpak, or a profile chosen by hand: the usual id.
+        assert_eq!(app_id_for("OpenDraft", None, false), "opendraft");
+        assert_eq!(
+            app_id_for("OpenDraft Test", flatpak, true),
+            "opendraft-test"
+        );
+        // An id that is not a plain dotted name is not trusted.
+        for bad in ["", "a b", "../x", "a/b", &"x".repeat(129)] {
+            assert_eq!(
+                app_id_for("OpenDraft", os(bad), false),
+                "opendraft",
+                "{bad:?}"
+            );
+        }
     }
 
     #[test]

@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=OpenDraft
+GenericName=2D CAD
+Comment=Free, open-source 2D CAD with an AutoCAD-style command line
+Exec=opendraft %F
+Icon=opendraft
+Terminal=false
+Categories=Graphics;2DGraphics;Engineering;
+Keywords=CAD;drafting;drawing;DXF;DWG;
+# The window's app id (see profile::app_id), so the desktop gives it this icon and groups it.
+StartupWMClass=opendraft
+MimeType=application/x-opendraft-drawing;image/vnd.dxf;image/vnd.dwg;

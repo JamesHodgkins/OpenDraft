@@ -145,13 +145,13 @@ jobs:
           cp dist/packager/*.deb "dist/OpenDraft-${VERSION}-linux-amd64.deb"
           cp dist/packager/*.AppImage "dist/OpenDraft-${VERSION}-linux-x86_64.AppImage"
           chmod +x "dist/OpenDraft-${VERSION}-linux-x86_64.AppImage"
-      - name: The .deb installs, starts and removes cleanly on a bare Ubuntu 22.04
+      - name: The .deb installs, works (the full smoke test) and removes cleanly on a bare Ubuntu 22.04
         if: runner.os == 'Linux' && !contains(needs.verify.outputs.version, '-')
         shell: bash
         env:
           VERSION: ${{ needs.verify.outputs.version }}
         run: |
-          docker run --rm -v "$PWD/dist:/dist:ro" -v "$PWD/scripts:/scripts:ro" ubuntu:22.04             bash /scripts/test_deb.sh "/dist/OpenDraft-${VERSION}-linux-amd64.deb"
+          docker run --rm -v "$PWD/dist:/dist:ro" -v "$PWD:/repo:ro" ubuntu:22.04             bash /repo/scripts/test_deb.sh "/dist/OpenDraft-${VERSION}-linux-amd64.deb"
       - name: The AppImage starts on a bare Ubuntu 22.04, bringing its own libraries
         if: runner.os == 'Linux' && !contains(needs.verify.outputs.version, '-')
         shell: bash

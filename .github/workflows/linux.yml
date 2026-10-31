@@ -1,0 +1,94 @@
+name: linux
+# Builds OpenDraft once on the oldest Linux runner (so it runs on systems with
+# an older glibc) and then runs that same program on several distributions in a
+# virtual X display: it opens a drawing, takes keyboard and mouse input, draws
+# and undoes a line, is checked from outside through the automation socket and
+# `opendraft-mcp --check`, and quits with Ctrl+Q (scripts/linux_smoke.py).
+# What this proves, and what it does not, is in docs/linux.md.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths-ignore: ['**.md', 'docs/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: linux-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Linux system libraries
+        run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libwayland-dev libx11-dev libxcb1-dev libgl1-mesa-dev
+      - run: cargo build --release -p od-app -p od-mcp
+      - name: Keep the programs (file modes are lost in an artifact, so tar them)
+        run: tar -C target/release -cf linux-build.tar opendraft opendraft-mcp
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: linux-build.tar
+          if-no-files-found: error
+  smoke:
+    needs: build
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: ubuntu-22.04, image: 'ubuntu:22.04', scales: '1' }
+          - { name: ubuntu-24.04, image: 'ubuntu:24.04', scales: '1 1.5 2' }
+          - { name: debian-12, image: 'debian:12', scales: '1' }
+          - { name: fedora, image: 'fedora:latest', scales: '1 2' }
+          - { name: arch, image: 'archlinux:latest', scales: '1' }
+          - { name: opensuse-tumbleweed, image: 'opensuse/tumbleweed:latest', scales: '1' }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-build
+      - name: Unpack
+        run: mkdir -p build && tar -C build -xf linux-build.tar
+      - name: OpenDraft on ${{ matrix.image }}
+        run: |
+          docker run --rm -v "$PWD:/w" -w /w -e SMOKE_SCALES='${{ matrix.scales }}' ${{ matrix.image }} \
+            bash scripts/linux_smoke_container.sh build "out/${{ matrix.name }}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-${{ matrix.name }}
+          path: out/${{ matrix.name }}
+          if-no-files-found: ignore
+  wayland:
+    # The same checks under a headless Wayland compositor (sway), with the
+    # program forced onto Wayland (no X11 to fall back to).
+    needs: build
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: ubuntu-24.04-wayland, image: 'ubuntu:24.04' }
+          - { name: fedora-wayland, image: 'fedora:latest' }
+          - { name: arch-wayland, image: 'archlinux:latest' }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-build
+      - name: Unpack
+        run: mkdir -p build && tar -C build -xf linux-build.tar
+      - name: OpenDraft on ${{ matrix.image }}, Wayland
+        run: |
+          # sway is installed with a file capability that a container must be allowed to hold.
+          docker run --rm --cap-add=SYS_NICE -v "$PWD:/w" -w /w -e SMOKE_SESSION=wayland ${{ matrix.image }}             bash scripts/linux_smoke_container.sh build "out/${{ matrix.name }}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-${{ matrix.name }}
+          path: out/${{ matrix.name }}
+          if-no-files-found: ignore

@@ -12,6 +12,6 @@ Categories=Graphics;2DGraphics;Engineering;
 Keywords=CAD;drafting;drawing;DXF;DWG;
 # The window's app id (see profile::app_id), so the desktop gives it this icon and groups it.
 StartupWMClass=opendraft
-{{#if mime_type}}
-MimeType={{mime_type}}
-{{/if}}
+# What the program opens. DXF and DWG are listed so file managers offer it in "Open with"; the
+# desktop, not the package, decides which program is the default for them.
+MimeType=application/x-opendraft-drawing;image/vnd.dxf;image/vnd.dwg;

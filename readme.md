@@ -135,7 +135,9 @@ cd OpenDraft-<version>-linux
 ./opendraft
 ```
 
-Tested on Linux Mint with 0.1.0: it started and ran with nothing extra installed. Other distributions are untested, and reports are welcome. The Linux build is made in CI on Ubuntu 22.04. If it does not start, a desktop library may be missing (Debian/Ubuntu: `sudo apt-get install -y libxkbcommon0 libwayland-client0 libx11-6 libxcb1 libgl1`).
+**Arch and Flatpak:** the build files are in `installer/linux/` (`arch/PKGBUILD` and `flatpak/`); they are built and checked in CI but not published to the AUR or Flathub yet.
+
+**How well is Linux tested?** Every change is built on Ubuntu 22.04 and that same program is run in CI, under a virtual display, on Ubuntu 22.04 and 24.04, Debian 12, Fedora, Arch and openSUSE Tumbleweed: on X11 it opens a drawing, draws a line with the keyboard and mouse, undoes it, answers the assistant connection and quits; on Wayland (three of them) it starts, draws and closes. That uses software rendering and no real desktop environment, so real graphics cards, GNOME and KDE are not covered, and Wayland keyboard and mouse input is not exercised. Reports from real machines are welcome. [docs/linux.md](./docs/linux.md) has what it needs (a missing library is the usual reason it will not start), what is and is not tested, and fixes for common problems such as no file dialog or a blurry or oversized window.
 
 ### Check your download
 
@@ -222,7 +224,7 @@ Work follows the standard 2D drafting command set; `ui_plan.md` has the detailed
 - The rest of dimensions (associativity, a styles table, real DXF dimensions), block attributes, ByBlock and dynamic blocks
 - Linetypes from `.lin` files, hatch gap tolerance and gradients
 - DWG export, PDF and SVG export
-- Wider Linux testing (one distribution so far)
+- Linux: real-hardware and desktop-environment testing (CI covers six distributions on a virtual display); publishing to Flathub and the AUR
 - Plugin system for third-party commands
 
 ## 🤝 Contributing

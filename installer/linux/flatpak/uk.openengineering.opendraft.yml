@@ -1,0 +1,66 @@
+# Flatpak manifest for OpenDraft. See README.md in this folder for how to build it
+# and what changes for Flathub. Built in CI by .github/workflows/packages.yml.
+app-id: uk.openengineering.opendraft
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+command: opendraft
+
+finish-args:
+  # The window: Wayland when there is one, X11 otherwise, and the GPU for OpenGL.
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  # The optional update check and the optional assistant talk to the network.
+  - --share=network
+  # Drawings are opened and saved anywhere in the home folder. A save writes a
+  # temporary file next to the drawing and renames it, and autosave and crash
+  # recovery write beside it too, which a file handed over by the file chooser
+  # portal alone would not allow.
+  - --filesystem=home
+  # The assistant's API key can be kept in the desktop's password store.
+  - --talk-name=org.freedesktop.secrets
+
+build-options:
+  append-path: /usr/lib/sdk/rust-stable/bin
+  env:
+    CARGO_HOME: /run/build/opendraft/cargo
+    CARGO_NET_OFFLINE: 'true'
+
+modules:
+  - name: opendraft
+    buildsystem: simple
+    build-commands:
+      - cargo --offline fetch --manifest-path Cargo.toml --verbose
+      - cargo --offline build --release --verbose -p od-app -p od-mcp
+
+      # The programs live in libexec; the two scripts in bin put the automation
+      # socket in the one folder the sandbox and the host both see.
+      - install -Dm755 target/release/opendraft /app/libexec/opendraft
+      - install -Dm755 target/release/opendraft-mcp /app/libexec/opendraft-mcp
+      - install -Dm755 installer/linux/flatpak/opendraft.sh /app/bin/opendraft
+      - install -Dm755 installer/linux/flatpak/opendraft-mcp.sh /app/bin/opendraft-mcp
+
+      # The desktop entry, icons, file types and description are named after the
+      # application id, as Flatpak requires.
+      - install -Dm644 installer/linux/share/opendraft.desktop /app/share/applications/${FLATPAK_ID}.desktop
+      - desktop-file-edit --set-key=Icon --set-value=${FLATPAK_ID} --set-key=StartupWMClass --set-value=${FLATPAK_ID} /app/share/applications/${FLATPAK_ID}.desktop
+      - install -Dm644 installer/linux/opendraft.xml /app/share/mime/packages/${FLATPAK_ID}.xml
+      - install -Dm644 installer/linux/share/${FLATPAK_ID}.metainfo.xml /app/share/metainfo/${FLATPAK_ID}.metainfo.xml
+      - |
+        for size in 16 32 48 64 128 256; do
+          install -Dm644 assets/app-icons/${size}x${size}.png /app/share/icons/hicolor/${size}x${size}/apps/${FLATPAK_ID}.png
+        done
+      - install -Dm644 LICENSE /app/share/licenses/${FLATPAK_ID}/LICENSE
+      - install -Dm644 docs/mcp.md /app/share/doc/${FLATPAK_ID}/MCP.md
+    sources:
+      # The checkout this manifest is in. For Flathub this becomes a git source
+      # at a release tag (see README.md).
+      - type: dir
+        path: ../../..
+        skip: [.git, target, dist]
+      # Generated from Cargo.lock by flatpak-cargo-generator (see README.md).
+      - cargo-sources.json

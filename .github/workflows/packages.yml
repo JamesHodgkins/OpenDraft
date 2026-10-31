@@ -1,0 +1,104 @@
+name: packages
+# Checks the Linux packaging files that are not built by the release workflow:
+# the desktop file and AppStream metadata every package shares, and the Arch
+# PKGBUILD (built in an Arch container, installed, and its files listed). Runs
+# when those files change, by hand, and every Monday so that a change in Arch or
+# in a dependency is noticed.
+on:
+  push:
+    branches: [main]
+    paths: ['installer/linux/**', '.github/workflows/packages.yml', 'scripts/check_packaging.py']
+  pull_request:
+    paths: ['installer/linux/**', '.github/workflows/packages.yml', 'scripts/check_packaging.py']
+  schedule:
+    - cron: '23 5 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tools
+        run: sudo apt-get update && sudo apt-get install -y appstream desktop-file-utils shared-mime-info
+      - name: The desktop files and the AppStream file are valid
+        run: |
+          desktop-file-validate installer/linux/share/opendraft.desktop
+          appstreamcli validate --no-net installer/linux/share/uk.openengineering.opendraft.metainfo.xml
+      - name: The MIME file is valid and the packages agree
+        run: python3 scripts/check_packaging.py
+  arch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the PKGBUILD in an Arch container
+        run: |
+          docker run --rm -v "$PWD:/src:ro" archlinux:latest bash -euxo pipefail -c '
+            pacman -Syu --noconfirm --needed base-devel git sudo rust namcap
+            useradd -m builder
+            echo "builder ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/builder
+            git config --global --add safe.directory /src
+            ver=$(sed -n "s/^pkgver=//p" /src/installer/linux/arch/PKGBUILD)
+            mkdir -p /home/builder/pkg
+            git -C /src archive --prefix="OpenDraft-$ver/" -o "/home/builder/pkg/opendraft-$ver.tar.gz" HEAD
+            cp /src/installer/linux/arch/PKGBUILD /home/builder/pkg/
+            cd /home/builder/pkg
+            # Build from this checkout instead of the release tag.
+            sed -i "s|^source=.*|source=(\"opendraft-\$pkgver.tar.gz\")|" PKGBUILD
+            chown -R builder:builder /home/builder
+            sudo -u builder makepkg -s --noconfirm
+            pacman -Qlp opendraft-*.pkg.tar.zst | tee /tmp/files.txt
+            for f in usr/bin/opendraft usr/bin/opendraft-mcp usr/share/applications/opendraft.desktop \
+                     usr/share/mime/packages/opendraft.xml usr/share/icons/hicolor/256x256/apps/opendraft.png \
+                     usr/share/licenses/opendraft/LICENSE; do
+              grep -q " /$f\$" /tmp/files.txt || { echo "missing from the package: $f"; exit 1; }
+            done
+            namcap opendraft-*.pkg.tar.zst || true
+            pacman -U --noconfirm opendraft-*.pkg.tar.zst
+            ldd /usr/bin/opendraft | grep "not found" && exit 1
+            test -x /usr/bin/opendraft-mcp
+            echo "the Arch package builds, installs and links"
+          '
+  flatpak:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-24.08
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v4
+      - name: Crate sources for an offline build, made from Cargo.lock
+        run: |
+          git clone --depth 1 https://github.com/flatpak/flatpak-builder-tools
+          pip install aiohttp toml tomlkit
+          python3 flatpak-builder-tools/cargo/flatpak-cargo-generator.py Cargo.lock \
+            -o installer/linux/flatpak/cargo-sources.json
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: opendraft.flatpak
+          manifest-path: installer/linux/flatpak/uk.openengineering.opendraft.yml
+          cache-key: flatpak-builder-${{ hashFiles('Cargo.lock') }}
+      - name: The Flatpak has what it should
+        run: |
+          flatpak remote-add --if-not-exists --user flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak install --user --noninteractive -y --bundle opendraft.flatpak
+          flatpak run --command=sh uk.openengineering.opendraft -c '
+            set -e
+            test -x /app/bin/opendraft && test -x /app/libexec/opendraft && test -x /app/libexec/opendraft-mcp
+            test -f /app/share/applications/uk.openengineering.opendraft.desktop
+            grep -q "^Icon=uk.openengineering.opendraft$" /app/share/applications/uk.openengineering.opendraft.desktop
+            grep -q "^StartupWMClass=uk.openengineering.opendraft$" /app/share/applications/uk.openengineering.opendraft.desktop
+            test -f /app/share/metainfo/uk.openengineering.opendraft.metainfo.xml
+            test -f /app/share/icons/hicolor/256x256/apps/uk.openengineering.opendraft.png
+            test -f /app/share/mime/packages/uk.openengineering.opendraft.xml
+            if ldd /app/libexec/opendraft | grep "not found"; then exit 1; fi
+            echo "the Flatpak holds the programs, desktop entry, icons, file types and metadata"
+          '
+      - name: It starts and stays open in a virtual display
+        run: |
+          apt-get update && apt-get install -y --no-install-recommends xvfb xauth
+          set +e
+          timeout 30 xvfb-run -a flatpak run --env=OPENDRAFT_PROFILE=ci-smoke --env=LIBGL_ALWAYS_SOFTWARE=1 uk.openengineering.opendraft
+          code=$?
+          if [ "$code" != 124 ]; then echo "the Flatpak exited with code $code instead of staying open for 30 s"; exit 1; fi
+          echo "the Flatpak starts"
