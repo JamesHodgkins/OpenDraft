@@ -25,9 +25,17 @@ pub trait FilePicker {
 
     /// Something the user should be told about the dialog just asked for
     /// (that none could be shown), once. Most pickers have nothing to say.
-    fn take_problem(&mut self) -> Option<String> {
+    fn take_problem(&mut self) -> Option<Problem> {
         None
     }
+}
+
+/// What to tell the user about a dialog that went wrong: a line short enough
+/// for the status bar, and the whole explanation for the command line's history.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Problem {
+    pub brief: String,
+    pub details: String,
 }
 
 /// A kind of file in a dialog: its name and extensions.
@@ -40,7 +48,11 @@ const SHOWN_AT_LEAST: Duration = Duration::from_millis(300);
 /// What to tell a Linux user whose desktop has nothing to show a file dialog
 /// with. The dialogs come from the desktop portal, or `zenity` when there is
 /// none; with neither, asking for a file does nothing, and this says why.
-const NO_DIALOG: &str = "No file dialog could be shown. On Linux a dialog needs xdg-desktop-portal with a backend (xdg-desktop-portal-gtk or -kde) or zenity. Until one is installed, start OpenDraft with the file's name: opendraft drawing.dxf";
+const NO_DIALOG_BRIEF: &str =
+    "No file dialog available. Install xdg-desktop-portal with a backend, or zenity. Or drop a file on the window.";
+
+/// The fuller explanation, which the command line keeps.
+const NO_DIALOG_DETAILS: &str = "No file dialog could be shown. On Linux a file dialog comes from the desktop portal (xdg-desktop-portal, with a backend for your desktop such as xdg-desktop-portal-gtk or xdg-desktop-portal-kde) or, when there is none, from zenity. Install one of them. Until then you can drop a file on the window, or start OpenDraft with the file's name: opendraft drawing.dxf";
 
 /// Whether a dialog that was answered with `None` after `elapsed` was in fact
 /// never shown.
@@ -53,18 +65,21 @@ fn never_appeared(elapsed: Duration) -> bool {
 #[cfg_attr(test, allow(dead_code))]
 #[derive(Default)]
 pub struct NativePicker {
-    problem: Option<String>,
+    problem: Option<Problem>,
 }
 
 #[cfg_attr(test, allow(dead_code))]
 impl NativePicker {
     /// Show a dialog with `ask`. On Linux, one that comes back at once with
-    /// no answer could not be shown, which is worth saying (see [`NO_DIALOG`]).
+    /// no answer could not be shown, which is worth saying (see [`NO_DIALOG_BRIEF`]).
     fn shown<T>(&mut self, ask: impl FnOnce() -> Option<T>) -> Option<T> {
         let started = Instant::now();
         let answer = ask();
         if answer.is_none() && cfg!(target_os = "linux") && never_appeared(started.elapsed()) {
-            self.problem = Some(NO_DIALOG.to_owned());
+            self.problem = Some(Problem {
+                brief: NO_DIALOG_BRIEF.to_owned(),
+                details: NO_DIALOG_DETAILS.to_owned(),
+            });
         }
         answer
     }
@@ -82,7 +97,7 @@ impl FilePicker for NativePicker {
         self.shown(|| dialog.pick_file())
     }
 
-    fn take_problem(&mut self) -> Option<String> {
+    fn take_problem(&mut self) -> Option<Problem> {
         self.problem.take()
     }
 
@@ -110,10 +125,12 @@ impl FilePicker for NativePicker {
 
 impl crate::state::AppState {
     /// Tell the user what the picker said about its last dialog, if it said
-    /// anything (once a frame is enough).
+    /// anything (once a frame is enough): a short line in the status bar and the
+    /// whole explanation in the command line's history.
     pub fn report_picker_problem(&mut self) {
         if let Some(problem) = self.picker.take_problem() {
-            self.message = problem;
+            self.message = problem.brief;
+            self.cmdline.say(problem.details);
         }
     }
 }
@@ -229,7 +246,7 @@ mod tests {
     use crate::state::AppState;
 
     /// A picker that answers nothing and has a problem to report once.
-    struct Troubled(Option<String>);
+    struct Troubled(Option<Problem>);
 
     impl FilePicker for Troubled {
         fn open(&mut self, _: Option<&Path>) -> Option<PathBuf> {
@@ -241,7 +258,7 @@ mod tests {
         fn folder(&mut self, _: &str) -> Option<PathBuf> {
             None
         }
-        fn take_problem(&mut self) -> Option<String> {
+        fn take_problem(&mut self) -> Option<Problem> {
             self.0.take()
         }
     }
@@ -255,16 +272,39 @@ mod tests {
     }
 
     #[test]
-    fn the_help_names_the_things_to_install_and_a_way_round() {
-        for word in ["xdg-desktop-portal", "zenity", "opendraft drawing.dxf"] {
-            assert!(NO_DIALOG.contains(word), "{word}");
+    fn the_help_names_the_things_to_install_and_the_ways_round() {
+        for word in ["xdg-desktop-portal", "zenity", "drop a file"] {
+            assert!(NO_DIALOG_BRIEF.contains(word), "{word}");
         }
+        for word in [
+            "xdg-desktop-portal-gtk",
+            "zenity",
+            "drop a file",
+            "opendraft drawing.dxf",
+        ] {
+            assert!(NO_DIALOG_DETAILS.contains(word), "{word}");
+        }
+    }
+
+    #[test]
+    fn the_status_bar_line_is_short_enough_to_be_read_whole() {
+        // The status bar showed about 120 characters of a longer message
+        // before cutting it off with an ellipsis (seen on a 1280 px window).
+        assert!(
+            NO_DIALOG_BRIEF.chars().count() <= 115,
+            "{}",
+            NO_DIALOG_BRIEF.chars().count()
+        );
     }
 
     #[test]
     fn a_problem_the_picker_reports_reaches_the_status_bar_once() {
         let mut state = AppState::new();
-        state.picker = Box::new(Troubled(Some("no dialog".to_owned())));
+        let problem = Problem {
+            brief: "no dialog".to_owned(),
+            details: "no dialog, and here is why".to_owned(),
+        };
+        state.picker = Box::new(Troubled(Some(problem)));
         state.message.clear();
         state.report_picker_problem();
         assert_eq!(state.message, "no dialog");

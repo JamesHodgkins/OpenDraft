@@ -30,9 +30,21 @@ For **file dialogs** (Open, Save As) you also need one of: `xdg-desktop-portal` 
 
 ## What is tested
 
-Every change is built once on Ubuntu 22.04 and that same program is run on the distributions below (`.github/workflows/linux.yml`, `scripts/linux_smoke.py`). Each run starts the real program, opens a DXF drawing, checks the screen is drawn, types `L`, clicks twice and presses Enter to draw a line, undoes it with Ctrl+Z, checks the result through the automation socket, runs `opendraft-mcp --check` against the live program, and, in a second launch with no drawing, quits with Ctrl+Q and checks the exit code.
+Every change is built once on Ubuntu 22.04, and that same program is run on the distributions below (`.github/workflows/linux.yml`, `scripts/linux_smoke.py`).
 
-| | X11 | Wayland | Scaling 1.5 and 2 |
+**On X11** (a virtual X server with no window manager, software rendering) each run starts the real program with a drawing named on the command line and checks, through the automation socket and the screen:
+
+- the program starts, offers the automation socket (in a folder only the user can enter) and accepts the connection;
+- the drawing is open and has its objects;
+- the screen is drawn, not blank;
+- typing `L`, clicking twice and pressing Enter draws one line (keyboard, mouse, command and repaint), and Ctrl+Z takes it back;
+- `opendraft-mcp --check` reaches the running program.
+
+A second launch with no drawing checks that it starts on the Home page, that Open with no file dialog available says so (a picture is kept), and that Ctrl+Q ends it with exit code 0. A third does the same with `XDG_RUNTIME_DIR` unset.
+
+**On Wayland** (a headless `sway`; the program is given no X11 to fall back to) the run checks that it starts and draws, opens the drawing, answers on the automation socket, and that closing its window from the compositor ends it with exit code 0. **Keyboard and mouse are not exercised on Wayland**: a headless compositor has no input devices, and the tools that fake one make it for a single command, so the program never sees a stable keyboard or pointer.
+
+| | X11 | Wayland | Scale 1.5 and 2 |
 |---|---|---|---|
 | Ubuntu 22.04 | yes | | |
 | Ubuntu 24.04 | yes | yes | yes |
@@ -41,7 +53,7 @@ Every change is built once on Ubuntu 22.04 and that same program is run on the d
 | Arch | yes | yes | |
 | openSUSE Tumbleweed | yes | | |
 
-The release workflow also installs the .deb and runs the AppImage on a bare Ubuntu 22.04 and checks they start. The Arch package and the Flatpak are built in CI (`.github/workflows/packages.yml`).
+The release workflow also installs the .deb on a bare Ubuntu 22.04 and runs the same X11 checks against it, and starts the AppImage there. The Arch package and the Flatpak are built in CI on every change to `installer/linux/` (`.github/workflows/packages.yml`), and the Flatpak is started in a virtual display.
 
 ### What this does not show
 
@@ -49,7 +61,7 @@ Be careful how far to trust a green tick. These runs use a virtual display with 
 
 - **No real graphics hardware.** Drivers, GPUs, multi-monitor and variable refresh are untested. If your GPU stack is unusual, tell us.
 - **No real desktop environment.** X11 runs with no window manager; Wayland runs under `sway`. GNOME (mutter) and KDE (KWin) have their own window handling and decorations, and are not tested.
-- **No real file dialogs, clipboard, drag and drop or input methods.** These depend on the desktop and are untested.
+- **Wayland input** (above), and **real file dialogs, the clipboard, drag and drop and input methods** on either session. These depend on the desktop and are untested.
 - **Pixel-for-pixel appearance** is not compared; the tests check that the screen is drawn, not that it is identical to a reference.
 
 ## If something does not work
@@ -59,7 +71,7 @@ Be careful how far to trust a green tick. These runs use a virtual display with 
 - `NoGlutinConfigs` or "no matching configuration": the graphics setup offers no OpenGL configuration the program could use. OpenDraft asks for smooth (multisampled) edges first and settles for plain ones, so this now only appears when there is no usable OpenGL at all. Install the Mesa packages above; for a quick test try `LIBGL_ALWAYS_SOFTWARE=1 opendraft`.
 - "error while loading shared libraries": install the packages in the table above.
 
-**Open or Save As does nothing.** The status bar will say that no file dialog could be shown. Install `xdg-desktop-portal` and a backend for your desktop, or `zenity`. Until then you can open a drawing by giving its name when you start the program: `opendraft drawing.dxf`.
+**Open or Save As does nothing.** The status bar says that no file dialog is available (and the command line keeps the longer explanation). Install `xdg-desktop-portal` and a backend for your desktop, or `zenity`. Until then you can drop a file on the window or give its name when you start the program: `opendraft drawing.dxf`. Saving a drawing that has no file yet needs a dialog.
 
 **The window is too small or too large on a high-resolution screen.** The program follows the desktop's scale. To force one on X11: `WINIT_X11_SCALE_FACTOR=1.5 opendraft`.
 
