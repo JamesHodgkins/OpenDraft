@@ -60,14 +60,17 @@ Written 2026-10-31. Update it when something is done or the plan changes: tick t
 
 *Why: audience 2. Files going out matter as much as files coming in.*
 
-- [ ] **PDF plot at true scale (L).** Today plotting writes PNG. PDF is the usual way to print at 1:1 and share drawings.
-- [ ] **SVG export (M).** For laser cutters, vinyl cutters and Inkscape. Closed shapes, correct units, no stray duplicates.
-- [ ] **Clean DXF for fabrication (M).** Correct units, closed polylines, splines handled sensibly. OVERKILL and JOIN already help; add a checklist test of a typical laser-cutting file.
-- [ ] **DXF gaps (M).** TEXT import (skipped today), anonymous blocks, block export. Each is a known gap in `CLAUDE.md`.
-- [ ] **Templates and a first-hour tutorial (S).** A metric sheet, A4 and A3, a laser-cutting template, and a ten-command walkthrough.
-- [ ] **Hatch patterns from `.pat` files and linetypes from `.lin` files (M).**
+**Correction (2026-10-31):** this phase first said PDF and SVG plotting were still to build. They are built (`PLOT` writes a layout to PDF or SVG at 1:1 in millimetres; `od_core::plot` and `od_files::plot`, checked in two PDF readers and a browser). What is missing is *proof on real fabrication and printing workflows*, and a few gaps listed in `ui_plan.md`.
 
-**Exit test:** a drawing made in OpenDraft cuts correctly on a laser cutter or prints at 1:1 from the PDF, with no hand-fixing.
+- [ ] **Prove the plots on real workflows (M, needs real software and a printer).** Open OpenDraft's SVG in Inkscape and in the laser and cutter software people use (LightBurn, Glowforge, Silhouette, Cricut and similar); print the PDF at 100% and measure it with a ruler. Write down what was tried in the repository, and fix what breaks.
+- [ ] **Plot gaps (M).** From `ui_plan.md`, not plotted or not settable: margins and a plot area, a plot-scale setting (a sheet plots at 1:1 and the scale is each viewport's), wide polyline segments, viewport borders. Check each is still true before building it.
+- [ ] **Layers to cut settings (S to M).** Laser software reads colour or layer as "cut", "engrave" and "score". Check that SVG and DXF carry layer names and colours in a way those tools use, and document the recipe.
+- [ ] **Clean DXF for fabrication (M).** Correct units, closed polylines, splines handled sensibly. OVERKILL and JOIN already help; add a checklist test of a typical laser-cutting file.
+- [ ] **DXF gaps (M).** TEXT import (skipped today: a DXF with one gives "Skipped 1 TEXT"), anonymous blocks, block export. Each is a known gap in `CLAUDE.md`.
+- [ ] **Templates and a first-hour tutorial (S).** A metric sheet, A4 and A3, a laser-cutting template, and a ten-command walkthrough.
+- [ ] **Hatch patterns from `.pat` files, and linetypes from `.lin` files (M).** Check what loads today (there is a stock linetype library) before scoping.
+
+**Exit test:** a drawing made in OpenDraft cuts correctly on a laser cutter or prints at 1:1 from the PDF, with no hand-fixing, and the repository says which software was tried.
 
 ## Phase 4: Community and project health
 
