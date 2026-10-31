@@ -38,6 +38,8 @@ pub(crate) struct Aim<'a> {
     pub tracks: Vec<crate::snap::Track>,
     /// The paths of object snap tracking and polar tracking.
     pub track: Option<crate::snap::TrackInput>,
+    /// Stand-in objects for what a command has drawn but not yet added.
+    pub extra: std::sync::Arc<[od_core::Object]>,
 }
 
 impl Aim<'_> {
@@ -53,7 +55,7 @@ impl Aim<'_> {
             tracks: &self.tracks,
             track: self.track.as_ref(),
         };
-        snap_all(near, &probe)
+        snap_all(near.into_iter().chain(self.extra.iter()), &probe)
     }
 
     /// Where the pointer at `at` ends up, and the snap behind it.
@@ -175,11 +177,31 @@ mod tests {
             insist: over.as_ref().is_some_and(crate::SnapOverride::insists),
             tracks: Vec::new(),
             track: None,
+            extra: Default::default(),
         }
     }
 
     fn placed(document: &Document, over: Option<crate::SnapOverride>, at: Point) -> Option<Point> {
         aimed(document, over).place(at).map(|(p, _)| p)
+    }
+
+    #[test]
+    fn extra_geometry_is_snapped_to_like_the_drawing() {
+        let doc = Document::default();
+        let mut aim = aimed(&doc, None);
+        let none = aim.place(p(5.0, 0.3)).map(|(at, _)| at);
+        assert_ne!(none, Some(p(5.0, 0.0)), "nothing there yet but the grid");
+        let id = od_core::EntityId(u64::MAX);
+        let attrs = od_core::Attributes::on_layer(od_core::LayerId::DEFAULT);
+        let line = od_core::Entity::Line {
+            start: p(0.0, 0.0),
+            end: p(10.0, 0.0),
+        };
+        aim.extra = vec![od_core::Object::new(id, line, attrs, None)].into();
+        let found = aim.found(p(5.0, 0.3));
+        assert!(found
+            .iter()
+            .any(|s| s.kind == SnapKind::Midpoint && s.point == p(5.0, 0.0)));
     }
 
     #[test]

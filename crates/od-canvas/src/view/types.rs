@@ -113,6 +113,8 @@ pub struct PointPrompt {
     pub base: Option<Point>,
     pub ghost: Option<Ghost>,
     pub ghost_style: GhostStyle,
+    /// Objects not in the drawing that the pointer snaps to as well.
+    pub snap_geometry: Arc<[Entity]>,
     /// Draw a line from the base to the pointer.
     pub rubber_band: bool,
     /// Marks that keep one size on the screen; given the drawing units a

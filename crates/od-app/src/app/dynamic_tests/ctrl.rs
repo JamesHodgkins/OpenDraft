@@ -41,6 +41,20 @@ fn asking(app: &mut OpenDraftApp) -> String {
     app.state.cmd_prompt().text.to_string()
 }
 
+/// Dynamic input at work, as in the real app: it handles every frame while a
+/// point is asked for, which once starved the Ctrl watch.
+#[test]
+fn a_tap_of_ctrl_cycles_while_dynamic_input_is_showing() {
+    let (mut app, ctx) = (app(), egui::Context::default());
+    editing_an_end_grip(&mut app);
+    let input = &mut app.state.docs[0].dynamic_input;
+    input.canvas = Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(800.0, 600.0)));
+    input.cursor = Some(Point::new(5.0, 5.0));
+    ctrl_frame(&mut app, &ctx, true, Vec::new(), 0.1);
+    ctrl_frame(&mut app, &ctx, false, Vec::new(), 0.2);
+    assert!(asking(&mut app).starts_with("Specify new end point"));
+}
+
 #[test]
 fn a_tap_of_ctrl_cycles_but_ctrl_with_a_key_does_not() {
     let (mut app, ctx) = (app(), egui::Context::default());
