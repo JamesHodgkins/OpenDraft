@@ -1,7 +1,7 @@
 //! Remembering what a keyed operation did, so asking again changes nothing.
 //!
 //! A key belongs to one connection and one operation. The first success is
-//! kept, with a hash of the arguments it was asked with; the same key and
+//! kept, with a digest of the arguments it was asked with; the same key and
 //! arguments again gets that answer back (marked `replayed`), and the same
 //! key with other arguments is refused rather than guessed at. Failures are
 //! not kept: every failure leaves the drawing as it was, so trying again is
@@ -9,7 +9,8 @@
 //! that has been pushed out simply runs again.
 
 use std::collections::VecDeque;
-use std::hash::{Hash, Hasher};
+
+use sha2::{Digest, Sha256};
 
 use od_api::idempotency::{supports, valid_key, KEY_FIELD, KEY_MAX};
 use od_api::{ApiError, ErrorCode};
@@ -24,7 +25,7 @@ struct Entry {
     grant: u64,
     operation: String,
     key: String,
-    arguments: u64,
+    arguments: Fingerprint,
     answer: Value,
 }
 
@@ -70,15 +71,17 @@ pub fn take_key(
     }
 }
 
-/// A hash of the arguments, for noticing that they changed. The map keys
-/// are sorted, so the same arguments hash the same however they were
-/// ordered. It guards against mistakes, not against a determined caller.
-fn fingerprint(arguments: &Value) -> u64 {
-    let mut hasher = std::collections::hash_map::DefaultHasher::new();
-    serde_json::to_string(arguments)
-        .unwrap_or_default()
-        .hash(&mut hasher);
-    hasher.finish()
+/// What the arguments came to, for noticing that they changed.
+type Fingerprint = [u8; 32];
+
+/// A SHA-256 digest of the arguments. The map keys are sorted, so the same
+/// arguments give the same digest however they were ordered, and two
+/// different sets of arguments do not share one. (A `Value` always
+/// serializes, so the empty fallback is never used.) It is kept in place of the
+/// arguments themselves, which can be a large batch.
+fn fingerprint(arguments: &Value) -> Fingerprint {
+    let text = serde_json::to_vec(arguments).unwrap_or_default();
+    Sha256::digest(&text).into()
 }
 
 impl Replays {
@@ -136,4 +139,38 @@ pub fn reused(key: &str) -> ApiError {
         "That idempotency_key was already used with different arguments. Use a new key for a different request.",
     )
     .detail("idempotency_key", key)
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::*;
+
+    #[test]
+    fn the_same_arguments_have_the_same_digest_whatever_the_field_order() {
+        let a = json!({"x": 1, "y": [1, 2, 3], "name": "a"});
+        let b = json!({"name": "a", "y": [1, 2, 3], "x": 1});
+        assert_eq!(fingerprint(&a), fingerprint(&b));
+    }
+
+    #[test]
+    fn arguments_that_differ_in_the_smallest_way_have_different_digests() {
+        let base = json!({"entities": [{"x": 1.0}, {"x": 2.0}]});
+        for other in [
+            json!({"entities": [{"x": 1.0}, {"x": 2.000001}]}),
+            json!({"entities": [{"x": 2.0}, {"x": 1.0}]}),
+            json!({"entities": [{"x": 1.0}]}),
+            json!({"entities": [{"x": 1.0}, {"x": 2.0}], "extra": null}),
+        ] {
+            assert_ne!(fingerprint(&base), fingerprint(&other), "{other}");
+        }
+    }
+
+    #[test]
+    fn the_digest_does_not_grow_with_the_arguments() {
+        let big = json!({"entities": vec![json!({"x": 1.5}); 50_000]});
+        assert_eq!(fingerprint(&big).len(), 32);
+        assert_eq!(std::mem::size_of::<Fingerprint>(), 32);
+    }
 }
