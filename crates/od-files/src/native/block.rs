@@ -32,6 +32,7 @@ pub(super) struct BlockDto {
     #[serde(default, skip_serializing_if = "String::is_empty")]
     description: String,
     /// In draw order.
+    #[serde(deserialize_with = "super::limits::block_objects")]
     objects: Vec<BlockObjectDto>,
 }
 

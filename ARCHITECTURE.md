@@ -170,6 +170,10 @@ Rules that follow:
   which checks the size, reads, then dispatches, and passes the open job's
   Cancel flag; `FORMATS` is native, DXF, DWG, and the Open dialog's filters
   come from it.
+  `.odx` is also bounded by what it holds, not only by bytes: its long lists
+  (objects, table rows, objects in a block, points of a shape) are cut off
+  while they are read (`od-files/src/native/limits.rs`), well above any real
+  drawing, and building the drawing looks at the cancel flag as it goes.
 - **DWG** (`od-files/src/dwg/`, over the `od-dwg` crate) is import only, on
   the same lifecycle as DXF: opening a `.dwg` installs an unsaved drawing with
   no file of its own and says "Imported", Save asks for an `.odx` name, and
