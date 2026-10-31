@@ -163,6 +163,24 @@ fn a_wrong_token_or_version_is_refused_and_gets_no_grant() {
     assert!(fixture.host.grants().is_empty());
 }
 
+/// A fixture whose server drops a connection that sends no hello for `wait`.
+pub(super) fn start_impatient(name: &str, wait: Duration) -> Fixture {
+    let dir = std::env::temp_dir().join(format!("od-host-{name}-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    let core = AutomationCore::new(super::core::fresh_instance_id(), Box::new(|| {}));
+    let server = SocketServer::start_with(&dir, &core, wait).unwrap();
+    let host = TestHost {
+        core,
+        server: Some(server),
+    };
+    let descriptor = instance::list(&dir).pop().unwrap();
+    Fixture {
+        host,
+        dir,
+        descriptor,
+    }
+}
+
 #[test]
 fn a_request_before_the_hello_is_not_served() {
     let fixture = start("nohello");
