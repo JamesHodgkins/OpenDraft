@@ -118,7 +118,7 @@ All contributors are expected to be respectful and considerate. See [CODE_OF_CON
 
 A release is a version tag on `main`. Stable releases are `vX.Y.Z`; a version with a suffix (`v0.2.0-beta.1`) is published as a prerelease. A published release and its files are never changed: a mistake is fixed by a new version.
 
-1. Set `version` in the root `Cargo.toml` to the release version and merge that to `main` through a pull request.
+1. Set `version` in the root `Cargo.toml` to the release version and merge that to `main` through a pull request. In the same pull request set `pkgver` in `installer/linux/arch/PKGBUILD` and add a `<release>` for the version to `installer/linux/share/uk.openengineering.opendraft.metainfo.xml`; `scripts/check_packaging.py` (run by the `packages` workflow) fails until they agree.
 2. Decide the "What's new" note (below).
 3. Tag that commit and push the tag: `git tag v0.2.0 && git push origin v0.2.0`.
 4. The `release` workflow then checks that the tag is `v` plus the `Cargo.toml` version and that the commit is on `main`, runs formatting, clippy and the tests on Windows and Linux, builds both packages, and publishes one release holding the Windows zip, the Linux tarball and `SHA256SUMS`. The release is created as a draft and made public only once every file is attached, so a failed run leaves nothing visible; push the fix and re-run it (a leftover draft for the tag is replaced, a published release is refused).
@@ -130,7 +130,9 @@ For Linux the same step builds `OpenDraft-<version>-linux-amd64.deb` and `OpenDr
 
 Running the workflow by hand from the Actions tab builds and tests the packages without publishing anything.
 
-The Linux package is built on Ubuntu 22.04 and has not been run extensively; call it experimental in the notes.
+After a release is published, the packages that are not built here need their own update: run `updpkgsums` in `installer/linux/arch/` and push the PKGBUILD to the AUR, and for Flathub open a pull request on the `uk.openengineering.opendraft` repository with the new tag (see `installer/linux/flatpak/README.md`).
+
+The Linux packages are built on Ubuntu 22.04. The release workflow installs the `.deb` on a bare Ubuntu 22.04 and runs the whole smoke test (`scripts/linux_smoke.py`) against it; `docs/linux.md` says what that does and does not prove.
 
 Before tagging a release, decide what the Home page's "What's new" card says. `crates/od-app/src/whats_new.rs` holds one `Note` per version, keyed by the exact `CARGO_PKG_VERSION`: a short title and at most three plain-language changes users will notice (capabilities and workflow, not refactors or dependency updates). Add one when the release has changes worth announcing; leave it out when it does not, and the card simply does not show. The card's "View release notes" opens `https://github.com/JamesHodgkins/OpenDraft/releases/tag/v<version>`, so publish the release with that tag.
 
