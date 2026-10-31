@@ -92,7 +92,7 @@ fn circle(edge: &HatchEdge) -> Option<Entity> {
         return None;
     };
     let sweep = arc::sweep(*start_angle, *end_angle);
-    let whole = sweep < 1e-9 || sweep > TAU - 1e-9;
+    let whole = !(1e-9..=TAU - 1e-9).contains(&sweep);
     if !whole || !radius.is_finite() || *radius <= 0.0 {
         return None;
     }

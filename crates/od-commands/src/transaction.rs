@@ -1,3 +1,5 @@
+use std::panic::{catch_unwind, resume_unwind, AssertUnwindSafe};
+
 use od_core::{Attributes, Document, Entity, EntityId};
 
 use crate::{Action, AddCopies, AddEntity, Changes, ModifyEntities, RemoveEntities};
@@ -95,8 +97,28 @@ impl<'a> Transaction<'a> {
 
     /// Undo everything done so far, newest first.
     pub(crate) fn rollback(mut self) {
+        self.revert_all();
+    }
+
+    fn revert_all(&mut self) {
         while let Some(mut action) = self.done.pop() {
             action.revert(self.document);
+        }
+    }
+
+    /// Run `edit` on this transaction. Should it panic, the edits made so
+    /// far are reverted before the panic carries on, so the drawing is not
+    /// left changed with no undo step to take the change back.
+    pub(crate) fn run<T, E>(
+        &mut self,
+        edit: impl FnOnce(&mut Transaction) -> Result<T, E>,
+    ) -> Result<T, E> {
+        match catch_unwind(AssertUnwindSafe(|| edit(self))) {
+            Ok(result) => result,
+            Err(payload) => {
+                self.revert_all();
+                resume_unwind(payload)
+            }
         }
     }
 

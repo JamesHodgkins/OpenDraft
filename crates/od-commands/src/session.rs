@@ -151,7 +151,7 @@ impl Session {
         edit: impl FnOnce(&mut Transaction) -> Result<T, E>,
     ) -> Result<T, E> {
         let mut tx = Transaction::new(&mut self.document);
-        match edit(&mut tx) {
+        match tx.run(edit) {
             Ok(value) => {
                 if let Some(batch) = tx.finish(name) {
                     self.history.record(batch);
@@ -179,7 +179,7 @@ impl Session {
         edit: impl FnOnce(&mut Transaction) -> Result<T, E>,
     ) -> Result<(T, Changes), CheckedError<E>> {
         let mut tx = Transaction::new(&mut self.document);
-        let value = match edit(&mut tx) {
+        let value = match tx.run(edit) {
             Ok(value) => value,
             Err(error) => {
                 tx.rollback();
@@ -483,5 +483,39 @@ mod tests {
             session.redo_checked(mine, own),
             Err(HistoryError::Moved { .. })
         ));
+    }
+
+    /// A closure that edits and then panics, as a command with a bug would.
+    fn edit_then_panic(tx: &mut Transaction) -> Result<(), ()> {
+        tx.add(Entity::Line {
+            start: Point::new(0.0, 0.0),
+            end: Point::new(2.0, 2.0),
+        });
+        panic!("a command bug");
+    }
+
+    #[test]
+    fn a_panic_inside_a_transaction_leaves_no_edits_behind() {
+        let mut session = Session::default();
+        add(&mut session);
+        let (objects, undoable) = (session.document.len(), session.history.can_undo());
+        let caught = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _ = session.transaction("Buggy", edit_then_panic);
+        }));
+        assert!(caught.is_err());
+        assert_eq!(session.document.len(), objects);
+        assert_eq!(session.history.can_undo(), undoable);
+        session.document.validate().unwrap();
+    }
+
+    #[test]
+    fn a_panic_inside_a_checked_transaction_leaves_no_edits_behind() {
+        let mut session = Session::default();
+        let caught = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _ = session.checked_transaction("Buggy", Provenance::User, edit_then_panic);
+        }));
+        assert!(caught.is_err());
+        assert_eq!(session.document.len(), 0);
+        assert!(!session.is_modified());
     }
 }
