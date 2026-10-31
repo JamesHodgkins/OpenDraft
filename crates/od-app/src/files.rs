@@ -18,7 +18,7 @@ pub fn default_picker() -> Box<dyn FilePicker> {
     }
     #[cfg(not(test))]
     {
-        Box::new(crate::picker::NativePicker)
+        Box::<crate::picker::NativePicker>::default()
     }
 }
 
