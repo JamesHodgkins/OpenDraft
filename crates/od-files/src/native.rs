@@ -102,19 +102,22 @@ impl FileFormat for NativeFormat {
     }
 
     fn read(&self, bytes: &[u8]) -> Result<Loaded, FileError> {
-        let header: Header =
-            serde_json::from_slice(bytes).map_err(|e| FileError::Unreadable(e.to_string()))?;
-        if header.format != MAGIC {
+        // One pass over the file. Only when the whole body does not parse is
+        // the start of the file read on its own, to say why.
+        let file: FileDto = match serde_json::from_slice(bytes) {
+            Ok(file) => file,
+            Err(parse) => return Err(explain(bytes, &parse)),
+        };
+        if file.format != MAGIC {
             return Err(FileError::Unreadable("not an OpenDraft drawing".into()));
         }
-        if header.version != CURRENT_VERSION {
+        if file.version != CURRENT_VERSION {
             return Err(FileError::WrongVersion {
-                found: header.version,
+                found: file.version,
                 supported: CURRENT_VERSION,
-                saved_by: header.saved_by,
+                saved_by: file.saved_by,
             });
         }
-        let file: FileDto = serde_json::from_slice(bytes).map_err(|e| unreadable(&header, &e))?;
         let document = file.drawing.into_document()?;
         document
             .validate()
@@ -154,6 +157,26 @@ struct Header {
     version: u32,
     #[serde(default)]
     saved_by: String,
+}
+
+/// Why `bytes` did not parse as a drawing: not ours, another version, or a
+/// body of the current version that is damaged.
+fn explain(bytes: &[u8], parse: &serde_json::Error) -> FileError {
+    let header: Header = match serde_json::from_slice(bytes) {
+        Ok(header) => header,
+        Err(e) => return FileError::Unreadable(e.to_string()),
+    };
+    if header.format != MAGIC {
+        return FileError::Unreadable("not an OpenDraft drawing".into());
+    }
+    if header.version != CURRENT_VERSION {
+        return FileError::WrongVersion {
+            found: header.version,
+            supported: CURRENT_VERSION,
+            saved_by: header.saved_by,
+        };
+    }
+    unreadable(&header, parse)
 }
 
 /// The error for a body of the current version that did not parse. While the
@@ -796,6 +819,16 @@ mod tests {
                 matches!(read(text), Err(FileError::Unreadable(_))),
                 "{text:?}"
             );
+        }
+    }
+
+    #[test]
+    fn a_file_that_is_not_ours_is_refused_even_if_its_body_parses() {
+        let other = MINIMAL.replace("opendraft-drawing", "something-else");
+        assert_ne!(other, MINIMAL);
+        match read(&other) {
+            Err(FileError::Unreadable(why)) => assert!(why.contains("not an OpenDraft"), "{why}"),
+            other => panic!("expected Unreadable, got {other:?}"),
         }
     }
 
