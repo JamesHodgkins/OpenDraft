@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Describes OpenDraft to software centres (GNOME Software, KDE Discover, Flathub).
+     Checked in CI with `appstreamcli validate`. The id is the Flatpak's application id;
+     other packages may ship it under the same name, with the desktop file of the same
+     name (see installer/linux/flatpak). -->
+<component type="desktop-application">
+  <id>uk.openengineering.opendraft</id>
+  <name>OpenDraft</name>
+  <summary>Free, open-source 2D CAD with an AutoCAD-style command line</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <developer id="uk.openengineering">
+    <name>The OpenDraft project</name>
+  </developer>
+  <description>
+    <p>
+      OpenDraft is a fast, free 2D CAD application for people who think in command lines.
+      Type L, press Enter and click two points: a ribbon, a real command line with the
+      standard drafting command names and short aliases, and step-by-step prompts with options.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>Opens DXF and DWG drawings (including files saved by AutoCAD 2010 to 2018), saves DXF, and has its own .odx format</li>
+      <li>Layers, linetypes, blocks, hatches, dimensions, multiline text and layouts</li>
+      <li>Every change is one undo step; saves are atomic, with autosave and crash recovery</li>
+      <li>An optional, off-by-default connection that lets an AI assistant inspect and draw in open drawings, with every change undoable</li>
+    </ul>
+    <p>OpenDraft is in early development: features and the .odx format may still change.</p>
+  </description>
+  <launchable type="desktop-id">uk.openengineering.opendraft.desktop</launchable>
+  <screenshots>
+    <screenshot type="default">
+      <caption>A drawing with the ribbon, Properties panel, command line and Layers panel</caption>
+      <image type="source" width="850" height="552">https://raw.githubusercontent.com/JamesHodgkins/OpenDraft/main/docs/screenshot.png</image>
+    </screenshot>
+  </screenshots>
+  <url type="homepage">https://github.com/JamesHodgkins/OpenDraft</url>
+  <url type="bugtracker">https://github.com/JamesHodgkins/OpenDraft/issues</url>
+  <url type="vcs-browser">https://github.com/JamesHodgkins/OpenDraft</url>
+  <categories>
+    <category>Graphics</category>
+    <category>2DGraphics</category>
+    <category>Engineering</category>
+  </categories>
+  <keywords>
+    <keyword>CAD</keyword>
+    <keyword>drafting</keyword>
+    <keyword>drawing</keyword>
+    <keyword>DXF</keyword>
+    <keyword>DWG</keyword>
+  </keywords>
+  <provides>
+    <mediatype>application/x-opendraft-drawing</mediatype>
+    <mediatype>image/vnd.dxf</mediatype>
+    <mediatype>image/vnd.dwg</mediatype>
+    <binary>opendraft</binary>
+  </provides>
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </supports>
+  <requires>
+    <display_length compare="ge">768</display_length>
+  </requires>
+  <content_rating type="oars-1.1" />
+  <releases>
+    <release version="0.1.3" date="2026-10-25" />
+  </releases>
+</component>

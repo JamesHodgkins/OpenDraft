@@ -2,7 +2,8 @@
 """End-to-end smoke test of OpenDraft on a Linux desktop (X11).
 
 Run it inside a running X server (scripts/linux_smoke.sh starts Xvfb). It
-starts the real program with a throwaway profile, home and runtime folder,
+starts the real program (OD_AUTOMATION=1 turns its automation socket on)
+with a throwaway profile, home and runtime folder,
 and drives it the way a person would, then reads the result back through the
 automation socket (the same one the MCP server uses):
 
@@ -196,19 +197,6 @@ def wait_for(predicate, seconds, step=0.25):
     return None
 
 
-def seed_settings(data_home):
-    """Turn automation on in the profile's saved settings, as ticking the
-    box in Settings would. eframe keeps them in app.ron (a RON map of strings),
-    in $XDG_DATA_HOME/<profile name, lower case, without spaces>."""
-    folder = os.path.join(data_home, WINDOW_TITLE.lower().replace(" ", ""))
-    os.makedirs(folder, exist_ok=True)
-    settings = json.dumps({"automation_enabled": True})
-    escaped = settings.replace("\\", "\\\\").replace('"', '\\"')
-    with open(os.path.join(folder, "app.ron"), "w") as handle:
-        handle.write('{\n    "settings": "%s",\n}\n' % escaped)
-    return folder
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--binary", required=True, help="path of the opendraft program")
@@ -244,10 +232,11 @@ def main():
         "LIBGL_ALWAYS_SOFTWARE": "1",
         "RUST_BACKTRACE": "1",
         "RUST_LOG": "info",
+        # Turns the automation socket on without ticking the box in Settings.
+        "OD_AUTOMATION": "1",
     })
     if args.scale:
         env["WINIT_X11_SCALE_FACTOR"] = args.scale
-    seed_settings(data)
 
     log_path = os.path.join(args.out, f"{args.label}-app.log")
     log = open(log_path, "wb")
