@@ -3,7 +3,10 @@
 //! reads a frame, hands the request to the core's queue and writes the
 //! answer back. What a request may do is the core's to decide.
 
-use std::io::{Read, Write};
+use std::io::{self, Read, Write};
+use std::time::{Duration, Instant};
+
+use interprocess::local_socket::traits::Stream;
 
 use od_api::frame::{read_frame, write_frame};
 use od_api::handshake::{tokens_match, Hello, HelloReply};
@@ -19,9 +22,64 @@ fn send<S: Write>(stream: &mut S, value: &impl serde::Serialize) -> bool {
     }
 }
 
+/// How long to wait between looks for the next bytes of a hello.
+const POLL: Duration = Duration::from_millis(5);
+
+/// A stream in non-blocking mode that is read until `deadline` and no longer,
+/// so a peer that connects and says nothing cannot hold its thread (and one
+/// of the few connection slots) for ever. The local socket gives no read
+/// timeout on Windows named pipes, so waiting is done here.
+struct Patient<'a, S> {
+    stream: &'a mut S,
+    deadline: Instant,
+}
+
+/// Whether a non-blocking read found nothing to read yet, rather than data,
+/// the end of the stream or a failure. A Windows named pipe has no way to say
+/// so apart from the end of the stream (the library turns the "no data" error
+/// into `Ok(0)`), so there an empty read counts as nothing yet and a client
+/// that has gone is noticed at the deadline.
+fn nothing_yet(read: &io::Result<usize>, wanted: usize) -> bool {
+    match read {
+        Err(e) => e.kind() == io::ErrorKind::WouldBlock,
+        Ok(0) => cfg!(windows) && wanted > 0,
+        Ok(_) => false,
+    }
+}
+
+impl<S: Read> Read for Patient<'_, S> {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        loop {
+            let read = self.stream.read(buf);
+            if !nothing_yet(&read, buf.len()) {
+                return read;
+            }
+            if Instant::now() >= self.deadline {
+                return Err(io::ErrorKind::TimedOut.into());
+            }
+            std::thread::sleep(POLL);
+        }
+    }
+}
+
+/// The first frame of a connection, which must arrive within `timeout`.
+fn read_hello<S: Stream>(stream: &mut S, timeout: Duration) -> Option<Vec<u8>> {
+    stream.set_nonblocking(true).ok()?;
+    let frame = read_frame(&mut Patient {
+        stream,
+        deadline: Instant::now() + timeout,
+    });
+    // The rest of the connection waits as long as the client likes.
+    stream.set_nonblocking(false).ok()?;
+    frame.ok()
+}
+
 /// One connection, start to finish.
-pub(super) fn serve<S: Read + Write>(socket: &Socket, stream: &mut S) {
-    let Some(grant_id) = handshake(socket, stream) else {
+pub(super) fn serve<S: Stream>(socket: &Socket, stream: &mut S) {
+    let Some(frame) = read_hello(stream, socket.handshake_timeout) else {
+        return;
+    };
+    let Some(grant_id) = handshake(socket, stream, &frame) else {
         return;
     };
     while let Ok(frame) = read_frame(stream) {
@@ -50,10 +108,9 @@ pub(super) fn serve<S: Read + Write>(socket: &Socket, stream: &mut S) {
     socket.link.release(grant_id);
 }
 
-/// The first frame must be a valid hello with the right token. On success
-/// the connection gets a read-only grant.
-fn handshake<S: Read + Write>(socket: &Socket, stream: &mut S) -> Option<u64> {
-    let frame = read_frame(stream).ok()?;
+/// `frame`, the first the client sent, must be a valid hello with the right
+/// token. On success the connection gets a read-only grant.
+fn handshake<S: Read + Write>(socket: &Socket, stream: &mut S, frame: &[u8]) -> Option<u64> {
     let refuse = |stream: &mut S, error: ApiError| {
         send(
             stream,
@@ -67,7 +124,7 @@ fn handshake<S: Read + Write>(socket: &Socket, stream: &mut S) -> Option<u64> {
         );
         None
     };
-    let Ok(hello) = serde_json::from_slice::<Hello>(&frame) else {
+    let Ok(hello) = serde_json::from_slice::<Hello>(frame) else {
         return refuse(
             stream,
             ApiError::new(ErrorCode::InvalidArguments, "Bad hello."),

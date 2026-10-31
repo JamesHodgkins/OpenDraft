@@ -10,6 +10,7 @@ use std::io::{self};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::time::Duration;
 
 use interprocess::local_socket::{prelude::*, ListenerOptions, Name, Stream};
 use od_api::instance::{self, Descriptor};
@@ -19,12 +20,15 @@ use super::core::{AutomationCore, Link};
 
 /// Most connections served at once; each has a thread.
 const MAX_CONNECTIONS: usize = 8;
+/// How long a new connection has to send its hello before it is dropped.
+const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// What the connection threads share: where to send requests, and the
 /// secret a client must show.
 pub(super) struct Socket {
     pub(super) link: Link,
     pub(super) token: String,
+    pub(super) handshake_timeout: Duration,
     connections: AtomicUsize,
     shutdown: AtomicBool,
 }
@@ -91,6 +95,16 @@ fn endpoint_for(dir: &Path, instance_id: &str) -> String {
 impl SocketServer {
     /// Start listening and publish the descriptor in `dir`, feeding `core`.
     pub fn start(dir: &Path, core: &AutomationCore) -> io::Result<Self> {
+        Self::start_with(dir, core, HANDSHAKE_TIMEOUT)
+    }
+
+    /// As [`start`](Self::start), with a connection that sends no hello for
+    /// `handshake_timeout` dropped.
+    pub(super) fn start_with(
+        dir: &Path,
+        core: &AutomationCore,
+        handshake_timeout: Duration,
+    ) -> io::Result<Self> {
         sweep_stale(dir);
         let instance_id = core.instance_id().to_owned();
         let token = random_hex(32)?;
@@ -104,6 +118,7 @@ impl SocketServer {
         let socket = Arc::new(Socket {
             link: core.link(),
             token: token.clone(),
+            handshake_timeout,
             connections: AtomicUsize::new(0),
             shutdown: AtomicBool::new(false),
         });
