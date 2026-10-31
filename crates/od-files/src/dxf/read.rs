@@ -224,24 +224,26 @@ impl Importer {
         let layer = self.layer_named(&decode(record.text(8).unwrap_or("0")));
         let color = match (record.int(420), record.int(62)) {
             (Some(value), _) => Attr::Set(true_color(value)),
+            (None, Some(0)) => Attr::ByBlock,
             (None, Some(index)) if (1..=255).contains(&index.abs()) => {
                 Attr::Set(aci_color(index.abs()))
             }
             _ => Attr::ByLayer,
         };
-        let linetype = self
-            .linetype_ref(record.text(6))
-            .map_or(Attr::ByLayer, Attr::Set);
+        let linetype = if record
+            .text(6)
+            .is_some_and(|n| n.eq_ignore_ascii_case("byblock"))
+        {
+            Attr::ByBlock
+        } else {
+            self.linetype_ref(record.text(6))
+                .map_or(Attr::ByLayer, Attr::Set)
+        };
         let lineweight = match record.int(370) {
             Some(w) if w >= 0 => Attr::Set(Lineweight(u16::try_from(w).unwrap_or(u16::MAX))),
+            Some(-2) => Attr::ByBlock,
             _ => Attr::ByLayer,
         };
-        let by_block = record.int(62) == Some(0)
-            || record.int(370) == Some(-2)
-            || record
-                .text(6)
-                .is_some_and(|n| n.eq_ignore_ascii_case("byblock"));
-        self.blocks.by_block += u64::from(by_block);
         let (linetype_scale, continuous_generation) =
             super::linetypes::read_entity(&record.name, record.number(48), record.int(70));
         Attributes {
@@ -608,7 +610,10 @@ mod tests {
             Attr::Set(od_core::LinetypeId::CENTER)
         );
         assert_eq!(objects[1].attrs.lineweight, Attr::Set(Lineweight(35)));
-        assert_eq!(objects[2].attrs, Attributes::on_layer(LayerId::DEFAULT));
+        // Colour 256 and BYLAYER are by layer; lineweight -2 is by block.
+        assert_eq!(objects[2].attrs.color, Attr::ByLayer);
+        assert_eq!(objects[2].attrs.linetype, Attr::ByLayer);
+        assert_eq!(objects[2].attrs.lineweight, Attr::ByBlock);
     }
 
     #[test]

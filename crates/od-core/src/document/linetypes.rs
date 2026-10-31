@@ -44,7 +44,7 @@ impl Document {
     pub fn linetype_uses(&self) -> impl Iterator<Item = (LinetypeId, LinetypeUse<'_>)> {
         let set = |attr: &crate::Attr<LinetypeId>| match attr {
             crate::Attr::Set(id) => Some(*id),
-            crate::Attr::ByLayer => None,
+            crate::Attr::ByLayer | crate::Attr::ByBlock => None,
         };
         let layers = self
             .layers()
@@ -77,8 +77,8 @@ impl Document {
     }
 
     /// Every reference names a record of the table, and none names `BYLAYER`
-    /// or `BYBLOCK` (an object says ByLayer with `Attr::ByLayer`; ByBlock is
-    /// not built).
+    /// or `BYBLOCK` (an object says ByLayer with `Attr::ByLayer` and ByBlock with
+    /// `Attr::ByBlock`).
     pub(crate) fn validate_linetypes(&self) -> Result<(), DocumentError> {
         for (id, who) in self.linetype_uses() {
             let place = match who {
@@ -208,7 +208,10 @@ mod tests {
             bad(&on_object(2)),
             "BYLAYER is Attr::ByLayer, not a record to name"
         );
-        assert!(bad(&on_object(3)), "ByBlock is not built");
+        assert!(
+            bad(&on_object(3)),
+            "ByBlock is Attr::ByBlock, not a record to name"
+        );
         assert!(!bad(&on_object(1)));
         assert!(bad(&|doc: &mut Document| {
             doc.set_new_object_style(Attr::ByLayer, Attr::Set(LinetypeId(99)), Attr::ByLayer);

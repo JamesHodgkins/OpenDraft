@@ -17,12 +17,12 @@ fn it_is_an_import_and_says_what_it_left_out() {
     assert!(loaded.imported);
     assert_eq!(loaded.document.model_objects().count(), 13);
     // ezdxf adds three arrowhead blocks drawn "by block"; one holds a SOLID.
+    // Their by-block properties are kept.
     assert_eq!(
         loaded.warnings,
         [
             // ezdxf's add_spline writes fit points alone; they are fitted.
             "Skipped 2 unsupported objects: 1 SOLID, 1 TEXT.",
-            "2 objects used a \"by block\" colour, linetype or lineweight; they follow their layer instead.",
         ]
     );
     assert_eq!(loaded.document.blocks().len(), 4);

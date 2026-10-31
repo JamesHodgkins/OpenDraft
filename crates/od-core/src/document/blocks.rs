@@ -77,7 +77,7 @@ impl Document {
             return None;
         };
         let pieces = insert
-            .picture_with(&object.attrs)
+            .picture_with(&object.attrs, &|l| self.layer_look(l))
             .into_iter()
             .map(|p| Object::new(object.id, p.entity, p.attrs, object.layout));
         Some(pieces.filter(|o| self.is_visible(o)).collect())

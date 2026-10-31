@@ -56,7 +56,9 @@ fn apply_props(document: &Document, layer: &mut Layer, props: &LayerProps) -> Re
     }
     match &props.color {
         None => {}
-        Some(ColorDto::ByLayer) => return Err(invalid("A layer's colour cannot be by_layer.")),
+        Some(ColorDto::ByLayer | ColorDto::ByBlock) => {
+            return Err(invalid("A layer's colour cannot be by_layer or by_block."))
+        }
         Some(ColorDto::Foreground) => layer.color = Color::Foreground,
         Some(ColorDto::Rgb { r, g, b }) => layer.color = Color::Rgb(*r, *g, *b),
     }

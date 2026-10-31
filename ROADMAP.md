@@ -100,7 +100,7 @@ Written 2026-10-31. Update it when something is done or the plan changes: tick t
 
 *Why: audience 3. Only after phases 1 to 5, and in this rough order.*
 
-- [ ] Text: TEXT/MTEXT in all import and export paths, block attributes, `ByBlock`.
+- [ ] Text: TEXT/MTEXT in all import and export paths, block attributes (`ByBlock` is done, 31-10-2026).
 - [ ] DWG export (L).
 - [ ] Associative arrays (ARRAY makes plain copies today).
 - [ ] Spline editing (trim, extend, break, join, offset), Lengthen for ellipses and splines, PEDIT's Fit and Spline.

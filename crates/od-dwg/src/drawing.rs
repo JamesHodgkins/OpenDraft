@@ -12,7 +12,7 @@ use crate::error::{DwgError, DwgErrorKind, DwgStage};
 use crate::handles::DwgHandle;
 use crate::header::DwgHeader;
 use crate::limits::DwgLimits;
-use crate::lineweight::{lineweight, DwgLineweight, BY_BLOCK, BY_LAYER};
+use crate::lineweight::{lineweight, DwgLineweight, BY_LAYER};
 use crate::pass::{Look, Pass, Record, Stored};
 use crate::report::{Degradation, ImportReport, Skipped};
 use crate::shapes::{self, Shape, MAX_ABS_COORDINATE};
@@ -26,6 +26,7 @@ use crate::version::DwgVersion;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DwgColor {
     ByLayer,
+    ByBlock,
     /// An AutoCAD Color Index, 1 to 255.
     Aci(u8),
     True(u8, u8, u8),
@@ -34,6 +35,7 @@ pub enum DwgColor {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DwgLinetype {
     ByLayer,
+    ByBlock,
     Named(String),
 }
 
@@ -192,8 +194,7 @@ fn invalid(handle: DwgHandle) -> DwgError {
     DwgError::new(DwgErrorKind::InvalidObject, DwgStage::Object).of_object(handle)
 }
 
-/// The look of one entity with every handle resolved. "By block" cannot be
-/// kept on an entity outside a block, so it becomes "by layer", with a note.
+/// The look of one entity with every handle resolved.
 fn attributes(
     handle: DwgHandle,
     look: &Look,
@@ -204,29 +205,19 @@ fn attributes(
         .layer
         .filter(|l| pass.layers.contains_key(l))
         .ok_or_else(|| invalid(handle))?;
-    let mut by_block = false;
     let color = match (look.true_color, look.color_index) {
         (Some(rgb), _) => DwgColor::True((rgb >> 16) as u8, (rgb >> 8) as u8, rgb as u8),
         (None, 256) => DwgColor::ByLayer,
-        (None, 0 | 257) => {
-            by_block = true;
-            DwgColor::ByLayer
-        }
+        (None, 0 | 257) => DwgColor::ByBlock,
         (None, i) if i <= 255 => DwgColor::Aci(i as u8),
         (None, _) => DwgColor::ByLayer,
     };
     let linetype = match look.linetype_flags {
-        1 => {
-            by_block = true;
-            DwgLinetype::ByLayer
-        }
+        1 => DwgLinetype::ByBlock,
         2 => DwgLinetype::Named("Continuous".to_owned()),
         3 => match look.linetype.and_then(|h| pass.linetypes.get(&h)) {
             Some(l) if l.name.eq_ignore_ascii_case("bylayer") => DwgLinetype::ByLayer,
-            Some(l) if l.name.eq_ignore_ascii_case("byblock") => {
-                by_block = true;
-                DwgLinetype::ByLayer
-            }
+            Some(l) if l.name.eq_ignore_ascii_case("byblock") => DwgLinetype::ByBlock,
             Some(l) => DwgLinetype::Named(l.name.clone()),
             None => {
                 report.degrade(Degradation::MissingLinetype);
@@ -235,15 +226,7 @@ fn attributes(
         },
         _ => DwgLinetype::ByLayer,
     };
-    let weight = if look.lineweight == BY_BLOCK {
-        by_block = true;
-        DwgLineweight::ByLayer
-    } else {
-        lineweight(look.lineweight)
-    };
-    if by_block {
-        report.degrade(Degradation::ByBlockAttribute);
-    }
+    let weight = lineweight(look.lineweight);
     Ok((layer, color, linetype, weight))
 }
 
@@ -532,35 +515,29 @@ mod tests {
     }
 
     #[test]
-    fn by_block_becomes_by_layer_with_one_note_per_entity() {
+    fn by_block_is_kept() {
         let l = Look {
             color_index: 0,
             linetype_flags: 1,
-            lineweight: BY_BLOCK,
+            lineweight: crate::lineweight::BY_BLOCK,
             ..look()
         };
         let (c, t, w, report) = resolve(&l);
         assert_eq!(
             (c, t, w),
             (
-                DwgColor::ByLayer,
-                DwgLinetype::ByLayer,
-                DwgLineweight::ByLayer
+                DwgColor::ByBlock,
+                DwgLinetype::ByBlock,
+                DwgLineweight::ByBlock
             )
         );
-        assert_eq!(
-            report.degraded.get(&Degradation::ByBlockAttribute),
-            Some(&1)
-        );
+        assert!(report.degraded.is_empty());
         let l = Look {
             linetype_flags: 3,
             linetype: Some(DwgHandle(0x21)),
             ..look()
         };
-        assert_eq!(
-            resolve(&l).3.degraded.get(&Degradation::ByBlockAttribute),
-            Some(&1)
-        );
+        assert_eq!(resolve(&l).1, DwgLinetype::ByBlock);
     }
 
     #[test]

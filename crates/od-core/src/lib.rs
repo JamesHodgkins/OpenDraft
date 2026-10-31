@@ -81,7 +81,7 @@ pub use grip::{Grip, GripKind};
 pub use hatch::HatchEntity;
 pub use intersect::Curve;
 pub use join::{join, Merged};
-pub use layer::{Attr, Attributes, Color, Layer, LayerId, Lineweight};
+pub use layer::{Attr, Attributes, Color, Layer, LayerId, LayerLook, Lineweight};
 pub use layout::{
     format_scale, paper_size, paper_size_name, parse_scale, Layout, LayoutId, Viewport, ViewportId,
     MIN_SHEET, PAPER_SIZES,

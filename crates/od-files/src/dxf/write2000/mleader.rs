@@ -30,6 +30,7 @@ fn colour_code(colour: &Attr<Color>) -> i64 {
         Attr::Set(Color::Rgb(r, g, b)) => {
             0xC200_0000_i64 | (i64::from(*r) << 16) | (i64::from(*g) << 8) | i64::from(*b)
         }
+        Attr::ByBlock => BY_BLOCK,
         _ => BY_LAYER,
     }
 }
@@ -38,6 +39,7 @@ fn weight_code(weight: &Attr<Lineweight>) -> i32 {
     match weight {
         Attr::Set(w) => i32::from(w.0),
         Attr::ByLayer => -1,
+        Attr::ByBlock => -2,
     }
 }
 

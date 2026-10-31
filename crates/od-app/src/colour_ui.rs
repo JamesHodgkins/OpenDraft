@@ -9,6 +9,7 @@ use od_ui::{menu, Theme};
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Pick {
     ByLayer,
+    ByBlock,
     Color(Color),
 }
 
@@ -87,7 +88,7 @@ fn swatch(ui: &Ui, theme: &Theme, rect: Rect, color: Color32) {
 }
 
 /// A square swatch that opens the palette (layer table cells). `by_layer`
-/// adds a ByLayer entry, for objects.
+/// adds ByLayer and ByBlock entries, for objects.
 pub fn swatch_button(
     ui: &mut Ui,
     theme: &Theme,
@@ -153,6 +154,9 @@ fn palette_popup(
         let mut picked = None;
         if by_layer && menu::menu_row(ui, theme, "ByLayer", false) {
             picked = Some(Pick::ByLayer);
+        }
+        if by_layer && menu::menu_row(ui, theme, "ByBlock", false) {
+            picked = Some(Pick::ByBlock);
         }
         if menu::menu_row(ui, theme, "Foreground", false) {
             picked = Some(Pick::Color(Color::Foreground));

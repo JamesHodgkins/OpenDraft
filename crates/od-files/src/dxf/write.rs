@@ -247,16 +247,22 @@ pub(super) fn write_r12(document: &Document) -> Result<Encoded, FileError> {
         // Group 8 (layer), then colour and linetype when set on the object.
         let mut common = |out: &mut Out| -> Result<(), FileError> {
             out.pair(8, &layer);
-            if let Attr::Set(id) = &object.attrs.linetype {
-                out.pair(6, super::linetypes::name_for(document, *id));
+            match &object.attrs.linetype {
+                Attr::Set(id) => out.pair(6, super::linetypes::name_for(document, *id)),
+                Attr::ByBlock => out.pair(6, "BYBLOCK"),
+                Attr::ByLayer => {}
             }
             if object.attrs.linetype_scale != 1.0 {
                 out.pair(48, finite(object.attrs.linetype_scale)?);
             }
-            if let Attr::Set(color) = object.attrs.color {
-                let (index, approximate) = aci_for(color);
-                approximated |= approximate;
-                out.pair(62, index);
+            match object.attrs.color {
+                Attr::Set(color) => {
+                    let (index, approximate) = aci_for(color);
+                    approximated |= approximate;
+                    out.pair(62, index);
+                }
+                Attr::ByBlock => out.pair(62, 0),
+                Attr::ByLayer => {}
             }
             Ok(())
         };

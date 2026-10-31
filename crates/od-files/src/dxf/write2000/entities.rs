@@ -123,17 +123,23 @@ pub(super) fn write_object(
             out.pair(67, 1);
         }
         out.pair(8, &layer);
-        if let Attr::Set(id) = &object.attrs.linetype {
-            out.pair(6, crate::dxf::linetypes::name_for(document, *id));
+        match &object.attrs.linetype {
+            Attr::Set(id) => out.pair(6, crate::dxf::linetypes::name_for(document, *id)),
+            Attr::ByBlock => out.pair(6, "ByBlock"),
+            Attr::ByLayer => {}
         }
         if object.attrs.linetype_scale != 1.0 {
             out.pair(48, object.attrs.linetype_scale);
         }
-        if let Attr::Set(color) = object.attrs.color {
-            out.pair(62, aci_for(color).0);
+        match object.attrs.color {
+            Attr::Set(color) => out.pair(62, aci_for(color).0),
+            Attr::ByBlock => out.pair(62, 0),
+            Attr::ByLayer => {}
         }
-        if let Attr::Set(weight) = object.attrs.lineweight {
-            out.pair(370, weight_code(weight));
+        match object.attrs.lineweight {
+            Attr::Set(weight) => out.pair(370, weight_code(weight)),
+            Attr::ByBlock => out.pair(370, -2),
+            Attr::ByLayer => {}
         }
         if let Attr::Set(color) = object.attrs.color {
             if let Some(rgb) = true_color(color) {

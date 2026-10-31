@@ -406,12 +406,14 @@ pub fn attributes_from(
     match &input.color {
         None => {}
         Some(ColorDto::ByLayer) => base.color = Attr::ByLayer,
+        Some(ColorDto::ByBlock) => base.color = Attr::ByBlock,
         Some(ColorDto::Foreground) => base.color = Attr::Set(Color::Foreground),
         Some(ColorDto::Rgb { r, g, b }) => base.color = Attr::Set(Color::Rgb(*r, *g, *b)),
     }
     match &input.linetype {
         None => {}
         Some(LinetypeDto::ByLayer) => base.linetype = Attr::ByLayer,
+        Some(LinetypeDto::ByBlock) => base.linetype = Attr::ByBlock,
         Some(LinetypeDto::Named { name }) => {
             let record = doc.linetypes().named(name).ok_or_else(|| {
                 ApiError::new(ErrorCode::InvalidReference, "No such linetype.")
@@ -423,6 +425,7 @@ pub fn attributes_from(
     match &input.lineweight {
         None => {}
         Some(LineweightDto::ByLayer) => base.lineweight = Attr::ByLayer,
+        Some(LineweightDto::ByBlock) => base.lineweight = Attr::ByBlock,
         Some(LineweightDto::Set { hundredths_mm }) => {
             let weight = Lineweight(*hundredths_mm);
             if !Lineweight::STANDARD.contains(&weight) {

@@ -292,6 +292,7 @@ enum ColorDto {
 enum AttrDto<T> {
     #[default]
     ByLayer,
+    ByBlock,
     Set(T),
 }
 
@@ -331,6 +332,7 @@ impl From<ColorDto> for Color {
 fn attr_to_dto<T, U>(attr: &Attr<T>, convert: impl Fn(&T) -> U) -> AttrDto<U> {
     match attr {
         Attr::ByLayer => AttrDto::ByLayer,
+        Attr::ByBlock => AttrDto::ByBlock,
         Attr::Set(value) => AttrDto::Set(convert(value)),
     }
 }
@@ -338,6 +340,7 @@ fn attr_to_dto<T, U>(attr: &Attr<T>, convert: impl Fn(&T) -> U) -> AttrDto<U> {
 fn attr_from_dto<T, U>(attr: AttrDto<T>, convert: impl Fn(T) -> U) -> Attr<U> {
     match attr {
         AttrDto::ByLayer => Attr::ByLayer,
+        AttrDto::ByBlock => Attr::ByBlock,
         AttrDto::Set(value) => Attr::Set(convert(value)),
     }
 }
@@ -628,6 +631,24 @@ mod tests {
     #[test]
     fn everything_survives_a_round_trip() {
         let document = rich();
+        assert_eq!(roundtrip(&document), document);
+    }
+
+    #[test]
+    fn by_block_round_trips() {
+        let mut document = Document::default();
+        document.add_with(
+            Entity::Line {
+                start: Point::new(0.0, 0.0),
+                end: Point::new(1.0, 0.0),
+            },
+            Attributes {
+                color: Attr::ByBlock,
+                linetype: Attr::ByBlock,
+                lineweight: Attr::ByBlock,
+                ..Attributes::on_layer(LayerId::DEFAULT)
+            },
+        );
         assert_eq!(roundtrip(&document), document);
     }
 

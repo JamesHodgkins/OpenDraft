@@ -10,7 +10,7 @@
 
 use crate::block::affine::Similarity;
 use crate::block::{inherited, Affine, BlockEntity, Insert, MAX_EXPANSION, MAX_NESTING};
-use crate::{bulge, Attributes, Bounds, Ellipse, Entity, Point};
+use crate::{bulge, Attributes, Bounds, Ellipse, Entity, LayerId, LayerLook, Point};
 
 /// One drawn object of an insert, with its layer and properties after
 /// inheritance from the insert (see [`inherited`]).
@@ -18,6 +18,13 @@ use crate::{bulge, Attributes, Bounds, Ellipse, Entity, Point};
 pub struct Piece {
     pub entity: Entity,
     pub attrs: Attributes,
+}
+
+/// What an expansion carries down through the levels of nesting.
+struct Walk<'a> {
+    look: &'a dyn Fn(LayerId) -> LayerLook,
+    budget: &'a mut usize,
+    out: &'a mut Vec<Piece>,
 }
 
 /// How closely curves are followed when an uneven scale turns them into
@@ -28,19 +35,29 @@ const CURVE_TOLERANCE: f64 = 2e-3;
 impl Insert {
     /// Every simple object the insert draws, in drawing coordinates, nested
     /// inserts expanded, with layers inherited from `attrs` (the insert's
-    /// own).
-    pub fn picture_with(&self, attrs: &Attributes) -> Vec<Piece> {
+    /// own). `look` says what a layer gives its objects, for ByBlock contents
+    /// of an insert that is ByLayer.
+    pub fn picture_with(
+        &self,
+        attrs: &Attributes,
+        look: &dyn Fn(LayerId) -> LayerLook,
+    ) -> Vec<Piece> {
         let mut out = Vec::new();
         let mut budget = MAX_EXPANSION;
-        self.expand(&Affine::IDENTITY, attrs, MAX_NESTING, &mut budget, &mut out);
+        let mut walk = Walk {
+            look,
+            budget: &mut budget,
+            out: &mut out,
+        };
+        self.expand(&Affine::IDENTITY, attrs, MAX_NESTING, &mut walk);
         out
     }
 
     /// The shapes of [`picture_with`](Self::picture_with), for queries that
     /// need geometry only.
     pub fn picture(&self) -> Vec<Entity> {
-        let attrs = Attributes::on_layer(crate::LayerId::DEFAULT);
-        self.picture_with(&attrs)
+        let attrs = Attributes::on_layer(LayerId::DEFAULT);
+        self.picture_with(&attrs, &|_| LayerLook::OUTSIDE_BLOCK)
             .into_iter()
             .map(|p| p.entity)
             .collect()
@@ -49,32 +66,27 @@ impl Insert {
     /// Add the insert's pieces to `out`, stopping at `depth` levels of nesting
     /// or when `budget` objects have been visited (see [`MAX_EXPANSION`]), so
     /// a block graph that fans out cannot run away.
-    fn expand(
-        &self,
-        outer: &Affine,
-        attrs: &Attributes,
-        depth: usize,
-        budget: &mut usize,
-        out: &mut Vec<Piece>,
-    ) {
+    fn expand(&self, outer: &Affine, attrs: &Attributes, depth: usize, walk: &mut Walk) {
         if depth == 0 {
             return;
         }
         let map = self.transform().then(outer);
         for child in &self.block.entities {
-            if *budget == 0 {
+            if *walk.budget == 0 {
                 return;
             }
-            *budget -= 1;
-            let child_attrs = inherited(&child.attrs, attrs);
+            *walk.budget -= 1;
+            let child_attrs = inherited(&child.attrs, attrs, walk.look);
             match &child.entity {
                 Entity::Insert(nested) => {
-                    nested.expand(&map, &child_attrs, depth - 1, budget, out);
+                    nested.expand(&map, &child_attrs, depth - 1, walk);
                 }
-                entity => out.extend(mapped(entity, &map).into_iter().map(|entity| Piece {
-                    entity,
-                    attrs: child_attrs.clone(),
-                })),
+                entity => walk
+                    .out
+                    .extend(mapped(entity, &map).into_iter().map(|entity| Piece {
+                        entity,
+                        attrs: child_attrs.clone(),
+                    })),
             }
         }
     }
@@ -83,16 +95,25 @@ impl Insert {
     /// block's objects mapped into the drawing with their own layers and
     /// properties. A nested insert stays an insert unless the scale is
     /// uneven, when it is expanded too.
-    pub fn exploded(&self) -> Vec<BlockEntity> {
+    pub fn exploded(
+        &self,
+        attrs: &Attributes,
+        look: &dyn Fn(LayerId) -> LayerLook,
+    ) -> Vec<BlockEntity> {
         let map = self.transform();
         let even = map.similarity().is_some();
         let mut out = Vec::new();
         for child in &self.block.entities {
+            // Only ByBlock changes: the layer stays the object's own.
+            let own = Attributes {
+                layer: child.attrs.layer,
+                ..inherited(&child.attrs, attrs, look)
+            };
             let parts = match &child.entity {
-                Entity::Insert(nested) if !even => nested.picture_with(&child.attrs),
+                Entity::Insert(nested) if !even => nested.picture_with(&own, look),
                 entity => vec![Piece {
                     entity: entity.clone(),
-                    attrs: child.attrs.clone(),
+                    attrs: own,
                 }],
             };
             for part in parts {

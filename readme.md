@@ -221,7 +221,7 @@ Work follows the standard 2D drafting command set; `ui_plan.md` has the detailed
 
 - Next: the remaining draw commands (Point, Donut, Boundary, Construction line, Ray), Distance and Area, Overkill and associative arrays
 - Spline editing (trim, extend, break, join, offset)
-- The rest of dimensions (associativity, a styles table, real DXF dimensions), block attributes, ByBlock and dynamic blocks
+- The rest of dimensions (associativity, a styles table, real DXF dimensions), block attributes and dynamic blocks
 - Linetypes from `.lin` files, hatch gap tolerance and gradients
 - DWG export, PDF and SVG export
 - Linux: real-hardware and desktop-environment testing (CI covers six distributions on a virtual display); publishing to Flathub and the AUR

@@ -149,6 +149,7 @@ impl Prop {
 fn colour_text(color: &Attr<Color>) -> String {
     match color {
         Attr::ByLayer => "ByLayer".to_owned(),
+        Attr::ByBlock => "ByBlock".to_owned(),
         Attr::Set(Color::Foreground) => "White/Black".to_owned(),
         Attr::Set(Color::Rgb(r, g, b)) => format!("{r},{g},{b}"),
     }
@@ -166,6 +167,7 @@ fn read(document: &Document, object: &Object, prop: Prop) -> Reading {
         Prop::Color => Reading::Text(colour_text(&attrs.color)),
         Prop::Linetype => Reading::Text(match &attrs.linetype {
             Attr::ByLayer => "ByLayer".to_owned(),
+            Attr::ByBlock => "ByBlock".to_owned(),
             Attr::Set(id) => document
                 .linetypes()
                 .get(*id)
@@ -173,6 +175,7 @@ fn read(document: &Document, object: &Object, prop: Prop) -> Reading {
         }),
         Prop::Lineweight => Reading::Text(match &attrs.lineweight {
             Attr::ByLayer => "ByLayer".to_owned(),
+            Attr::ByBlock => "ByBlock".to_owned(),
             Attr::Set(w) => format!("{:.2} mm", f64::from(w.0) / 100.0),
         }),
         Prop::LinetypeScale => Reading::Number(attrs.linetype_scale),
