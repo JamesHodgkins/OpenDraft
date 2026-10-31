@@ -35,8 +35,8 @@ Written 2026-10-31. Update it when something is done or the plan changes: tick t
 - [ ] **Test on real machines (M, needs you).** Real GPUs, GNOME (mutter) and KDE (KWin) on X11 and Wayland, the clipboard, drag and drop, real file dialogs and input methods, and Wayland keyboard and mouse input (a headless compositor has no input devices). Reports from users are the way to cover this; say what was tried in `docs/linux.md`.
 - [x] **GUI smoke test in CI (M).** `scripts/linux_smoke.py` starts the real program, opens a drawing, draws a line with the keyboard and mouse, undoes it, runs `opendraft-mcp --check` against it, quits with Ctrl+Q, and also starts without a drawing and without `XDG_RUNTIME_DIR`. It reads the screen and the program's state from outside, and leaves screenshots as artifacts.
 - [x] **Release artifacts tested (S).** The release workflow already installed the .deb and ran the AppImage on a bare Ubuntu 22.04; the .deb now also passes the whole smoke test.
-- [x] **Flatpak (M), built in CI.** `installer/linux/flatpak/` builds offline from `Cargo.lock`, has its files checked and starts under a virtual display. [ ] **Submit it to Flathub (S, needs you):** a pull request to `flathub/flathub` following `installer/linux/flatpak/README.md`.
-- [x] **Arch package (S), built in CI.** `installer/linux/arch/PKGBUILD` builds, installs and links in an Arch container. [ ] **Publish it to the AUR (S, needs you):** an AUR account and `updpkgsums`. Debian/Ubuntu, Fedora and nixpkgs as people ask.
+- [x] **Flatpak (M), built in CI.** `installer/linux/flatpak/` builds offline from `Cargo.lock`, has its files checked and starts under a virtual display, and `installer/linux/flatpak/flathub/` is the submission for release 0.1.4 (built in CI the way Flathub will). [ ] **Flathub (paused, 2026-10-31).** Flathub's rules (`AGENTS.md` and the submission template in `flathub/flathub`) do not allow AI-assisted packaging or submissions, and the manifest, scripts, metadata and CI here were written with AI help. Nothing has been submitted. Revisit by reading their generative AI policy, then either disclose honestly and submit by hand, or write the packaging again by hand. Their template also asks for a video and evidence of development history and real-world use, which a young project may not yet have.
+- [x] **Arch package (S), built in CI.** `installer/linux/arch/PKGBUILD` builds, installs and links in an Arch container, with the checksum of the 0.1.4 source. [ ] **Publish it to the AUR (waiting).** New AUR registrations were closed on 2026-10-31 (a wave of automated sign-ups; no date given). Do not script retries; watch the Arch news feed and `aur-general`. Check the AUR's own policy on AI-assisted packages first. Debian/Ubuntu, Fedora and nixpkgs as people ask.
 - [x] **Fix what the matrix finds.** Found and fixed: the program would not open at all where the graphics setup offered no multisampled configuration (Fedora, Arch, Ubuntu 24.04 and Tumbleweed under software rendering; Ubuntu 22.04 and Debian 12 were not affected); Open and Save As did nothing when there was no file dialog backend (the status bar now says what to install); the assistant connection needed `XDG_RUNTIME_DIR` (a private cache folder is used without it). Noticed and not changed: a drawing opened from DXF counts as unsaved at once, so closing it asks to save. That looks deliberate (it has no `.odx` file yet) but is worth a look.
 
 **Not covered, and why:** opening a *DWG* and *saving* were part of the original exit test. CI opens a DXF, because the DWG sample drawings are private and cannot be committed; and saving needs a file dialog or an automation grant that only the user can give, so a headless test cannot do it. A small hand-made DWG fixture would close the first; the second would need a test-only way to grant permission, which would weaken the rule that only the user grants write access, so it waits for a better idea.
@@ -60,14 +60,17 @@ Written 2026-10-31. Update it when something is done or the plan changes: tick t
 
 *Why: audience 2. Files going out matter as much as files coming in.*
 
-- [ ] **PDF plot at true scale (L).** Today plotting writes PNG. PDF is the usual way to print at 1:1 and share drawings.
-- [ ] **SVG export (M).** For laser cutters, vinyl cutters and Inkscape. Closed shapes, correct units, no stray duplicates.
-- [ ] **Clean DXF for fabrication (M).** Correct units, closed polylines, splines handled sensibly. OVERKILL and JOIN already help; add a checklist test of a typical laser-cutting file.
-- [ ] **DXF gaps (M).** TEXT import (skipped today), anonymous blocks, block export. Each is a known gap in `CLAUDE.md`.
-- [ ] **Templates and a first-hour tutorial (S).** A metric sheet, A4 and A3, a laser-cutting template, and a ten-command walkthrough.
-- [ ] **Hatch patterns from `.pat` files and linetypes from `.lin` files (M).**
+**Correction (2026-10-31):** this phase first said PDF and SVG plotting were still to build. They are built (`PLOT` writes a layout to PDF or SVG at 1:1 in millimetres; `od_core::plot` and `od_files::plot`, checked in two PDF readers and a browser). What is missing is *proof on real fabrication and printing workflows*, and a few gaps listed in `ui_plan.md`.
 
-**Exit test:** a drawing made in OpenDraft cuts correctly on a laser cutter or prints at 1:1 from the PDF, with no hand-fixing.
+- [ ] **Prove the plots on real workflows (M, needs real software and a printer).** Open OpenDraft's SVG in Inkscape and in the laser and cutter software people use (LightBurn, Glowforge, Silhouette, Cricut and similar); print the PDF at 100% and measure it with a ruler. Write down what was tried in the repository, and fix what breaks.
+- [ ] **Plot gaps (M).** From `ui_plan.md`, not plotted or not settable: margins and a plot area, a plot-scale setting (a sheet plots at 1:1 and the scale is each viewport's), wide polyline segments, viewport borders. Check each is still true before building it.
+- [ ] **Layers to cut settings (S to M).** Laser software reads colour or layer as "cut", "engrave" and "score". Check that SVG and DXF carry layer names and colours in a way those tools use, and document the recipe.
+- [ ] **Clean DXF for fabrication (M).** Correct units, closed polylines, splines handled sensibly. OVERKILL and JOIN already help; add a checklist test of a typical laser-cutting file.
+- [ ] **DXF gaps (M).** TEXT import (skipped today: a DXF with one gives "Skipped 1 TEXT"), anonymous blocks, block export. Each is a known gap in `CLAUDE.md`.
+- [ ] **Templates and a first-hour tutorial (S).** A metric sheet, A4 and A3, a laser-cutting template, and a ten-command walkthrough.
+- [ ] **Hatch patterns from `.pat` files, and linetypes from `.lin` files (M).** Check what loads today (there is a stock linetype library) before scoping.
+
+**Exit test:** a drawing made in OpenDraft cuts correctly on a laser cutter or prints at 1:1 from the PDF, with no hand-fixing, and the repository says which software was tried.
 
 ## Phase 4: Community and project health
 
