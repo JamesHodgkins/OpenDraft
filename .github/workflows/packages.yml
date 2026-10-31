@@ -134,6 +134,7 @@ jobs:
           cache-key: flatpak-builder-flathub-${{ hashFiles('installer/linux/flatpak/flathub/**') }}
       - name: Flathub's linter on the submission manifest
         run: |
+          flatpak remote-add --if-not-exists --user flathub https://dl.flathub.org/repo/flathub.flatpakrepo
           flatpak install --user --noninteractive -y flathub org.flatpak.Builder
           flatpak run --command=flatpak-builder-lint org.flatpak.Builder manifest             installer/linux/flatpak/flathub/uk.openengineering.opendraft.yml
       - name: It starts and stays open in a virtual display
