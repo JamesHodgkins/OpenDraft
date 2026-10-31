@@ -86,6 +86,17 @@ for script in ("opendraft.sh", "opendraft-mcp.sh"):
     need("OD_AUTOMATION_DIR" in text and "FLATPAK_ID" in text,
          f"{script} must point the automation socket at the folder the sandbox shares with the host")
 
+# The Flathub manifest is the in-repo one with a different first source: nothing
+# else may differ, or what CI builds is not what is submitted.
+def manifest_without_sources(text):
+    return text.split("    sources:")[0]
+
+
+flathub_manifest = (LINUX / "flatpak" / "flathub" / "uk.openengineering.opendraft.yml").read_text()
+body = lambda text: [line for line in manifest_without_sources(text).splitlines() if not line.lstrip().startswith("#")]
+need(body(manifest) == body(flathub_manifest),
+     "flatpak/flathub/uk.openengineering.opendraft.yml differs from the in-repo manifest outside its sources")
+
 # Versions.
 cargo = (ROOT / "Cargo.toml").read_text()
 version = re.search(r'^\[workspace\.package\][^\[]*?^version = "([^"]+)"', cargo, re.M | re.S)
