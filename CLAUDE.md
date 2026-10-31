@@ -4,6 +4,7 @@ OpenDraft: a 2D-only CAD app in Rust on egui/eframe, with an AutoCAD-2020-style 
 
 ## Read first
 - `ARCHITECTURE.md`: the rules new code follows (crates, commands, Editor, files, geometry). Authoritative.
+- `ROADMAP.md`: the ordered plan (phases, sizes, exit tests) for trust, reach and depth; tick items and date them when done.
 - `ui_plan.md`: history of what was built and why; its last section, "Where we are and what next", is the to-do list.
 - `2d_commands_reference.md`: the AutoCAD command list we work through as a roadmap.
 - `Command_specifications.md` is the user's untracked scratch file: never stage it.

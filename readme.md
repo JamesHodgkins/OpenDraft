@@ -215,7 +215,7 @@ Dependencies point downward: the document knows nothing about the UI. Read [ARCH
 
 ## 📍 Roadmap
 
-Work follows the standard 2D drafting command set; `ui_plan.md` has the detailed to-do list.
+Work follows the standard 2D drafting command set; `ui_plan.md` has the detailed to-do list. [`ROADMAP.md`](./ROADMAP.md) is the plan for what comes first and why: Linux as a first-class platform, trust in files, what makers need, and community.
 
 - Next: the remaining draw commands (Point, Donut, Boundary, Construction line, Ray), Distance and Area, Overkill and associative arrays
 - Spline editing (trim, extend, break, join, offset)
