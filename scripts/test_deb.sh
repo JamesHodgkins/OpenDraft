@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Run INSIDE a clean ubuntu:22.04 container (see .github/workflows/release.yml):
+# Run INSIDE a clean ubuntu:22.04 container (see .github/workflows/release.yml), with
+# the repository mounted so the smoke test can run:
 #   scripts/test_deb.sh /path/to/OpenDraft-<version>-linux-amd64.deb
 # Installs the package with only what it declares (plus a virtual display and a
 # software GL driver, which a desktop has), checks the files it should install,
@@ -44,6 +45,18 @@ set -e
 if [ "$code" != 124 ]; then
   echo "opendraft exited with code $code instead of staying open for 15 s"
   exit 1
+fi
+
+# Does the installed program work? The whole smoke test (scripts/linux_smoke.py)
+# against what the package put in /usr/bin: opens a drawing, takes keyboard and
+# mouse input, draws and undoes a line, runs opendraft-mcp --check and quits. It
+# needs the repository's scripts and test drawing, mounted at /repo.
+here=$(cd "$(dirname "$0")" && pwd)
+if [ -f "$here/linux_smoke.sh" ] && [ -f "$here/../crates/od-files/tests/fixtures/ezdxf_sample.dxf" ]; then
+  apt-get install -y --no-install-recommends xdotool python3 fonts-dejavu-core
+  bash "$here/linux_smoke.sh" /usr/bin /tmp/smoke "" deb
+else
+  echo "the repository is not mounted: skipping the full smoke test"
 fi
 
 # And is it removed cleanly?
