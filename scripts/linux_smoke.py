@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""End-to-end smoke test of OpenDraft on a Linux desktop (X11).
+"""End-to-end smoke test of OpenDraft on a Linux desktop (X11 or Wayland).
 
-Run it inside a running X server (scripts/linux_smoke.sh starts Xvfb). It
-starts the real program (OD_AUTOMATION=1 turns its automation socket on)
-with a throwaway profile, home and runtime folder,
-and drives it the way a person would, then reads the result back through the
-automation socket (the same one the MCP server uses):
+Run it inside a running display: scripts/linux_smoke.sh starts a virtual X
+server, scripts/linux_smoke_wayland.sh a headless Wayland compositor (sway). It
+starts the real program with a throwaway profile, home and runtime folder, and
+drives it the way a person would, then reads the result back through the
+automation socket (the same one the MCP server uses; OD_AUTOMATION=1 turns it
+on without ticking the box in Settings):
 
   1. the program starts and the automation socket appears;
   2. the drawing named on the command line is open and has objects;
@@ -21,7 +22,8 @@ cannot do that: a drawing imported from DXF counts as unsaved, so quitting asks
 whether to save it.)
 
 Screenshots, the program's log and a JSON report are left in --out. Only the
-Python standard library is used, plus `xdotool` for input.
+Python standard library is used, plus `xdotool` (X11) or `swaymsg`, `wtype` and
+`grim` (Wayland) for input and screenshots.
 """
 
 import argparse
@@ -121,7 +123,7 @@ class Client:
             pass
 
 
-# ------------------------------------------------------------------ screen
+# ------------------------------------------------------------------ pictures
 
 def read_xwd(path):
     """Read an XWD file as Xvfb writes it with -fbdir: returns
@@ -150,6 +152,29 @@ def read_xwd(path):
     rgb[1::3] = data[byte_of(gmask)::4]
     rgb[2::3] = data[byte_of(bmask)::4]
     return width, height, bytes(rgb)
+
+
+def read_ppm(data):
+    """Read a binary PPM (P6), which `grim -t ppm` writes."""
+    fields = []
+    position = 0
+    while len(fields) < 4:
+        while data[position:position + 1].isspace():
+            position += 1
+        if data[position:position + 1] == b"#":
+            position = data.index(b"\n", position)
+            continue
+        end = position
+        while not data[end:end + 1].isspace():
+            end += 1
+        fields.append(data[position:end])
+        position = end
+    magic, width, height, top = fields
+    if magic != b"P6" or int(top) != 255:
+        raise RuntimeError(f"unsupported picture: {magic!r} {top!r}")
+    width, height = int(width), int(height)
+    start = position + 1
+    return width, height, data[start:start + width * height * 3]
 
 
 def write_png(path, width, height, rgb):
@@ -186,10 +211,126 @@ def differing_pixels(a, b, width):
     return count
 
 
-# --------------------------------------------------------------- the driver
+# ------------------------------------------------------------- the displays
 
-def xdotool(*args, check=True):
-    return subprocess.run(["xdotool", *args], check=check, capture_output=True, text=True)
+def run(command, check=True, **kwargs):
+    return subprocess.run(command, check=check, capture_output=True, **kwargs)
+
+
+class X11Session:
+    """A virtual X server (Xvfb) with no window manager. Input is sent with
+    xdotool; the screen is read from the server's framebuffer file."""
+
+    name = "x11"
+
+    def __init__(self, args):
+        self.fbdir = args.fbdir
+
+    def environment(self, args):
+        return {"WINIT_X11_SCALE_FACTOR": args.scale} if args.scale else {}
+
+    def screenshot(self):
+        if not self.fbdir:
+            return None
+        files = glob.glob(os.path.join(self.fbdir, "Xvfb_screen*"))
+        return read_xwd(files[0]) if files else None
+
+    def find_window(self):
+        found = run(["xdotool", "search", "--name", WINDOW_TITLE], check=False, text=True).stdout.split()
+        if not found:
+            return None
+        window = found[0]
+        geometry = dict(line.split("=") for line in
+                        run(["xdotool", "getwindowgeometry", "--shell", window], text=True).stdout.split())
+        return {"id": window, **{k.lower(): int(geometry[k]) for k in ("X", "Y", "WIDTH", "HEIGHT")}}
+
+    def focus(self, window):
+        # With no window manager nothing gives a window the keyboard focus, as a
+        # manager does when it is clicked: do it here, or the keys go nowhere.
+        run(["xdotool", "windowfocus", window["id"]], check=False)
+
+    def move(self, x, y):
+        run(["xdotool", "mousemove", str(x), str(y)])
+
+    def click(self):
+        # Press, hold a moment, release, as a hand does: an instant click
+        # arrives as one frame's press and release, which a program that
+        # reads them frame by frame can miss.
+        run(["xdotool", "mousedown", "1"])
+        time.sleep(0.12)
+        run(["xdotool", "mouseup", "1"])
+
+    def type_text(self, text):
+        run(["xdotool", "type", "--delay", "120", text])
+
+    def key(self, chord):
+        """A key or a chord such as "Return" or "ctrl+q"."""
+        run(["xdotool", "key", chord])
+
+    def diagnostics(self):
+        return run(["xdotool", "search", "--name", "."], check=False, text=True).stdout
+
+
+class WaylandSession:
+    """A headless sway. Input is sent with wtype (keys) and swaymsg (pointer);
+    the screen is read with grim."""
+
+    name = "wayland"
+
+    def __init__(self, args):
+        pass
+
+    def environment(self, args):
+        # winit uses Wayland when WAYLAND_DISPLAY is set and falls back to X11
+        # when it is not; main() removes DISPLAY, so there is nothing to fall
+        # back to and a pass means the Wayland path itself worked.
+        return {}
+
+    def screenshot(self):
+        result = run(["grim", "-t", "ppm", "-"], check=False)
+        return read_ppm(result.stdout) if result.returncode == 0 and result.stdout else None
+
+    def _tree(self):
+        return json.loads(run(["swaymsg", "-t", "get_tree", "-r"], text=True).stdout)
+
+    def find_window(self):
+        stack = [self._tree()]
+        while stack:
+            node = stack.pop()
+            stack.extend(node.get("nodes", []) + node.get("floating_nodes", []))
+            if node.get("name") == WINDOW_TITLE or node.get("app_id") == "opendraft-ci-smoke":
+                rect = node["rect"]
+                return {"id": node.get("id"), "x": rect["x"], "y": rect["y"],
+                        "width": rect["width"], "height": rect["height"]}
+        return None
+
+    def focus(self, window):
+        run(["swaymsg", f'[title="{WINDOW_TITLE}"] focus'], check=False)
+
+    def move(self, x, y):
+        run(["swaymsg", "seat", "-", "cursor", "set", str(x), str(y)])
+
+    def click(self):
+        run(["swaymsg", "seat", "-", "cursor", "press", "button1"])
+        time.sleep(0.12)
+        run(["swaymsg", "seat", "-", "cursor", "release", "button1"])
+
+    def type_text(self, text):
+        run(["wtype", "-d", "120", text])
+
+    def key(self, chord):
+        parts = chord.split("+")
+        modifiers, key = parts[:-1], parts[-1]
+        command = ["wtype"]
+        for modifier in modifiers:
+            command += ["-M", modifier]
+        command += ["-k", key]
+        for modifier in reversed(modifiers):
+            command += ["-m", modifier]
+        run(command)
+
+    def diagnostics(self):
+        return run(["swaymsg", "-t", "get_tree"], check=False, text=True).stdout
 
 
 def wait_for(predicate, seconds, step=0.25):
@@ -202,28 +343,83 @@ def wait_for(predicate, seconds, step=0.25):
     return None
 
 
+# --------------------------------------------------------------- the driver
+
+def diagnose(args, work, shot, app, display):
+    """Leave what is needed to understand a program that did not come up: the
+    screen, the folders it should have written to, the windows and the
+    process."""
+    try:
+        shot("failed-start")
+    except Exception as error:  # noqa: BLE001
+        print(f"no screenshot: {error!r}")
+    lines = []
+    for folder in ("run", "data"):
+        lines.append(f"--- find {folder}")
+        for root, _dirs, files in os.walk(os.path.join(work, folder)):
+            lines.append(root)
+            lines.extend("    " + name for name in files)
+    lines.append("--- windows")
+    try:
+        lines.append(display.diagnostics())
+    except Exception as error:  # noqa: BLE001
+        lines.append(f"(could not list them: {error!r})")
+    lines.append(f"--- process: pid {app.pid}, returncode {app.poll()}")
+    try:
+        with open(f"/proc/{app.pid}/status") as handle:
+            lines.append(handle.read())
+    except OSError:
+        lines.append("(no /proc entry: it has gone)")
+    with open(os.path.join(args.out, f"{args.label}-diagnosis.txt"), "w") as handle:
+        handle.write("\n".join(lines))
+    print("\n".join(lines))
+
+
+def finish(report, app, log, log_path, args, work):
+    if app.poll() is None:
+        app.terminate()
+        try:
+            app.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            app.kill()
+    log.close()
+    summary = {"label": args.label, "session": args.session, "scale": args.scale,
+               "checks": report.checks, "notes": report.notes}
+    with open(os.path.join(args.out, f"{args.label}-report.json"), "w") as handle:
+        json.dump(summary, handle, indent=2)
+    if report.failed:
+        print(f"\n{len(report.failed)} check(s) failed. The program's log ({log_path}), last lines:")
+        with open(log_path, errors="replace") as handle:
+            print("".join(handle.readlines()[-40:]))
+    shutil.rmtree(work, ignore_errors=True)
+    print(f"\n{len(report.checks) - len(report.failed)} of {len(report.checks)} checks passed ({args.label}).")
+    return 1 if report.failed else 0
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--binary", required=True, help="path of the opendraft program")
     parser.add_argument("--mcp", help="path of opendraft-mcp (default: next to the program)")
     parser.add_argument("--sample", required=True, help="a drawing to open")
     parser.add_argument("--out", required=True, help="folder for screenshots, log and report")
+    parser.add_argument("--session", choices=["x11", "wayland"], default="x11")
     parser.add_argument("--fbdir", default=os.environ.get("SMOKE_FBDIR"),
-                        help="the Xvfb -fbdir, for screenshots")
-    parser.add_argument("--scale", help="set WINIT_X11_SCALE_FACTOR (for example 2)")
+                        help="the Xvfb -fbdir, for screenshots (X11)")
+    parser.add_argument("--scale", help="set WINIT_X11_SCALE_FACTOR (for example 2; X11)")
     parser.add_argument("--label", default="smoke", help="names the artifacts")
     parser.add_argument("--scenario", choices=["drawing", "home"], default="drawing")
     args = parser.parse_args()
 
+    display = X11Session(args) if args.session == "x11" else WaylandSession(args)
     os.makedirs(args.out, exist_ok=True)
     report = Report()
     work = tempfile.mkdtemp(prefix="od-smoke-")
     home = os.path.join(work, "home")
     data = os.path.join(work, "data")
-    run = os.path.join(work, "run")
-    for folder in (home, data, run):
+    runtime = os.path.join(work, "run")
+    for folder in (home, data, runtime):
         os.makedirs(folder)
-    os.chmod(run, 0o700)
+    os.chmod(runtime, 0o700)
     sample = os.path.join(work, os.path.basename(args.sample))
     shutil.copy(args.sample, sample)
 
@@ -233,7 +429,7 @@ def main():
         "XDG_DATA_HOME": data,
         "XDG_CONFIG_HOME": os.path.join(home, ".config"),
         "XDG_CACHE_HOME": os.path.join(home, ".cache"),
-        "XDG_RUNTIME_DIR": run,
+        "XDG_RUNTIME_DIR": runtime,
         "OPENDRAFT_PROFILE": PROFILE,
         "LIBGL_ALWAYS_SOFTWARE": "1",
         "RUST_BACKTRACE": "1",
@@ -241,38 +437,37 @@ def main():
         # Turns the automation socket on without ticking the box in Settings.
         "OD_AUTOMATION": "1",
     })
-    if args.scale:
-        env["WINIT_X11_SCALE_FACTOR"] = args.scale
+    env.update(display.environment(args))
+    if args.session == "wayland":
+        # The program's own runtime folder is private to the test, so the
+        # compositor's socket is linked into it, and X11 is out of reach.
+        env.pop("DISPLAY", None)
+        wayland = os.environ["WAYLAND_DISPLAY"]
+        os.symlink(os.path.join(os.environ["XDG_RUNTIME_DIR"], wayland), os.path.join(runtime, wayland))
 
     log_path = os.path.join(args.out, f"{args.label}-app.log")
     log = open(log_path, "wb")
     command = [args.binary] + ([sample] if args.scenario == "drawing" else [])
     app = subprocess.Popen(command, env=env, stdout=log, stderr=subprocess.STDOUT)
     client = None
-    shots = {}
-    cx = cy = None
 
     def shot(name):
-        if not args.fbdir:
+        picture = display.screenshot()
+        if picture is None:
             return None
-        files = glob.glob(os.path.join(args.fbdir, "Xvfb_screen*"))
-        if not files:
-            return None
-        width, height, rgb = read_xwd(files[0])
-        write_png(os.path.join(args.out, f"{args.label}-{name}.png"), width, height, rgb)
-        shots[name] = (width, height, rgb)
-        return shots[name]
+        write_png(os.path.join(args.out, f"{args.label}-{name}.png"), *picture)
+        return picture
 
     try:
         # 1. The program starts and the automation socket appears.
-        pattern = os.path.join(run, "OpenDraft", "automation", "*.json")
+        pattern = os.path.join(runtime, "OpenDraft", "automation", "*.json")
         descriptor_file = wait_for(
             lambda: (glob.glob(pattern) or [None])[0] if app.poll() is None else "gone", 90)
         if descriptor_file in (None, "gone"):
             code = app.poll()
             report.check("the program starts and offers the automation socket", False,
                          f"it exited with code {code}" if descriptor_file == "gone" else "no socket after 90 s")
-            diagnose(args, work, shot, app)
+            diagnose(args, work, shot, app, display)
             return finish(report, app, log, log_path, args, work)
         report.check("the program starts and offers the automation socket", True)
         with open(descriptor_file) as handle:
@@ -309,7 +504,6 @@ def main():
             before = count()
             report.check("the drawing has objects", before > 0, f"{before} objects")
 
-
         # 3. The window draws something.
         time.sleep(3)
         first = shot("opened")
@@ -320,49 +514,49 @@ def main():
                          stats["colours"] >= 16 and stats["dominant_share"] < 0.9,
                          f"{stats['colours']} colours, {stats['dominant_share']:.0%} the commonest")
         else:
-            report.check("a screenshot could be taken", False, "no framebuffer file (pass --fbdir)")
+            report.check("a screenshot could be taken", False, "the display gave no picture")
 
-        # 4. Keyboard and mouse: draw a line, then undo it.
-        window = wait_for(lambda: (xdotool("search", "--name", WINDOW_TITLE, check=False).stdout.split() or [None])[0], 30)
+        # 4. Keyboard and mouse.
+        window = wait_for(display.find_window, 30)
         if not window:
             report.check("the window is on screen", False, f"no window named {WINDOW_TITLE!r}")
         else:
-            geometry = dict(line.split("=") for line in
-                            xdotool("getwindowgeometry", "--shell", window).stdout.split())
-            x, y, w, h = (int(geometry[k]) for k in ("X", "Y", "WIDTH", "HEIGHT"))
-            report.notes["window"] = {"x": x, "y": y, "width": w, "height": h}
-            report.check("the window is on screen and a sensible size", w >= 600 and h >= 400, f"{w}x{h}")
-            cx, cy = x + int(w * 0.5), y + int(h * 0.55)
-            # With no window manager nothing gives the window the keyboard
-            # focus, as a manager does when a window is clicked: do it here,
-            # or the keys go nowhere.
-            xdotool("mousemove", str(cx), str(cy))
-            xdotool("windowfocus", window, check=False)
+            report.notes["window"] = window
+            report.check("the window is on screen and a sensible size",
+                         window["width"] >= 600 and window["height"] >= 400,
+                         f"{window['width']}x{window['height']}")
+            cx = window["x"] + window["width"] // 2
+            cy = window["y"] + int(window["height"] * 0.55)
+            display.move(cx, cy)
+            display.focus(window)
             time.sleep(0.5)
             if args.scenario == "drawing":
-                xdotool("type", "--delay", "120", "L")
-                xdotool("key", "Return")
+                display.type_text("L")
+                display.key("Return")
                 time.sleep(1.0)
-                xdotool("mousemove", str(cx - 120), str(cy - 40))
+                display.move(cx - 120, cy - 40)
                 time.sleep(0.4)
-                xdotool("click", "1")
+                display.click()
                 time.sleep(0.6)
-                xdotool("mousemove", str(cx + 140), str(cy + 60))
+                shot("first-point")
+                display.move(cx + 140, cy + 60)
                 time.sleep(0.4)
-                xdotool("click", "1")
+                display.click()
                 time.sleep(0.6)
-                xdotool("key", "Return")
+                display.key("Return")
                 drawn = wait_for(lambda: count() == before + 1 or None, 15)
-                report.check("typing L, two clicks and Enter draws one line", bool(drawn), f"{before} -> {count()} objects")
+                report.check("typing L, two clicks and Enter draws one line", bool(drawn),
+                             f"{before} -> {count()} objects")
                 time.sleep(1.0)
                 second = shot("drawn")
-                if first and second:
+                if first and second and (first[0], first[1]) == (second[0], second[1]):
                     changed = differing_pixels(first[2], second[2], first[0])
                     report.check("the new line is painted", changed > 50, f"{changed} pixels changed")
                 if drawn:
                     newest = client.call("entities.query", {"document_id": doc_id, "limit": 1000})["entities"][-1]
-                    report.check("the new object is a line", str(newest.get("kind", "")).lower() == "line", newest.get("kind"))
-                xdotool("key", "ctrl+z")
+                    report.check("the new object is a line", str(newest.get("kind", "")).lower() == "line",
+                                 newest.get("kind"))
+                display.key("ctrl+z")
                 undone = wait_for(lambda: count() == before or None, 15)
                 report.check("Ctrl+Z takes it back", bool(undone), f"now {count()} objects")
 
@@ -381,7 +575,7 @@ def main():
         client.close()
         client = None
         if args.scenario == "home":
-            xdotool("key", "ctrl+q")
+            display.key("ctrl+q")
             try:
                 code = app.wait(timeout=20)
                 report.check("Ctrl+Q ends the program with exit code 0", code == 0, f"exit code {code}")
@@ -398,53 +592,6 @@ def main():
         if client:
             client.close()
     return finish(report, app, log, log_path, args, work)
-
-
-def diagnose(args, work, shot, app):
-    """Leave what is needed to understand a program that did not come up: the
-    screen, the folders it should have written to, the windows and the
-    process."""
-    try:
-        shot("failed-start")
-    except Exception as error:  # noqa: BLE001
-        print(f"no screenshot: {error!r}")
-    lines = []
-    for folder in ("run", "data"):
-        lines.append(f"--- find {folder}")
-        for root, _dirs, files in os.walk(os.path.join(work, folder)):
-            lines.append(root)
-            lines.extend("    " + name for name in files)
-    lines.append("--- windows")
-    lines.append(xdotool("search", "--name", ".", check=False).stdout)
-    lines.append(f"--- process: pid {app.pid}, returncode {app.poll()}")
-    try:
-        with open(f"/proc/{app.pid}/status") as handle:
-            lines.append(handle.read())
-    except OSError:
-        lines.append("(no /proc entry: it has gone)")
-    with open(os.path.join(args.out, f"{args.label}-diagnosis.txt"), "w") as handle:
-        handle.write("\n".join(lines))
-    print("\n".join(lines))
-
-
-def finish(report, app, log, log_path, args, work):
-    if app.poll() is None:
-        app.terminate()
-        try:
-            app.wait(timeout=10)
-        except subprocess.TimeoutExpired:
-            app.kill()
-    log.close()
-    summary = {"label": args.label, "scale": args.scale, "checks": report.checks, "notes": report.notes}
-    with open(os.path.join(args.out, f"{args.label}-report.json"), "w") as handle:
-        json.dump(summary, handle, indent=2)
-    if report.failed:
-        print(f"\n{len(report.failed)} check(s) failed. The program's log ({log_path}), last lines:")
-        with open(log_path, errors="replace") as handle:
-            print("".join(handle.readlines()[-40:]))
-    shutil.rmtree(work, ignore_errors=True)
-    print(f"\n{len(report.checks) - len(report.failed)} of {len(report.checks)} checks passed ({args.label}).")
-    return 1 if report.failed else 0
 
 
 if __name__ == "__main__":

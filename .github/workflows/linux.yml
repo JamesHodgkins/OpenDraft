@@ -63,3 +63,31 @@ jobs:
           name: smoke-${{ matrix.name }}
           path: out/${{ matrix.name }}
           if-no-files-found: ignore
+  wayland:
+    # The same checks under a headless Wayland compositor (sway), with the
+    # program forced onto Wayland (no X11 to fall back to).
+    needs: build
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: ubuntu-24.04-wayland, image: 'ubuntu:24.04' }
+          - { name: fedora-wayland, image: 'fedora:latest' }
+          - { name: arch-wayland, image: 'archlinux:latest' }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-build
+      - name: Unpack
+        run: mkdir -p build && tar -C build -xf linux-build.tar
+      - name: OpenDraft on ${{ matrix.image }}, Wayland
+        run: |
+          docker run --rm -v "$PWD:/w" -w /w -e SMOKE_SESSION=wayland ${{ matrix.image }}             bash scripts/linux_smoke_container.sh build "out/${{ matrix.name }}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-${{ matrix.name }}
+          path: out/${{ matrix.name }}
+          if-no-files-found: ignore
