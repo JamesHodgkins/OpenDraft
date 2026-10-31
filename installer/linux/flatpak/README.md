@@ -66,7 +66,7 @@ two changes:
    ```yaml
    - type: git
      url: https://github.com/JamesHodgkins/OpenDraft.git
-     tag: v0.1.3
+     tag: v0.1.4
      commit: <the commit the tag points at>
    ```
 
