@@ -424,11 +424,8 @@ impl eframe::App for OpenDraftApp {
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         self.state.settings.save(storage);
         self.updates.save(storage);
-        crate::corner_memory::save(storage);
         self.state.defaults().save(storage);
-        crate::spline_memory::save(storage);
         crate::hatch_memory::save(storage);
-        crate::text_memory::save(storage);
         dock::save(&self.dock, storage);
         self.state.recent.save(storage);
         crate::window_memory::save(storage);

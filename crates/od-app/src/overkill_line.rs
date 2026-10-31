@@ -5,8 +5,8 @@
 use od_commands::{Cancelled, Editor, Options};
 use od_core::overkill::{Ignore, Settings};
 
+use crate::defaults::EditorDefaults;
 use crate::overkill_cmd::run;
-use crate::overkill_memory::{memory, remember};
 
 fn yes_no(on: bool) -> &'static str {
     if on {
@@ -93,7 +93,7 @@ fn ask_ignore(ed: &Editor, ignore: &mut Ignore) -> Result<(), Cancelled> {
 /// -OVERKILL.
 pub fn overkill_prompt(ed: &mut Editor) -> Result<(), Cancelled> {
     let chosen = ed.pickset_or_select("Select objects")?;
-    let mut settings = memory();
+    let mut settings = ed.defaults().overkill.get();
     loop {
         let line = describe(ed, &settings)?;
         ed.say(line);
@@ -138,6 +138,6 @@ pub fn overkill_prompt(ed: &mut Editor) -> Result<(), Cancelled> {
             _ => break,
         }
     }
-    remember(settings);
+    ed.defaults().overkill.change(|m| *m = settings);
     run(ed, chosen, settings)
 }

@@ -5,7 +5,8 @@
 use od_commands::{Answer, Cancelled, Editor, Options, Picked};
 use od_core::{chamfer_lines, fillet, round_polyline, Chamfer, Entity, EntityId, Joined, Round};
 
-use crate::corner_memory::{memory, remember, Memory};
+use crate::corner_memory::Memory;
+use crate::defaults::EditorDefaults;
 use crate::text::plural;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -53,7 +54,7 @@ fn settings_text(kind: Kind, m: &Memory) -> String {
 fn join_corners(ed: &mut Editor, kind: Kind) -> Result<(), Cancelled> {
     let mut multiple = false;
     loop {
-        let m = memory();
+        let m = ed.defaults().corner.get();
         let mut options =
             Options::<Picked>::new(format!("{} Select first object", settings_text(kind, &m)));
         options = match kind {
@@ -93,7 +94,7 @@ fn change_setting(ed: &Editor, keyword: &str, m: &Memory) -> Result<(), Cancelle
         "Radius" => {
             let r =
                 ed.get_distance(Options::<f64>::new("Specify fillet radius").default(m.radius))?;
-            remember(|m| m.radius = r.max(0.0));
+            ed.defaults().corner.change(|m| m.radius = r.max(0.0));
         }
         "Distance" => {
             let first = ed.get_distance(
@@ -102,7 +103,7 @@ fn change_setting(ed: &Editor, keyword: &str, m: &Memory) -> Result<(), Cancelle
             let second = ed.get_distance(
                 Options::<f64>::new("Specify second chamfer distance").default(first),
             )?;
-            remember(|m| {
+            ed.defaults().corner.change(|m| {
                 m.first = first.max(0.0);
                 m.second = second.max(0.0);
                 m.by_angle = false;
@@ -116,7 +117,7 @@ fn change_setting(ed: &Editor, keyword: &str, m: &Memory) -> Result<(), Cancelle
                 Options::<f64>::new("Specify chamfer angle from the first line")
                     .default(m.angle.to_radians()),
             )?;
-            remember(|m| {
+            ed.defaults().corner.change(|m| {
                 m.length = length.max(0.0);
                 m.angle = angle.to_degrees();
                 m.by_angle = true;
@@ -130,7 +131,7 @@ fn change_setting(ed: &Editor, keyword: &str, m: &Memory) -> Result<(), Cancelle
                     .keyword("No trim", "N")
                     .default(current.to_owned()),
             )?;
-            remember(|m| m.trim = answer == "Trim");
+            ed.defaults().corner.change(|m| m.trim = answer == "Trim");
         }
         _ => {}
     }
@@ -167,6 +168,7 @@ enum Plan {
 }
 
 fn plan_pair(
+    m: &Memory,
     kind: Kind,
     a: &Entity,
     b: &Entity,
@@ -177,7 +179,6 @@ fn plan_pair(
     if kind == Kind::Fillet && [a, b].iter().any(|e| matches!(e, Entity::Spline(_))) {
         return Err(Some("FILLET does not support splines yet.".to_owned()));
     }
-    let m = memory();
     let sharp = second.shift;
     if same {
         // Two segments of one polyline.
@@ -240,7 +241,15 @@ fn join_pair(ed: &Editor, kind: Kind, first: Picked, second: Picked) -> Result<O
         return Ok(Outcome::Finished);
     };
     let same = first.id == second.id;
-    let plan = match plan_pair(kind, &a, &b, same, first, second) {
+    let plan = match plan_pair(
+        &ed.defaults().corner.get(),
+        kind,
+        &a,
+        &b,
+        same,
+        first,
+        second,
+    ) {
         Ok(plan) => plan,
         Err(None) => {
             ed.say("Select a different object.");
@@ -264,7 +273,7 @@ fn apply(
     attrs: od_core::Attributes,
     plan: Plan,
 ) -> Result<(), Cancelled> {
-    let trim = memory().trim;
+    let trim = ed.defaults().corner.get().trim;
     match plan {
         Plan::Pair(joined) => {
             if !trim && joined.joint.is_none() {
@@ -315,7 +324,7 @@ fn round_whole_polyline(ed: &Editor, kind: Kind) -> Result<bool, Cancelled> {
         ed.say("That is not a polyline.");
         return Ok(false);
     };
-    let m = memory();
+    let m = ed.defaults().corner.get();
     let how = match kind {
         Kind::Fillet => Round::Fillet(m.radius),
         Kind::Chamfer => Round::Chamfer(m.chamfer()),
@@ -353,8 +362,6 @@ mod tests {
 
     use super::*;
     use crate::state::AppState;
-
-    use crate::corner_memory::take_turn_for_tests as take_turn;
 
     fn p(x: f64, y: f64) -> Point {
         Point::new(x, y)
@@ -416,7 +423,6 @@ mod tests {
 
     #[test]
     fn fillet_and_chamfer_cut_construction_lines_and_rays_back_to_rays() {
-        let _turn = take_turn();
         let objects = [
             Entity::Xline {
                 origin: p(0.0, 0.0),
@@ -445,7 +451,6 @@ mod tests {
 
     #[test]
     fn fillet_rounds_the_corner_and_trims_both_lines() {
-        let _turn = take_turn();
         let mut state = started(&axes(), fillet_objects, &["r", "2"]);
         click(&mut state, 0, p(5.0, 0.0));
         click(&mut state, 1, p(0.0, 5.0));
@@ -471,7 +476,6 @@ mod tests {
 
     #[test]
     fn an_ellipse_is_filleted_but_not_chamfered() {
-        let _turn = take_turn();
         let half = od_core::Ellipse::new(p(0.0, 0.0), p(4.0, 0.0), 0.5, 0.0, std::f64::consts::PI);
         let items = vec![
             Entity::Ellipse(half.unwrap()),
@@ -502,7 +506,6 @@ mod tests {
 
     #[test]
     fn a_spline_is_not_filleted() {
-        let _turn = take_turn();
         let items = vec![
             axes()[0].clone(),
             Entity::Spline(Box::new(
@@ -524,7 +527,6 @@ mod tests {
 
     #[test]
     fn no_trim_adds_the_arc_and_leaves_the_lines() {
-        let _turn = take_turn();
         let mut state = started(&axes(), fillet_objects, &["r", "2", "t", "n"]);
         click(&mut state, 0, p(5.0, 0.0));
         click(&mut state, 1, p(0.0, 5.0));
@@ -535,7 +537,6 @@ mod tests {
 
     #[test]
     fn shift_on_the_second_pick_joins_at_a_sharp_corner() {
-        let _turn = take_turn();
         let lines = vec![
             line(p(0.0, 0.0), p(5.0, 0.0)),
             line(p(8.0, -6.0), p(8.0, 4.0)),
@@ -550,7 +551,6 @@ mod tests {
 
     #[test]
     fn a_fillet_between_a_line_and_a_circle() {
-        let _turn = take_turn();
         let objects = vec![
             Entity::Circle {
                 center: p(0.0, 0.0),
@@ -569,7 +569,6 @@ mod tests {
 
     #[test]
     fn a_fillet_that_cannot_be_made_is_explained() {
-        let _turn = take_turn();
         let far = vec![
             Entity::Circle {
                 center: p(0.0, 0.0),
@@ -589,7 +588,6 @@ mod tests {
 
     #[test]
     fn the_same_line_twice_is_refused_and_the_second_asked_again() {
-        let _turn = take_turn();
         let mut state = started(&axes(), fillet_objects, &["r", "2"]);
         click(&mut state, 0, p(5.0, 0.0));
         click(&mut state, 0, p(6.0, 0.0));
@@ -604,7 +602,6 @@ mod tests {
 
     #[test]
     fn two_segments_of_one_polyline_are_filleted_at_their_shared_vertex() {
-        let _turn = take_turn();
         let mut state = started(&[square()], fillet_objects, &["r", "2"]);
         // The bottom side, then the right side: the corner at (10, 0).
         click(&mut state, 0, p(5.0, 0.0));
@@ -633,7 +630,6 @@ mod tests {
 
     #[test]
     fn the_polyline_option_rounds_every_corner() {
-        let _turn = take_turn();
         let mut state = started(&[square()], fillet_objects, &["r", "2", "p"]);
         click(&mut state, 0, p(5.0, 0.0));
         assert!(!state.command_running());
@@ -661,7 +657,6 @@ mod tests {
 
     #[test]
     fn a_chamfer_by_two_distances_cuts_the_corner() {
-        let _turn = take_turn();
         let mut state = started(&axes(), chamfer_objects, &["d", "2", "3"]);
         click(&mut state, 0, p(5.0, 0.0));
         click(&mut state, 1, p(0.0, 5.0));
@@ -672,9 +667,8 @@ mod tests {
 
     #[test]
     fn a_chamfer_by_length_and_angle() {
-        let _turn = take_turn();
         let mut state = started(&axes(), chamfer_objects, &["a", "3", "45"]);
-        assert!(memory().by_angle);
+        assert!(state.defaults().corner.get().by_angle);
         click(&mut state, 0, p(5.0, 0.0));
         click(&mut state, 1, p(0.0, 5.0));
         let Entity::Line { start, end } = entities(&state)[2] else {
@@ -685,7 +679,6 @@ mod tests {
 
     #[test]
     fn the_polyline_option_chamfers_every_corner_into_one_polyline() {
-        let _turn = take_turn();
         let mut state = started(&[square()], chamfer_objects, &["d", "1", "1", "p"]);
         click(&mut state, 0, p(5.0, 0.0));
         let all = entities(&state);
@@ -697,7 +690,6 @@ mod tests {
 
     #[test]
     fn multiple_keeps_asking_until_enter() {
-        let _turn = take_turn();
         let mut state = started(&axes(), fillet_objects, &["r", "1", "m"]);
         click(&mut state, 0, p(5.0, 0.0));
         click(&mut state, 1, p(0.0, 5.0));
@@ -713,11 +705,11 @@ mod tests {
 
     #[test]
     fn the_settings_are_remembered_for_next_time() {
-        let _turn = take_turn();
         let mut state = started(&axes(), fillet_objects, &["r", "7"]);
-        assert_eq!(memory().radius, 7.0);
+        assert_eq!(state.defaults().corner.get().radius, 7.0);
         state.cancel();
-        let mut state = started(&axes(), fillet_objects, &[]);
+        state.start_command("Corner", fillet_objects);
+        state.settle_command();
         assert!(state.cmd_prompt().text.contains("Radius = 7"));
     }
 }

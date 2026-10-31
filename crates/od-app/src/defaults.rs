@@ -7,7 +7,10 @@ use std::sync::{Arc, Mutex};
 
 use od_commands::Editor;
 
-use crate::rect_memory;
+use crate::{
+    corner_memory, overkill_memory, pedit_memory, purge_memory, rect_memory, spline_memory,
+    text_memory,
+};
 
 /// One remembered section, shared between the application and the commands
 /// running on their own threads.
@@ -33,20 +36,38 @@ impl<T: Clone> Slot<T> {
 
 #[derive(Default)]
 pub struct CommandDefaults {
+    pub corner: Slot<corner_memory::Memory>,
+    pub overkill: Slot<od_core::overkill::Settings>,
+    pub pedit: Slot<pedit_memory::Memory>,
+    pub purge: Slot<purge_memory::Memory>,
     pub rect: Slot<rect_memory::Memory>,
+    pub spline: Slot<spline_memory::Memory>,
+    pub text: Slot<text_memory::Memory>,
 }
 
 impl CommandDefaults {
     /// The saved sections, keeping the default for anything missing.
     pub fn load(storage: Option<&dyn eframe::Storage>) -> Self {
         Self {
+            corner: Slot::new(corner_memory::load(storage)),
+            overkill: Slot::new(overkill_memory::load(storage)),
+            pedit: Slot::new(pedit_memory::load(storage)),
+            purge: Slot::new(purge_memory::load(storage)),
             rect: Slot::new(rect_memory::load(storage)),
+            spline: Slot::new(spline_memory::load(storage)),
+            text: Slot::new(text_memory::load(storage)),
         }
     }
 
     /// Write the sections for the next run.
     pub fn save(&self, storage: &mut dyn eframe::Storage) {
+        corner_memory::save(&self.corner.get(), storage);
+        overkill_memory::save(&self.overkill.get(), storage);
+        pedit_memory::save(&self.pedit.get(), storage);
+        purge_memory::save(&self.purge.get(), storage);
         rect_memory::save(&self.rect.get(), storage);
+        spline_memory::save(&self.spline.get(), storage);
+        text_memory::save(&self.text.get(), storage);
     }
 }
 

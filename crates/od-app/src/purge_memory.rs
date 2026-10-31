@@ -1,8 +1,6 @@
 //! What the Purge dialog remembers between uses, saved with the user's
 //! settings: its two switches and the two unnamed-object options.
 
-use std::sync::Mutex;
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Memory {
     /// Ask about each item before deleting it.
@@ -28,18 +26,6 @@ impl Default for Memory {
     }
 }
 
-static MEMORY: Mutex<Memory> = Mutex::new(DEFAULT);
-
-/// The settings as they are now.
-pub fn memory() -> Memory {
-    *MEMORY.lock().unwrap_or_else(|e| e.into_inner())
-}
-
-/// Change the settings; used by the dialog and loading the user's settings.
-pub fn remember(change: impl FnOnce(&mut Memory)) {
-    change(&mut MEMORY.lock().unwrap_or_else(|e| e.into_inner()));
-}
-
 const KEYS: [&str; 4] = [
     "purge_confirm",
     "purge_nested",
@@ -49,20 +35,19 @@ const KEYS: [&str; 4] = [
 
 /// Take the saved settings, keeping the default for anything missing or not
 /// a sensible value.
-pub fn load(storage: Option<&dyn eframe::Storage>) {
-    let Some(storage) = storage else { return };
+pub fn load(storage: Option<&dyn eframe::Storage>) -> Memory {
+    let mut m = DEFAULT;
+    let Some(storage) = storage else { return m };
     let get = |key: &str| storage.get_string(key).and_then(|v| v.parse::<bool>().ok());
-    remember(|m| {
-        m.confirm = get(KEYS[0]).unwrap_or(m.confirm);
-        m.nested = get(KEYS[1]).unwrap_or(m.nested);
-        m.zero_length = get(KEYS[2]).unwrap_or(m.zero_length);
-        m.empty_text = get(KEYS[3]).unwrap_or(m.empty_text);
-    });
+    m.confirm = get(KEYS[0]).unwrap_or(m.confirm);
+    m.nested = get(KEYS[1]).unwrap_or(m.nested);
+    m.zero_length = get(KEYS[2]).unwrap_or(m.zero_length);
+    m.empty_text = get(KEYS[3]).unwrap_or(m.empty_text);
+    m
 }
 
 /// Write the settings for the next run.
-pub fn save(storage: &mut dyn eframe::Storage) {
-    let m = memory();
+pub fn save(m: &Memory, storage: &mut dyn eframe::Storage) {
     storage.set_string(KEYS[0], m.confirm.to_string());
     storage.set_string(KEYS[1], m.nested.to_string());
     storage.set_string(KEYS[2], m.zero_length.to_string());
@@ -90,23 +75,15 @@ mod tests {
     #[test]
     fn the_settings_round_trip_and_bad_values_keep_the_default() {
         let mut saved = Saved::default();
-        remember(|m| {
-            *m = Memory {
-                confirm: true,
-                nested: false,
-                zero_length: true,
-                empty_text: true,
-            }
-        });
-        let wanted = memory();
-        save(&mut saved);
-        remember(|m| *m = Memory::default());
-        load(Some(&saved));
-        assert_eq!(memory(), wanted);
+        let wanted = Memory {
+            confirm: true,
+            nested: false,
+            zero_length: true,
+            empty_text: true,
+        };
+        save(&wanted, &mut saved);
+        assert_eq!(load(Some(&saved)), wanted);
         saved.set_string(KEYS[0], "maybe".to_owned());
-        remember(|m| *m = Memory::default());
-        load(Some(&saved));
-        assert!(!memory().confirm, "a bad value keeps the default");
-        remember(|m| *m = Memory::default());
+        assert!(!load(Some(&saved)).confirm, "a bad value keeps the default");
     }
 }

@@ -126,7 +126,6 @@ mod tests {
     use super::*;
     use crate::mtext_editor::Outcome;
     use crate::state::AppState;
-    use crate::text_memory::take_turn_for_tests;
 
     fn start(state: &mut AppState) {
         state.start_command("LEADER", draw_leader);
@@ -167,7 +166,6 @@ mod tests {
 
     #[test]
     fn points_then_text_make_a_leader_with_a_hookline_and_its_text_in_one_undo_step() {
-        let _turn = take_turn_for_tests();
         let mut state = AppState::new();
         start(&mut state);
         submit(&mut state, &["0,0", "10,10", ""]);
@@ -193,7 +191,6 @@ mod tests {
 
     #[test]
     fn a_level_last_segment_gets_no_hookline_and_text_to_the_left_goes_left() {
-        let _turn = take_turn_for_tests();
         let mut state = AppState::new();
         start(&mut state);
         submit(&mut state, &["0,0", "-10,2", ""]);
@@ -209,7 +206,6 @@ mod tests {
 
     #[test]
     fn undo_takes_back_a_point_and_empty_text_leaves_a_leader_with_none() {
-        let _turn = take_turn_for_tests();
         let mut state = AppState::new();
         start(&mut state);
         submit(&mut state, &["0,0", "5,5", "U", "10,0", ""]);
@@ -224,7 +220,6 @@ mod tests {
 
     #[test]
     fn escape_in_the_editor_or_enter_with_one_point_adds_nothing() {
-        let _turn = take_turn_for_tests();
         let mut state = AppState::new();
         start(&mut state);
         submit(&mut state, &["0,0", "5,5", ""]);
@@ -238,7 +233,6 @@ mod tests {
 
     #[test]
     fn a_repeated_point_is_ignored() {
-        let _turn = take_turn_for_tests();
         let mut state = AppState::new();
         start(&mut state);
         submit(&mut state, &["0,0", "0,0", "10,10", ""]);

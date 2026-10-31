@@ -190,11 +190,8 @@ fn main() -> eframe::Result {
         options,
         Box::new(|cc| {
             let settings = settings::Settings::load(cc.storage);
-            corner_memory::load(cc.storage);
             let defaults = std::sync::Arc::new(defaults::CommandDefaults::load(cc.storage));
-            spline_memory::load(cc.storage);
             hatch_memory::load(cc.storage);
-            text_memory::load(cc.storage);
             let theme = od_ui::Theme::with_palette(settings.palette);
             theme.apply(&cc.egui_ctx);
             cc.egui_ctx.set_zoom_factor(settings.zoom_factor());

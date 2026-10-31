@@ -12,8 +12,9 @@
 use od_commands::{Answer, Cancelled, Editor, NumberOptions, Options, PointOptions};
 use od_core::{Entity, KnotParameterization, Point, Spline};
 
+use crate::defaults::EditorDefaults;
 use crate::draw::{add, distance, MIN_SIZE};
-use crate::spline_memory::{memory, remember, Method, DEGREE_RANGE};
+use crate::spline_memory::{Method, DEGREE_RANGE};
 
 /// Most points one spline may be given.
 const MAX_POINTS: usize = 10_000;
@@ -29,9 +30,9 @@ fn knots_label(knots: KnotParameterization) -> &'static str {
 /// SPLINE. See the module notes.
 pub fn draw_spline(ed: &mut Editor) -> Result<(), Cancelled> {
     // The CV degree for this spline: SPLDEGREE, or what Degree gave.
-    let mut degree = memory().degree;
+    let mut degree = ed.defaults().spline.get().degree;
     let first = loop {
-        let m = memory();
+        let m = ed.defaults().spline.get();
         let options = PointOptions::new("Specify first point").keyword("Method", "M");
         let options = match m.method {
             Method::Fit => {
@@ -55,14 +56,14 @@ pub fn draw_spline(ed: &mut Editor) -> Result<(), Cancelled> {
             Answer::Enter => return Ok(()),
         }
     };
-    match memory().method {
-        Method::Fit => by_fit_points(ed, first, memory().knots),
+    match ed.defaults().spline.get().method {
+        Method::Fit => by_fit_points(ed, first, ed.defaults().spline.get().knots),
         Method::Cv => by_control_vertices(ed, first, degree),
     }
 }
 
 fn ask_method(ed: &Editor) -> Result<(), Cancelled> {
-    let current = match memory().method {
+    let current = match ed.defaults().spline.get().method {
         Method::Fit => "Fit",
         Method::Cv => "CV",
     };
@@ -72,7 +73,7 @@ fn ask_method(ed: &Editor) -> Result<(), Cancelled> {
             .keyword("CV", "C")
             .default(current.to_owned()),
     )?;
-    remember(|m| {
+    ed.defaults().spline.change(|m| {
         m.method = if answer == "CV" {
             Method::Cv
         } else {
@@ -88,14 +89,14 @@ fn ask_knots(ed: &Editor) -> Result<(), Cancelled> {
             .keyword("Chord", "C")
             .keyword("Square root", "S")
             .keyword("Uniform", "U")
-            .default(knots_label(memory().knots).to_owned()),
+            .default(knots_label(ed.defaults().spline.get().knots).to_owned()),
     )?;
     let knots = match answer.as_str() {
         "Square root" => KnotParameterization::SqrtChord,
         "Uniform" => KnotParameterization::Uniform,
         _ => KnotParameterization::Chord,
     };
-    remember(|m| m.knots = knots);
+    ed.defaults().spline.change(|m| m.knots = knots);
     Ok(())
 }
 
@@ -109,7 +110,7 @@ fn ask_degree(ed: &Editor, current: u8) -> Result<u8, Cancelled> {
         if typed.fract() == 0.0 && (1.0..=f64::from(most)).contains(&typed) {
             let degree = typed as u8;
             if (DEGREE_RANGE.0..=DEGREE_RANGE.1).contains(&degree) {
-                remember(|m| m.degree = degree);
+                ed.defaults().spline.change(|m| m.degree = degree);
             }
             return Ok(degree);
         }
@@ -265,7 +266,6 @@ fn by_control_vertices(ed: &Editor, first: Point, degree: u8) -> Result<(), Canc
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::spline_memory::take_turn_for_tests;
     use crate::state::AppState;
 
     fn p(x: f64, y: f64) -> Point {
@@ -298,7 +298,6 @@ mod tests {
 
     #[test]
     fn fit_points_make_a_cubic_through_them_in_one_undo_step() {
-        let _turn = take_turn_for_tests();
         let mut state = AppState::new();
         run(&mut state, &["0,0", "3,4", "6,0", "9,4", ""]);
         assert!(!state.command_running());
@@ -320,7 +319,6 @@ mod tests {
 
     #[test]
     fn too_few_points_or_esc_leave_nothing() {
-        let _turn = take_turn_for_tests();
         let mut state = AppState::new();
         run(&mut state, &["0,0", ""]);
         assert!(!state.command_running());
@@ -333,7 +331,6 @@ mod tests {
 
     #[test]
     fn undo_takes_back_the_last_point() {
-        let _turn = take_turn_for_tests();
         let mut state = AppState::new();
         run(&mut state, &["0,0", "5,5", "3,4", "u", "6,0", ""]);
         let fit = splines(&state)[0].fit.clone().unwrap();
@@ -342,17 +339,18 @@ mod tests {
 
     #[test]
     fn knots_are_chosen_and_remembered() {
-        let _turn = take_turn_for_tests();
         let mut state = AppState::new();
         run(&mut state, &["k", "u", "0,0", "3,4", "6,0", ""]);
         let fit = splines(&state)[0].fit.clone().unwrap();
         assert_eq!(fit.parameterization, Some(KnotParameterization::Uniform));
-        assert_eq!(memory().knots, KnotParameterization::Uniform);
+        assert_eq!(
+            state.defaults().spline.get().knots,
+            KnotParameterization::Uniform
+        );
     }
 
     #[test]
     fn options_not_built_yet_say_so_and_change_nothing() {
-        let _turn = take_turn_for_tests();
         let mut state = AppState::new();
         run(
             &mut state,
@@ -375,13 +373,16 @@ mod tests {
 
     #[test]
     fn control_vertices_make_a_spline_of_the_chosen_degree() {
-        let _turn = take_turn_for_tests();
         let mut state = AppState::new();
         run(
             &mut state,
             &["m", "cv", "0,0", "1,2", "3,-1", "4,2", "6,0", ""],
         );
-        assert_eq!(memory().method, Method::Cv, "the method is remembered");
+        assert_eq!(
+            state.defaults().spline.get().method,
+            Method::Cv,
+            "the method is remembered"
+        );
         let s = splines(&state).remove(0);
         assert_eq!(
             (s.degree, s.control_points.len(), s.fit.is_none()),
@@ -396,9 +397,15 @@ mod tests {
             "Degree lowered to 1 to suit 2 control vertices."
         ));
         assert_eq!(splines(&state)[1].degree, 1);
-        assert_eq!(memory().degree, 3);
+        assert_eq!(state.defaults().spline.get().degree, 3);
         run(&mut state, &["d", "2", "0,0", "1,1", "2,0", ""]);
-        assert_eq!((splines(&state)[2].degree, memory().degree), (2, 2));
+        assert_eq!(
+            (
+                splines(&state)[2].degree,
+                state.defaults().spline.get().degree
+            ),
+            (2, 2)
+        );
     }
 
     #[test]
