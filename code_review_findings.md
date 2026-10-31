@@ -12,9 +12,9 @@ Severity distribution: **0 Critical, 6 Major, 6 Minor**.
 
 ## Status update (2026-10-31)
 
-Every finding below has been checked against the code since it was written and carries a **Status** line. Fixed: OD-006, OD-008, OD-009, OD-010 and OD-011. Mostly fixed: OD-001, OD-003 and OD-005. Partly: OD-002. Measured and left alone: OD-004. Open: OD-007 and OD-012 (both minor).
+Every finding below has been checked against the code since it was written and carries a **Status** line. Fixed: OD-006, OD-008, OD-009, OD-010, OD-011 and OD-012. Mostly fixed: OD-001, OD-003 and OD-005. Partly: OD-002. Measured and left alone: OD-004. Open: OD-007 (minor).
 
-A separate pass over the automation socket, the DWG and DXF readers, panic handling and the transaction layer added two findings of its own, both since fixed: a panic inside a transaction left its edits in the drawing with no undo step, and eight idle local connections could fill every automation slot (a connection now has ten seconds to say hello). Still open from that pass: on Windows the automation descriptor file (which holds the session token) has no restricted permissions, where on Unix it is written `0600`; it lives under `%LOCALAPPDATA%`, which is already per-user.
+A separate pass over the automation socket, the DWG and DXF readers, panic handling and the transaction layer added two findings of its own, both since fixed: a panic inside a transaction left its edits in the drawing with no undo step, and eight idle local connections could fill every automation slot (a connection now has ten seconds to say hello). One thing from that pass turned out not to be a problem: on Windows the automation descriptor file (which holds the session token) is written without explicit permissions, where on Unix it is `0600`, but it inherits its folder's, and `%LOCALAPPDATA%` allows only the user, administrators and the system.
 
 ## Detailed Findings
 
@@ -117,7 +117,7 @@ A separate pass over the automation socket, the DWG and DXF readers, panic handl
 ### OD-012 — Idempotency equivalence relies only on a 64-bit non-cryptographic hash
 
 - **Severity:** Minor
-- **Status (2026-10-31):** Open. `fingerprint` in `idempotency.rs` is still a 64-bit `DefaultHasher` digest. Its comment says it guards against mistakes, not against a determined caller, which is the intent.
+- **Status (2026-10-31):** Fixed (#89). `fingerprint` in `idempotency.rs` is a SHA-256 digest, kept in place of the arguments themselves so a large batch does not cost memory.
 - **File path & line(s):** `crates/od-app/src/automation/idempotency.rs:18-29`, `crates/od-app/src/automation/idempotency.rs:73-102`
 - **Description:** Replay entries retain only a `u64` `DefaultHasher` fingerprint of canonicalized JSON arguments. If two different argument values collide, reuse of an idempotency key is incorrectly treated as the same request and the earlier successful answer is returned. The comment explicitly frames the check as accidental-misuse protection, but the externally visible idempotency contract should compare request identity rather than probabilistic equality. `serde_json::to_string(...).unwrap_or_default()` also maps a serialization failure to the hash of an empty string instead of making failure explicit.
 - **Recommendation:** Store the canonical serialized argument bytes for the bounded 256-entry replay window and compare them exactly. If memory measurements require digests, use a stable collision-resistant digest and retain length plus canonical bytes for collision confirmation. Make fingerprint construction fallible and reject an unrepresentable request instead of substituting an empty value.
