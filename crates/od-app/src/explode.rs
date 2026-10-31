@@ -3,7 +3,7 @@
 //! `Entity::explode` and `Insert::exploded` in `od_core`.
 
 use od_commands::{Cancelled, Editor};
-use od_core::{Attributes, Entity, EntityId, Object};
+use od_core::{Attributes, Document, Entity, EntityId, Object};
 
 use crate::text::plural;
 
@@ -11,13 +11,14 @@ use crate::text::plural;
 /// rectangle or polyline is replaced by its lines and arcs, which keep its
 /// layer and attributes. A block reference is replaced by its block's
 /// objects, one level down, each with its own layer and attributes as in
-/// AutoCAD. Other objects are left alone. One undo step.
+/// AutoCAD, except that a ByBlock colour, linetype or lineweight takes the
+/// reference's. Other objects are left alone. One undo step.
 pub fn explode_objects(ed: &mut Editor) -> Result<(), Cancelled> {
     let chosen = ed.pickset_or_select("Select objects to explode")?;
     let found = ed.read(move |doc| {
         chosen
             .iter()
-            .filter_map(|id| doc.object(*id).map(|o| (*id, parts_of(o))))
+            .filter_map(|id| doc.object(*id).map(|o| (*id, parts_of(doc, o))))
             .collect::<Vec<_>>()
     })?;
     let mut gone = Vec::new();
@@ -56,9 +57,11 @@ pub fn explode_objects(ed: &mut Editor) -> Result<(), Cancelled> {
 
 /// What an object explodes into, with the attributes each part keeps, or
 /// `None` when it is already simple.
-fn parts_of(object: &Object) -> Option<Vec<(Entity, Attributes)>> {
+fn parts_of(doc: &Document, object: &Object) -> Option<Vec<(Entity, Attributes)>> {
     if let Entity::Insert(insert) = &object.entity {
-        let parts = insert.exploded().into_iter();
+        let parts = insert
+            .exploded(&object.attrs, &|l| doc.layer_look(l))
+            .into_iter();
         return Some(parts.map(|p| (p.entity, p.attrs)).collect());
     }
     let pieces = object.entity.explode()?;

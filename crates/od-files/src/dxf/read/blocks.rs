@@ -31,8 +31,6 @@ pub(super) struct BlockReading {
     unread: HashMap<String, Unread>,
     anonymous_references: u64,
     external_references: u64,
-    /// Objects whose "by block" colour, linetype or lineweight became "by layer".
-    pub(super) by_block: u64,
 }
 
 impl BlockReading {
@@ -45,9 +43,6 @@ impl BlockReading {
         }
         if self.external_references > 0 {
             out.push(block_import::external_references(self.external_references));
-        }
-        if self.by_block > 0 {
-            out.push(block_import::by_block(self.by_block));
         }
         out
     }
@@ -301,7 +296,7 @@ mod tests {
     }
 
     #[test]
-    fn by_block_properties_follow_the_layer_with_a_note() {
+    fn by_block_properties_are_kept() {
         let body = [
             (0, "LINE"),
             (8, "0"),
@@ -316,8 +311,8 @@ mod tests {
         let e = &loaded.document.blocks()[0].entities[0];
         assert_eq!(
             (&e.attrs.color, &e.attrs.linetype),
-            (&Attr::ByLayer, &Attr::ByLayer)
+            (&Attr::ByBlock, &Attr::ByBlock)
         );
-        assert_eq!(loaded.warnings, [block_import::by_block(1)]);
+        assert!(loaded.warnings.is_empty());
     }
 }

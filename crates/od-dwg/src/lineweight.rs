@@ -3,6 +3,7 @@
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DwgLineweight {
     ByLayer,
+    ByBlock,
     Default,
     /// In hundredths of a millimetre.
     Hundredths(u16),
@@ -23,6 +24,7 @@ const LINEWEIGHTS: [u16; 24] = [
 pub(crate) fn lineweight(code: u8) -> DwgLineweight {
     match code {
         BY_LAYER => DwgLineweight::ByLayer,
+        BY_BLOCK => DwgLineweight::ByBlock,
         c => LINEWEIGHTS
             .get(usize::from(c))
             .map_or(DwgLineweight::Default, |&w| DwgLineweight::Hundredths(w)),

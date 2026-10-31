@@ -20,7 +20,7 @@ pub(super) fn exploded(document: &Document) -> (Cow<'_, Document>, usize) {
     let replaced = flat.replace_each(|object| match &object.entity {
         Entity::Insert(insert) => Some(
             insert
-                .picture_with(&object.attrs)
+                .picture_with(&object.attrs, &|l| document.layer_look(l))
                 .into_iter()
                 .map(|piece| (piece.entity, piece.attrs))
                 .collect(),

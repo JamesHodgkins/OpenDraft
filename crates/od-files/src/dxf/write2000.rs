@@ -716,6 +716,36 @@ mod tests {
     }
 
     #[test]
+    fn by_block_is_written_and_read_back() {
+        let mut doc = Document::default();
+        doc.add_with(
+            Entity::Line {
+                start: Point::new(0.0, 0.0),
+                end: Point::new(1.0, 0.0),
+            },
+            Attributes {
+                color: Attr::ByBlock,
+                linetype: Attr::ByBlock,
+                lineweight: Attr::ByBlock,
+                ..Attributes::on_layer(LayerId::DEFAULT)
+            },
+        );
+        let bytes = write(&doc).unwrap().bytes;
+        let pairs = pairs(&bytes);
+        let (_, line) = object(&pairs, "LINE", 0).unwrap();
+        assert_eq!(value(line, 62), Some("0"));
+        assert_eq!(value(line, 6), Some("ByBlock"));
+        assert_eq!(value(line, 370), Some("-2"));
+        let back = crate::dxf::read::read(&bytes).unwrap();
+        let attrs = &back.document.objects()[0].attrs;
+        assert_eq!(
+            (&attrs.color, &attrs.linetype, &attrs.lineweight),
+            (&Attr::ByBlock, &Attr::ByBlock, &Attr::ByBlock)
+        );
+        assert!(back.warnings.is_empty(), "{:?}", back.warnings);
+    }
+
+    #[test]
     fn construction_lines_and_rays_come_back_and_need_r2000() {
         let mut original = Document::default();
         let d = Point::new(0.6, 0.8);

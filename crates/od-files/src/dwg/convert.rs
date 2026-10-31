@@ -42,7 +42,7 @@ fn units(header: &DwgHeader) -> Units {
 pub(super) fn color(c: DwgColor) -> Color {
     match c {
         // Colour 7 is the foreground: white on a dark canvas, black on a light one.
-        DwgColor::Aci(7) | DwgColor::ByLayer => Color::Foreground,
+        DwgColor::Aci(7) | DwgColor::ByLayer | DwgColor::ByBlock => Color::Foreground,
         DwgColor::Aci(i) => {
             let (r, g, b) = aci_rgb(i);
             Color::Rgb(r, g, b)
@@ -54,7 +54,9 @@ pub(super) fn color(c: DwgColor) -> Color {
 fn lineweight(w: DwgLineweight) -> Lineweight {
     match w {
         DwgLineweight::Hundredths(w) => Lineweight(w),
-        DwgLineweight::ByLayer | DwgLineweight::Default => Lineweight::DEFAULT,
+        DwgLineweight::ByLayer | DwgLineweight::ByBlock | DwgLineweight::Default => {
+            Lineweight::DEFAULT
+        }
     }
 }
 
@@ -269,17 +271,20 @@ fn attributes(
         .ok_or_else(|| FileError::Invalid("an object is on a layer that is not there".into()))?;
     let linetype = match &e.linetype {
         DwgLinetype::ByLayer => Attr::ByLayer,
+        DwgLinetype::ByBlock => Attr::ByBlock,
         DwgLinetype::Named(name) => Attr::Set(linetypes.id_for(document, name)),
     };
     Ok(Attributes {
         layer,
         color: match e.color {
             DwgColor::ByLayer => Attr::ByLayer,
+            DwgColor::ByBlock => Attr::ByBlock,
             c => Attr::Set(color(c)),
         },
         linetype,
         lineweight: match e.lineweight {
             DwgLineweight::ByLayer => Attr::ByLayer,
+            DwgLineweight::ByBlock => Attr::ByBlock,
             w => Attr::Set(lineweight(w)),
         },
         linetype_scale: Some(e.linetype_scale)

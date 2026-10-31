@@ -18,8 +18,6 @@ pub enum Normalization {
 pub enum Degradation {
     /// A constant, non-zero elevation was dropped to flatten the entity.
     ElevationFlattened,
-    /// An entity's "by block" colour, linetype or lineweight was read as "by layer".
-    ByBlockAttribute,
     /// An entity named a linetype that is not in the drawing; "by layer" was used.
     MissingLinetype,
     /// Spline-frame control points of a fitted polyline were left out.

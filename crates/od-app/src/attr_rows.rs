@@ -14,6 +14,7 @@ use crate::properties_ui::{row_frame, text_cell};
 
 /// Shown when the selected objects follow their layer.
 const BY_LAYER: &str = "ByLayer";
+const BY_BLOCK: &str = "ByBlock";
 pub(crate) const VARIES: &str = "Varies";
 
 /// The value every item agrees on, or `None` when they differ (or there are
@@ -109,6 +110,7 @@ pub(crate) fn color_value_field(
 ) -> Option<AttrEdit> {
     let (swatch, label) = match (attr, resolved) {
         (Some(Attr::ByLayer), resolved) => (resolved, BY_LAYER.to_owned()),
+        (Some(Attr::ByBlock), resolved) => (resolved, BY_BLOCK.to_owned()),
         (Some(Attr::Set(color)), _) => (Some(color), colour_ui::name(color)),
         (None, _) => (None, VARIES.to_owned()),
     };
@@ -116,6 +118,7 @@ pub(crate) fn color_value_field(
     let picked = colour_ui::field(&mut child, theme, id, area.size(), swatch, &label, true)?;
     Some(AttrEdit::Color(match picked {
         Pick::ByLayer => Attr::ByLayer,
+        Pick::ByBlock => Attr::ByBlock,
         Pick::Color(color) => Attr::Set(color),
     }))
 }
@@ -154,13 +157,15 @@ pub(crate) fn linetype_value_field(
     attr: Option<Attr<LinetypeId>>,
 ) -> Option<AttrEdit> {
     let choices = linetype_ui::choices(document);
-    // ByLayer first, then the table's linetypes, each with a picture.
-    let entries: Vec<String> = std::iter::once(BY_LAYER.to_owned())
+    // ByLayer and ByBlock first, then the table's linetypes, each with a picture.
+    let entries: Vec<String> = [BY_LAYER.to_owned(), BY_BLOCK.to_owned()]
+        .into_iter()
         .chain(choices.iter().map(|r| r.name.clone()))
         .collect();
     let current = attr.as_ref().and_then(|a| match a {
         Attr::ByLayer => Some(0),
-        Attr::Set(id) => linetype_ui::position(&choices, *id).map(|i| i + 1),
+        Attr::ByBlock => Some(1),
+        Attr::Set(id) => linetype_ui::position(&choices, *id).map(|i| i + 2),
     });
     let text = match (&attr, current) {
         // A reference the table cannot answer (a valid drawing has none).
@@ -169,7 +174,7 @@ pub(crate) fn linetype_value_field(
         _ => VARIES,
     };
     let sample = |painter: &egui::Painter, area: egui::Rect, i: usize, color: egui::Color32| {
-        if let Some(record) = i.checked_sub(1).and_then(|i| choices.get(i)) {
+        if let Some(record) = i.checked_sub(2).and_then(|i| choices.get(i)) {
             linetype_ui::paint_sample(painter, area, &record.elements, color);
         }
     };
@@ -186,7 +191,8 @@ pub(crate) fn linetype_value_field(
     )?;
     Some(AttrEdit::Linetype(match picked {
         0 => Attr::ByLayer,
-        i => Attr::Set(choices[i - 1].id),
+        1 => Attr::ByBlock,
+        i => Attr::Set(choices[i - 2].id),
     }))
 }
 
@@ -216,22 +222,25 @@ pub(crate) fn lineweight_value_field(
     area: egui::Rect,
     attr: Option<Attr<Lineweight>>,
 ) -> Option<AttrEdit> {
-    let entries: Vec<String> = std::iter::once(BY_LAYER.to_owned())
+    let entries: Vec<String> = [BY_LAYER.to_owned(), BY_BLOCK.to_owned()]
+        .into_iter()
         .chain(Lineweight::STANDARD.iter().map(|w| weight_label(*w)))
         .collect();
     let current = attr.as_ref().and_then(|a| match a {
         Attr::ByLayer => Some(0),
+        Attr::ByBlock => Some(1),
         Attr::Set(w) => Lineweight::STANDARD
             .iter()
             .position(|s| s == w)
-            .map(|i| i + 1),
+            .map(|i| i + 2),
     });
     let text = current.map_or(VARIES, |i| entries[i].as_str());
     let mut child = ui.new_child(egui::UiBuilder::new().max_rect(area));
     let picked = menu::combo(&mut child, theme, id, area.size(), text, &entries, current)?;
     Some(AttrEdit::Lineweight(match picked {
         0 => Attr::ByLayer,
-        i => Attr::Set(Lineweight::STANDARD[i - 1]),
+        1 => Attr::ByBlock,
+        i => Attr::Set(Lineweight::STANDARD[i - 2]),
     }))
 }
 

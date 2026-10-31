@@ -46,7 +46,6 @@ fn degraded(how: Degradation, count: u64) -> String {
             "Flattened {} that sat above or below the drawing plane.",
             plural(count, "object")
         ),
-        Degradation::ByBlockAttribute => block_import::by_block(count),
         Degradation::MissingLinetype => format!(
             "{} named a linetype that is not in the drawing; they follow their layer instead.",
             plural(count, "object")

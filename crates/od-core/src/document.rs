@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use crate::block::BlockDef;
 use crate::dimension::DimStyle;
-use crate::layer::{Attr, Attributes, Color, Layer, LayerId, Lineweight};
+use crate::layer::{Attr, Attributes, Color, Layer, LayerId, LayerLook, Lineweight};
 use crate::layout::{Layout, LayoutId};
 use crate::linetype::{LinetypeId, LinetypeTable, StrokeElement};
 use crate::mleader::{MLeaderStyle, MLeaderStyleId};
@@ -308,15 +308,19 @@ impl Document {
         self.layer(object.attrs.layer).unwrap_or(&self.layers[0])
     }
 
+    /// What a layer gives its objects (the default layer's for an unknown id).
+    pub fn layer_look(&self, id: LayerId) -> LayerLook {
+        self.layer(id).unwrap_or(&self.layers[0]).look()
+    }
+
     pub fn color_of(&self, object: &Object) -> Color {
-        object.attrs.color.resolve(&self.layer_of(object).color)
+        let (color, outside) = (&object.attrs.color, LayerLook::OUTSIDE_BLOCK.color);
+        color.resolve(&self.layer_of(object).color, &outside)
     }
 
     pub fn linetype_of(&self, object: &Object) -> LinetypeId {
-        object
-            .attrs
-            .linetype
-            .resolve(&self.layer_of(object).linetype)
+        let (attr, outside) = (&object.attrs.linetype, LayerLook::OUTSIDE_BLOCK.linetype);
+        attr.resolve(&self.layer_of(object).linetype, &outside)
     }
 
     /// The pattern an object is drawn with and the scale to lay it at (its own
@@ -332,10 +336,11 @@ impl Document {
     }
 
     pub fn lineweight_of(&self, object: &Object) -> Lineweight {
-        object
-            .attrs
-            .lineweight
-            .resolve(&self.layer_of(object).lineweight)
+        let (attr, outside) = (
+            &object.attrs.lineweight,
+            LayerLook::OUTSIDE_BLOCK.lineweight,
+        );
+        attr.resolve(&self.layer_of(object).lineweight, &outside)
     }
 
     /// Drawn and snapped to: on a layer that is on and not frozen.

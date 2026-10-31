@@ -156,6 +156,7 @@ pub enum GeometryDto {
 #[serde(tag = "mode", rename_all = "snake_case")]
 pub enum ColorDto {
     ByLayer,
+    ByBlock,
     Foreground,
     Rgb { r: u8, g: u8, b: u8 },
 }
@@ -164,6 +165,7 @@ pub enum ColorDto {
 #[serde(tag = "mode", rename_all = "snake_case")]
 pub enum LinetypeDto {
     ByLayer,
+    ByBlock,
     Named { name: String },
 }
 
@@ -171,6 +173,7 @@ pub enum LinetypeDto {
 #[serde(tag = "mode", rename_all = "snake_case")]
 pub enum LineweightDto {
     ByLayer,
+    ByBlock,
     /// Hundredths of a millimetre.
     Set {
         hundredths_mm: u16,
@@ -206,6 +209,7 @@ pub struct EntityDto {
 pub fn color_dto(color: &Attr<Color>) -> ColorDto {
     match color {
         Attr::ByLayer => ColorDto::ByLayer,
+        Attr::ByBlock => ColorDto::ByBlock,
         Attr::Set(Color::Foreground) => ColorDto::Foreground,
         Attr::Set(Color::Rgb(r, g, b)) => ColorDto::Rgb {
             r: *r,
@@ -221,6 +225,7 @@ fn attributes_dto(document: &Document, a: &Attributes) -> AttributesDto {
         color: color_dto(&a.color),
         linetype: match &a.linetype {
             Attr::ByLayer => LinetypeDto::ByLayer,
+            Attr::ByBlock => LinetypeDto::ByBlock,
             // The wire speaks names; ids are the drawing's own business.
             Attr::Set(id) => LinetypeDto::Named {
                 name: document
@@ -231,6 +236,7 @@ fn attributes_dto(document: &Document, a: &Attributes) -> AttributesDto {
         },
         lineweight: match a.lineweight {
             Attr::ByLayer => LineweightDto::ByLayer,
+            Attr::ByBlock => LineweightDto::ByBlock,
             Attr::Set(w) => LineweightDto::Set { hundredths_mm: w.0 },
         },
         linetype_scale: num(a.linetype_scale),

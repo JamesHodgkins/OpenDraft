@@ -68,12 +68,14 @@ fn colour_row(ui: &mut egui::Ui, theme: &Theme, id: &str, label: &str, value: &m
     row(ui, theme, label, |ui| {
         let (swatch, text) = match value {
             Attr::ByLayer => (None, "ByLayer".to_owned()),
+            Attr::ByBlock => (None, "ByBlock".to_owned()),
             Attr::Set(color) => (Some(*color), colour_ui::name(*color)),
         };
         let at = egui::vec2(FIELD_WIDTH, 24.0);
         let picked = colour_ui::field(ui, theme, ui.id().with(id), at, swatch, &text, true);
         match picked {
             Some(Pick::ByLayer) => *value = Attr::ByLayer,
+            Some(Pick::ByBlock) => *value = Attr::ByBlock,
             Some(Pick::Color(c)) => *value = Attr::Set(c),
             None => {}
         }
@@ -84,6 +86,7 @@ fn linetype_row(ui: &mut egui::Ui, theme: &Theme, value: &mut Attr<LinetypeId>, 
     row(ui, theme, "Linetype:", |ui| {
         let shown = match value {
             Attr::ByLayer => "ByLayer".to_owned(),
+            Attr::ByBlock => "ByBlock".to_owned(),
             Attr::Set(id) => doc
                 .linetypes()
                 .get(*id)
@@ -95,6 +98,12 @@ fn linetype_row(ui: &mut egui::Ui, theme: &Theme, value: &mut Attr<LinetypeId>, 
                 .clicked()
             {
                 *value = Attr::ByLayer;
+            }
+            if ui
+                .selectable_label(matches!(value, Attr::ByBlock), "ByBlock")
+                .clicked()
+            {
+                *value = Attr::ByBlock;
             }
             for record in linetype_ui::choices(doc) {
                 let on = matches!(value, Attr::Set(id) if *id == record.id);
@@ -110,6 +119,7 @@ fn lineweight_row(ui: &mut egui::Ui, theme: &Theme, value: &mut Attr<Lineweight>
     row(ui, theme, "Lineweight:", |ui| {
         let shown = match value {
             Attr::ByLayer => "ByLayer".to_owned(),
+            Attr::ByBlock => "ByBlock".to_owned(),
             Attr::Set(w) => weight_label(*w),
         };
         widgets::dropdown(ui, theme, "ml_lineweight", &shown, FIELD_WIDTH, |ui| {
@@ -118,6 +128,12 @@ fn lineweight_row(ui: &mut egui::Ui, theme: &Theme, value: &mut Attr<Lineweight>
                 .clicked()
             {
                 *value = Attr::ByLayer;
+            }
+            if ui
+                .selectable_label(matches!(value, Attr::ByBlock), "ByBlock")
+                .clicked()
+            {
+                *value = Attr::ByBlock;
             }
             for weight in Lineweight::STANDARD {
                 let on = matches!(value, Attr::Set(w) if w == weight);
@@ -164,7 +180,11 @@ pub(super) fn leader_format(ui: &mut egui::Ui, theme: &Theme, draft: &mut Draft,
         });
     });
     ui.add_space(8.0);
-    note(ui, theme, "ByBlock colour, linetype and lineweight and custom arrowhead blocks are not kept by the style yet.");
+    note(
+        ui,
+        theme,
+        "Custom arrowhead blocks are not kept by the style yet.",
+    );
 }
 
 /// A checkbox that holds a segment to one of [`ANGLES`] when ticked.

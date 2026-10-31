@@ -5,7 +5,7 @@
 //! segment. Lines, circles, arcs and ellipses are already simple.
 
 use crate::intersect::corners;
-use crate::{bulge, Entity, Point};
+use crate::{bulge, Attributes, Entity, LayerId, LayerLook, Point};
 
 impl Entity {
     /// The lines and arcs this object is made of, in order, or `None` when
@@ -33,7 +33,11 @@ impl Entity {
             Entity::Hatch(_) => None,
             // One level down; the command keeps each part's own layer and
             // properties through `Insert::exploded`.
-            Entity::Insert(i) => Some(i.exploded().into_iter().map(|p| p.entity).collect()),
+            Entity::Insert(i) => {
+                let attrs = Attributes::on_layer(LayerId::DEFAULT);
+                let parts = i.exploded(&attrs, &|_| LayerLook::OUTSIDE_BLOCK);
+                Some(parts.into_iter().map(|p| p.entity).collect())
+            }
             Entity::Rectangle { min, max } => {
                 let c = corners(*min, *max);
                 Some(pieces(&c, &[], true))

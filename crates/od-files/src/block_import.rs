@@ -93,14 +93,6 @@ pub(crate) fn external_references(count: u64) -> String {
     )
 }
 
-/// The sentence for objects whose "by block" properties became "by layer".
-pub(crate) fn by_block(count: u64) -> String {
-    format!(
-        "{} used a \"by block\" colour, linetype or lineweight; they follow their layer instead.",
-        plural(count, "object")
-    )
-}
-
 impl<K: Clone + Eq + Hash> ImportedBlocks<K> {
     /// Builds every definition and adds them to `document`'s block table in
     /// the order given.

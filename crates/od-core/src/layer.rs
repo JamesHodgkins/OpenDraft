@@ -59,21 +59,57 @@ impl Lineweight {
     }
 }
 
-/// An object attribute that either follows its layer or is set on the object.
+/// An object attribute that follows its layer, follows the block reference it
+/// sits in, or is set on the object.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Attr<T> {
     ByLayer,
+    /// Takes the value of the block reference that holds the object. Outside
+    /// a block reference it draws with the drawing's defaults (white,
+    /// continuous, the default lineweight), as in AutoCAD.
+    ByBlock,
     Set(T),
 }
 
 impl<T: Clone> Attr<T> {
-    /// The effective value, given what the layer says.
-    pub fn resolve(&self, layer_value: &T) -> T {
+    /// The effective value, given what the layer says and what a block
+    /// reference gives its ByBlock contents when there is none around.
+    pub fn resolve(&self, layer_value: &T, block_value: &T) -> T {
         match self {
             Attr::ByLayer => layer_value.clone(),
+            Attr::ByBlock => block_value.clone(),
             Attr::Set(v) => v.clone(),
         }
     }
+
+    /// What a ByBlock object inside a block reference takes from it: the
+    /// reference's own setting, with ByLayer made concrete (the reference's
+    /// layer's value, `layer_value`) because the object is on a layer of its
+    /// own. Any other setting of the object is its own.
+    pub(crate) fn inside(&self, reference: &Attr<T>, layer_value: impl FnOnce() -> T) -> Attr<T> {
+        match (self, reference) {
+            (Attr::ByBlock, Attr::ByLayer) => Attr::Set(layer_value()),
+            (Attr::ByBlock, other) => other.clone(),
+            (own, _) => own.clone(),
+        }
+    }
+}
+
+/// What a layer gives the objects on it.
+#[derive(Clone, Debug, PartialEq)]
+pub struct LayerLook {
+    pub color: Color,
+    pub linetype: LinetypeId,
+    pub lineweight: Lineweight,
+}
+
+impl LayerLook {
+    /// What an object that is ByBlock outside any block reference draws with.
+    pub const OUTSIDE_BLOCK: LayerLook = LayerLook {
+        color: Color::Foreground,
+        linetype: LinetypeId::CONTINUOUS,
+        lineweight: Lineweight::DEFAULT,
+    };
 }
 
 /// How an object is displayed: its layer, and any overrides of the layer's
@@ -123,6 +159,14 @@ pub struct Layer {
 }
 
 impl Layer {
+    pub fn look(&self) -> LayerLook {
+        LayerLook {
+            color: self.color,
+            linetype: self.linetype,
+            lineweight: self.lineweight,
+        }
+    }
+
     pub fn new(id: LayerId, name: impl Into<String>) -> Self {
         Self {
             id,

@@ -33,7 +33,7 @@ pub use editing::BlockEditSave;
 pub use picture::Piece;
 pub use table::{block_name_problem, Redefinition};
 
-use crate::{Attributes, Entity, LayerId, Point};
+use crate::{Attributes, Entity, LayerId, LayerLook, Point};
 
 /// Permanent identity of a block definition. Never reused within a drawing.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -159,16 +159,29 @@ impl Insert {
 }
 
 /// Where one object of a definition ends up: on the insert's layer when it
-/// was drawn on layer 0 (as in AutoCAD), otherwise on its own.
-pub fn inherited(child: &Attributes, parent: &Attributes) -> Attributes {
+/// was drawn on layer 0 (as in AutoCAD), otherwise on its own; and with its
+/// ByBlock colour, linetype and lineweight taken from the insert (`parent`),
+/// whose ByLayer settings are made concrete with `look` of the insert's layer.
+pub fn inherited(
+    child: &Attributes,
+    parent: &Attributes,
+    look: &dyn Fn(LayerId) -> LayerLook,
+) -> Attributes {
+    let layer_look = look(parent.layer);
+    let mut out = Attributes {
+        color: child.color.inside(&parent.color, || layer_look.color),
+        linetype: child
+            .linetype
+            .inside(&parent.linetype, || layer_look.linetype),
+        lineweight: child
+            .lineweight
+            .inside(&parent.lineweight, || layer_look.lineweight),
+        ..child.clone()
+    };
     if child.layer == LayerId::DEFAULT {
-        Attributes {
-            layer: parent.layer,
-            ..child.clone()
-        }
-    } else {
-        child.clone()
+        out.layer = parent.layer;
     }
+    out
 }
 
 #[cfg(test)]
