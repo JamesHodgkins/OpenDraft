@@ -44,7 +44,8 @@ pub struct Saved {
 /// What the Home page and the title bar show.
 #[derive(Clone, Debug, PartialEq)]
 pub enum View {
-    /// This build never checks (a development build).
+    /// This build never checks (a development build, or one a software store
+    /// updates).
     Disabled,
     /// The user has not been asked.
     Unasked,
@@ -81,11 +82,13 @@ pub struct Updates {
 
 impl Updates {
     /// For this build. A development build never checks, unless the address
-    /// was replaced (`OD_UPDATES_URL`) to try it.
+    /// was replaced (`OD_UPDATES_URL`) to try it, and neither does a copy a
+    /// software store updates (a Flatpak).
     pub fn new(saved: Saved) -> Self {
         let channel = crate::build_info::channel();
         let current = Version::parse(crate::build_info::VERSION).unwrap_or(Version::new(0, 0, 0));
-        let enabled = channel != Channel::Dev || super::fetch::Github::is_overridden();
+        let enabled = !super::handled_by_the_store()
+            && (channel != Channel::Dev || super::fetch::Github::is_overridden());
         Self::with(
             saved,
             Arc::new(super::fetch::Github::new()),

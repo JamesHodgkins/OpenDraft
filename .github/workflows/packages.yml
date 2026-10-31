@@ -94,6 +94,14 @@ jobs:
             if ldd /app/libexec/opendraft | grep "not found"; then exit 1; fi
             echo "the Flatpak holds the programs, desktop entry, icons, file types and metadata"
           '
+      - name: Flathub's own linter (the checks its reviewers run)
+        run: |
+          flatpak install --user --noninteractive -y flathub org.flatpak.Builder
+          set +e
+          flatpak run --command=flatpak-builder-lint org.flatpak.Builder manifest             installer/linux/flatpak/uk.openengineering.opendraft.yml | tee manifest-lint.json
+          flatpak run --command=flatpak-builder-lint org.flatpak.Builder appstream             installer/linux/share/uk.openengineering.opendraft.metainfo.xml | tee appstream-lint.json
+          flatpak run --command=flatpak-builder-lint org.flatpak.Builder builddir flatpak_app 2>/dev/null | tee builddir-lint.json
+          true
       - name: It starts and stays open in a virtual display
         run: |
           apt-get update && apt-get install -y --no-install-recommends xvfb xauth
