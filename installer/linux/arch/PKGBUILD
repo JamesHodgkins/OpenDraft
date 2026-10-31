@@ -35,7 +35,7 @@ optdepends=(
 )
 options=('!lto')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('SKIP') # run updpkgsums for a release
+sha256sums=('f4222a38222b476beb0d2e8aa6654f739f211ef3f5c87be41a4555be5a4277e8') # run updpkgsums for a release
 
 # The directory the source unpacks to (the CI build overrides it).
 _srcdir="OpenDraft-$pkgver"

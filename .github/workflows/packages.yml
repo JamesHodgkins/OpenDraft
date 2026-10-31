@@ -46,6 +46,7 @@ jobs:
             cd /home/builder/pkg
             # Build from this checkout instead of the release tag.
             sed -i "s|^source=.*|source=(\"opendraft-\$pkgver.tar.gz\")|" PKGBUILD
+            sed -i "s|^sha256sums=.*|sha256sums=(SKIP)|" PKGBUILD
             chown -R builder:builder /home/builder
             sudo -u builder makepkg -s --noconfirm
             pacman -Qlp opendraft-*.pkg.tar.zst | tee /tmp/files.txt
@@ -73,6 +74,11 @@ jobs:
           pip install aiohttp toml tomlkit
           python3 flatpak-builder-tools/cargo/flatpak-cargo-generator.py Cargo.lock \
             -o installer/linux/flatpak/cargo-sources.json
+      - name: Keep the generated crate sources (a Flathub submission commits this file)
+        uses: actions/upload-artifact@v4
+        with:
+          name: cargo-sources
+          path: installer/linux/flatpak/cargo-sources.json
       - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: opendraft.flatpak
@@ -112,3 +118,32 @@ jobs:
           code=$?
           if [ "$code" != 124 ]; then echo "the Flatpak exited with code $code instead of staying open for 30 s"; exit 1; fi
           echo "the Flatpak starts"
+  flathub:
+    # The manifest to submit to Flathub, built the way Flathub will build it: from
+    # the released tag, with the committed crate sources and no network for cargo.
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-24.08
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v4
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: opendraft-flathub.flatpak
+          manifest-path: installer/linux/flatpak/flathub/uk.openengineering.opendraft.yml
+          cache-key: flatpak-builder-flathub-${{ hashFiles('installer/linux/flatpak/flathub/**') }}
+      - name: Flathub's linter on the submission manifest
+        run: |
+          flatpak remote-add --if-not-exists --user flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak install --user --noninteractive -y flathub org.flatpak.Builder
+          flatpak run --command=flatpak-builder-lint org.flatpak.Builder manifest             installer/linux/flatpak/flathub/uk.openengineering.opendraft.yml
+      - name: It starts and stays open in a virtual display
+        run: |
+          flatpak remote-add --if-not-exists --user flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak install --user --noninteractive -y --bundle opendraft-flathub.flatpak
+          command -v xvfb-run >/dev/null || { echo "xvfb-run is not in this image"; exit 1; }
+          set +e
+          timeout 30 xvfb-run -a flatpak run --env=OPENDRAFT_PROFILE=ci-smoke --env=LIBGL_ALWAYS_SOFTWARE=1 uk.openengineering.opendraft
+          code=$?
+          if [ "$code" != 124 ]; then echo "the Flatpak exited with code $code instead of staying open for 30 s"; exit 1; fi
+          echo "the Flathub build starts"
