@@ -4,6 +4,7 @@
 //! per-user profile folder on Windows) and removed on a clean exit. A stale
 //! file is discovered by failing to connect, not by guessing from the pid.
 
+use std::ffi::OsString;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -56,8 +57,39 @@ pub fn directory() -> Option<PathBuf> {
     #[cfg(windows)]
     let base = std::env::var_os("LOCALAPPDATA").map(PathBuf::from)?;
     #[cfg(not(windows))]
-    let base = std::env::var_os("XDG_RUNTIME_DIR").map(PathBuf::from)?;
+    let base = unix_base(|name| std::env::var_os(name))?;
     Some(base.join("OpenDraft").join("automation"))
+}
+
+/// Where a Unix session keeps its per-user runtime files: `XDG_RUNTIME_DIR`
+/// (`/run/user/<uid>`, which the login system makes and only the user can
+/// enter) when there is one. Some sessions have none (`su`, `ssh` without a
+/// login manager, a few containers and minimal desktops); there the user's
+/// cache folder serves, so the connection still works.
+#[cfg_attr(windows, allow(dead_code))]
+fn unix_base(var: impl Fn(&str) -> Option<OsString>) -> Option<PathBuf> {
+    let absolute = |name: &str| var(name).map(PathBuf::from).filter(|p| p.is_absolute());
+    if let Some(run) = absolute("XDG_RUNTIME_DIR").filter(|p| p.is_dir()) {
+        return Some(run);
+    }
+    absolute("XDG_CACHE_HOME").or_else(|| absolute("HOME").map(|home| home.join(".cache")))
+}
+
+/// Make `dir` and any missing parents, readable only by the user on Unix: the
+/// socket and the file holding the token live in it.
+pub fn create_private_dir(dir: &Path) -> io::Result<()> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::DirBuilderExt;
+        fs::DirBuilder::new()
+            .recursive(true)
+            .mode(0o700)
+            .create(dir)
+    }
+    #[cfg(not(unix))]
+    {
+        fs::create_dir_all(dir)
+    }
 }
 
 fn file_name(instance_id: &str) -> String {
@@ -76,7 +108,7 @@ pub fn write(dir: &Path, descriptor: &Descriptor) -> io::Result<PathBuf> {
             "bad instance id",
         ));
     }
-    fs::create_dir_all(dir)?;
+    create_private_dir(dir)?;
     let path = dir.join(file_name(&descriptor.instance_id));
     let json = serde_json::to_vec(descriptor).map_err(io::Error::other)?;
     write_private(&path, &json)?;
@@ -127,6 +159,71 @@ pub fn remove(dir: &Path, instance_id: &str) {
 
 #[cfg(test)]
 mod tests {
+    fn env<'a>(pairs: &'a [(&'a str, &'a str)]) -> impl Fn(&str) -> Option<OsString> + 'a {
+        move |name| {
+            pairs
+                .iter()
+                .find(|(k, _)| *k == name)
+                .map(|(_, v)| OsString::from(v))
+        }
+    }
+
+    fn here() -> String {
+        std::env::temp_dir().to_string_lossy().into_owned()
+    }
+
+    #[test]
+    fn the_runtime_folder_is_used_when_the_session_has_one() {
+        let run = here();
+        let found = unix_base(env(&[("XDG_RUNTIME_DIR", &run), ("HOME", "/home/someone")]));
+        assert_eq!(found, Some(PathBuf::from(run)));
+    }
+
+    #[test]
+    fn without_a_runtime_folder_the_cache_folder_serves() {
+        let home = here();
+        let cache = std::env::temp_dir().join("elsewhere");
+        let by_home = unix_base(env(&[("HOME", &home)]));
+        assert_eq!(by_home, Some(PathBuf::from(&home).join(".cache")));
+        let cache_text = cache.to_string_lossy().into_owned();
+        let by_cache = unix_base(env(&[("XDG_CACHE_HOME", &cache_text), ("HOME", &home)]));
+        assert_eq!(by_cache, Some(cache));
+    }
+
+    #[test]
+    fn a_runtime_folder_that_is_not_there_or_not_absolute_is_not_trusted() {
+        let home = here();
+        let gone = std::env::temp_dir().join("od-no-such-run-dir");
+        let gone_text = gone.to_string_lossy().into_owned();
+        let found = unix_base(env(&[("XDG_RUNTIME_DIR", &gone_text), ("HOME", &home)]));
+        assert_eq!(found, Some(PathBuf::from(&home).join(".cache")));
+        let relative = unix_base(env(&[("XDG_RUNTIME_DIR", "run"), ("HOME", &home)]));
+        assert_eq!(relative, Some(PathBuf::from(&home).join(".cache")));
+    }
+
+    #[test]
+    fn nothing_in_the_environment_means_no_folder() {
+        assert_eq!(unix_base(env(&[])), None);
+        assert_eq!(unix_base(env(&[("HOME", "relative/home")])), None);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn the_descriptor_folder_is_made_for_the_user_alone() {
+        use std::os::unix::fs::PermissionsExt;
+        let top = std::env::temp_dir().join(format!("od-private-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&top);
+        let dir = top.join("a/b");
+        create_private_dir(&dir).unwrap();
+        for folder in [&top, &top.join("a"), &dir] {
+            let mode = fs::metadata(folder).unwrap().permissions().mode() & 0o777;
+            assert_eq!(mode, 0o700, "{}", folder.display());
+        }
+        // Making it again is fine.
+        create_private_dir(&dir).unwrap();
+        let _ = fs::remove_dir_all(&top);
+    }
+
     use super::*;
 
     fn descriptor(id: &str) -> Descriptor {
