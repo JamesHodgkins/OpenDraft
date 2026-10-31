@@ -209,7 +209,7 @@ impl AppState {
     fn selected_layers(&self) -> Vec<LayerId> {
         let doc = &self.docs[self.active];
         doc.session
-            .document
+            .document()
             .layers()
             .iter()
             .map(|l| l.id)
@@ -240,7 +240,7 @@ impl AppState {
     pub fn show_all_layers(&mut self) {
         let layers: Vec<LayerId> = self
             .session()
-            .document
+            .document()
             .layers()
             .iter()
             .map(|l| l.id)
@@ -255,7 +255,7 @@ impl AppState {
     /// Whether any layer is off or frozen.
     pub fn any_layer_hidden(&self) -> bool {
         self.session()
-            .document
+            .document()
             .layers()
             .iter()
             .any(|l| !l.is_visible())
@@ -327,7 +327,7 @@ mod tests {
     fn layer_named(state: &AppState, name: &str) -> Layer {
         state
             .session()
-            .document
+            .document()
             .layers()
             .iter()
             .find(|l| l.name == name)
@@ -342,7 +342,7 @@ mod tests {
         state.new_layer();
         let names: Vec<_> = state
             .session()
-            .document
+            .document()
             .layers()
             .iter()
             .map(|l| l.name.clone())

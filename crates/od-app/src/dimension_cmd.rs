@@ -353,7 +353,7 @@ mod tests {
     fn dimensions(state: &AppState) -> Vec<Dimension> {
         state
             .session()
-            .document
+            .document()
             .objects()
             .iter()
             .filter_map(|o| match &o.entity {

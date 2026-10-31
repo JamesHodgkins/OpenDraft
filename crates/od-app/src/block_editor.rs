@@ -158,7 +158,7 @@ impl AppState {
         };
         let save = match edit
             .drawing
-            .document
+            .document()
             .block_edit_save(doc.session.document(), edit.block)
         {
             Ok(save) => save,

@@ -558,7 +558,7 @@ mod tests {
         assert!(
             !state
                 .session()
-                .document
+                .document()
                 .layer(LayerId::DEFAULT)
                 .unwrap()
                 .frozen
@@ -614,7 +614,7 @@ mod tests {
         assert!(state.erase_viewport());
         assert!(state
             .session()
-            .document
+            .document()
             .layout(id)
             .unwrap()
             .viewports

@@ -627,7 +627,7 @@ mod tests {
         // Stretch the right wall and the top corner outward: still closed.
         let ids: Vec<_> = state
             .session()
-            .document
+            .document()
             .objects()
             .iter()
             .filter(|o| matches!(o.entity, Entity::Line { .. }))

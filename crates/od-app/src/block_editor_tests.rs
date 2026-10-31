@@ -32,7 +32,7 @@ fn with_box() -> AppState {
 
 fn reference_bounds(state: &AppState) -> od_core::Bounds {
     let doc = &state.docs[state.active];
-    doc.drawing().document.objects()[0].entity.bounds()
+    doc.drawing().document().objects()[0].entity.bounds()
 }
 
 fn said(state: &AppState, text: &str) -> bool {

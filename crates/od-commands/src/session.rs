@@ -29,8 +29,8 @@ pub enum HistoryError {
 /// [`Session::perform`] so they can be undone.
 #[derive(Default)]
 pub struct Session {
-    pub document: Document,
-    pub history: History,
+    pub(crate) document: Document,
+    pub(crate) history: History,
     /// Where the history stood when the drawing was last saved (or opened).
     saved_at: u64,
     /// Counts effective changes (edits, undo, redo). Unlike the history

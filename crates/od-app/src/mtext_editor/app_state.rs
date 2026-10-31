@@ -22,7 +22,7 @@ impl AppState {
             Some((text, of)) if doc.mtext_editor.is_none() => {
                 let style = doc
                     .session
-                    .document
+                    .document()
                     .text_style(text.style)
                     .cloned()
                     .unwrap_or_else(TextStyle::standard);
