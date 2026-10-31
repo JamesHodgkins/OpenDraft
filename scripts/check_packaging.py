@@ -73,6 +73,19 @@ provided = {m.text for m in metainfo.findall("provides/mediatype")}
 need(provided <= semicolon_set(plain.get("MimeType", "")),
      f"AppStream provides types the desktop file does not list: {provided - semicolon_set(plain.get('MimeType', ''))}")
 
+# The Flatpak manifest (plain text: only the standard library is used here).
+manifest = (LINUX / "flatpak" / "uk.openengineering.opendraft.yml").read_text()
+app_id = re.search(r"^app-id: (\S+)", manifest, re.M)
+need(app_id and app_id.group(1) == metainfo.findtext("id"),
+     "the Flatpak app-id must be the AppStream id")
+need(re.search(r"^command: opendraft$", manifest, re.M), "the Flatpak must run the opendraft script")
+for script in ("opendraft.sh", "opendraft-mcp.sh"):
+    need((LINUX / "flatpak" / script).exists() and f"installer/linux/flatpak/{script}" in manifest,
+         f"the Flatpak must install {script}")
+    text = (LINUX / "flatpak" / script).read_text() if (LINUX / "flatpak" / script).exists() else ""
+    need("OD_AUTOMATION_DIR" in text and "FLATPAK_ID" in text,
+         f"{script} must point the automation socket at the folder the sandbox shares with the host")
+
 # Versions.
 cargo = (ROOT / "Cargo.toml").read_text()
 version = re.search(r'^\[workspace\.package\][^\[]*?^version = "([^"]+)"', cargo, re.M | re.S)

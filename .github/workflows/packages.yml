@@ -60,3 +60,45 @@ jobs:
             test -x /usr/bin/opendraft-mcp
             echo "the Arch package builds, installs and links"
           '
+  flatpak:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-24.08
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v4
+      - name: Crate sources for an offline build, made from Cargo.lock
+        run: |
+          git clone --depth 1 https://github.com/flatpak/flatpak-builder-tools
+          pip install aiohttp toml tomlkit
+          python3 flatpak-builder-tools/cargo/flatpak-cargo-generator.py Cargo.lock \
+            -o installer/linux/flatpak/cargo-sources.json
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: opendraft.flatpak
+          manifest-path: installer/linux/flatpak/uk.openengineering.opendraft.yml
+          cache-key: flatpak-builder-${{ hashFiles('Cargo.lock') }}
+      - name: The Flatpak has what it should
+        run: |
+          flatpak remote-add --if-not-exists --user flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak install --user --noninteractive -y --bundle opendraft.flatpak
+          flatpak run --command=sh uk.openengineering.opendraft -c '
+            set -e
+            test -x /app/bin/opendraft && test -x /app/libexec/opendraft && test -x /app/libexec/opendraft-mcp
+            test -f /app/share/applications/uk.openengineering.opendraft.desktop
+            grep -q "^Icon=uk.openengineering.opendraft$" /app/share/applications/uk.openengineering.opendraft.desktop
+            grep -q "^StartupWMClass=uk.openengineering.opendraft$" /app/share/applications/uk.openengineering.opendraft.desktop
+            test -f /app/share/metainfo/uk.openengineering.opendraft.metainfo.xml
+            test -f /app/share/icons/hicolor/256x256/apps/uk.openengineering.opendraft.png
+            test -f /app/share/mime/packages/uk.openengineering.opendraft.xml
+            if ldd /app/libexec/opendraft | grep "not found"; then exit 1; fi
+            echo "the Flatpak holds the programs, desktop entry, icons, file types and metadata"
+          '
+      - name: It starts and stays open in a virtual display
+        run: |
+          apt-get update && apt-get install -y --no-install-recommends xvfb xauth
+          set +e
+          timeout 30 xvfb-run -a flatpak run --env=OPENDRAFT_PROFILE=ci-smoke --env=LIBGL_ALWAYS_SOFTWARE=1 uk.openengineering.opendraft
+          code=$?
+          if [ "$code" != 124 ]; then echo "the Flatpak exited with code $code instead of staying open for 30 s"; exit 1; fi
+          echo "the Flatpak starts"

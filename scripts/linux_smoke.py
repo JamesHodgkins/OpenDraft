@@ -12,8 +12,13 @@ automation socket (the same one the MCP server uses):
   3. the window draws something (the screen is not blank);
   4. typing L, Enter, two clicks and Enter draws one more line, and Ctrl+Z
      takes it back (keyboard, mouse, command, undo, repaint);
-  5. `opendraft-mcp --check` reaches the running program;
-  6. Ctrl+Q ends it with exit code 0.
+  5. `opendraft-mcp --check` reaches the running program.
+
+A second scenario (--scenario home) starts the program with no drawing, as a
+person does from the menu, and checks it starts on the Home page with nothing
+open and ends with exit code 0 when Ctrl+Q is pressed. (The first scenario
+cannot do that: a drawing imported from DXF counts as unsaved, so quitting asks
+whether to save it.)
 
 Screenshots, the program's log and a JSON report are left in --out. Only the
 Python standard library is used, plus `xdotool` for input.
@@ -207,6 +212,7 @@ def main():
                         help="the Xvfb -fbdir, for screenshots")
     parser.add_argument("--scale", help="set WINIT_X11_SCALE_FACTOR (for example 2)")
     parser.add_argument("--label", default="smoke", help="names the artifacts")
+    parser.add_argument("--scenario", choices=["drawing", "home"], default="drawing")
     args = parser.parse_args()
 
     os.makedirs(args.out, exist_ok=True)
@@ -240,7 +246,8 @@ def main():
 
     log_path = os.path.join(args.out, f"{args.label}-app.log")
     log = open(log_path, "wb")
-    app = subprocess.Popen([args.binary, sample], env=env, stdout=log, stderr=subprocess.STDOUT)
+    command = [args.binary] + ([sample] if args.scenario == "drawing" else [])
+    app = subprocess.Popen(command, env=env, stdout=log, stderr=subprocess.STDOUT)
     client = None
     shots = {}
     cx = cy = None
@@ -274,22 +281,34 @@ def main():
         report.check("the hello is accepted with a read-only grant", client.hello["scopes"] == ["drawing.read"],
                      client.hello.get("scopes"))
 
-        # 2. The drawing named on the command line is open.
-        def documents():
-            found = client.call("documents.list")["documents"]
-            return found if found else None
-        docs = wait_for(documents, 60)
-        sample_name = os.path.splitext(os.path.basename(args.sample))[0]
-        report.check("the drawing on the command line is open",
-                     bool(docs) and sample_name in json.dumps(docs), json.dumps(docs)[:200] if docs else "none")
-        if not docs:
-            return finish(report, app, log, log_path, args, work)
-        doc_id = docs[0]["document_id"]
+        doc_id = None
+        before = 0
+        if args.scenario == "home":
+            # 2. Nothing is open: the program starts on the Home page.
+            time.sleep(3)
+            nothing = client.call("documents.list")["documents"]
+            report.check("it starts on the Home page with no drawing open", nothing == [], json.dumps(nothing)[:160])
 
-        def count():
-            return len(client.call("entities.query", {"document_id": doc_id, "limit": 1000})["entities"])
-        before = count()
-        report.check("the drawing has objects", before > 0, f"{before} objects")
+            def count():
+                return 0
+        else:
+            # 2. The drawing named on the command line is open.
+            def documents():
+                found = client.call("documents.list")["documents"]
+                return found if found else None
+            docs = wait_for(documents, 60)
+            sample_name = os.path.splitext(os.path.basename(args.sample))[0]
+            report.check("the drawing on the command line is open",
+                         bool(docs) and sample_name in json.dumps(docs), json.dumps(docs)[:200] if docs else "none")
+            if not docs:
+                return finish(report, app, log, log_path, args, work)
+            doc_id = docs[0]["document_id"]
+
+            def count():
+                return len(client.call("entities.query", {"document_id": doc_id, "limit": 1000})["entities"])
+            before = count()
+            report.check("the drawing has objects", before > 0, f"{before} objects")
+
 
         # 3. The window draws something.
         time.sleep(3)
@@ -314,34 +333,38 @@ def main():
             report.notes["window"] = {"x": x, "y": y, "width": w, "height": h}
             report.check("the window is on screen and a sensible size", w >= 600 and h >= 400, f"{w}x{h}")
             cx, cy = x + int(w * 0.5), y + int(h * 0.55)
-            # No window manager: the window under the pointer gets the keys.
+            # With no window manager nothing gives the window the keyboard
+            # focus, as a manager does when a window is clicked: do it here,
+            # or the keys go nowhere.
             xdotool("mousemove", str(cx), str(cy))
+            xdotool("windowfocus", window, check=False)
             time.sleep(0.5)
-            xdotool("type", "--delay", "120", "L")
-            xdotool("key", "Return")
-            time.sleep(1.0)
-            xdotool("mousemove", str(cx - 120), str(cy - 40))
-            time.sleep(0.4)
-            xdotool("click", "1")
-            time.sleep(0.6)
-            xdotool("mousemove", str(cx + 140), str(cy + 60))
-            time.sleep(0.4)
-            xdotool("click", "1")
-            time.sleep(0.6)
-            xdotool("key", "Return")
-            drawn = wait_for(lambda: count() == before + 1 or None, 15)
-            report.check("typing L, two clicks and Enter draws one line", bool(drawn), f"{before} -> {count()} objects")
-            time.sleep(1.0)
-            second = shot("drawn")
-            if first and second:
-                changed = differing_pixels(first[2], second[2], first[0])
-                report.check("the new line is painted", changed > 50, f"{changed} pixels changed")
-            if drawn:
-                newest = client.call("entities.query", {"document_id": doc_id, "limit": 1000})["entities"][-1]
-                report.check("the new object is a line", str(newest.get("kind", "")).lower() == "line", newest.get("kind"))
-            xdotool("key", "ctrl+z")
-            undone = wait_for(lambda: count() == before or None, 15)
-            report.check("Ctrl+Z takes it back", bool(undone), f"now {count()} objects")
+            if args.scenario == "drawing":
+                xdotool("type", "--delay", "120", "L")
+                xdotool("key", "Return")
+                time.sleep(1.0)
+                xdotool("mousemove", str(cx - 120), str(cy - 40))
+                time.sleep(0.4)
+                xdotool("click", "1")
+                time.sleep(0.6)
+                xdotool("mousemove", str(cx + 140), str(cy + 60))
+                time.sleep(0.4)
+                xdotool("click", "1")
+                time.sleep(0.6)
+                xdotool("key", "Return")
+                drawn = wait_for(lambda: count() == before + 1 or None, 15)
+                report.check("typing L, two clicks and Enter draws one line", bool(drawn), f"{before} -> {count()} objects")
+                time.sleep(1.0)
+                second = shot("drawn")
+                if first and second:
+                    changed = differing_pixels(first[2], second[2], first[0])
+                    report.check("the new line is painted", changed > 50, f"{changed} pixels changed")
+                if drawn:
+                    newest = client.call("entities.query", {"document_id": doc_id, "limit": 1000})["entities"][-1]
+                    report.check("the new object is a line", str(newest.get("kind", "")).lower() == "line", newest.get("kind"))
+                xdotool("key", "ctrl+z")
+                undone = wait_for(lambda: count() == before or None, 15)
+                report.check("Ctrl+Z takes it back", bool(undone), f"now {count()} objects")
 
         # 5. The MCP sidecar reaches the running program.
         mcp = args.mcp or os.path.join(os.path.dirname(os.path.abspath(args.binary)), "opendraft-mcp")
@@ -354,18 +377,17 @@ def main():
         else:
             report.check("opendraft-mcp is next to the program", False, mcp)
 
-        # 6. A clean exit.
+        # 6. The end of the run.
         client.close()
         client = None
-        if cx is not None:
-            xdotool("mousemove", str(cx), str(cy))
-        xdotool("key", "ctrl+q")
-        try:
-            code = app.wait(timeout=20)
-            report.check("Ctrl+Q ends the program with exit code 0", code == 0, f"exit code {code}")
-        except subprocess.TimeoutExpired:
-            shot("quit-stuck")
-            report.check("Ctrl+Q ends the program with exit code 0", False, "still running after 20 s")
+        if args.scenario == "home":
+            xdotool("key", "ctrl+q")
+            try:
+                code = app.wait(timeout=20)
+                report.check("Ctrl+Q ends the program with exit code 0", code == 0, f"exit code {code}")
+            except subprocess.TimeoutExpired:
+                shot("quit-stuck")
+                report.check("Ctrl+Q ends the program with exit code 0", False, "still running after 20 s")
     except Exception as error:  # noqa: BLE001 - the report must still be written
         report.check("the run finished without an error", False, repr(error))
         try:
