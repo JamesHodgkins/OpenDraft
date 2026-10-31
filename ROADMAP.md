@@ -27,16 +27,21 @@ Written 2026-10-31. Update it when something is done or the plan changes: tick t
 
 ## Phase 1: Linux as a first-class platform
 
-*Why: the first audience runs Linux, and so far it has been run on one machine (Linux Mint).*
+*Why: the first audience runs Linux, and until now it had been run on one machine (Linux Mint).*
 
-- [ ] **Test matrix (M).** Ubuntu LTS, Fedora and Arch, on X11 and Wayland, with HiDPI and fractional scaling. Check the clipboard, file dialogs, drag and drop, key handling and window behaviour. Record what was tested in the repo.
-- [ ] **GUI smoke test in CI (M).** Launch the app under `xvfb`; open a file, draw a line, save, quit. It catches whole classes of Linux breakage.
-- [ ] **Release artifacts tested (S).** The AppImage and .deb already have test scripts (`scripts/test_appimage.sh`, `scripts/test_deb.sh`); run them in the release workflow.
-- [ ] **Flathub (M).** One package that works on every distribution.
-- [ ] **AUR package (S).** Then Debian/Ubuntu, Fedora and nixpkgs as people ask.
-- [ ] **Fix what the matrix finds (S to L).**
+**Status (2026-10-31): done as far as it can be shown without real machines.** What is built, and what was found, is in `docs/linux.md`; the remainder needs people with the hardware.
 
-**Exit test:** a fresh install on each tested distribution opens a DWG, draws, saves and quits, and the CI smoke test guards that.
+- [x] **Test matrix (M), on virtual displays.** CI builds once on Ubuntu 22.04 and runs that program on Ubuntu 22.04 and 24.04, Debian 12, Fedora, Arch and openSUSE Tumbleweed (X11), on Ubuntu 24.04, Fedora and Arch under Wayland (a headless sway), and at scale 1.5 and 2 (`.github/workflows/linux.yml`). `docs/linux.md` records what it does and does not show.
+- [ ] **Test on real machines (M, needs you).** Real GPUs, GNOME (mutter) and KDE (KWin) on X11 and Wayland, the clipboard, drag and drop, real file dialogs and input methods, and Wayland keyboard and mouse input (a headless compositor has no input devices). Reports from users are the way to cover this; say what was tried in `docs/linux.md`.
+- [x] **GUI smoke test in CI (M).** `scripts/linux_smoke.py` starts the real program, opens a drawing, draws a line with the keyboard and mouse, undoes it, runs `opendraft-mcp --check` against it, quits with Ctrl+Q, and also starts without a drawing and without `XDG_RUNTIME_DIR`. It reads the screen and the program's state from outside, and leaves screenshots as artifacts.
+- [x] **Release artifacts tested (S).** The release workflow already installed the .deb and ran the AppImage on a bare Ubuntu 22.04; the .deb now also passes the whole smoke test.
+- [x] **Flatpak (M), built in CI.** `installer/linux/flatpak/` builds offline from `Cargo.lock`, has its files checked and starts under a virtual display. [ ] **Submit it to Flathub (S, needs you):** a pull request to `flathub/flathub` following `installer/linux/flatpak/README.md`.
+- [x] **Arch package (S), built in CI.** `installer/linux/arch/PKGBUILD` builds, installs and links in an Arch container. [ ] **Publish it to the AUR (S, needs you):** an AUR account and `updpkgsums`. Debian/Ubuntu, Fedora and nixpkgs as people ask.
+- [x] **Fix what the matrix finds.** Found and fixed: the program would not open at all where the graphics setup offered no multisampled configuration (every distribution with a recent Mesa under software rendering); Open and Save As did nothing when there was no file dialog backend (the status bar now says what to install); the assistant connection needed `XDG_RUNTIME_DIR` (a private cache folder is used without it). Noticed and not changed: a drawing opened from DXF counts as unsaved at once, so closing it asks to save. That looks deliberate (it has no `.odx` file yet) but is worth a look.
+
+**Not covered, and why:** opening a *DWG* and *saving* were part of the original exit test. CI opens a DXF, because the DWG sample drawings are private and cannot be committed; and saving needs a file dialog or an automation grant that only the user can give, so a headless test cannot do it. A small hand-made DWG fixture would close the first; the second would need a test-only way to grant permission, which would weaken the rule that only the user grants write access, so it waits for a better idea.
+
+**Exit test:** on each tested distribution the program starts and draws, takes keyboard and mouse input (X11), opens a drawing, answers the assistant connection and quits, and the CI smoke test guards that. Real-machine coverage is the open item above.
 
 ## Phase 2: Trust in files
 
