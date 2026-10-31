@@ -46,6 +46,7 @@ jobs:
             cd /home/builder/pkg
             # Build from this checkout instead of the release tag.
             sed -i "s|^source=.*|source=(\"opendraft-\$pkgver.tar.gz\")|" PKGBUILD
+            sed -i "s|^sha256sums=.*|sha256sums=(SKIP)|" PKGBUILD
             chown -R builder:builder /home/builder
             sudo -u builder makepkg -s --noconfirm
             pacman -Qlp opendraft-*.pkg.tar.zst | tee /tmp/files.txt
@@ -73,6 +74,11 @@ jobs:
           pip install aiohttp toml tomlkit
           python3 flatpak-builder-tools/cargo/flatpak-cargo-generator.py Cargo.lock \
             -o installer/linux/flatpak/cargo-sources.json
+      - name: Keep the generated crate sources (a Flathub submission commits this file)
+        uses: actions/upload-artifact@v4
+        with:
+          name: cargo-sources
+          path: installer/linux/flatpak/cargo-sources.json
       - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: opendraft.flatpak
