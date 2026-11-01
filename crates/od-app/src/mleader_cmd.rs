@@ -6,7 +6,7 @@ use od_commands::{Answer, Cancelled, Editor, PointOptions};
 use od_core::mleader::{MLeader, MLeaderContent, MLeaderLineType, MLeaderStyle};
 use od_core::{Entity, Point};
 
-use crate::draw::add;
+use crate::draw::{add, path_through};
 
 /// Points close enough to be the same.
 const SAME: f64 = 1e-9;
@@ -59,6 +59,7 @@ pub fn draw_mleader(ed: &mut Editor) -> Result<(), Cancelled> {
         let (shown, so_far) = (style.clone(), points.clone());
         let options = PointOptions::new(message)
             .base(points[points.len() - 1])
+            .snap_to(path_through(&points))
             .ghost(move |at| ghost(&shown, &so_far, at));
         match ed.ask_point(options)? {
             Answer::Value(at) if same(at, points[points.len() - 1]) => {
@@ -134,6 +135,19 @@ mod tests {
         }
         state.finish_mtext_editor(outcome);
         state.settle_command();
+    }
+
+    #[test]
+    fn the_points_so_far_are_snap_geometry() {
+        let mut state = AppState::new();
+        let mut style = state.mleader_style();
+        style.max_points = None;
+        state.modify_mleader_style(style.id, style);
+        start(&mut state);
+        submit(&mut state, &["0,0"]);
+        assert!(state.waiting().unwrap().snap_geometry.is_empty());
+        submit(&mut state, &["10,0"]);
+        assert_eq!(state.waiting().unwrap().snap_geometry.len(), 1);
     }
 
     #[test]

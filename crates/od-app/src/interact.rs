@@ -392,6 +392,7 @@ fn canvas_prompt(ask: &Ask) -> Option<PointPrompt> {
         pick: ask.wants == Wants::Object,
         pick_locked: ask.pick_locked,
         ghost: ask.ghost.clone(),
+        snap_geometry: ask.snap_geometry.clone(),
         marker: ask.marker.clone(),
         ghost_style: match ask.ghost_style {
             GhostStyle::Normal => od_canvas::GhostStyle::Normal,
@@ -423,6 +424,7 @@ mod tests {
             base,
             ghost: None,
             ghost_style: GhostStyle::Normal,
+            snap_geometry: Default::default(),
             rubber_band: true,
             marker: None,
             default_hint: None,

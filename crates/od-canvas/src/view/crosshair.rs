@@ -99,12 +99,27 @@ impl View {
             chosen: None,
             tracks: Vec::new(),
             track: None,
+            extra: self.snap_extra(),
             insist: self
                 .snap_cycle
                 .over
                 .as_ref()
                 .is_some_and(SnapOverride::insists),
         }
+    }
+
+    /// The prompt's extra snap geometry as objects, for the snap pass.
+    fn snap_extra(&self) -> std::sync::Arc<[od_core::Object]> {
+        let Some(prompt) = &self.point_prompt else {
+            return Default::default();
+        };
+        (prompt.snap_geometry.iter().enumerate())
+            .map(|(i, entity)| {
+                let id = od_core::EntityId(u64::MAX - i as u64);
+                let attrs = od_core::Attributes::on_layer(od_core::LayerId::DEFAULT);
+                od_core::Object::new(id, entity.clone(), attrs, None)
+            })
+            .collect()
     }
 
     pub fn set_crosshair(&mut self, crosshair: Crosshair) {

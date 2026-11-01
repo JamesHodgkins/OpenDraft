@@ -206,6 +206,8 @@ impl OpenDraftApp {
     /// line, as in AutoCAD. So does a bare Enter: it answers the current
     /// prompt (finishes Copy, accepts a default) or repeats the last command.
     fn route_typing_to_command_line(&mut self, ctx: &egui::Context) {
+        // First, because dynamic input handles the frame and returns early.
+        self.watch_ctrl(ctx);
         if self.route_dynamic_input(ctx) || self.browse_command_history(ctx) {
             return;
         }
@@ -246,7 +248,6 @@ impl OpenDraftApp {
             .state
             .dynamic_ask()
             .is_some_and(|ask| ask.wants == od_commands::Wants::Text);
-        self.watch_ctrl(ctx);
         let enter = ctx.input(|i| {
             i.key_pressed(egui::Key::Enter) || (!wants_text && i.key_pressed(egui::Key::Space))
         });

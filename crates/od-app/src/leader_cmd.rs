@@ -8,7 +8,7 @@ use od_core::leader::{Leader, MAX_VERTICES};
 use od_core::mtext::MTextAttachment;
 use od_core::{DimStyle, Entity, EntityId, MText, Point};
 
-use crate::draw::add;
+use crate::draw::{add, path_through};
 
 /// A last segment steeper than this from horizontal gets a hookline.
 const HOOK_ANGLE: f64 = 15.0;
@@ -70,6 +70,7 @@ pub fn draw_leader(ed: &mut Editor) -> Result<(), Cancelled> {
         let options = PointOptions::new("Specify next point (Enter to add text)")
             .base(points[points.len() - 1])
             .keyword("Undo", "U")
+            .snap_to(path_through(&points))
             .ghost(move |at| ghost(&shown, &so_far, at));
         match ed.ask_point(options)? {
             Answer::Value(at) if same(at, points[points.len() - 1]) => {
@@ -162,6 +163,20 @@ mod tests {
                 _ => None,
             })
             .collect()
+    }
+
+    #[test]
+    fn the_points_so_far_are_snap_geometry() {
+        let mut state = AppState::new();
+        start(&mut state);
+        submit(&mut state, &["0,0"]);
+        assert!(state.waiting().unwrap().snap_geometry.is_empty());
+        submit(&mut state, &["10,0", "10,5"]);
+        let drawn = state.waiting().unwrap().snap_geometry.clone();
+        let [Entity::Polyline { points, .. }] = &drawn[..] else {
+            panic!("one path, got {drawn:?}")
+        };
+        assert_eq!(points.len(), 3);
     }
 
     #[test]

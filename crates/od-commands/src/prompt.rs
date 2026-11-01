@@ -77,6 +77,9 @@ pub struct Options<T> {
     /// Live preview shown while choosing a point.
     pub ghost: Option<Ghost>,
     pub ghost_style: GhostStyle,
+    /// Objects not yet in the drawing that the pointer snaps to as well (the
+    /// parts of a polyline drawn so far).
+    pub snap_geometry: Arc<[Entity]>,
     /// Draw a line from `base` to the pointer (the default).
     pub rubber_band: bool,
     /// Marks drawn at a fixed size on the screen, whatever the zoom.
@@ -103,6 +106,7 @@ impl<T> Options<T> {
             base: None,
             ghost: None,
             ghost_style: GhostStyle::Normal,
+            snap_geometry: Arc::default(),
             rubber_band: true,
             marker: None,
             allow_empty: false,
@@ -163,6 +167,12 @@ impl<T> Options<T> {
     /// Let an object prompt pick objects on locked layers.
     pub fn pick_locked(mut self) -> Self {
         self.pick_locked = true;
+        self
+    }
+
+    /// Let the pointer snap to `entities` too, as if they were in the drawing.
+    pub fn snap_to(mut self, entities: Vec<Entity>) -> Self {
+        self.snap_geometry = entities.into();
         self
     }
 
@@ -236,6 +246,8 @@ pub struct Prompt {
     pub base: Option<Point>,
     pub ghost: Option<Ghost>,
     pub ghost_style: GhostStyle,
+    /// See [`Options::snap_geometry`].
+    pub snap_geometry: Arc<[Entity]>,
     pub rubber_band: bool,
     pub marker: Option<Marker>,
     /// Enter alone is accepted (a default exists); the UI may show it.
@@ -263,6 +275,7 @@ impl Prompt {
             base: options.base,
             ghost: options.ghost.clone(),
             ghost_style: options.ghost_style,
+            snap_geometry: options.snap_geometry.clone(),
             rubber_band: options.rubber_band,
             marker: options.marker.clone(),
             default_hint: hint,

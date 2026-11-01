@@ -103,6 +103,17 @@ impl Chain {
         }
     }
 
+    /// What has been drawn so far, for the pointer to snap to: the
+    /// segments, as a polyline once there is one.
+    fn drawn(&self) -> Vec<Entity> {
+        if self.points.len() < 2 {
+            return Vec::new();
+        }
+        let mut shown = self.clone();
+        shown.finish(0.0, (0.0, 0.0));
+        vec![shown.entity(false)]
+    }
+
     /// How the polyline would look with a segment to `to` added.
     fn with_segment(&self, to: Point, curve: f64, widths: (f64, f64)) -> Entity {
         let mut shown = self.clone();
@@ -205,6 +216,7 @@ fn step(ed: &Editor, chain: &mut Chain, mode: &mut Mode) -> Result<Flow, Cancell
         "Specify next point"
     })
     .base(from)
+    .snap_to(chain.drawn())
     .ghost(move |at| {
         let curve = if arcs {
             bulge::tangent(from, heading, at).unwrap_or(0.0)
@@ -339,6 +351,23 @@ mod tests {
     fn labels(state: &mut AppState) -> Vec<String> {
         let options = state.cmd_prompt().options;
         options.iter().map(|o| o.label.to_string()).collect()
+    }
+
+    #[test]
+    fn the_segments_drawn_so_far_are_snap_geometry() {
+        let mut state = AppState::new();
+        run(&mut state, &["0,0"]);
+        assert!(state.waiting().unwrap().snap_geometry.is_empty());
+        run_more(&mut state, &["10,0", "10,5"]);
+        let drawn = state.waiting().unwrap().snap_geometry.clone();
+        assert_eq!(drawn.len(), 1);
+        assert_eq!(
+            polyline(&drawn[0]).0,
+            [p(0.0, 0.0), p(10.0, 0.0), p(10.0, 5.0)]
+        );
+        run_more(&mut state, &["u"]);
+        let drawn = state.waiting().unwrap().snap_geometry.clone();
+        assert_eq!(polyline(&drawn[0]).0, [p(0.0, 0.0), p(10.0, 0.0)]);
     }
 
     #[test]

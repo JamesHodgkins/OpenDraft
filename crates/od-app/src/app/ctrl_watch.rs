@@ -23,7 +23,11 @@ impl OpenDraftApp {
         if other {
             self.ctrl_alone = false;
         }
-        if !down && self.ctrl_down && self.ctrl_alone {
+        let free = !self.state.home
+            && !self.state.mtext_editing()
+            && !self.state.modal_open()
+            && self.state.confirm.is_none();
+        if !down && self.ctrl_down && self.ctrl_alone && free {
             self.state.cycle_grip_option();
         }
         self.ctrl_down = down;

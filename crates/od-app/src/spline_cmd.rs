@@ -182,6 +182,7 @@ fn by_fit_points(ed: &Editor, first: Point, knots: KnotParameterization) -> Resu
         let shown = points.clone();
         let mut options = PointOptions::new("Enter next point")
             .base(points[n - 1])
+            .snap_to(fit_ghost(points.clone(), knots))
             .ghost(move |at| fit_ghost(with_point(&shown, at), knots))
             .keyword(
                 if n < 2 {
@@ -228,6 +229,11 @@ fn by_control_vertices(ed: &Editor, first: Point, degree: u8) -> Result<(), Canc
         let shown = points.clone();
         let mut options = PointOptions::new("Enter next point")
             .base(points[n - 1])
+            .snap_to(
+                (cv_spline(points.clone(), degree))
+                    .map(|s| vec![Entity::Spline(Box::new(s))])
+                    .unwrap_or_default(),
+            )
             .ghost(move |at| {
                 // The control frame, and the curve once there is one.
                 let all = with_point(&shown, at);
@@ -294,6 +300,19 @@ mod tests {
 
     fn said(state: &AppState, text: &str) -> bool {
         state.cmdline.log.iter().any(|l| l.contains(text))
+    }
+
+    #[test]
+    fn the_curve_so_far_is_snap_geometry() {
+        let mut state = AppState::new();
+        run(&mut state, &["0,0"]);
+        assert!(state.waiting().unwrap().snap_geometry.is_empty());
+        for input in ["3,4", "6,0"] {
+            state.cmd_submit(input);
+            state.settle_command();
+        }
+        let drawn = state.waiting().unwrap().snap_geometry.clone();
+        assert!(matches!(&drawn[..], [Entity::Spline(_)]), "{drawn:?}");
     }
 
     #[test]
