@@ -8,6 +8,7 @@ mod infinite;
 mod mleader;
 mod polyline;
 mod spline;
+mod text;
 mod unit;
 
 pub use unit::{format, parse, Unit};
@@ -182,6 +183,7 @@ pub fn rows(entity: &Entity) -> &'static [Row] {
         Entity::Polyline { .. } => polyline::ROWS,
         Entity::Dimension(_) => DIMENSION,
         Entity::MText(_) => MTEXT,
+        Entity::Text(_) => ATTRIBUTE_DEFINITION,
         Entity::MLeader(m) => mleader::rows(m),
         Entity::Leader(_) => LEADER,
         Entity::Insert(_) => INSERT,
@@ -246,6 +248,13 @@ pub fn value(entity: &Entity, field: Field) -> f64 {
             Field::Angle => m.direction.y.atan2(m.direction.x).to_degrees(),
             Field::Height => m.nominal_height,
             Field::Width => m.reference_width,
+            _ => f64::NAN,
+        },
+        Entity::Text(t) => match field {
+            Field::X1 => t.placement.position.x,
+            Field::Y1 => t.placement.position.y,
+            Field::Angle => t.placement.rotation.to_degrees(),
+            Field::Height => t.placement.height,
             _ => f64::NAN,
         },
         Entity::Xline { origin, direction } | Entity::Ray { origin, direction } => {
@@ -399,6 +408,7 @@ pub fn with_value(entity: &Entity, field: Field, new: f64) -> Option<Entity> {
             Field::Height if positive => d.text.height = new,
             _ => return None,
         },
+        Entity::Text(t) => text::with_value(t, field, new, positive)?,
         Entity::Insert(i) => match field {
             Field::X1 => i.insertion.x = new,
             Field::Y1 => i.insertion.y = new,

@@ -63,6 +63,10 @@ impl Entity {
         match self {
             Entity::Insert(i) => vec![grip(i.insertion, Move)],
             Entity::AttributeDefinition(d) => vec![grip(d.text.position, Move)],
+            Entity::Text(t) => t.alignment.map_or_else(
+                || vec![grip(t.position(), Move)],
+                |a| vec![grip(t.position(), Stretch), grip(a.second, Stretch)],
+            ),
             Entity::Point { at } => vec![grip(*at, Move)],
             Entity::Xline { .. } | Entity::Ray { .. } => self.line_grips(),
             Entity::Hatch(_) => {
@@ -157,6 +161,16 @@ impl Entity {
             | Entity::AttributeDefinition(_)
             | Entity::Hatch(_)
             | Entity::Point { .. } => Some(self.translated(dx, dy)),
+            Entity::Text(t) => match (t.alignment, index) {
+                (Some(a), 0) => t
+                    .with_alignment_points(to, a.second)
+                    .map(|t| Entity::Text(Box::new(t))),
+                (Some(_), 1) => t
+                    .with_alignment_points(t.position(), to)
+                    .map(|t| Entity::Text(Box::new(t))),
+                (None, 0) => Some(self.translated(dx, dy)),
+                _ => None,
+            },
             Entity::Ellipse(e) => e.with_grip_moved(index, to).map(Entity::Ellipse),
             Entity::Spline(s) => s
                 .with_grip_moved(index, to)

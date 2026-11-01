@@ -69,6 +69,7 @@ impl Document {
         use crate::Entity;
         let uses = |entity: &Entity| match entity {
             Entity::MText(m) => m.style == id,
+            Entity::Text(t) => t.style() == id,
             Entity::MLeader(m) => m.text().is_some_and(|t| t.text.style == id),
             Entity::Dimension(d) => d.style.text_style == id,
             _ => false,

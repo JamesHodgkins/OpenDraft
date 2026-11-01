@@ -35,6 +35,7 @@ impl Entity {
             // Splines are not cut yet (Trim and Break refuse them).
             Entity::Dimension(_)
             | Entity::MText(_)
+            | Entity::Text(_)
             | Entity::MLeader(_)
             | Entity::Leader(_)
             | Entity::Insert(_)

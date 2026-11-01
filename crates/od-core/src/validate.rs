@@ -48,6 +48,8 @@ pub enum DocumentError {
     MissingTextStyle(EntityId, TextStyleId),
     /// Multiline text that could not exist, with the reason.
     BadMText(EntityId, String),
+    /// Single-line text that could not exist, with the reason.
+    BadText(EntityId, String),
     /// A multileader that could not exist or names a missing style, with the reason.
     BadMLeader(EntityId, String),
     /// A leader that could not exist, with the reason.
@@ -110,6 +112,13 @@ impl fmt::Display for DocumentError {
             }
             Self::BadMText(object, why) => {
                 write!(f, "object {} is not valid text: {why}", object.0)
+            }
+            Self::BadText(object, why) => {
+                write!(
+                    f,
+                    "object {} is not valid single-line text: {why}",
+                    object.0
+                )
             }
             Self::BadEllipse(object, why) => {
                 write!(f, "object {} is not a valid ellipse: {why}", object.0)
@@ -248,14 +257,24 @@ impl Document {
             return Err(DocumentError::CounterBehind);
         }
         for object in self.objects() {
-            let Entity::MText(text) = &object.entity else {
-                continue;
-            };
-            if !ids.contains(&text.style) {
-                return Err(DocumentError::MissingTextStyle(object.id, text.style));
-            }
-            if let Err(e) = text.validate() {
-                return Err(DocumentError::BadMText(object.id, e.to_string()));
+            match &object.entity {
+                Entity::MText(text) => {
+                    if !ids.contains(&text.style) {
+                        return Err(DocumentError::MissingTextStyle(object.id, text.style));
+                    }
+                    if let Err(e) = text.validate() {
+                        return Err(DocumentError::BadMText(object.id, e.to_string()));
+                    }
+                }
+                Entity::Text(text) => {
+                    if !ids.contains(&text.style()) {
+                        return Err(DocumentError::MissingTextStyle(object.id, text.style()));
+                    }
+                    if let Err(e) = text.validate() {
+                        return Err(DocumentError::BadText(object.id, e.to_string()));
+                    }
+                }
+                _ => {}
             }
         }
         Ok(())

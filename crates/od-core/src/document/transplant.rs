@@ -399,8 +399,6 @@ impl Merge<'_> {
         self.blocks.insert(def.id, found.clone());
         found
     }
-
-    /// The entity with everything it points at matched to the target.
     fn entity(&mut self, entity: &Entity) -> Entity {
         match entity {
             Entity::MText(m) => {
@@ -409,6 +407,11 @@ impl Merge<'_> {
                 let fields = self.detached(&m.fields_as_text());
                 m.set_fields_from(fields);
                 Entity::MText(m)
+            }
+            Entity::Text(t) => {
+                let mut t = t.clone();
+                t.placement.style = self.text_style(t.placement.style);
+                Entity::Text(t)
             }
             Entity::Insert(i) => {
                 let mut i = i.clone();

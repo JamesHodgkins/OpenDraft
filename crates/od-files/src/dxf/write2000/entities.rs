@@ -201,6 +201,10 @@ pub(super) fn write_object(
             head(out, h, "MTEXT");
             super::text::mtext(out, document, text)?;
         }
+        Entity::Text(text) => {
+            head(out, h, "TEXT");
+            super::text::single_line(out, document, text)?;
+        }
         Entity::Hatch(hatch) => {
             head(out, h, "HATCH");
             super::hatch::hatch(out, hatch)?;

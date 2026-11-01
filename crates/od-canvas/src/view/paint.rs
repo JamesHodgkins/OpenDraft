@@ -162,6 +162,14 @@ impl View {
                     stroke,
                 );
             }
+            Entity::Text(t) => {
+                self.stroke_entity(
+                    painter,
+                    rect,
+                    &Entity::MText(Box::new(t.projection())),
+                    stroke,
+                );
+            }
             Entity::MText(m) => {
                 let layout = m.layout(&od_core::TextStyle::standard());
                 self.fill_text(painter, rect, m, &layout, &|_| stroke.color);
@@ -337,6 +345,14 @@ impl View {
                 let (selected, hovered) = (selection.contains(id), hover == Some(*id));
                 self.paint_mtext(
                     painter, rect, style, document, text, line, selected, hovered,
+                );
+                continue;
+            }
+            if let Entity::Text(text) = entity {
+                let (selected, hovered) = (selection.contains(id), hover == Some(*id));
+                let projected = text.projection();
+                self.paint_mtext(
+                    painter, rect, style, document, &projected, line, selected, hovered,
                 );
                 continue;
             }

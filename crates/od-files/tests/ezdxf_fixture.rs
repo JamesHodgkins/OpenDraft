@@ -15,14 +15,14 @@ fn sample() -> od_files::Loaded {
 fn it_is_an_import_and_says_what_it_left_out() {
     let loaded = sample();
     assert!(loaded.imported);
-    assert_eq!(loaded.document.model_objects().count(), 13);
+    assert_eq!(loaded.document.model_objects().count(), 14);
     // ezdxf adds three arrowhead blocks drawn "by block"; one holds a SOLID.
     // Their by-block properties are kept.
     assert_eq!(
         loaded.warnings,
         [
             // ezdxf's add_spline writes fit points alone; they are fitted.
-            "Skipped 2 unsupported objects: 1 SOLID, 1 TEXT.",
+            "Skipped 1 unsupported object: 1 SOLID.",
         ]
     );
     assert_eq!(loaded.document.blocks().len(), 4);

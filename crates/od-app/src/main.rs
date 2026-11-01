@@ -146,6 +146,7 @@ mod selection;
 mod settings;
 mod settings_tracking;
 mod settings_ui;
+mod single_line_text_cmd;
 mod snap_once;
 mod snap_vars;
 mod spline_cmd;

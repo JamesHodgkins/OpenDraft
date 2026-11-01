@@ -1,7 +1,4 @@
-//! Text from a DWG: the style table, and the TEXT and MTEXT shapes as
-//! `MText` objects. This build has one text object, so a single line of text
-//! becomes an MText without a box: hung from its alignment point, with its
-//! own width factor and slant written as format codes.
+//! Text from a DWG: the style table and the distinct TEXT and MTEXT shapes.
 
 use std::collections::{HashMap, HashSet};
 
@@ -10,7 +7,9 @@ use od_core::mtext::{
     BackgroundFill, EntityLineSpacing, LineSpacingStyle, MTextAttachment, MTextBackground,
     MTextFlow,
 };
-use od_core::{Document, Entity, FontDescriptor, MText, Point, TextStyle, TextStyleId};
+use od_core::{
+    Document, Entity, FontDescriptor, MText, Point, SingleLineText, TextStyle, TextStyleId,
+};
 use od_dwg::{DwgHandle, DwgTextStyle, Shape};
 
 use super::convert::color;
@@ -132,50 +131,6 @@ fn percent_codes(text: &str, markup: bool) -> String {
     out
 }
 
-/// A line of text as MText contents: its braces and backslashes kept as
-/// letters (except the `\U+` forms, which are Unicode escapes), then the
-/// width factor and slant it asks for.
-fn line_contents(value: &str, width_factor: f64, oblique: f64) -> String {
-    let mut text = String::new();
-    let mut rest = value;
-    while let Some(c) = rest.chars().next() {
-        let len = c.len_utf8();
-        match c {
-            '{' | '}' => {
-                text.push('\\');
-                text.push(c);
-            }
-            '\\' if rest.starts_with("\\U+") || rest.starts_with("\\M+") => text.push(c),
-            '\\' => text.push_str("\\\\"),
-            _ => text.push(c),
-        }
-        rest = &rest[len..];
-    }
-    let mut out = String::new();
-    if (width_factor - 1.0).abs() > 1e-9 {
-        out.push_str(&format!("\\W{width_factor};"));
-    }
-    if oblique.abs() > 1e-9 {
-        out.push_str(&format!("\\Q{};", oblique.to_degrees()));
-    }
-    out.push_str(&percent_codes(&text, true));
-    out
-}
-
-fn attachment(horizontal: u8, vertical: u8) -> MTextAttachment {
-    use MTextAttachment::*;
-    let row = |top, middle, bottom| match vertical {
-        0 | 3 => top,
-        2 => middle,
-        _ => bottom,
-    };
-    match horizontal {
-        1 => row(TopCenter, MiddleCenter, BottomCenter),
-        2 => row(TopRight, MiddleRight, BottomRight),
-        _ => row(TopLeft, MiddleLeft, BottomLeft),
-    }
-}
-
 /// The settings of an attribute's text (a [`Shape::Text`] placed in the
 /// drawing) and the value it shows, or `None` when it is not valid text.
 pub(super) fn attribute_text(shape: &Shape, styles: &Styles) -> Option<(AttributeText, String)> {
@@ -221,33 +176,17 @@ pub(super) fn attribute_text(shape: &Shape, styles: &Styles) -> Option<(Attribut
 
 /// The object for a text shape, or `None` when its values make no text.
 pub(super) fn entity(shape: &Shape, styles: &Styles) -> Option<Entity> {
+    if matches!(shape, Shape::Text { .. }) {
+        let (placement, contents) = attribute_text(shape, styles)?;
+        let text = SingleLineText {
+            contents,
+            placement,
+            alignment: None,
+        };
+        text.validate().ok()?;
+        return Some(Entity::Text(Box::new(text)));
+    }
     let text = match shape {
-        Shape::Text {
-            at,
-            rotation,
-            height,
-            width_factor,
-            oblique,
-            value,
-            horizontal,
-            vertical,
-            style,
-            ..
-        } => {
-            let (sin, cos) = rotation.sin_cos();
-            // A line is as tall as its text, so text hung by its baseline is
-            // the same as text hung by its top, one height higher.
-            let lift = if *vertical == 0 { *height } else { 0.0 };
-            let mut text = MText::new(
-                Point::new(at[0] - lift * sin, at[1] + lift * cos),
-                *height,
-                line_contents(value, *width_factor, *oblique),
-                styles.id(*style),
-            );
-            text.attachment = attachment(*horizontal, *vertical);
-            text.direction = Point::new(cos, sin);
-            text
-        }
         Shape::MText {
             at,
             direction,
@@ -311,10 +250,17 @@ mod tests {
         }
     }
 
-    fn made(shape: &Shape) -> MText {
+    fn made_mtext(shape: &Shape) -> MText {
         match entity(shape, &Styles::default()) {
             Some(Entity::MText(m)) => *m,
             _ => panic!("an mtext"),
+        }
+    }
+
+    fn made_text(shape: &Shape) -> SingleLineText {
+        match entity(shape, &Styles::default()) {
+            Some(Entity::Text(t)) => *t,
+            _ => panic!("a text"),
         }
     }
 
@@ -330,37 +276,27 @@ mod tests {
     }
 
     #[test]
-    fn markup_in_a_line_is_text_not_codes() {
-        assert_eq!(line_contents("a{b}\\c", 1.0, 0.0), "a\\{b\\}\\\\c");
-        assert_eq!(line_contents("\\U+00B0", 1.0, 0.0), "\\U+00B0");
-        assert_eq!(line_contents("x", 0.5, 0.0), "\\W0.5;x");
-        assert!(line_contents("x", 1.0, 0.2).starts_with("\\Q11.4"));
-    }
-
-    #[test]
-    fn baseline_text_hangs_from_its_top_one_height_up() {
-        let m = made(&text(0, 0, 0.0));
-        assert_eq!(m.attachment, MTextAttachment::TopLeft);
-        assert_eq!((m.insertion.x, m.insertion.y), (10.0, 22.0));
-        let turned = made(&text(0, 0, std::f64::consts::FRAC_PI_2));
-        assert!(
-            (turned.insertion.x - 8.0).abs() < 1e-9 && (turned.insertion.y - 20.0).abs() < 1e-9
-        );
-        assert!(turned.direction.x.abs() < 1e-9 && (turned.direction.y - 1.0).abs() < 1e-9);
+    fn baseline_text_keeps_its_text_placement() {
+        let text = made_text(&text(0, 0, std::f64::consts::FRAC_PI_2));
+        assert_eq!(text.placement.position, Point::new(10.0, 20.0));
+        assert_eq!(text.placement.vertical, TextVertical::Baseline);
+        assert!((text.placement.rotation - std::f64::consts::FRAC_PI_2).abs() < 1e-9);
     }
 
     #[test]
     fn the_other_alignments_pick_their_attachment() {
         assert_eq!(
-            made(&text(1, 2, 0.0)).attachment,
-            MTextAttachment::MiddleCenter
+            made_text(&text(1, 2, 0.0)).placement.horizontal,
+            TextHorizontal::Center
         );
-        assert_eq!(made(&text(2, 3, 0.0)).attachment, MTextAttachment::TopRight);
         assert_eq!(
-            made(&text(1, 1, 0.0)).attachment,
-            MTextAttachment::BottomCenter
+            made_text(&text(2, 3, 0.0)).placement.vertical,
+            TextVertical::Top
         );
-        assert_eq!(made(&text(1, 2, 0.0)).insertion.y, 20.0);
+        assert_eq!(
+            made_text(&text(1, 1, 0.0)).placement.vertical,
+            TextVertical::Bottom
+        );
     }
 
     #[test]
@@ -378,7 +314,7 @@ mod tests {
             background: Some((1.2, Some(od_dwg::DwgColor::Aci(1)))),
             style: None,
         };
-        let m = made(&shape);
+        let m = made_mtext(&shape);
         assert_eq!(m.contents, "A\\PB°");
         assert_eq!(
             (m.reference_width, m.attachment),

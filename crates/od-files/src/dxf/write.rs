@@ -140,6 +140,7 @@ fn needs_r2000(document: &Document) -> bool {
                     | Entity::Spline(_)
                     | Entity::Hatch(_)
                     | Entity::MText(_)
+                    | Entity::Text(_)
                     | Entity::Dimension(_)
                     | Entity::MLeader(_)
                     | Entity::Leader(_)
@@ -272,6 +273,7 @@ pub(super) fn write_r12(document: &Document) -> Result<Encoded, FileError> {
         match &object.entity {
             Entity::Dimension(_)
             | Entity::MText(_)
+            | Entity::Text(_)
             | Entity::Insert(_)
             | Entity::AttributeDefinition(_)
             | Entity::MLeader(_) => return Err(unexploded()),

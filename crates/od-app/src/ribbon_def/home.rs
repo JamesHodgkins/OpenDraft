@@ -406,7 +406,6 @@ mod tests {
         "draw.circle_3t",
         "draw.gradient",
         "modify.blend",
-        "annotate.text",
         "annotate.mleader_add",
         "annotate.mleader_remove",
         "annotate.mleader_align",

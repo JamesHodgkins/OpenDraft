@@ -328,7 +328,7 @@ fn outlines(entity: &Entity, tolerance: f64) -> Result<Vec<(Vec<Point>, bool)>, 
     };
     Ok(match entity {
         // Text is plotted as filled glyphs (`fills`), not strokes.
-        Entity::MText(_) => Vec::new(),
+        Entity::MText(_) | Entity::Text(_) => Vec::new(),
         // A pattern is its strokes; a solid fill is in `fills`.
         Entity::Hatch(h) => plot_hatch::strokes(h, tolerance)?,
         // Callers expand blocks first (`Document::drawn`), so their pieces

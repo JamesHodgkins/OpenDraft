@@ -53,6 +53,7 @@ pub mod polygon;
 pub mod polyline;
 pub mod purge;
 pub mod rect;
+pub mod single_line_text;
 mod spatial_index;
 pub mod spline;
 mod split;
@@ -97,6 +98,7 @@ pub use mtext::MText;
 pub use point_style::{PointMarks, PointStyle};
 pub use polycorner::{round_polyline, Path, Round, Rounded};
 pub use polyline::PolylineError;
+pub use single_line_text::{SingleLineText, TextAlignment, TextAlignmentMode};
 pub use spline::{KnotParameterization, Spline, SplineError, SplineFitData};
 pub use tangent::tangent_circle;
 pub use text_style::{
@@ -173,6 +175,9 @@ pub enum Entity {
     /// Multiline text. See [`mtext`]. Its geometry comes from the text
     /// engine, so the other kinds of object only see it as a frame.
     MText(Box<MText>),
+    /// One line of text (`TEXT`). It is drawn through its multiline-text
+    /// projection so both kinds share one text engine.
+    Text(Box<SingleLineText>),
     /// A template text in a block, filled in by each insert. See
     /// [`block::attribute`]. Other kinds of object see it as its text.
     AttributeDefinition(Box<AttributeDefinition>),
@@ -218,6 +223,7 @@ impl Entity {
             Entity::Polyline { .. } => EntityKind::Polyline,
             Entity::Dimension(_) => EntityKind::Dimension,
             Entity::MText(_) => EntityKind::MText,
+            Entity::Text(_) => EntityKind::Text,
             Entity::Hatch(_) => EntityKind::Hatch,
             Entity::MLeader(_) => EntityKind::MLeader,
             Entity::Leader(_) => EntityKind::Leader,
@@ -294,6 +300,7 @@ impl Entity {
                 .unwrap_or_else(|| Bounds::from_points(Point::default(), Point::default())),
             Entity::Dimension(d) => d.bounds(),
             Entity::MText(m) => m.bounds(),
+            Entity::Text(t) => t.projection().bounds(),
             Entity::Insert(i) => i.bounds(),
             Entity::AttributeDefinition(d) => d.tag_view().bounds(),
             Entity::MLeader(m) => m.bounds(),

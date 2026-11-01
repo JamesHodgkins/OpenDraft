@@ -18,7 +18,7 @@ pub(super) fn notes(document: &Document) -> Vec<String> {
     let texts = document
         .objects()
         .iter()
-        .any(|o| matches!(o.entity, Entity::MText(_)));
+        .any(|o| matches!(o.entity, Entity::MText(_) | Entity::Text(_)));
     let why = match (document.layouts().is_empty(), has(false), has(true)) {
         (true, false, false) if !document.blocks().is_empty() && !texts && !hatches => {
             "Written as DXF 2000 so that blocks are kept (DXF R12 has no BLOCK_RECORD table)."

@@ -27,11 +27,12 @@ pub enum EntityKind {
     Ray,
     Rectangle,
     Spline,
+    Text,
 }
 
 impl EntityKind {
     /// Every kind, in order.
-    pub const ALL: [EntityKind; 17] = [
+    pub const ALL: [EntityKind; 18] = [
         EntityKind::Arc,
         EntityKind::AttributeDefinition,
         EntityKind::Insert,
@@ -49,6 +50,7 @@ impl EntityKind {
         EntityKind::Ray,
         EntityKind::Rectangle,
         EntityKind::Spline,
+        EntityKind::Text,
     ];
 
     /// The kind in running text: "Added line", "Add block reference".
@@ -71,6 +73,7 @@ impl EntityKind {
             EntityKind::Ray => "ray",
             EntityKind::Rectangle => "rectangle",
             EntityKind::Spline => "spline",
+            EntityKind::Text => "text",
         }
     }
 
@@ -94,6 +97,7 @@ impl EntityKind {
             EntityKind::Ray => "Ray",
             EntityKind::Rectangle => "Rectangle",
             EntityKind::Spline => "Spline",
+            EntityKind::Text => "Text",
         }
     }
 
@@ -118,6 +122,7 @@ impl EntityKind {
             EntityKind::Ray => "ray",
             EntityKind::Rectangle => "rectangle",
             EntityKind::Spline => "spline",
+            EntityKind::Text => "text",
         }
     }
 
@@ -194,7 +199,8 @@ mod tests {
                 "polyline",
                 "ray",
                 "rectangle",
-                "spline"
+                "spline",
+                "text"
             ]
         );
     }

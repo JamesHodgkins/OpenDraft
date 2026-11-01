@@ -59,6 +59,15 @@ pub fn candidates(entity: &Entity) -> Vec<SnapPoint> {
         }
         // Its text point, then the corners of its tag.
         Entity::AttributeDefinition(d) => candidates(&Entity::MText(Box::new(d.tag_view()))),
+        Entity::Text(t) => {
+            let mut found = candidates(&Entity::MText(Box::new(t.projection())));
+            if let Some(a) = t.alignment {
+                found.push(at(t.position(), SnapKind::Endpoint));
+                found.push(at(a.second, SnapKind::Endpoint));
+                found.push(at(mid(t.position(), a.second), SnapKind::Midpoint));
+            }
+            found
+        }
         // The insertion point and corners, then the edge middles.
         Entity::MText(m) => m
             .snap_points()

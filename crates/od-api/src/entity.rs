@@ -1,6 +1,5 @@
-//! Read-side entity DTOs. They are separate from the native `.odx` schema and
-//! built from core types by matches with no wildcard, so a new core entity
-//! kind fails the build here until its wire form is decided.
+//! Read-side entity DTOs, separate from native `.odx`. Matches have no wildcard,
+//! so a new core entity fails the build until its wire form is decided.
 
 use od_core::hatch::HatchFill;
 use od_core::mtext::MTextAttachment;
@@ -22,7 +21,7 @@ pub struct PointDto {
 }
 
 /// Negative zero is normalised away so output is stable.
-fn num(value: f64) -> f64 {
+pub(crate) fn num(value: f64) -> f64 {
     if value == 0.0 {
         0.0
     } else {
@@ -109,6 +108,21 @@ pub enum GeometryDto {
         attachment: String,
         style_id: String,
         /// Untrusted drawing text (inline formatting codes included).
+        contents: String,
+        contents_truncated: bool,
+    },
+    Text {
+        position: PointDto,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        alignment_mode: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        alignment_end: Option<PointDto>,
+        height: f64,
+        rotation: f64,
+        horizontal: String,
+        vertical: String,
+        style_id: String,
+        /// Untrusted drawing text.
         contents: String,
         contents_truncated: bool,
     },
@@ -363,19 +377,8 @@ pub fn geometry_dto(entity: &Entity) -> GeometryDto {
                 .map(|w| w.iter().map(|v| num(*v)).collect()),
             has_fit_points: s.fit.is_some(),
         },
-        Entity::MText(m) => {
-            let (contents, contents_truncated) = bounded(&m.contents);
-            GeometryDto::Mtext {
-                insertion: m.insertion.into(),
-                direction: m.direction.into(),
-                nominal_height: num(m.nominal_height),
-                reference_width: num(m.reference_width),
-                attachment: attachment_name(m.attachment).to_owned(),
-                style_id: m.style.0.to_string(),
-                contents,
-                contents_truncated,
-            }
-        }
+        Entity::MText(m) => crate::entity_text::mtext(m),
+        Entity::Text(t) => crate::entity_text::single_line(t),
         Entity::Insert(i) => GeometryDto::Insert {
             block_id: i.block.id.0.to_string(),
             block_name: bounded(&i.block.name).0,

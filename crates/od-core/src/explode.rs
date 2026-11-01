@@ -28,7 +28,7 @@ impl Entity {
             Entity::Leader(l) => Some(l.picture()),
             // Text would have to become glyph outlines, losing its meaning;
             // that needs a command of its own.
-            Entity::MText(_) => None,
+            Entity::MText(_) | Entity::Text(_) => None,
             // Its tag is not text to keep; the block it sits in explodes into
             // the value instead.
             Entity::AttributeDefinition(_) => None,

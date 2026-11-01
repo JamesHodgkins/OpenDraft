@@ -58,6 +58,7 @@ impl Entity {
     pub fn mirror_refusal(&self) -> Option<&'static str> {
         match self {
             Entity::MText(m) => m.mirror_refusal(),
+            Entity::Text(t) => t.projection().mirror_refusal(),
             Entity::MLeader(m) => m.mirror_refusal(),
             _ => None,
         }
@@ -67,6 +68,7 @@ impl Entity {
     pub fn scale_refusal(&self) -> Option<&'static str> {
         match self {
             Entity::MText(m) => m.scale_refusal(),
+            Entity::Text(t) => t.projection().scale_refusal(),
             Entity::MLeader(m) => m.scale_refusal(),
             _ => None,
         }
@@ -77,6 +79,14 @@ impl Entity {
         match self {
             Entity::Dimension(d) => Entity::Dimension(Box::new(d.translated(dx, dy))),
             Entity::MText(m) => Entity::MText(Box::new(m.translated(dx, dy))),
+            Entity::Text(t) => {
+                let mut moved = (**t).clone();
+                moved.placement.position = moved.placement.position.translated(dx, dy);
+                if let Some(alignment) = &mut moved.alignment {
+                    alignment.second = alignment.second.translated(dx, dy);
+                }
+                Entity::Text(Box::new(moved))
+            }
             Entity::MLeader(m) => Entity::MLeader(Box::new(m.translated(dx, dy))),
             Entity::Leader(l) => Entity::Leader(Box::new(l.translated(dx, dy))),
             Entity::Insert(i) => Entity::Insert(Box::new(i.translated(dx, dy))),
@@ -136,6 +146,15 @@ impl Entity {
         match self {
             Entity::Dimension(d) => Entity::Dimension(Box::new(d.rotated(center, angle))),
             Entity::MText(m) => Entity::MText(Box::new(m.rotated(center, angle))),
+            Entity::Text(t) => {
+                let mut turned = (**t).clone();
+                turned.placement.position = turned.placement.position.rotated(center, angle);
+                turned.placement.rotation += angle;
+                if let Some(alignment) = &mut turned.alignment {
+                    alignment.second = alignment.second.rotated(center, angle);
+                }
+                Entity::Text(Box::new(turned))
+            }
             Entity::MLeader(m) => Entity::MLeader(Box::new(m.rotated(center, angle))),
             Entity::Leader(l) => Entity::Leader(Box::new(l.rotated(center, angle))),
             Entity::Insert(i) => Entity::Insert(Box::new(i.rotated(center, angle))),
@@ -241,6 +260,17 @@ impl Entity {
                     m.translated(to.x - m.insertion.x, to.y - m.insertion.y),
                 ))
             }
+            Entity::Text(t) => {
+                let to = t.position().mirrored(a, b);
+                let mut mirrored = (**t).clone();
+                mirrored.placement.position = to;
+                if let Some(alignment) = &mut mirrored.alignment {
+                    alignment.second = alignment.second.mirrored(a, b);
+                    mirrored.placement.rotation =
+                        (alignment.second.y - to.y).atan2(alignment.second.x - to.x);
+                }
+                Entity::Text(Box::new(mirrored))
+            }
             Entity::Line { start, end } => Entity::Line {
                 start: start.mirrored(a, b),
                 end: end.mirrored(a, b),
@@ -312,6 +342,15 @@ impl Entity {
         match self {
             Entity::Dimension(d) => Entity::Dimension(Box::new(d.scaled(base, factor))),
             Entity::MText(m) => Entity::MText(Box::new(m.scaled(base, factor))),
+            Entity::Text(t) => {
+                let mut scaled = (**t).clone();
+                scaled.placement.position = scaled.placement.position.scaled(base, factor);
+                scaled.placement.height *= factor;
+                if let Some(alignment) = &mut scaled.alignment {
+                    alignment.second = alignment.second.scaled(base, factor);
+                }
+                Entity::Text(Box::new(scaled))
+            }
             Entity::MLeader(m) => Entity::MLeader(Box::new(m.scaled(base, factor))),
             Entity::Leader(l) => Entity::Leader(Box::new(l.scaled(base, factor))),
             Entity::Insert(i) => Entity::Insert(Box::new(i.scaled(base, factor))),
