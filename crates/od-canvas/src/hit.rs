@@ -80,6 +80,7 @@ pub fn distance_to_entity(entity: &Entity, p: Point) -> f64 {
         Entity::AttributeDefinition(d) => {
             distance_to_entity(&Entity::MText(Box::new(d.tag_view())), p)
         }
+        Entity::Text(t) => distance_to_entity(&Entity::MText(Box::new(t.projection())), p),
         Entity::MText(m) if m.text_contains(p) => 0.0,
         Entity::MText(m) => {
             let corners = m.text_frame();

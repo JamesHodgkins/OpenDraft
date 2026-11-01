@@ -131,6 +131,7 @@ fn outline(entity: &Entity) -> Vec<Edge> {
         Entity::MLeader(m) => m.picture().iter().flat_map(outline).collect(),
         Entity::Leader(l) => l.picture().iter().flat_map(outline).collect(),
         Entity::MText(m) => closed_edges(&m.frame()),
+        Entity::Text(t) => closed_edges(&t.projection().frame()),
         Entity::AttributeDefinition(d) => closed_edges(&d.tag_view().frame()),
         Entity::Hatch(h) => hatch_contours(h)
             .iter()
@@ -209,6 +210,7 @@ fn sample_points(entity: &Entity) -> Vec<Point> {
             Region::rect_corners(b.min, b.max)
         }
         Entity::MText(m) => m.frame().to_vec(),
+        Entity::Text(t) => t.projection().frame().to_vec(),
         Entity::AttributeDefinition(d) => d.tag_view().frame().to_vec(),
         Entity::Leader(l) => {
             let b = l.bounds();

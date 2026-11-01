@@ -286,6 +286,7 @@ fn uneven(entity: &Entity, map: &Affine) -> Vec<Entity> {
         Entity::MLeader(m) => m.picture().iter().flat_map(|p| uneven(p, map)).collect(),
         Entity::Leader(l) => l.picture().iter().flat_map(|p| uneven(p, map)).collect(),
         Entity::AttributeDefinition(d) => uneven(&Entity::MText(Box::new(d.tag_view())), map),
+        Entity::Text(t) => uneven(&Entity::MText(Box::new(t.projection())), map),
         Entity::MText(_) => {
             // Text keeps its shape: placed and turned with the map's x axis,
             // at its average size.

@@ -102,6 +102,9 @@ pub(crate) fn object_fills(
     if let crate::Entity::MText(text) = &object.entity {
         return fills(document, text, tolerance, object_rgb);
     }
+    if let crate::Entity::Text(text) = &object.entity {
+        return fills(document, &text.projection(), tolerance, object_rgb);
+    }
     let picture = match &object.entity {
         crate::Entity::MLeader(m) => m.picture().into(),
         _ => match object.dimension_picture() {

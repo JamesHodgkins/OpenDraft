@@ -1,7 +1,10 @@
 //! Multiline text and text styles as R2000 `MTEXT` and `STYLE` records.
 
+use od_core::block::{TextHorizontal, TextVertical};
 use od_core::mtext::{BackgroundFill, LineSpacingStyle, MTextFlow};
-use od_core::{Document, FontDescriptor, MText, TextStyle};
+use od_core::{
+    Document, FontDescriptor, MText, SingleLineText, TextAlignmentMode, TextStyle, TextStyleId,
+};
 
 use super::{Handles, Ids};
 use crate::dxf::write::{aci_for, dxf_name, finite, Out};
@@ -32,9 +35,9 @@ pub(super) fn escaped(contents: &str) -> String {
 }
 
 /// The name a style goes by in the file.
-pub(super) fn style_name(document: &Document, text: &MText) -> String {
+fn style_name(document: &Document, style: TextStyleId) -> String {
     document
-        .text_style(text.style)
+        .text_style(style)
         .map_or_else(|| "Standard".to_owned(), |s| dxf_name(&s.name))
 }
 
@@ -65,7 +68,7 @@ pub(super) fn mtext(out: &mut Out, document: &Document, text: &MText) -> Result<
         out.pair(3, chunk);
     }
     out.pair(1, last);
-    out.pair(7, style_name(document, text));
+    out.pair(7, style_name(document, text.style));
     out.point3(210, 0.0, 0.0, 1.0);
     out.point3(
         11,
@@ -92,6 +95,55 @@ pub(super) fn mtext(out: &mut Out, document: &Document, text: &MText) -> Result<
         }
         out.pair(45, finite(back.scale)?);
     }
+    Ok(())
+}
+
+/// The `AcDbText` part of a single-line text whose common entity part is
+/// already written.
+pub(super) fn single_line(
+    out: &mut Out,
+    document: &Document,
+    text: &SingleLineText,
+) -> Result<(), FileError> {
+    let p = &text.placement;
+    out.pair(100, "AcDbText");
+    out.point3(10, finite(p.position.x)?, finite(p.position.y)?, 0.0);
+    out.pair(40, finite(p.height)?);
+    out.pair(1, escaped(&text.contents));
+    out.pair(50, finite(p.rotation.to_degrees())?);
+    out.pair(41, finite(p.width_factor)?);
+    out.pair(51, finite(p.oblique.to_degrees())?);
+    out.pair(7, style_name(document, p.style));
+    out.pair(71, p.generation_flags);
+    let horizontal = text.alignment.map_or_else(
+        || match p.horizontal {
+            TextHorizontal::Left => 0,
+            TextHorizontal::Center => 1,
+            TextHorizontal::Right => 2,
+        },
+        |a| match a.mode {
+            TextAlignmentMode::Align => 3,
+            TextAlignmentMode::Fit => 5,
+        },
+    );
+    out.pair(72, horizontal);
+    let second = text.alignment.map_or(p.position, |a| a.second);
+    out.point3(11, finite(second.x)?, finite(second.y)?, 0.0);
+    out.point3(210, 0.0, 0.0, 1.0);
+    out.pair(100, "AcDbText");
+    out.pair(
+        73,
+        if text.alignment.is_some() {
+            0
+        } else {
+            match p.vertical {
+                TextVertical::Baseline => 0,
+                TextVertical::Bottom => 1,
+                TextVertical::Middle => 2,
+                TextVertical::Top => 3,
+            }
+        },
+    );
     Ok(())
 }
 

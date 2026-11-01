@@ -35,6 +35,19 @@ impl Entity {
                 .map(|l| Entity::Leader(Box::new(l))),
             // Only the insertion point moves the text; the width has its own grip.
             Entity::MText(m) => inside(m.insertion).then(|| self.translated(dx, dy)),
+            Entity::Text(t) => match t.alignment {
+                Some(a) => match (inside(t.position()), inside(a.second)) {
+                    (true, true) => Some(self.translated(dx, dy)),
+                    (true, false) => t
+                        .with_alignment_points(t.position().translated(dx, dy), a.second)
+                        .map(|t| Entity::Text(Box::new(t))),
+                    (false, true) => t
+                        .with_alignment_points(t.position(), a.second.translated(dx, dy))
+                        .map(|t| Entity::Text(Box::new(t))),
+                    (false, false) => None,
+                },
+                None => inside(t.position()).then(|| self.translated(dx, dy)),
+            },
             // A block moves when its insertion point is caught, as in AutoCAD.
             Entity::Insert(i) => inside(i.insertion).then(|| self.translated(dx, dy)),
             Entity::AttributeDefinition(d) => {

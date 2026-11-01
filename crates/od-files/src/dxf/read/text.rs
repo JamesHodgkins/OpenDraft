@@ -11,11 +11,12 @@
 use std::collections::HashMap;
 use std::f64::consts::PI;
 
+use od_core::block::{TextHorizontal, TextVertical};
 use od_core::mtext::{
     BackgroundFill, EntityLineSpacing, LineSpacingStyle, MTextAttachment, MTextBackground,
     MTextFlow,
 };
-use od_core::{Entity, FontDescriptor, MText, Point, TextStyle, TextStyleId};
+use od_core::{Entity, FontDescriptor, MText, Point, SingleLineText, TextStyle, TextStyleId};
 
 use super::{aci_color, decode, Importer, Record};
 
@@ -116,6 +117,77 @@ impl Importer {
             Ok(_) => self.damaged += 1,
             Err(why) => self.skip(&format!("MTEXT ({why})")),
         }
+    }
+
+    /// A DXF `TEXT` entity, including the two-point aligned and fit modes.
+    pub(super) fn text(&mut self, record: &Record) {
+        match self.read_text(record) {
+            Ok(text) if text.validate().is_ok() => self.add(record, Entity::Text(Box::new(text))),
+            Ok(_) => self.damaged += 1,
+            Err(why) => self.skip(&format!("TEXT ({why})")),
+        }
+    }
+
+    fn read_text(&self, record: &Record) -> Result<SingleLineText, &'static str> {
+        let height = record.number(40).filter(|h| *h > 0.0).ok_or("damaged")?;
+        let horizontal = record.int(72).unwrap_or(0);
+        let vertical = record.int(73).unwrap_or(0);
+        let normal = (
+            record.number(210).unwrap_or(0.0),
+            record.number(220).unwrap_or(0.0),
+            record.number(230).unwrap_or(1.0),
+        );
+        if normal != (0.0, 0.0, 1.0) {
+            return Err("not drawn in the XY plane");
+        }
+        let aligned = matches!(horizontal, 3 | 5);
+        let at = if aligned {
+            Self::point(record, 10, 20)
+        } else if horizontal != 0 || vertical != 0 {
+            Self::point(record, 11, 21).or_else(|| Self::point(record, 10, 20))
+        } else {
+            Self::point(record, 10, 20)
+        }
+        .ok_or("damaged")?;
+        let style = record
+            .text(7)
+            .and_then(|n| self.text_styles.by_name.get(&decode(n).to_lowercase()))
+            .copied()
+            .unwrap_or(TextStyleId::STANDARD);
+        let mut text = SingleLineText::new(at, height, decode(record.text(1).unwrap_or("")), style);
+        text.placement.rotation = record.number(50).unwrap_or(0.0).to_radians();
+        text.placement.width_factor = record.number(41).unwrap_or(1.0);
+        text.placement.oblique = record.number(51).unwrap_or(0.0).to_radians();
+        text.placement.generation_flags = record.int(71).unwrap_or(0) as u8;
+        text.placement.horizontal = match horizontal {
+            0 => TextHorizontal::Left,
+            1 | 4 => TextHorizontal::Center,
+            2 => TextHorizontal::Right,
+            3 | 5 => TextHorizontal::Left,
+            _ => return Err("unknown horizontal justification"),
+        };
+        text.placement.vertical = match (horizontal, vertical) {
+            (4, _) => TextVertical::Middle,
+            (_, 0) => TextVertical::Baseline,
+            (_, 1) => TextVertical::Bottom,
+            (_, 2) => TextVertical::Middle,
+            (_, 3) => TextVertical::Top,
+            _ => return Err("unknown vertical justification"),
+        };
+        if aligned {
+            let second = Self::point(record, 11, 21).ok_or("missing second alignment point")?;
+            text.placement.rotation = (second.y - at.y).atan2(second.x - at.x);
+            text.alignment = Some(od_core::TextAlignment {
+                mode: if horizontal == 3 {
+                    od_core::TextAlignmentMode::Align
+                } else {
+                    od_core::TextAlignmentMode::Fit
+                },
+                second,
+            });
+            text.placement.rotation = (second.y - at.y).atan2(second.x - at.x);
+        }
+        Ok(text)
     }
 
     fn read_mtext(&self, record: &Record) -> Result<MText, &'static str> {
@@ -228,6 +300,57 @@ mod tests {
         assert_eq!(found.reference_width, 12.0);
         assert_eq!(found.direction, Point::new(0.0, 1.0));
         assert!(back.validate().is_ok());
+    }
+
+    #[test]
+    fn single_line_text_written_by_us_reads_back_as_text() {
+        use od_core::block::{TextHorizontal, TextVertical};
+        use od_core::SingleLineText;
+
+        let mut doc = od_core::Document::default();
+        let notes = doc.allocate_text_style_id();
+        doc.push_text_style(TextStyle::new(notes, "Notes"));
+        let mut text = SingleLineText::new(Point::new(3.0, 4.0), 2.5, "Hello \u{2312}", notes);
+        text.placement.rotation = 0.5;
+        text.placement.width_factor = 0.8;
+        text.placement.oblique = 0.1;
+        text.placement.horizontal = TextHorizontal::Right;
+        text.placement.vertical = TextVertical::Top;
+        doc.add(Entity::Text(Box::new(text.clone())));
+        let bytes = crate::dxf::write2000::write(&doc).unwrap().bytes;
+        let back = read_dxf(&bytes).unwrap().document;
+        let Entity::Text(found) = &back.objects()[0].entity else {
+            panic!("not text")
+        };
+        assert_eq!(found.contents, text.contents);
+        assert_eq!(found.placement.position, text.placement.position);
+        assert_eq!(found.placement.horizontal, TextHorizontal::Right);
+        assert_eq!(found.placement.vertical, TextVertical::Top);
+        assert!((found.placement.rotation - 0.5).abs() < 1e-9);
+        assert_eq!(back.text_style(found.style()).unwrap().name, "Notes");
+    }
+
+    #[test]
+    fn aligned_and_fit_text_keep_both_points() {
+        use od_core::{SingleLineText, TextAlignmentMode};
+
+        for mode in [TextAlignmentMode::Align, TextAlignmentMode::Fit] {
+            let mut doc = od_core::Document::default();
+            let style = doc.text_style(TextStyleId::STANDARD).unwrap().clone();
+            let mut text = SingleLineText::new(Point::new(1.0, 2.0), 2.5, "Two points", style.id);
+            text.resolve_alignment(mode, Point::new(7.0, 10.0), &style)
+                .unwrap();
+            doc.add(Entity::Text(Box::new(text.clone())));
+            let bytes = crate::dxf::write2000::write(&doc).unwrap().bytes;
+            let back = read_dxf(&bytes).unwrap().document;
+            let Entity::Text(found) = &back.objects()[0].entity else {
+                panic!("not text")
+            };
+            assert_eq!(found.alignment, text.alignment);
+            assert!((found.placement.rotation - text.placement.rotation).abs() < 1e-9);
+            assert!((found.placement.height - text.placement.height).abs() < 1e-9);
+            assert!((found.placement.width_factor - text.placement.width_factor).abs() < 1e-9);
+        }
     }
 
     fn file(entity: &str) -> Vec<u8> {

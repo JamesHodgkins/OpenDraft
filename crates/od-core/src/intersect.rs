@@ -70,6 +70,7 @@ impl Entity {
             // Nothing trims to or extends to a dimension.
             Entity::Dimension(_)
             | Entity::MText(_)
+            | Entity::Text(_)
             | Entity::MLeader(_)
             | Entity::Leader(_)
             | Entity::Insert(_)

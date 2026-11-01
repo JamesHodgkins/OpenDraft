@@ -28,6 +28,7 @@ impl Entity {
         match self {
             Entity::Dimension(_)
             | Entity::MText(_)
+            | Entity::Text(_)
             | Entity::MLeader(_)
             | Entity::Leader(_)
             | Entity::Insert(_)

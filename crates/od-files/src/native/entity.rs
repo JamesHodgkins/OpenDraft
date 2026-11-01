@@ -12,7 +12,7 @@ use super::hatch::HatchDto;
 use super::leader::LeaderDto;
 use super::mleader::MLeaderDto;
 use super::spline::SplineDto;
-use super::text::MTextDto;
+use super::text::{MTextDto, SingleLineTextDto};
 use crate::FileError;
 
 pub(super) type PointDto = [f64; 2];
@@ -87,6 +87,7 @@ pub(super) enum EntityDto {
     Hatch(HatchDto),
     #[serde(rename = "mtext")]
     MText(MTextDto),
+    Text(SingleLineTextDto),
     #[serde(rename = "mleader")]
     MLeader(MLeaderDto),
     Leader(LeaderDto),
@@ -186,6 +187,7 @@ impl EntityDto {
             },
             Entity::Dimension(d) => EntityDto::Dimension(DimensionDto::from_dimension(d, styles)),
             Entity::MText(m) => EntityDto::MText(MTextDto::from_mtext(m)),
+            Entity::Text(t) => EntityDto::Text(SingleLineTextDto::of(t)),
             Entity::MLeader(m) => EntityDto::MLeader(MLeaderDto::from_mleader(m)?),
             Entity::Leader(l) => EntityDto::Leader(LeaderDto::from_leader(l)?),
             Entity::Hatch(h) => EntityDto::Hatch(HatchDto::from_hatch(h)?),
@@ -302,6 +304,7 @@ impl EntityDto {
             EntityDto::Spline(s) => Entity::Spline(Box::new(s.to_spline()?)),
             EntityDto::Dimension(d) => Entity::Dimension(Box::new(d.to_dimension(dim_styles)?)),
             EntityDto::MText(m) => Entity::MText(Box::new(m.to_mtext()?)),
+            EntityDto::Text(t) => Entity::Text(Box::new(t.text()?)),
             EntityDto::MLeader(m) => Entity::MLeader(Box::new(m.to_mleader()?)),
             EntityDto::Leader(l) => Entity::Leader(Box::new(l.to_leader()?)),
             EntityDto::Hatch(h) => Entity::Hatch(Box::new(h.to_hatch()?)),
@@ -349,7 +352,8 @@ impl EntityDto {
 
 #[cfg(test)]
 mod tests {
-    use od_core::{Document, Entity, Point};
+    use od_core::block::{TextHorizontal, TextVertical};
+    use od_core::{Document, Entity, Point, SingleLineText, TextStyleId};
 
     use crate::native::tests::roundtrip;
 
@@ -372,6 +376,35 @@ mod tests {
         for (a, b) in back.objects().iter().zip(document.objects()) {
             assert_eq!(a.entity, b.entity);
         }
+    }
+
+    #[test]
+    fn single_line_text_survives_a_round_trip() {
+        let mut document = Document::default();
+        let mut text =
+            SingleLineText::new(Point::new(2.0, 3.0), 4.0, "One line", TextStyleId::STANDARD);
+        text.placement.rotation = 0.25;
+        text.placement.horizontal = TextHorizontal::Right;
+        text.placement.vertical = TextVertical::Top;
+        document.add(Entity::Text(Box::new(text.clone())));
+        let back = roundtrip(&document);
+        assert_eq!(back.objects()[0].entity, Entity::Text(Box::new(text)));
+    }
+
+    #[test]
+    fn aligned_single_line_text_survives_a_round_trip() {
+        let mut document = Document::default();
+        let style = document.text_style(TextStyleId::STANDARD).unwrap().clone();
+        let mut text = SingleLineText::new(Point::new(2.0, 3.0), 4.0, "One line", style.id);
+        text.resolve_alignment(
+            od_core::TextAlignmentMode::Fit,
+            Point::new(12.0, 3.0),
+            &style,
+        )
+        .unwrap();
+        document.add(Entity::Text(Box::new(text.clone())));
+        let back = roundtrip(&document);
+        assert_eq!(back.objects()[0].entity, Entity::Text(Box::new(text)));
     }
 
     #[test]

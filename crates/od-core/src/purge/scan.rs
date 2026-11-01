@@ -288,6 +288,7 @@ pub fn unnamed_with(doc: &Document, include_locked: bool) -> Unnamed {
                 }
             }
             Entity::MText(m) if m.contents.trim().is_empty() => found.empty_text.push(object.id),
+            Entity::Text(t) if t.contents.trim().is_empty() => found.empty_text.push(object.id),
             _ => {}
         }
     }
@@ -300,6 +301,7 @@ pub fn users_of(doc: &Document, item: &Item) -> Vec<EntityId> {
     let same = |a: &str, b: &str| a.eq_ignore_ascii_case(b);
     let text_style = |id: TextStyleId, e: &Entity| match e {
         Entity::MText(m) => m.style == id,
+        Entity::Text(t) => t.style() == id,
         Entity::MLeader(m) => m.text().is_some_and(|t| t.text.style == id),
         Entity::Dimension(d) => d.style.text_style == id,
         _ => false,

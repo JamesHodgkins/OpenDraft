@@ -63,7 +63,7 @@ pub(super) struct AttributeTextDto {
 }
 
 impl AttributeTextDto {
-    fn of(t: &AttributeText) -> Self {
+    pub(super) fn of(t: &AttributeText) -> Self {
         Self {
             position: point(t.position),
             height: t.height,
@@ -86,7 +86,7 @@ impl AttributeTextDto {
         }
     }
 
-    fn text(&self) -> Result<AttributeText, FileError> {
+    pub(super) fn text(&self) -> Result<AttributeText, FileError> {
         Ok(AttributeText {
             position: from_point(self.position)?,
             height: self.height,

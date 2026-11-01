@@ -125,6 +125,11 @@ fn annotate() -> Tab {
                         icons::ANNOTATE_MTEXT,
                     )),
                     Column::Large(Item::new(
+                        "annotate.text",
+                        "Single Line Text",
+                        icons::ANNOTATE_TEXT,
+                    )),
+                    Column::Large(Item::new(
                         "annotate.mleader",
                         "Multileader",
                         icons::ANNOTATE_MLEADER,

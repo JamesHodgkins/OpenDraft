@@ -295,6 +295,7 @@ impl Importer {
             "SPLINE" => self.spline(record),
             "HATCH" => self.hatch(record),
             "MTEXT" => self.mtext(record),
+            "TEXT" => self.text(record),
             "LEADER" => self.leader(record),
             "MULTILEADER" => self.multileader(record),
             "DIMENSION" => self.dimension(record),
@@ -852,12 +853,12 @@ mod tests {
         let loaded = load(
             &[],
             &[
-                (0, "TEXT"),
+                (0, "3DFACE"),
                 (8, "0"),
                 (10, "0"),
                 (20, "0"),
                 (1, "hi"),
-                (0, "TEXT"),
+                (0, "3DFACE"),
                 (8, "0"),
                 (10, "0"),
                 (20, "0"),
@@ -879,7 +880,7 @@ mod tests {
         assert_eq!(
             loaded.warnings,
             [
-                "Skipped 2 unsupported objects: 2 TEXT.",
+                "Skipped 2 unsupported objects: 2 3DFACE.",
                 "Skipped 1 block reference to blocks that are not in the file."
             ]
         );

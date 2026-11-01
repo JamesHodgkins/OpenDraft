@@ -12,6 +12,7 @@ pub mod entity;
 mod entity_bounds;
 mod entity_dimensions;
 mod entity_leaders;
+mod entity_text;
 pub mod envelope;
 pub mod error;
 pub mod event_ops;

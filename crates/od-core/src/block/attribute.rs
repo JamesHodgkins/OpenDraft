@@ -10,8 +10,8 @@
 //! definition itself is drawn by every insert.
 //!
 //! Text is single-line. Its look comes from the style, the height and the
-//! justification; the width factor and oblique angle are kept and written to
-//! files but not yet applied when drawing.
+//! justification; width factor and oblique angle are applied through the
+//! shared multiline-text formatter.
 
 use std::sync::Arc;
 
@@ -154,12 +154,15 @@ impl AttributeText {
     /// is drawn, picked and measured. A baseline-justified line is drawn from
     /// its bottom edge.
     pub fn projection(&self, text: &str) -> MText {
-        let mut m = MText::new(
-            self.position,
-            self.height,
-            escape_for_contents(text),
-            self.style,
-        );
+        let mut contents = String::new();
+        if (self.width_factor - 1.0).abs() > 1e-9 {
+            contents.push_str(&format!("\\W{};", self.width_factor));
+        }
+        if self.oblique.abs() > 1e-9 {
+            contents.push_str(&format!("\\Q{};", self.oblique.to_degrees()));
+        }
+        contents.push_str(&escape_for_contents(text));
+        let mut m = MText::new(self.position, self.height, contents, self.style);
         m.direction = Point::new(self.rotation.cos(), self.rotation.sin());
         m.attachment = self.attachment();
         m

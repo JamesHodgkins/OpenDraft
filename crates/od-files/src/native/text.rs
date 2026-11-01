@@ -6,10 +6,13 @@ use od_core::mtext::{
     BackgroundFill, ColumnKind, EntityLineSpacing, MTextBackground, MTextColumns,
     PreservedMTextFields,
 };
-use od_core::{Document, FontDescriptor, MText, TextStyle, TextStyleId};
+use od_core::{
+    Document, FontDescriptor, MText, SingleLineText, TextAlignment, TextAlignmentMode, TextStyle,
+    TextStyleId,
+};
 use serde::{Deserialize, Serialize};
 
-use super::attribute::DataFieldDto;
+use super::attribute::{AttributeTextDto, DataFieldDto};
 use super::entity::{from_point, invalid, point, PointDto};
 use super::names::{AttachmentPointDto, FlowDto, SpacingStyleDto};
 use super::ColorDto;
@@ -275,6 +278,67 @@ pub(super) struct MTextDto {
         rename = "dxf_group_441"
     )]
     unimplemented_441: Option<i32>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub(super) struct SingleLineTextDto {
+    contents: String,
+    placement: AttributeTextDto,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    alignment: Option<TextAlignmentDto>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct TextAlignmentDto {
+    mode: TextAlignmentModeDto,
+    second: PointDto,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum TextAlignmentModeDto {
+    Align,
+    Fit,
+}
+
+impl SingleLineTextDto {
+    pub(super) fn of(text: &SingleLineText) -> Self {
+        Self {
+            contents: text.contents.clone(),
+            placement: AttributeTextDto::of(&text.placement),
+            alignment: text.alignment.map(|a| TextAlignmentDto {
+                mode: match a.mode {
+                    TextAlignmentMode::Align => TextAlignmentModeDto::Align,
+                    TextAlignmentMode::Fit => TextAlignmentModeDto::Fit,
+                },
+                second: point(a.second),
+            }),
+        }
+    }
+
+    pub(super) fn text(&self) -> Result<SingleLineText, FileError> {
+        let alignment = self
+            .alignment
+            .as_ref()
+            .map(|a| -> Result<TextAlignment, FileError> {
+                Ok(TextAlignment {
+                    mode: match a.mode {
+                        TextAlignmentModeDto::Align => TextAlignmentMode::Align,
+                        TextAlignmentModeDto::Fit => TextAlignmentMode::Fit,
+                    },
+                    second: from_point(a.second)?,
+                })
+            })
+            .transpose()?;
+        let text = SingleLineText {
+            contents: self.contents.clone(),
+            placement: self.placement.text()?,
+            alignment,
+        };
+        text.validate()
+            .or_else(|why| invalid(format!("single-line text is not valid: {why}")))?;
+        Ok(text)
+    }
 }
 
 impl MTextDto {
