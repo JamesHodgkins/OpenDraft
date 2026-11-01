@@ -60,6 +60,27 @@ fn insert() -> Tab {
                 ..Default::default()
             },
             Panel {
+                title: "Attributes",
+                columns: vec![
+                    Column::Large(Item::new(
+                        "block.attdef",
+                        "Define Attributes",
+                        icons::BLOCK_ATTDEF,
+                    )),
+                    Column::Large(Item::new(
+                        "block.attedit",
+                        "Edit Attributes",
+                        icons::BLOCK_ATTEDIT,
+                    )),
+                    Column::Large(Item::new(
+                        "block.attsync",
+                        "Synchronize",
+                        icons::BLOCK_ATTSYNC,
+                    )),
+                ],
+                ..Default::default()
+            },
+            Panel {
                 title: "Import",
                 columns: vec![
                     Column::Large(Item::new(
