@@ -13,6 +13,7 @@ mod home_layout;
 mod linetypes;
 mod mleader_styles;
 mod placement;
+mod pline_snap;
 mod text_styles;
 mod units;
 
