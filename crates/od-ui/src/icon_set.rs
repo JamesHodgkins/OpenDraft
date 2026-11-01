@@ -381,6 +381,7 @@ impl egui::Widget for Icon {
             self.size,
             color,
         );
+        crate::widgets::focus_ring(ui, &crate::Theme::default(), &response, rect);
         response
     }
 }

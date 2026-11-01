@@ -56,6 +56,7 @@ pub fn document_tabs(
             15.0,
             if home { c.text } else { c.text_weak },
         );
+        crate::widgets::focus_ring(ui, theme, &response, rect);
         if response.on_hover_text("Home").clicked() {
             event = Some(DocumentTabEvent::Home);
         }
@@ -103,9 +104,12 @@ pub fn document_tabs(
                     c.text,
                 );
             }
+            crate::widgets::focus_ring(ui, theme, &response, rect);
+            crate::widgets::focus_ring(ui, theme, &close, close_rect);
+            let close = close.on_hover_text(format!("Close {title}"));
             if close.clicked() {
                 event = Some(DocumentTabEvent::Close(i));
-            } else if response.clicked() {
+            } else if response.on_hover_text(title).clicked() {
                 event = Some(DocumentTabEvent::Select(i));
             }
         }

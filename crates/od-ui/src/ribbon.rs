@@ -283,6 +283,7 @@ fn ribbon_tabs(ui: &mut Ui, theme: &Theme, selected: &mut usize, titles: &[&str]
                             c.text_weak
                         },
                     );
+                    crate::widgets::focus_ring(ui, theme, &response, rect);
                     if response.clicked() {
                         *selected = i;
                     }
