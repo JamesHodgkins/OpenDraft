@@ -1286,6 +1286,39 @@ mod tests {
     }
 
     #[test]
+    fn an_object_field_in_text_still_points_at_its_object_after_a_save_and_load() {
+        use od_core::block::{update_fields, DataField, FieldContext, ObjectProperty};
+        let mut document = Document::default();
+        let circle = document.add(Entity::Circle {
+            center: Point::new(0.0, 0.0),
+            radius: 2.0,
+        });
+        let mut text = od_core::MText::new(Point::new(5.0, 5.0), 2.5, "", TextStyleId::STANDARD);
+        text.insert_field(
+            0,
+            DataField::object_property(circle, ObjectProperty::Radius),
+        );
+        let label = document.add(Entity::MText(Box::new(text)));
+        let loaded = roundtrip(&document);
+        assert_eq!(loaded, document, "the whole drawing comes back as it was");
+        // Make the circle bigger in the loaded drawing: updating follows it.
+        let mut loaded = loaded;
+        loaded.replace(
+            circle,
+            Entity::Circle {
+                center: Point::new(0.0, 0.0),
+                radius: 7.0,
+            },
+        );
+        let update = update_fields(&loaded, &[label], &FieldContext::default());
+        let Some((_, Entity::MText(after))) = update.edits.first() else {
+            panic!("the field found its circle again")
+        };
+        let expected = od_core::units::format_length(loaded.units(), 7.0);
+        assert_eq!(after.field_values(), [expected]);
+    }
+
+    #[test]
     fn drawing_properties_survive_a_round_trip_and_are_left_out_when_empty() {
         use od_core::drawing_properties::DrawingProperties;
         let mut document = Document::default();
