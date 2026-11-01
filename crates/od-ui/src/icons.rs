@@ -68,7 +68,9 @@ icons! {
     ASSISTANT_NEW_CHAT = '\u{e410}';
     ASSISTANT_SEND = '\u{e04e}';
     ASSISTANT_STOP = '\u{e16a}';
+    BLOCK_ATTDEF = '\u{e182}';
     BLOCK_ATTEDIT = '\u{e133}';
+    BLOCK_ATTSYNC = '\u{e148}';
     BLOCK_CLOSE = '\u{e1b1}';
     BLOCK_CREATE = '\u{e2ac}';
     BLOCK_EATTEDIT = '\u{e10b}';

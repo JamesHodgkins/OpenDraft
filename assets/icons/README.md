@@ -51,7 +51,9 @@ The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
 | ![](assistant-new-chat.svg) | `assistant-new-chat.svg` | message-square-plus | assistant/panel/mod.rs |
 | ![](assistant-send.svg) | `assistant-send.svg` | arrow-up | assistant/panel/composer.rs |
 | ![](assistant-stop.svg) | `assistant-stop.svg` | square | assistant/panel/composer.rs |
-| ![](block-attedit.svg) | `block-attedit.svg` | pen-line | Single |
+| ![](block-attdef.svg) | `block-attdef.svg` | tag | Define Attributes |
+| ![](block-attedit.svg) | `block-attedit.svg` | pen-line | Edit Attributes, Single |
+| ![](block-attsync.svg) | `block-attsync.svg` | refresh-cw | Synchronize |
 | ![](block-close.svg) | `block-close.svg` | x | Close Block Editor |
 | ![](block-create.svg) | `block-create.svg` | component | Create |
 | ![](block-eattedit.svg) | `block-eattedit.svg` | list | Multiple |
@@ -72,7 +74,7 @@ The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
 | ![](context-submenu.svg) | `context-submenu.svg` | chevron-right | app/context_menu.rs |
 | ![](context-view-panel-properties.svg) | `context-view-panel-properties.svg` | sliders-horizontal | app/context_menu.rs |
 | ![](context-view-zoom-extents.svg) | `context-view-zoom-extents.svg` | zoom-in | app/context_menu.rs |
-| ![](dialog-close.svg) | `dialog-close.svg` | x | widgets.rs |
+| ![](dialog-close.svg) | `dialog-close.svg` | x | widgets/containers.rs |
 | ![](dim-aligned.svg) | `dim-aligned.svg` | move-diagonal | Aligned |
 | ![](dim-angular.svg) | `dim-angular.svg` | triangle-right | Angular |
 | ![](dim-arc.svg) | `dim-arc.svg` | circle-dashed | Arc Length |
@@ -119,8 +121,8 @@ The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
 | ![](draw-spline.svg) | `draw-spline.svg` | spline | Spline |
 | ![](draw-xline.svg) | `draw-xline.svg` | slash | Construction Line (Lucide's slash: a line that runs on both ways.) |
 | ![](dropdown-arrow.svg) | `dropdown-arrow.svg` | chevron-down | widgets.rs |
-| ![](dynamic-input-locked.svg) | `dynamic-input-locked.svg` | lock | app/dynamic_overlay.rs |
-| ![](dynamic-input-options.svg) | `dynamic-input-options.svg` | chevron-down | app/dynamic_overlay.rs |
+| ![](dynamic-input-locked.svg) | `dynamic-input-locked.svg` | lock | app/dynamic_overlay/boxes.rs |
+| ![](dynamic-input-options.svg) | `dynamic-input-options.svg` | chevron-down | app/dynamic_overlay/boxes.rs |
 | ![](edit-copy-base.svg) | `edit-copy-base.svg` | copy-plus | Copy with Base Point |
 | ![](edit-copy-clip.svg) | `edit-copy-clip.svg` | copy | Copy Clip |
 | ![](edit-cut.svg) | `edit-cut.svg` | scissors | Cut |
