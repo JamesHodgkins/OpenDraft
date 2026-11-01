@@ -13,6 +13,8 @@ pub struct Changes {
     pub changed: Vec<EntityId>,
     pub layers: bool,
     pub units: bool,
+    /// The drawing's title, author and the rest of its description changed.
+    pub properties: bool,
     pub dim_style: bool,
     pub layouts: bool,
     /// The block table changed (a block defined, redefined or purged).
@@ -59,6 +61,13 @@ impl Changes {
     pub fn units() -> Self {
         Self {
             units: true,
+            ..Self::default()
+        }
+    }
+
+    pub fn properties() -> Self {
+        Self {
+            properties: true,
             ..Self::default()
         }
     }

@@ -99,6 +99,7 @@ pub const ALIASES: &[(&str, &str, &str)] = &[
     ("UN", "UNITS", "format.units"),
     ("UNITS", "UNITS", "format.units"),
     ("DDUNITS", "UNITS", "format.units"),
+    ("DWGPROPS", "DWGPROPS", "format.properties"),
     ("LT", "LINETYPE", "format.linetype"),
     ("LTYPE", "LINETYPE", "format.linetype"),
     ("LINETYPE", "LINETYPE", "format.linetype"),

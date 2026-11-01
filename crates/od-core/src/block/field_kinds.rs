@@ -193,7 +193,15 @@ pub struct FieldKind {
 /// from the object picked, not from a format.
 pub const OBJECT: &str = "Object";
 
-pub const KINDS: [FieldKind; 3] = [
+pub const KINDS: [FieldKind; 9] = [
+    FieldKind {
+        name: "Author",
+        category: FieldCategory::Document,
+    },
+    FieldKind {
+        name: "Comments",
+        category: FieldCategory::Document,
+    },
     FieldKind {
         name: "Date",
         category: FieldCategory::DateTime,
@@ -203,8 +211,24 @@ pub const KINDS: [FieldKind; 3] = [
         category: FieldCategory::Document,
     },
     FieldKind {
+        name: "HyperlinkBase",
+        category: FieldCategory::Document,
+    },
+    FieldKind {
+        name: "Keywords",
+        category: FieldCategory::Document,
+    },
+    FieldKind {
         name: OBJECT,
         category: FieldCategory::Objects,
+    },
+    FieldKind {
+        name: "Subject",
+        category: FieldCategory::Document,
+    },
+    FieldKind {
+        name: "Title",
+        category: FieldCategory::Document,
     },
 ];
 
@@ -233,7 +257,8 @@ pub fn formats(name: &str, context: &FieldContext) -> Vec<FormatChoice> {
                 code: (*p).to_string(),
             })
             .collect(),
-        "Filename" => CASES
+        // Every other field shows text, which can be put in a case.
+        n if n != OBJECT => CASES
             .iter()
             .map(|(label, code)| FormatChoice {
                 label: (*label).into(),

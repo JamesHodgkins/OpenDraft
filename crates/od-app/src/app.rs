@@ -34,6 +34,7 @@ mod overkill_dialog;
 mod page_setup_dialog;
 mod panels;
 mod power_select_dialog;
+mod properties_dialog;
 mod purge_dialog;
 mod settings_dialog;
 mod snap_menu;

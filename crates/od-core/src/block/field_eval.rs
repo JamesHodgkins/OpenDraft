@@ -9,6 +9,7 @@
 //! (its object is gone, the property does not suit it, the drawing has no file
 //! yet) keeps its last value and says `EvaluationFailed`.
 
+use crate::drawing_properties::DrawingProperties;
 use crate::units::{format_area, format_length};
 use crate::{arc, bulge, Document, Entity, EntityId};
 
@@ -31,6 +32,8 @@ pub struct FieldContext {
     pub file_name: Option<String>,
     /// The time now, in the user's own time zone; `None` if it is not known.
     pub now: Option<FieldTime>,
+    /// The drawing's title, author and the rest of its description.
+    pub properties: DrawingProperties,
 }
 
 /// A property `AcObjProp` can show.
@@ -243,7 +246,11 @@ impl DataField {
                     format_time(&t, pattern)
                 })
                 .ok_or(FieldStatus::EvaluationFailed),
-            Some(_) => Err(FieldStatus::Unsupported),
+            Some(n) => context
+                .properties
+                .named(n)
+                .map(|value| apply_case(value, format))
+                .ok_or(FieldStatus::Unsupported),
             None => Err(FieldStatus::ParseError),
         }
     }
@@ -485,7 +492,7 @@ mod tests {
         );
         let after = field.evaluated(&Document::default(), &FieldContext::default());
         assert_eq!(after, field);
-        let other = DataField::new(VARIABLE, "\\AcVar Author", None)
+        let other = DataField::new(VARIABLE, "\\AcVar Nonesuch", None)
             .evaluated(&Document::default(), &FieldContext::default());
         assert_eq!(other.status, FieldStatus::Unsupported);
     }
@@ -551,6 +558,7 @@ mod date_tests {
         FieldContext {
             file_name: file.map(str::to_owned),
             now: Some(T),
+            ..FieldContext::default()
         }
     }
 
@@ -579,5 +587,62 @@ mod date_tests {
             .evaluated(&Document::default(), &context(Some("plan.odx")))
             .display();
         assert_eq!(shown, "PLAN.ODX");
+    }
+}
+
+#[cfg(test)]
+mod property_tests {
+    use super::*;
+    use crate::block::field_kinds::KINDS;
+
+    fn described() -> FieldContext {
+        FieldContext {
+            properties: DrawingProperties {
+                title: "Plot 7".into(),
+                author: "ada lovelace".into(),
+                ..DrawingProperties::default()
+            },
+            ..FieldContext::default()
+        }
+    }
+
+    #[test]
+    fn a_drawing_property_shows_its_value_and_takes_a_case() {
+        let doc = Document::default();
+        let show = |name, format| {
+            DataField::variable(name, format)
+                .evaluated(&doc, &described())
+                .display()
+        };
+        assert_eq!(show("Title", ""), "Plot 7");
+        assert_eq!(show("Author", "%tc4"), "Ada Lovelace");
+        assert_eq!(
+            show("author", "%tc1"),
+            "ADA LOVELACE",
+            "any case of the name"
+        );
+    }
+
+    #[test]
+    fn an_empty_property_is_an_empty_value_not_a_failure() {
+        let field =
+            DataField::variable("Subject", "").evaluated(&Document::default(), &described());
+        assert_eq!(field.status, FieldStatus::Success);
+        assert_eq!(field.display(), "");
+    }
+
+    #[test]
+    fn every_document_field_the_dialog_lists_can_be_evaluated() {
+        let doc = Document::default();
+        for kind in KINDS.iter().filter(|k| k.name != "Object") {
+            let field = DataField::of_kind(kind.name, "").unwrap();
+            let after = field.evaluated(&doc, &described());
+            assert_ne!(
+                after.status,
+                FieldStatus::Unsupported,
+                "{} is listed but not evaluated",
+                kind.name
+            );
+        }
     }
 }

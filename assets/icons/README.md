@@ -136,6 +136,7 @@ The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
 | ![](file-open.svg) | `file-open.svg` | folder-open | app.rs, app/home_page/start.rs |
 | ![](file-save.svg) | `file-save.svg` | save | app.rs, theme.rs |
 | ![](format-linetype.svg) | `format-linetype.svg` | ellipsis | Linetypes |
+| ![](format-properties.svg) | `format-properties.svg` | file-text | Properties |
 | ![](format-units.svg) | `format-units.svg` | ruler | Units |
 | ![](gallery-landscape.svg) | `gallery-landscape.svg` | rectangle-horizontal | crates/od-ui/examples/gallery.rs |
 | ![](gallery-portrait.svg) | `gallery-portrait.svg` | rectangle-vertical | crates/od-ui/examples/gallery.rs |

@@ -3,6 +3,7 @@
 use od_core::block::attribute_draft::{DefinitionDraft, EditorDraft};
 use od_core::block::block_draft::BlockDraft;
 use od_core::block::FieldDraft;
+use od_core::drawing_properties::DrawingProperties;
 
 use crate::state::AppState;
 
@@ -13,6 +14,8 @@ pub struct CommandDialogs {
     pub editor: Option<EditorDraft>,
     pub block: Option<BlockDraft>,
     pub field: Option<FieldDraft>,
+    /// The Drawing Properties dialog, while it is open.
+    pub properties: Option<DrawingProperties>,
 }
 
 impl AppState {
@@ -20,6 +23,7 @@ impl AppState {
     pub fn modal_open(&self) -> bool {
         self.show_settings
             || self.show_units
+            || self.command_dialogs.properties.is_some()
             || self.show_point_style
             || self.power_select.open
             || self.overkill_draft.is_some()

@@ -155,6 +155,7 @@ pub const TABLE: &[(&str, AutomationPolicy, CommandEffect)] = &[
     // Dialogs and variables.
     ("tools.setvar", Denied, Lifecycle),
     ("format.units", Denied, Lifecycle),
+    ("format.properties", Denied, Lifecycle),
     ("format.linetype", Denied, Lifecycle),
     ("annotate.textstyle", Denied, Lifecycle),
     ("dim.style", Denied, Lifecycle),

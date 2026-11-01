@@ -36,6 +36,11 @@ impl AppState {
                 .and_then(|p| p.file_name())
                 .map(|n| n.to_string_lossy().into_owned()),
             now: Some(current_time()),
+            properties: self
+                .docs
+                .get(self.active)
+                .map(|d| d.session.document().properties().clone())
+                .unwrap_or_default(),
         }
     }
 }

@@ -161,6 +161,7 @@ icons! {
     FILE_OPEN = '\u{e246}';
     FILE_SAVE = '\u{e150}';
     FORMAT_LINETYPE = '\u{e0ba}';
+    FORMAT_PROPERTIES = '\u{e0d0}';
     FORMAT_UNITS = '\u{e14e}';
     GALLERY_LANDSCAPE = '\u{e379}';
     GALLERY_PORTRAIT = '\u{e37a}';

@@ -257,6 +257,11 @@ fn manage() -> Tab {
                 columns: vec![
                     Column::Large(Item::new("format.units", "Units", icons::FORMAT_UNITS)),
                     Column::Large(Item::new(
+                        "format.properties",
+                        "Properties",
+                        icons::FORMAT_PROPERTIES,
+                    )),
+                    Column::Large(Item::new(
                         "format.linetype",
                         "Linetypes",
                         icons::FORMAT_LINETYPE,

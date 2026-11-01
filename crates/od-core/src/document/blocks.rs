@@ -132,6 +132,7 @@ impl Document {
             new_linetype: self.new_linetype.clone(),
             new_lineweight: self.new_lineweight.clone(),
             units: self.units,
+            properties: self.properties.clone(),
             dim_style: self.dim_style.clone(),
             dim_styles: self.dim_styles.clone(),
             layouts: self.layouts.clone(),

@@ -209,3 +209,58 @@ mod tests {
         assert!(dialog_is_open(&state));
     }
 }
+
+#[cfg(test)]
+mod property_tests {
+    use od_commands::Reply;
+    use od_core::block::DataField;
+    use od_core::drawing_properties::DrawingProperties;
+    use od_core::Entity;
+
+    use crate::state::AppState;
+
+    #[test]
+    fn a_title_field_made_through_the_dialog_shows_the_drawings_title() {
+        let mut state = AppState::new();
+        state.set_drawing_properties(DrawingProperties {
+            title: "Plot 7".into(),
+            ..DrawingProperties::default()
+        });
+        state.start_command("FIELD", super::insert_field_dialog);
+        state.settle_command();
+        state.reply(Reply::Field(Box::new(DataField::variable("Title", ""))));
+        state.settle_command();
+        state.cmd_submit("0,0");
+        state.settle_command();
+        let shown = state
+            .session()
+            .document()
+            .objects()
+            .iter()
+            .find_map(|o| match &o.entity {
+                Entity::MText(t) => Some(t.field_values()),
+                _ => None,
+            })
+            .unwrap();
+        assert_eq!(shown, ["Plot 7"]);
+        // Changing the title and updating brings the text along.
+        state.set_drawing_properties(DrawingProperties {
+            title: "Plot 8".into(),
+            ..DrawingProperties::default()
+        });
+        state.select_all();
+        state.start_command("UPDATEFIELD", crate::field_cmd::update_field);
+        state.settle_command();
+        let updated = state
+            .session()
+            .document()
+            .objects()
+            .iter()
+            .find_map(|o| match &o.entity {
+                Entity::MText(t) => Some(t.field_values()),
+                _ => None,
+            })
+            .unwrap();
+        assert_eq!(updated, ["Plot 8"]);
+    }
+}

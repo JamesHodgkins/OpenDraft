@@ -183,10 +183,9 @@ mod tests {
 
     #[test]
     fn choosing_another_field_starts_its_format_afresh() {
-        let mut d = FieldDraft {
-            format: 3,
-            ..FieldDraft::new(false)
-        };
+        let mut d = FieldDraft::new(false);
+        d.select_kind("Date");
+        d.format = 3;
         d.select_kind("Date");
         assert_eq!(d.format, 3, "the same field keeps its format");
         d.select_kind("Filename");

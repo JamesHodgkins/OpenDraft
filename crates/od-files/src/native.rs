@@ -60,6 +60,7 @@ mod mleader_style;
 mod names;
 mod new_style;
 mod point_style;
+mod properties;
 pub(crate) mod spline;
 mod text;
 mod units;
@@ -68,6 +69,7 @@ use block::BlockDto;
 use dimension_style::{DimStylesDto, StylePool};
 use entity::EntityDto;
 use layout::LayoutDto;
+use properties::PropertiesDto;
 use text::TextStyleDto;
 use units::UnitsDto;
 
@@ -225,6 +227,9 @@ struct DrawingDto {
     next_layer_id: u64,
     current_layer: u64,
     units: UnitsDto,
+    /// Title, author and the rest of the drawing's description.
+    #[serde(default, skip_serializing_if = "PropertiesDto::is_empty")]
+    properties: PropertiesDto,
     /// The dimension styles, in full: see `dimension_style.rs`.
     #[serde(flatten)]
     dim_styles: DimStylesDto,
@@ -393,6 +398,7 @@ impl DrawingDto {
             next_layer_id,
             current_layer: document.current_layer().0,
             units: UnitsDto::from(document.units()),
+            properties: PropertiesDto::of(document.properties()),
             dim_styles: DimStylesDto::of(document, &styles, named_styles)?,
             layers,
             objects,
@@ -1277,6 +1283,41 @@ mod tests {
         )))]);
         let plain = String::from_utf8(NativeFormat.write(&plain).unwrap().bytes).unwrap();
         assert!(!plain.contains("\"fields\""));
+    }
+
+    #[test]
+    fn drawing_properties_survive_a_round_trip_and_are_left_out_when_empty() {
+        use od_core::drawing_properties::DrawingProperties;
+        let mut document = Document::default();
+        let empty = String::from_utf8(NativeFormat.write(&document).unwrap().bytes).unwrap();
+        assert!(!empty.contains("\"properties\""));
+        document.set_properties(DrawingProperties {
+            title: "Plan".into(),
+            author: "Ada".into(),
+            comments: "two\nlines".into(),
+            ..DrawingProperties::default()
+        });
+        assert_eq!(roundtrip(&document), document);
+        assert_eq!(roundtrip(&document).properties().author, "Ada");
+        let written = String::from_utf8(NativeFormat.write(&document).unwrap().bytes).unwrap();
+        assert!(written.contains("\"properties\""));
+        assert!(
+            !written.contains("\"subject\""),
+            "an empty value is not written"
+        );
+    }
+
+    #[test]
+    fn a_property_over_the_limit_is_refused_on_load() {
+        use od_core::drawing_properties::{DrawingProperties, MAX_PROPERTY_BYTES};
+        let mut document = Document::default();
+        document.set_properties(DrawingProperties {
+            title: "TITLE_MARK".into(),
+            ..DrawingProperties::default()
+        });
+        let written = String::from_utf8(NativeFormat.write(&document).unwrap().bytes).unwrap();
+        let hostile = written.replace("TITLE_MARK", &"x".repeat(MAX_PROPERTY_BYTES + 1));
+        assert!(NativeFormat.read(hostile.as_bytes()).is_err());
     }
 
     #[test]

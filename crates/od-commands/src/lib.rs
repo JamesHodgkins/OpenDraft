@@ -21,6 +21,7 @@ mod mleader_style_action;
 mod paste_action;
 mod point_style_action;
 mod prompt;
+mod properties_action;
 mod registry;
 mod runner;
 mod session;
@@ -48,6 +49,7 @@ pub use prompt::{
     Marker, NumberOptions, NumberOrPoint, Options, Picked, PointOptions, Prompt, Reply,
     TextOptions, Wants,
 };
+pub use properties_action::SetProperties;
 pub use registry::{
     always, never, AutomationPolicy, Command, CommandEffect, ExecuteError, Registry, RegistryError,
 };
