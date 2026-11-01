@@ -49,7 +49,7 @@ pub use field::{
     DataField, FieldObjectRef, FieldRun, FieldStatus, FieldText, FieldValue, MAX_FIELDS_PER_TEXT,
 };
 pub use field_draft::{FieldDraft, ObjectChoice};
-pub use field_eval::{update_fields, FieldContext, FieldUpdate, ObjectProperty};
+pub use field_eval::{update_all_fields, update_fields, FieldContext, FieldUpdate, ObjectProperty};
 pub use field_kinds::{FieldCategory, FieldKind, FieldTime, FormatChoice};
 pub use picture::Piece;
 pub use table::{block_name_problem, Redefinition};

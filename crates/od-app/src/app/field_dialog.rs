@@ -31,7 +31,9 @@ impl OpenDraftApp {
             Chosen::Open => self.state.command_dialogs.field = Some(draft),
             Chosen::Insert(field) => self.state.reply(Reply::Field(field)),
             Chosen::PickObject => self.state.reply(Reply::FieldPick(Box::new(draft))),
-            Chosen::Cancel => self.state.cancel_command(),
+            // Back, not a cancel: the command that asked (the Attribute Editor
+            // may have) carries on without a field.
+            Chosen::Cancel => self.state.reply(Reply::Back),
         }
     }
 }

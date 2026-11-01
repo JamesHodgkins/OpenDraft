@@ -227,7 +227,7 @@ pub fn show(
 
     // The Field dialog is modal: the toolbar steps aside while it is open
     // (it would be drawn over the dialog).
-    let (chosen, tools) = if editor.field_dialog {
+    let (chosen, tools) = if editor.field_dialog && !editor.field_pick {
         (None, Rect::NOTHING)
     } else {
         super::toolbar::show(&ctx, theme, editor, styles, bounds.union(ruler), canvas)
@@ -244,6 +244,7 @@ pub fn show(
                 && !bounds.contains(pos)
                 && !tools.contains(pos)
                 && !ruler.contains(pos)
+                && !editor.field_pick
                 && !dialog.is_some_and(|d| d.contains(pos))
                 && over_drawing(&ctx, pos)
             {

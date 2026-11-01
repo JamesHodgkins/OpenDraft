@@ -23,6 +23,8 @@ pub const GRIP_SIZE_RANGE: (u32, u32) = (1, 20);
 pub const CROSSHAIR_SIZE_RANGE: (u32, u32) = (1, 100);
 /// Allowed mouse wheel zoom speed, in percent of the normal rate.
 pub const ZOOM_SPEED_RANGE: (u32, u32) = (25, 400);
+/// Every moment `FIELDEVAL` can name: on open, on save, on plot.
+pub const FIELD_EVAL_ALL: u8 = 7;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
@@ -54,6 +56,9 @@ pub struct Settings {
     pub zoom_speed: u32,
     /// Minutes between recovery copies of unsaved drawings; 0 is off.
     pub autosave_minutes: u32,
+    /// When data fields are brought up to date (`FIELDEVAL`): 1 on open,
+    /// 2 on save, 4 on plot.
+    pub field_eval: u8,
     /// The experimental MCP automation endpoint is on. Off by default.
     pub automation_enabled: bool,
     /// Folders automation may open and write files in. Nothing outside
@@ -86,6 +91,7 @@ impl Default for Settings {
             crosshair_color: None,
             zoom_speed: 100,
             autosave_minutes: 2,
+            field_eval: FIELD_EVAL_ALL,
             automation_enabled: false,
             automation_roots: Vec::new(),
             templates_dir: None,
@@ -205,6 +211,7 @@ impl Settings {
         ] {
             *value = (*value).clamp(min, max);
         }
+        self.field_eval &= FIELD_EVAL_ALL;
         // Never both: a saved file with both has ortho win.
         if self.ortho.enabled {
             self.tracking.polar = false;
@@ -333,6 +340,7 @@ mod tests {
             crosshair_color: Some([10, 200, 30]),
             zoom_speed: 250,
             autosave_minutes: 10,
+            field_eval: 2,
             automation_enabled: true,
             automation_roots: vec!["/tmp/a".into(), "C:\\Plans".into()],
             templates_dir: Some("D:\\Templates".into()),

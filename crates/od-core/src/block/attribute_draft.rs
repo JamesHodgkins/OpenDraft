@@ -8,7 +8,7 @@ use crate::block::attribute::{
     normalized_tag, tag_problem, AttributeDefinition, AttributeDefinitionId, AttributeFlags,
     AttributeReference, AttributeText, TextHorizontal, TextVertical,
 };
-use crate::block::{FieldText, Insert};
+use crate::block::{DataField, FieldRun, FieldText, Insert};
 use crate::{Attributes, Point, TextStyleId};
 
 /// How text hangs on its point, from the dialog's list (the entries this
@@ -246,6 +246,9 @@ pub struct EditorRow {
     /// What is shown and edited. A data field is shown and not edited.
     pub value: String,
     pub is_field: bool,
+    /// A data field chosen in the editor to be the value, in place of what
+    /// it held.
+    pub field: Option<DataField>,
     /// Whether no definition of the block stands behind it.
     pub orphan: bool,
     pub text: TextOptions,
@@ -282,6 +285,7 @@ impl EditorDraft {
                     prompt: definition.map_or_else(|| r.tag.clone(), |d| d.prompt.clone()),
                     value: r.value.display(),
                     is_field: r.value.has_fields(),
+                    field: None,
                     orphan: definition.is_none(),
                     text: TextOptions::of(&r.text),
                     look: insert.attribute_attributes(r, own),
@@ -294,6 +298,15 @@ impl EditorDraft {
             rows,
             selected: 0,
             tab: 0,
+        }
+    }
+
+    /// Make `field` the value of the attribute selected.
+    pub fn set_field(&mut self, field: DataField) {
+        if let Some(row) = self.rows.get_mut(self.selected) {
+            row.value = field.display();
+            row.is_field = true;
+            row.field = Some(field);
         }
     }
 
@@ -328,6 +341,9 @@ impl EditorDraft {
             let mut r: AttributeReference = insert.attributes[i].clone();
             if row.value != before.value && !row.is_field {
                 r.value = FieldText::Literal(row.value.clone());
+            }
+            if let Some(field) = &row.field {
+                r.value = FieldText::Runs(vec![FieldRun::Field(field.clone())]);
             }
             if row.text != before.text {
                 row.text.write(&mut r.text);
@@ -501,5 +517,81 @@ mod tests {
         assert_eq!(draft.problem(), None);
         draft.rows[0].text.width_factor = 0.0;
         assert!(draft.problem().unwrap().contains('A'));
+    }
+}
+
+#[cfg(test)]
+mod field_row_tests {
+    use super::*;
+    use crate::block::{BlockDef, BlockEntity, FieldValue};
+    use crate::{Entity, LayerId};
+    use std::sync::Arc;
+
+    fn two_attributes() -> Insert {
+        let def = |id: u64, tag: &str| BlockEntity {
+            entity: Entity::AttributeDefinition(Box::new(
+                DefinitionDraft {
+                    tag: tag.into(),
+                    prompt: tag.into(),
+                    default_value: "d".into(),
+                    ..DefinitionDraft::new(AttributeFlags(0), false, 2.0, TextStyleId::STANDARD)
+                }
+                .definition(AttributeDefinitionId(id), Point::new(0.0, 1.0)),
+            )),
+            attrs: Attributes::on_layer(LayerId::DEFAULT),
+        };
+        let block = Arc::new(BlockDef {
+            unit: Default::default(),
+            id: crate::BlockId(1),
+            name: "Door".into(),
+            base: Point::default(),
+            description: String::new(),
+            entities: vec![def(1, "A"), def(2, "B")],
+        });
+        let mut i = Insert::new(block.clone(), Point::new(5.0, 5.0));
+        i.attributes = block.new_references(|d| d.default_value.clone());
+        i
+    }
+
+    #[test]
+    fn a_field_chosen_for_a_row_becomes_that_attributes_value_and_nothing_else_changes() {
+        let insert = two_attributes();
+        let own = Attributes::on_layer(LayerId::DEFAULT);
+        let mut draft = EditorDraft::new(&insert, &own);
+        draft.selected = 1;
+        draft.set_field(DataField::new(
+            "AcVar",
+            r"\AcVar Title",
+            Some(FieldValue::Text("Plot 7".into())),
+        ));
+        assert!(draft.is_changed());
+        assert_eq!(draft.rows[1].value, "Plot 7");
+        let out = draft.apply(&insert, &own).expect("a change");
+        assert_eq!(out.attributes[1].value.display(), "Plot 7");
+        assert!(out.attributes[1].value.has_fields());
+        assert_eq!(
+            out.attributes[0], insert.attributes[0],
+            "the other is untouched"
+        );
+    }
+
+    #[test]
+    fn a_field_replaces_one_the_row_already_held() {
+        let mut insert = two_attributes();
+        insert.attributes[0].value = FieldText::Runs(vec![FieldRun::Field(DataField::new(
+            "AcVar",
+            "x",
+            Some(FieldValue::Text("old".into())),
+        ))]);
+        let own = Attributes::on_layer(LayerId::DEFAULT);
+        let mut draft = EditorDraft::new(&insert, &own);
+        assert!(draft.rows[0].is_field);
+        draft.set_field(DataField::new(
+            "AcVar",
+            "y",
+            Some(FieldValue::Text("new".into())),
+        ));
+        let out = draft.apply(&insert, &own).unwrap();
+        assert_eq!(out.attributes[0].value.display(), "new");
     }
 }

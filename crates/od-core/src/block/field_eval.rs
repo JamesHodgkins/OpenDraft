@@ -307,6 +307,12 @@ pub fn update_fields(doc: &Document, ids: &[EntityId], context: &FieldContext) -
     update
 }
 
+/// Every data field in the drawing, evaluated (see [`update_fields`]).
+pub fn update_all_fields(doc: &Document, context: &FieldContext) -> FieldUpdate {
+    let ids: Vec<EntityId> = doc.objects().iter().map(|o| o.id).collect();
+    update_fields(doc, &ids, context)
+}
+
 /// `insert` with its attributes' fields evaluated, if that changes it.
 fn update_insert(
     doc: &Document,
@@ -314,6 +320,9 @@ fn update_insert(
     context: &FieldContext,
     update: &mut FieldUpdate,
 ) -> Option<Entity> {
+    if !insert.attributes.iter().any(|r| r.value.has_fields()) {
+        return None;
+    }
     let mut changed = insert.clone();
     let mut touched = false;
     for r in &mut changed.attributes {

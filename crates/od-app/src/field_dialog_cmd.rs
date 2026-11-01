@@ -5,7 +5,7 @@
 //! command-line prompts.
 
 use od_commands::{Answer, Cancelled, Editor, FieldAnswer, Options, Picked};
-use od_core::block::{FieldDraft, ObjectChoice};
+use od_core::block::{DataField, FieldDraft, ObjectChoice};
 use od_core::{Entity, MText};
 
 use crate::defaults::EditorDefaults;
@@ -28,11 +28,13 @@ fn pick_object(ed: &mut Editor) -> Result<Option<ObjectChoice>, Cancelled> {
     }
 }
 
-pub fn insert_field_dialog(ed: &mut Editor) -> Result<(), Cancelled> {
+/// The Field dialog, with object picks, until a field is chosen. Cancel is
+/// `Err(Cancelled)`; the command that asked decides what that means.
+pub(crate) fn choose_field(ed: &mut Editor) -> Result<DataField, Cancelled> {
     let mut draft = FieldDraft::new(true);
-    let field = loop {
+    loop {
         match ed.ask_field_dialog(draft.clone())? {
-            FieldAnswer::Ok(field) => break *field,
+            FieldAnswer::Ok(field) => return Ok(*field),
             FieldAnswer::PickObject(back) => {
                 draft = *back;
                 if let Some(choice) = pick_object(ed)? {
@@ -40,7 +42,11 @@ pub fn insert_field_dialog(ed: &mut Editor) -> Result<(), Cancelled> {
                 }
             }
         }
-    };
+    }
+}
+
+pub fn insert_field_dialog(ed: &mut Editor) -> Result<(), Cancelled> {
+    let field = choose_field(ed)?;
     let at = ed.get_point("Specify start point of multiline text")?;
     let context = field_context(ed);
     let field = ed.read(move |doc| field.evaluated(doc, &context))?;
