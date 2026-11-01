@@ -15,6 +15,7 @@ use crate::{arc, bulge, Document, Entity, EntityId};
 use super::field::{
     DataField, FieldObjectRef, FieldRun, FieldStatus, FieldText, FieldValue, MAX_TEXT_BYTES,
 };
+use super::field_kinds::{apply_case, format_time, FieldTime, DEFAULT_DATE};
 
 /// The evaluator of object properties.
 pub const OBJECT_PROPERTY: &str = "AcObjProp";
@@ -28,6 +29,8 @@ const FILE_NAME: &str = "Filename";
 pub struct FieldContext {
     /// The drawing's file name with its extension; `None` until it is saved.
     pub file_name: Option<String>,
+    /// The time now, in the user's own time zone; `None` if it is not known.
+    pub now: Option<FieldTime>,
 }
 
 /// A property `AcObjProp` can show.
@@ -162,9 +165,7 @@ impl DataField {
 
     /// A field showing the drawing's file name.
     pub fn file_name() -> Self {
-        let mut field = Self::new(VARIABLE, &format!("\\{VARIABLE} {FILE_NAME}"), None);
-        field.status = FieldStatus::Unevaluated;
-        field
+        Self::variable(FILE_NAME, "")
     }
 
     /// The property an `AcObjProp` code names: the word after `).`.
@@ -224,10 +225,23 @@ impl DataField {
             .trim_start_matches('\\')
             .strip_prefix(VARIABLE)
             .map(|rest| rest.split('\\').next().unwrap_or("").trim());
+        let format = self.format_code().unwrap_or("");
         match name {
             Some(n) if n.eq_ignore_ascii_case(FILE_NAME) => context
                 .file_name
-                .clone()
+                .as_deref()
+                .map(|name| apply_case(name, format))
+                .ok_or(FieldStatus::EvaluationFailed),
+            Some(n) if n.eq_ignore_ascii_case("Date") => context
+                .now
+                .map(|t| {
+                    let pattern = if format.is_empty() {
+                        DEFAULT_DATE
+                    } else {
+                        format
+                    };
+                    format_time(&t, pattern)
+                })
                 .ok_or(FieldStatus::EvaluationFailed),
             Some(_) => Err(FieldStatus::Unsupported),
             None => Err(FieldStatus::ParseError),
@@ -453,6 +467,7 @@ mod tests {
         let doc = Document::default();
         let named = FieldContext {
             file_name: Some("plan.odx".into()),
+            ..FieldContext::default()
         };
         let field = DataField::file_name().evaluated(&doc, &named);
         assert_eq!(shown(&field), "plan.odx");
@@ -502,6 +517,7 @@ mod tests {
         let (doc, id) = doc_with(Entity::MText(Box::new(text)));
         let named = FieldContext {
             file_name: Some("plan.odx".into()),
+            ..FieldContext::default()
         };
         let update = update_fields(&doc, &[id], &named);
         assert_eq!((update.found, update.changed, update.failed), (1, 1, 0));
@@ -513,5 +529,55 @@ mod tests {
         let mut again = doc.clone();
         again.replace(id, Entity::MText(after.clone()));
         assert!(update_fields(&again, &[id], &named).edits.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod date_tests {
+    use super::*;
+    use crate::block::field_kinds::FieldTime;
+
+    const T: FieldTime = FieldTime {
+        year: 2026,
+        month: 11,
+        day: 1,
+        weekday: 6,
+        hour: 9,
+        minute: 5,
+        second: 0,
+    };
+
+    fn context(file: Option<&str>) -> FieldContext {
+        FieldContext {
+            file_name: file.map(str::to_owned),
+            now: Some(T),
+        }
+    }
+
+    #[test]
+    fn the_date_field_shows_the_time_now_in_its_format() {
+        let doc = Document::default();
+        let show = |format| {
+            DataField::variable("Date", format)
+                .evaluated(&doc, &context(None))
+                .display()
+        };
+        assert_eq!(show(""), "11/1/2026");
+        assert_eq!(show("yyyy-MM-dd HH:mm"), "2026-11-01 09:05");
+    }
+
+    #[test]
+    fn a_date_without_a_clock_fails_and_keeps_its_value() {
+        let after = DataField::variable("Date", "")
+            .evaluated(&Document::default(), &FieldContext::default());
+        assert_eq!(after.status, FieldStatus::EvaluationFailed);
+    }
+
+    #[test]
+    fn the_file_name_takes_a_case_format() {
+        let shown = DataField::variable("Filename", "%tc1")
+            .evaluated(&Document::default(), &context(Some("plan.odx")))
+            .display();
+        assert_eq!(shown, "PLAN.ODX");
     }
 }

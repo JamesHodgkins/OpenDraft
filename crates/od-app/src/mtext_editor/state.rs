@@ -8,7 +8,8 @@
 use std::ops::Range;
 use std::rc::Rc;
 
-use od_core::text::{plain_text_of, replace_text, CharEdit, TextLayout};
+use od_core::block::FieldContext;
+use od_core::text::{plain_text_of, CharEdit, TextLayout};
 use od_core::{MText, TextStyle};
 
 use super::history::{History, Kind, Snapshot};
@@ -55,6 +56,10 @@ pub struct MTextEditor {
     pub composing: Option<String>,
     /// The Paragraph dialog is open.
     pub paragraph_dialog: bool,
+    /// The Field dialog is open.
+    pub field_dialog: bool,
+    /// What a field may know of the drawing, as of when the editor opened.
+    pub field_context: FieldContext,
     /// The drawing's text object this edit replaces, left out of the drawing
     /// while the draft is shown in its place.
     pub replaces: Option<od_core::EntityId>,
@@ -87,6 +92,8 @@ impl MTextEditor {
             notice: None,
             composing: None,
             paragraph_dialog: false,
+            field_dialog: false,
+            field_context: FieldContext::default(),
             replaces: None,
             pending: CharEdit::default(),
             open_group: None,
@@ -266,34 +273,6 @@ impl MTextEditor {
         self.clear_pending();
     }
 
-    /// Replace `range` with plain `text`, recording the step. Returns whether
-    /// it was done; if not, `notice` says why.
-    fn apply(&mut self, range: Range<usize>, text: &str, kind: Kind, now: f64) -> bool {
-        match replace_text(&self.working.contents, range, text) {
-            Ok(edited) => {
-                let before = self.snapshot();
-                let collapsed = !self.has_selection();
-                self.history.record(before, kind, now, collapsed);
-                self.working.contents = edited.contents;
-                self.layout = self.working.layout(&self.style);
-                let at = Pos {
-                    source: edited.caret,
-                    upstream: false,
-                };
-                self.anchor = at;
-                self.active = at;
-                self.preferred_x = None;
-                self.notice = None;
-                self.clear_pending();
-                true
-            }
-            Err(why) => {
-                self.notice = Some(why.to_string());
-                false
-            }
-        }
-    }
-
     /// Type `text` over the selection (or at the caret). A paragraph break
     /// is a newline in `text`.
     pub fn insert(&mut self, text: &str, now: f64) -> bool {
@@ -423,6 +402,8 @@ impl MTextEditor {
     }
 }
 
+mod apply;
+mod field;
 mod formatting;
 #[cfg(test)]
 mod formatting_tests;

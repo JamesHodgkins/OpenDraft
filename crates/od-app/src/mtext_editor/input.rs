@@ -157,6 +157,7 @@ fn key_pressed(editor: &mut MTextEditor, key: Key, m: Modifiers, now: f64, done:
             editor.select_all();
             done.touched = true;
         }
+        Key::F if m.command => editor.field_dialog = !editor.field_dialog,
         Key::Z if m.command && m.shift => done.touched |= editor.redo(),
         Key::Z if m.command => done.touched |= editor.undo(),
         Key::Y if m.command => done.touched |= editor.redo(),

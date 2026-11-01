@@ -222,6 +222,12 @@ fn top_row(
     if paragraph.clicked() {
         editor.paragraph_dialog = !editor.paragraph_dialog;
     }
+    let field = ui
+        .selectable_label(editor.field_dialog, "Field")
+        .on_hover_text("Insert a data field (Ctrl+F)");
+    if field.clicked() {
+        editor.field_dialog = !editor.field_dialog;
+    }
     ui.separator();
     if ui.button("OK").on_hover_text("Ctrl+Enter").clicked() {
         outcome = Some(Outcome::Accept);

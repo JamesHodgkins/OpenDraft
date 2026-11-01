@@ -235,6 +235,7 @@ mod tests {
         t.fields = vec![DataField::file_name()];
         let ctx = FieldContext {
             file_name: Some("plan.odx".into()),
+            ..FieldContext::default()
         };
         let after = t.evaluated(&Document::default(), &ctx);
         assert_eq!(after.contents, t.contents);

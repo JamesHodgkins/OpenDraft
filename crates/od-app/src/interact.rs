@@ -13,7 +13,6 @@ use od_canvas::PointPrompt;
 use od_commands::{
     Cancelled, Context, Editor, GhostStyle, Outcome, Prompt as Ask, Reply, Runner, Wants,
 };
-use od_core::block::FieldContext;
 use od_core::Point;
 
 use crate::cmdline::{CmdOption, Prompt};
@@ -39,17 +38,10 @@ impl AppState {
         self.end_sysvar_prompt();
         self.command_serial += 1;
         let pickset = self.docs[self.active].selection.iter().copied().collect();
-        let fields = FieldContext {
-            file_name: self.docs[self.active]
-                .path
-                .as_deref()
-                .and_then(|p| p.file_name())
-                .map(|n| n.to_string_lossy().into_owned()),
-        };
         let context = Context::default()
             .with(Arc::clone(self.defaults()))
             .with(Arc::clone(&self.block_requests))
-            .with(Arc::new(fields));
+            .with(Arc::new(self.field_context()));
         self.runner = Some(Runner::start_with(name, pickset, context, command));
         self.run_doc = self.active;
         self.pump_command();

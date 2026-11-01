@@ -15,6 +15,7 @@ impl AppState {
             .waiting()
             .filter(|ask| ask.wants == Wants::MTextEditor)
             .and_then(|ask| ask.mtext.clone().map(|text| (text, ask.mtext_of)));
+        let fields = self.field_context();
         let Some(doc) = self.docs.get_mut(self.run_doc) else {
             return;
         };
@@ -28,6 +29,7 @@ impl AppState {
                     .unwrap_or_else(TextStyle::standard);
                 let mut editor = MTextEditor::new(*text, style);
                 editor.replaces = of;
+                editor.field_context = fields;
                 doc.mtext_editor = Some(editor);
             }
             None => doc.mtext_editor = None,
@@ -54,7 +56,8 @@ impl AppState {
         };
         match outcome {
             Outcome::Accept => {
-                let text = editor.text().clone();
+                let mut text = editor.text().clone();
+                text.prune_fields();
                 let keep = editor.is_changed() && !text.contents.trim().is_empty();
                 self.answer_mtext(keep.then_some(text));
             }
