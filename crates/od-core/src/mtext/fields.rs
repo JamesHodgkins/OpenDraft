@@ -74,6 +74,16 @@ impl MText {
             .collect()
     }
 
+    /// Where each field shows in the contents: the byte range of every
+    /// marker that names a field.
+    pub fn field_spans(&self) -> Vec<std::ops::Range<usize>> {
+        self.markers()
+            .into_iter()
+            .filter(|(_, index)| index.is_some())
+            .map(|(range, _)| range)
+            .collect()
+    }
+
     /// Drop the fields no marker names and number the rest in the order they
     /// first appear. Markers that name no field are left as they are.
     pub fn prune_fields(&mut self) {
@@ -187,6 +197,15 @@ mod tests {
         assert_eq!(t.contents, format!("a{}b", marker(0)));
         assert_eq!(t.field_values(), ["F"]);
         assert_eq!(t.insert_field(99, shown("G")), None, "past the end");
+    }
+
+    #[test]
+    fn field_spans_are_the_markers_that_name_a_field() {
+        let mut t = text(&format!("a{}b{}", marker(0), marker(5)));
+        t.fields = vec![shown("x")];
+        let spans = t.field_spans();
+        assert_eq!(spans.len(), 1, "the marker for no field is not a field");
+        assert_eq!(&t.contents[spans[0].clone()], marker(0));
     }
 
     #[test]

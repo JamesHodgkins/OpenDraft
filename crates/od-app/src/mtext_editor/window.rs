@@ -6,7 +6,7 @@
 use eframe::egui::{self, Color32, Pos2, Rect, Sense, Shape, Stroke};
 use od_canvas::{paint_text, Camera, CanvasStyle};
 use od_core::aci::aci_rgb;
-use od_core::text::{TextColor, TextLayout};
+use od_core::text::{SelectionRect, TextColor, TextLayout};
 use od_core::MText;
 use od_ui::Theme;
 
@@ -154,20 +154,31 @@ pub fn show(
         Stroke::new(1.0_f32, style.selected),
     ));
     super::box_handles::paint(&painter, editor, camera, canvas, pad, style.selected);
-    let (from, to) = editor.selection();
-    let highlight = style.selected.gamma_multiply(0.45);
-    for r in layout.selection_rects(from, to) {
-        let quad = [
-            (r.x0, r.top),
-            (r.x1, r.top),
-            (r.x1, r.bottom),
-            (r.x0, r.bottom),
-        ]
-        .iter()
-        .map(|&(x, y)| to_screen(x, y))
-        .collect();
-        painter.add(Shape::convex_polygon(quad, highlight, Stroke::NONE));
+    let fill = |rects: Vec<SelectionRect>, colour: Color32| {
+        for r in rects {
+            let quad = [
+                (r.x0, r.top),
+                (r.x1, r.top),
+                (r.x1, r.bottom),
+                (r.x0, r.bottom),
+            ]
+            .iter()
+            .map(|&(x, y)| to_screen(x, y))
+            .collect();
+            painter.add(Shape::convex_polygon(quad, colour, Stroke::NONE));
+        }
+    };
+    // A data field sits on a translucent grey block, so it can be told from
+    // typed text; the selection is drawn over it.
+    let grey = fg.gamma_multiply(0.22);
+    for span in text.field_spans() {
+        fill(layout.selection_rects(span.start, span.end), grey);
     }
+    let (from, to) = editor.selection();
+    fill(
+        layout.selection_rects(from, to),
+        style.selected.gamma_multiply(0.45),
+    );
     let color = |c: TextColor| match c {
         TextColor::Entity | TextColor::Aci(7) => fg,
         TextColor::Aci(n) => {
