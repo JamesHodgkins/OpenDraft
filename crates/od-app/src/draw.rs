@@ -11,6 +11,20 @@ pub(crate) fn line(start: Point, end: Point) -> Entity {
     Entity::Line { start, end }
 }
 
+/// The straight path through `points`, for a prompt to snap to while the
+/// command that placed them still holds them back. Nothing before two points.
+pub(crate) fn path_through(points: &[Point]) -> Vec<Entity> {
+    if points.len() < 2 {
+        return Vec::new();
+    }
+    vec![Entity::Polyline {
+        points: points.to_vec(),
+        closed: false,
+        bulges: Vec::new(),
+        widths: Vec::new(),
+    }]
+}
+
 pub(crate) fn distance(a: Point, b: Point) -> f64 {
     (b.x - a.x).hypot(b.y - a.y)
 }
