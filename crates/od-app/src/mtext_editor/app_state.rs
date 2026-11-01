@@ -2,6 +2,7 @@
 //! waits for it, and closes by answering that command or cancelling it.
 
 use od_commands::{Reply, Wants};
+use od_core::block::ObjectChoice;
 use od_core::{MText, TextStyle};
 
 use super::{MTextEditor, Outcome};
@@ -62,6 +63,30 @@ impl AppState {
                 self.answer_mtext(keep.then_some(text));
             }
             Outcome::Cancel => self.cancel_command(),
+        }
+    }
+
+    /// A click while an object is being picked for a field in the open text
+    /// editor: the object becomes the dialog's, which then shows again. A
+    /// click on nothing keeps waiting.
+    pub(crate) fn answer_field_pick(&mut self, picked: Option<od_core::EntityId>) {
+        let context = self.field_context();
+        let Some(doc) = self.docs.get_mut(self.run_doc) else {
+            return;
+        };
+        let (Some(editor), Some(id)) = (doc.mtext_editor.as_mut().filter(|e| e.field_pick), picked)
+        else {
+            return;
+        };
+        match ObjectChoice::of(doc.session.document(), id, &context) {
+            Some(choice) if !choice.properties.is_empty() => {
+                editor.field_object = Some(choice);
+                editor.field_pick = false;
+                editor.notice = None;
+            }
+            _ => {
+                editor.notice = Some("That object has no property a field can show.".into());
+            }
         }
     }
 

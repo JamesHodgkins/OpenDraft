@@ -112,6 +112,7 @@ impl OpenDraftApp {
             } else {
                 self.state.answer_point(at);
                 self.state.answer_object(at, picked, pick_shift);
+                self.state.answer_field_pick(picked);
             }
         }
         if refused {
@@ -259,8 +260,10 @@ impl PanelViewer<'_> {
         doc.view.set_wheel_through_exclusions(editing);
         doc.view
             .set_hidden_entity(doc.mtext_editor.as_ref().and_then(|e| e.replaces));
-        if editing {
-            // The editor owns the pointer over the drawing.
+        let picking = doc.mtext_editor.as_ref().is_some_and(|e| e.field_pick);
+        if editing && !picking {
+            // The editor owns the pointer over the drawing, except while the
+            // user picks an object for a field.
             doc.view
                 .set_input_exclusions(vec![ui.available_rect_before_wrap()]);
         }

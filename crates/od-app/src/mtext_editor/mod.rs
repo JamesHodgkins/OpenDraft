@@ -5,6 +5,8 @@
 mod app_state;
 mod box_handles;
 mod field_dialog;
+#[cfg(test)]
+mod field_pick_tests;
 mod history;
 mod input;
 mod paragraph_dialog;

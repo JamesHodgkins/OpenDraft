@@ -8,7 +8,7 @@
 use std::ops::Range;
 use std::rc::Rc;
 
-use od_core::block::FieldContext;
+use od_core::block::{FieldContext, ObjectChoice};
 use od_core::text::{plain_text_of, CharEdit, TextLayout};
 use od_core::{MText, TextStyle};
 
@@ -58,6 +58,11 @@ pub struct MTextEditor {
     pub paragraph_dialog: bool,
     /// The Field dialog is open.
     pub field_dialog: bool,
+    /// The user is picking an object for an object field: the dialog is
+    /// hidden and the next click on an object is the answer.
+    pub field_pick: bool,
+    /// The object picked, until the dialog takes it.
+    pub field_object: Option<ObjectChoice>,
     /// What a field may know of the drawing, as of when the editor opened.
     pub field_context: FieldContext,
     /// The drawing's text object this edit replaces, left out of the drawing
@@ -93,6 +98,8 @@ impl MTextEditor {
             composing: None,
             paragraph_dialog: false,
             field_dialog: false,
+            field_pick: false,
+            field_object: None,
             field_context: FieldContext::default(),
             replaces: None,
             pending: CharEdit::default(),
