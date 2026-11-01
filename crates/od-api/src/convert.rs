@@ -59,6 +59,7 @@ pub fn is_writable(entity: &Entity) -> bool {
         | Entity::MLeader(_)
         | Entity::Leader(_)
         | Entity::Insert(_)
+        | Entity::AttributeDefinition(_)
         | Entity::Hatch(_) => false,
     }
 }

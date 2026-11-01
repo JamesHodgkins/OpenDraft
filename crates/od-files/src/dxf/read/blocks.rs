@@ -7,6 +7,7 @@
 
 use std::collections::HashMap;
 
+use od_core::block::AttributeReference;
 use od_core::{Entity, Point};
 
 use super::layouts::Spaces;
@@ -31,11 +32,37 @@ pub(super) struct BlockReading {
     unread: HashMap<String, Unread>,
     anonymous_references: u64,
     external_references: u64,
+    /// The block table's insert units, by lower-cased name.
+    units: HashMap<String, od_core::InsertUnits>,
+    /// Inserts waiting for their attributes.
+    pub(super) attributes: super::attribute::Reading,
+}
+
+impl Importer {
+    /// A record of the TABLES section that is read: a layer, a linetype or
+    /// a block record, each only in its own table.
+    pub(super) fn table_record(&mut self, record: &Record, section: &str, table: &str) {
+        match (record.name.as_str(), section, table) {
+            ("LAYER", "TABLES", "LAYER") => self.layer_record(record),
+            ("LTYPE", "TABLES", "LTYPE") => self.linetype_record(record),
+            ("BLOCK_RECORD", "TABLES", "BLOCK_RECORD") => self.blocks.table_record(record),
+            _ => {}
+        }
+    }
 }
 
 impl BlockReading {
+    /// A BLOCK_RECORD of the block table: what units its block is in.
+    pub(super) fn table_record(&mut self, record: &Record) {
+        let units = record.int(70).and_then(od_core::InsertUnits::from_code);
+        if let (Some(name), Some(units)) = (record.text(2), units) {
+            self.units.insert(decode(name).to_lowercase(), units);
+        }
+    }
+
     pub(super) fn warnings(&self) -> Vec<String> {
         let mut out = self.built.warnings();
+        out.extend(self.attributes.warnings());
         if self.anonymous_references > 0 {
             out.push(block_import::anonymous_references(
                 self.anonymous_references,
@@ -81,17 +108,20 @@ impl Importer {
                     } else if flags & 1 != 0 || name.starts_with('*') {
                         self.blocks.unread.insert(key, Unread::Anonymous);
                     } else {
+                        let unit = self.blocks.units.get(&key).copied().unwrap_or_default();
                         current = Some(PendingBlock {
                             key,
                             name,
                             base: Self::point(record, 10, 20).unwrap_or(Point::new(0.0, 0.0)),
                             description: decode(record.text(4).unwrap_or("")),
+                            unit,
                             items: Vec::new(),
                         });
                         self.blocks.collecting = Some(Vec::new());
                     }
                 }
                 "ENDBLK" => {
+                    self.drop_open_insert();
                     if let Some(mut block) = current.take() {
                         block.items = self.blocks.collecting.take().unwrap_or_default();
                         pending.push(block);
@@ -108,31 +138,42 @@ impl Importer {
     /// An INSERT entity. One with rows or columns (a MINSERT array) is
     /// skipped; the ATTRIB records that may follow it are skipped on their own.
     pub(super) fn insert(&mut self, record: &Record) {
+        self.drop_open_insert();
         let columns = record.int(70).unwrap_or(1);
         let rows = record.int(71).unwrap_or(1);
         if columns > 1 || rows > 1 {
             self.skip("INSERT (array)");
             return;
         }
-        let Some(insertion) = Self::point(record, 10, 20) else {
+        if Self::point(record, 10, 20).is_none() {
             self.damaged += 1;
             return;
-        };
+        }
         let key = decode(record.text(2).unwrap_or("")).to_lowercase();
         match self.blocks.unread.get(&key) {
             Some(Unread::Anonymous) => self.blocks.anonymous_references += 1,
             Some(Unread::External) => self.blocks.external_references += 1,
-            None => {
-                let insert = PendingInsert {
-                    block: key,
-                    insertion,
-                    scale_x: record.number(41).unwrap_or(1.0),
-                    scale_y: record.number(42).unwrap_or(1.0),
-                    rotation: record.number(50).unwrap_or(0.0).to_radians(),
-                };
-                self.add_item(record, Item::Insert(insert));
-            }
+            None if record.int(66) == Some(1) => self.open_insert(record),
+            None => self.place_insert(record, Vec::new()),
         }
+    }
+
+    /// Places an INSERT with the attributes that followed it (in the file's
+    /// coordinates; `block_import` brings them into the block's).
+    pub(super) fn place_insert(&mut self, record: &Record, attributes: Vec<AttributeReference>) {
+        let Some(insertion) = Self::point(record, 10, 20) else {
+            self.damaged += 1;
+            return;
+        };
+        let insert = PendingInsert {
+            block: decode(record.text(2).unwrap_or("")).to_lowercase(),
+            insertion,
+            scale_x: record.number(41).unwrap_or(1.0),
+            scale_y: record.number(42).unwrap_or(1.0),
+            rotation: record.number(50).unwrap_or(0.0).to_radians(),
+            attributes,
+        };
+        self.add_item(record, Item::Insert(insert));
     }
 
     /// Whether a block definition is being read (its objects go to it).

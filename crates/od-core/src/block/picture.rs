@@ -9,6 +9,7 @@
 //! the average size.
 
 use crate::block::affine::Similarity;
+use crate::block::attribute::traits_of;
 use crate::block::{inherited, Affine, BlockEntity, Insert, MAX_EXPANSION, MAX_NESTING};
 use crate::{bulge, Attributes, Bounds, Ellipse, Entity, LayerId, LayerLook, Point};
 
@@ -25,6 +26,17 @@ struct Walk<'a> {
     look: &'a dyn Fn(LayerId) -> LayerLook,
     budget: &'a mut usize,
     out: &'a mut Vec<Piece>,
+}
+
+impl Walk<'_> {
+    /// `entity` under `map`, with `attrs`.
+    fn push(&mut self, entity: &Entity, map: &Affine, attrs: &Attributes) {
+        self.out
+            .extend(mapped(entity, map).into_iter().map(|entity| Piece {
+                entity,
+                attrs: attrs.clone(),
+            }));
+    }
 }
 
 /// How closely curves are followed when an uneven scale turns them into
@@ -81,6 +93,14 @@ impl Insert {
                 Entity::Insert(nested) => {
                     nested.expand(&map, &child_attrs, depth - 1, walk);
                 }
+                // A constant attribute is drawn by every insert as its
+                // value; any other is drawn from the insert's own references.
+                Entity::AttributeDefinition(d) => {
+                    if d.flags.constant() && !d.flags.invisible() {
+                        let text = Entity::MText(Box::new(d.value_view()));
+                        walk.push(&text, &map, &child_attrs);
+                    }
+                }
                 entity => walk
                     .out
                     .extend(mapped(entity, &map).into_iter().map(|entity| Piece {
@@ -88,6 +108,15 @@ impl Insert {
                         attrs: child_attrs.clone(),
                     })),
             }
+        }
+        for r in self.attributes.iter().filter(|r| !r.flags.invisible()) {
+            if *walk.budget == 0 {
+                return;
+            }
+            *walk.budget -= 1;
+            let own = traits_of(&self.block, r, attrs);
+            let text = Entity::MText(Box::new(r.view()));
+            walk.push(&text, &map, &inherited(own, attrs, walk.look));
         }
     }
 
@@ -111,6 +140,18 @@ impl Insert {
             };
             let parts = match &child.entity {
                 Entity::Insert(nested) if !even => nested.picture_with(&own, look),
+                // A constant attribute becomes its value; any other is
+                // replaced by the insert's references below.
+                Entity::AttributeDefinition(d) => {
+                    if d.flags.constant() && !d.flags.invisible() {
+                        vec![Piece {
+                            entity: Entity::MText(Box::new(d.value_view())),
+                            attrs: own,
+                        }]
+                    } else {
+                        Vec::new()
+                    }
+                }
                 entity => vec![Piece {
                     entity: entity.clone(),
                     attrs: own,
@@ -126,6 +167,18 @@ impl Insert {
                         }),
                 );
             }
+        }
+        for r in self.attributes.iter().filter(|r| !r.flags.invisible()) {
+            let own = traits_of(&self.block, r, attrs);
+            let own = Attributes {
+                layer: own.layer,
+                ..inherited(own, attrs, look)
+            };
+            let text = Entity::MText(Box::new(r.view()));
+            out.extend(mapped(&text, &map).into_iter().map(|entity| BlockEntity {
+                entity,
+                attrs: own.clone(),
+            }));
         }
         out
     }
@@ -232,6 +285,7 @@ fn uneven(entity: &Entity, map: &Affine) -> Vec<Entity> {
         Entity::Dimension(d) => d.picture().iter().flat_map(|p| uneven(p, map)).collect(),
         Entity::MLeader(m) => m.picture().iter().flat_map(|p| uneven(p, map)).collect(),
         Entity::Leader(l) => l.picture().iter().flat_map(|p| uneven(p, map)).collect(),
+        Entity::AttributeDefinition(d) => uneven(&Entity::MText(Box::new(d.tag_view())), map),
         Entity::MText(_) => {
             // Text keeps its shape: placed and turned with the map's x axis,
             // at its average size.

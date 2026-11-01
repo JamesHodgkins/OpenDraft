@@ -83,8 +83,10 @@ impl Document {
     /// Whether any object is on the layer, including the objects inside
     /// block definitions.
     pub fn layer_in_use(&self, id: LayerId) -> bool {
-        self.objects.iter().any(|o| o.attrs.layer == id)
-            || self.blocks.iter().any(|b| b.uses_layer(id))
+        self.objects.iter().any(|o| {
+            o.attrs.layer == id
+                || matches!(&o.entity, crate::Entity::Insert(i) if i.uses_layer_for_attributes(id))
+        }) || self.blocks.iter().any(|b| b.uses_layer(id))
     }
 
     /// Why a layer cannot be deleted, or `None` when it can.

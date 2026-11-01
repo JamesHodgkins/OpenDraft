@@ -60,7 +60,8 @@ impl Document {
             .filter(|b| b.id != id && work.block(b.id).is_none_or(|known| **known != ***b))
             .map(|b| (**b).clone())
             .collect();
-        defs.push(BlockDef {
+        let mut edited = BlockDef {
+            unit: old.unit,
             id,
             name: old.name.clone(),
             base: Point::default(),
@@ -72,7 +73,10 @@ impl Document {
                     attrs: o.attrs.clone(),
                 })
                 .collect(),
-        });
+        };
+        // A copied definition arrives with its original's id.
+        edited.renumber_duplicate_attributes(|| work.allocate_attribute_definition_id());
+        defs.push(edited);
         for def in defs {
             let change = work.redefined_blocks(def)?;
             work.set_blocks(change.blocks);

@@ -51,13 +51,29 @@ impl Document {
             .iter()
             .map(|l| (l.linetype, LinetypeUse::Layer(l)));
         let new_objects = set(self.new_object_style().1).map(|id| (id, LinetypeUse::NewObjects));
-        let objects = self
-            .objects()
-            .iter()
-            .filter_map(move |o| set(&o.attrs.linetype).map(|id| (id, LinetypeUse::Object(o))));
+        // An insert holds the linetypes of its attributes' own properties.
+        let held = move |entity: &crate::Entity| -> Vec<LinetypeId> {
+            match entity {
+                crate::Entity::Insert(i) => i
+                    .attributes
+                    .iter()
+                    .filter_map(|r| r.attrs.as_ref().and_then(|a| set(&a.linetype)))
+                    .collect(),
+                _ => Vec::new(),
+            }
+        };
+        let objects = self.objects().iter().flat_map(move |o| {
+            set(&o.attrs.linetype)
+                .into_iter()
+                .chain(held(&o.entity))
+                .map(move |id| (id, LinetypeUse::Object(o)))
+        });
         let blocks = self.blocks().iter().flat_map(move |b| {
-            b.entities.iter().filter_map(move |e| {
-                set(&e.attrs.linetype).map(|id| (id, LinetypeUse::BlockObject(b)))
+            b.entities.iter().flat_map(move |e| {
+                set(&e.attrs.linetype)
+                    .into_iter()
+                    .chain(held(&e.entity))
+                    .map(move |id| (id, LinetypeUse::BlockObject(b)))
             })
         });
         let styles = self.mleader_styles().iter().filter_map(move |s| {
@@ -160,6 +176,7 @@ mod tests {
         doc.add(circle()); // takes the new-object style, DOT
         let id = doc.allocate_block_id();
         doc.push_block(Arc::new(BlockDef {
+            unit: Default::default(),
             id,
             name: "B".to_owned(),
             base: Point::new(0.0, 0.0),

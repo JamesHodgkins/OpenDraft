@@ -108,7 +108,8 @@ impl AngleFormat {
 }
 
 /// What one drawing unit is when content is inserted (`INSUNITS`), with
-/// AutoCAD's codes. Informational: no scaling is done with it yet.
+/// AutoCAD's codes. A block inserted from other units is scaled by the ratio
+/// ([`InsertUnits::ratio`]).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct InsertUnits(u8);
 
@@ -163,6 +164,44 @@ impl InsertUnits {
 
     pub fn label(self) -> &'static str {
         INSERT_LABELS[usize::from(self.0)]
+    }
+
+    /// The length of one unit in metres; none for unitless.
+    pub fn metres(self) -> Option<f64> {
+        const METRES: [f64; 21] = [
+            0.0,
+            0.0254,
+            0.3048,
+            1609.344,
+            0.001,
+            0.01,
+            1.0,
+            1000.0,
+            2.54e-8,
+            2.54e-5,
+            0.9144,
+            1.0e-10,
+            1.0e-9,
+            1.0e-6,
+            0.1,
+            10.0,
+            100.0,
+            1.0e9,
+            1.495_978_707e11,
+            9.460_730_472_580_8e15,
+            3.085_677_581_491_367e16,
+        ];
+        let m = METRES[usize::from(self.0)];
+        (m > 0.0).then_some(m)
+    }
+
+    /// How much to scale content in `from` units to read the same length in
+    /// `to` units; 1 when either is unitless.
+    pub fn ratio(from: Self, to: Self) -> f64 {
+        match (from.metres(), to.metres()) {
+            (Some(a), Some(b)) => a / b,
+            _ => 1.0,
+        }
     }
 
     /// `mm`, `ft`...; empty for unitless.
@@ -281,6 +320,21 @@ impl Units {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn units_convert_by_their_length_in_metres() {
+        let (mm, m, ft) = (
+            InsertUnits::from_code(4).unwrap(),
+            InsertUnits::from_code(6).unwrap(),
+            InsertUnits::from_code(2).unwrap(),
+        );
+        assert!((InsertUnits::ratio(mm, m) - 0.001).abs() < 1e-12);
+        assert!((InsertUnits::ratio(m, mm) - 1000.0).abs() < 1e-9);
+        assert!((InsertUnits::ratio(ft, mm) - 304.8).abs() < 1e-9);
+        assert_eq!(InsertUnits::ratio(InsertUnits::UNITLESS, m), 1.0);
+        assert_eq!(InsertUnits::ratio(mm, InsertUnits::UNITLESS), 1.0);
+        assert!(InsertUnits::all().skip(1).all(|u| u.metres().is_some()));
+    }
 
     #[test]
     fn codes_match_autocad() {

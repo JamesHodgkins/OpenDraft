@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 pub use crate::entity_bounds::BoundsDto;
 use crate::entity_dimensions;
 use crate::entity_leaders;
-use crate::limits::STRING_BYTES_MAX;
+use crate::limits::{POINTS_PER_ENTITY_MAX, STRING_BYTES_MAX};
 use crate::WireId;
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
@@ -119,6 +119,23 @@ pub enum GeometryDto {
         scale_x: f64,
         scale_y: f64,
         rotation: f64,
+        /// The values of the block's attributes, in definition order.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        attributes: Vec<AttributeValueDto>,
+    },
+    /// A template text in a block: what an insert asks for and shows.
+    AttributeDefinition {
+        tag: String,
+        prompt: String,
+        /// The default as displayed (untrusted drawing text).
+        default_value: String,
+        constant: bool,
+        invisible: bool,
+        verify: bool,
+        preset: bool,
+        position: PointDto,
+        height: f64,
+        rotation: f64,
     },
     /// A summary: its defining points by name, and the text mode.
     Dimension {
@@ -150,6 +167,18 @@ pub enum GeometryDto {
         associative: bool,
         elevation: f64,
     },
+}
+
+/// One attribute of a block reference.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct AttributeValueDto {
+    pub tag: String,
+    /// The value as displayed (untrusted drawing text); a data field shows
+    /// its last value.
+    pub value: String,
+    pub invisible: bool,
+    /// Whether the value comes from a data field.
+    pub field: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
@@ -354,6 +383,29 @@ pub fn geometry_dto(entity: &Entity) -> GeometryDto {
             scale_x: num(i.scale_x),
             scale_y: num(i.scale_y),
             rotation: num(i.rotation),
+            attributes: i
+                .attributes
+                .iter()
+                .take(POINTS_PER_ENTITY_MAX)
+                .map(|r| AttributeValueDto {
+                    tag: bounded(&r.tag).0,
+                    value: bounded(&r.value.display()).0,
+                    invisible: r.flags.invisible(),
+                    field: r.value.has_fields(),
+                })
+                .collect(),
+        },
+        Entity::AttributeDefinition(d) => GeometryDto::AttributeDefinition {
+            tag: bounded(&d.tag).0,
+            prompt: bounded(&d.prompt).0,
+            default_value: bounded(&d.default_value.display()).0,
+            constant: d.flags.constant(),
+            invisible: d.flags.invisible(),
+            verify: d.flags.verify(),
+            preset: d.flags.preset(),
+            position: d.text.position.into(),
+            height: num(d.text.height),
+            rotation: num(d.text.rotation),
         },
         Entity::Dimension(d) => entity_dimensions::geometry(d),
         Entity::Leader(l) => entity_leaders::leader(l),

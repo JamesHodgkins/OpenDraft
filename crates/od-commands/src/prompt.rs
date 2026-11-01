@@ -4,6 +4,8 @@
 use std::fmt;
 use std::sync::Arc;
 
+use od_core::block::attribute_draft::{DefinitionDraft, EditorDraft};
+use od_core::block::block_draft::BlockDraft;
 use od_core::{overkill, Entity, EntityId, MText, Point};
 
 /// The user cancelled (Esc), or the command was abandoned. Commands pass it up
@@ -90,6 +92,10 @@ pub struct Options<T> {
     /// For an object prompt: objects on locked layers may be picked too, as
     /// LAYULK needs.
     pub pick_locked: bool,
+    /// Esc steps back out of this prompt (it answers [`Reply::Back`], and the
+    /// ask fails with `Cancelled`) without ending the command, for a command
+    /// that returns to a dialog.
+    pub esc_backs: bool,
 }
 
 pub type PointOptions = Options<Point>;
@@ -111,6 +117,7 @@ impl<T> Options<T> {
             marker: None,
             allow_empty: false,
             pick_locked: false,
+            esc_backs: false,
         }
     }
 
@@ -161,6 +168,13 @@ impl<T> Options<T> {
     /// Let a selection prompt be answered with nothing selected.
     pub fn allow_empty(mut self) -> Self {
         self.allow_empty = true;
+        self
+    }
+
+    /// Let Esc step back out of the prompt instead of ending the command
+    /// (see [`Options::esc_backs`]).
+    pub fn esc_backs(mut self) -> Self {
+        self.esc_backs = true;
         self
     }
 
@@ -223,6 +237,13 @@ pub enum Wants {
     /// The OVERKILL settings dialog, opened on [`Prompt::overkill`]; the
     /// answer is the settings it was closed with.
     OverkillDialog,
+    /// The Attribute Definition dialog, opened on
+    /// [`Prompt::attribute_definition`].
+    AttributeDefinitionDialog,
+    /// The Attribute Editor, opened on [`Prompt::attribute_editor`].
+    AttributeEditorDialog,
+    /// The Block Definition dialog, opened on [`Prompt::block_dialog`].
+    BlockDialog,
 }
 
 /// The default a prompt offers, left as a value so the UI can write it in the
@@ -256,6 +277,8 @@ pub struct Prompt {
     pub allow_empty: bool,
     /// See [`Options::pick_locked`].
     pub pick_locked: bool,
+    /// See [`Options::esc_backs`].
+    pub esc_backs: bool,
     /// For [`Wants::MTextEditor`]: the text to edit.
     pub mtext: Option<Box<MText>>,
     /// For [`Wants::MTextEditor`]: the text object being edited, if there is
@@ -263,6 +286,12 @@ pub struct Prompt {
     pub mtext_of: Option<EntityId>,
     /// For [`Wants::OverkillDialog`]: the settings to start from.
     pub overkill: Option<overkill::Settings>,
+    /// For [`Wants::AttributeDefinitionDialog`]: what it opens with.
+    pub attribute_definition: Option<Box<DefinitionDraft>>,
+    /// For [`Wants::AttributeEditorDialog`]: what it opens with.
+    pub attribute_editor: Option<Box<EditorDraft>>,
+    /// For [`Wants::BlockDialog`]: what it opens with.
+    pub block_dialog: Option<Box<BlockDraft>>,
 }
 
 impl Prompt {
@@ -281,11 +310,24 @@ impl Prompt {
             default_hint: hint,
             allow_empty: options.allow_empty,
             pick_locked: options.pick_locked,
+            esc_backs: options.esc_backs,
             mtext: None,
             mtext_of: None,
             overkill: None,
+            attribute_definition: None,
+            attribute_editor: None,
+            block_dialog: None,
         }
     }
+}
+
+/// The button that closed the Block Definition dialog. The pick buttons hide
+/// it while the user picks in the drawing, and it opens again.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BlockDialogButton {
+    Ok,
+    PickPoint,
+    SelectObjects,
 }
 
 /// What the UI sends back.
@@ -298,6 +340,15 @@ pub enum Reply {
     MText(Box<MText>),
     /// The settings the OVERKILL dialog was closed with.
     Overkill(overkill::Settings),
+    /// The Attribute Definition dialog, accepted.
+    AttributeDefinition(Box<DefinitionDraft>),
+    /// The Attribute Editor: what it holds, and whether it is
+    /// closing (OK) or staying open (Apply).
+    AttributeEditor(Box<EditorDraft>, bool),
+    /// The Attribute Editor, closed to choose another block reference.
+    AttributeEditorSelect(Box<EditorDraft>),
+    /// The Block Definition dialog, closed by a button.
+    BlockDialog(Box<BlockDraft>, BlockDialogButton),
     /// The label of a chosen keyword.
     Keyword(String),
     Selection(Vec<EntityId>),
@@ -310,6 +361,9 @@ pub enum Reply {
     /// Enter with nothing typed.
     Enter,
     Cancel,
+    /// Esc at a prompt that asked for [`Options::esc_backs`]: that ask fails
+    /// with `Cancelled`, and the command goes on.
+    Back,
 }
 
 /// The answer to `Editor::ask_object`: the object that was clicked, the point

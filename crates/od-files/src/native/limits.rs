@@ -17,6 +17,10 @@ pub(super) const TABLE_ROWS: usize = 100_000;
 pub(super) const BLOCK_OBJECTS: usize = 1_000_000;
 /// Points, bulges, widths and edges of one shape.
 pub(super) const VERTICES: usize = 1_000_000;
+/// Runs, fields, children and references in the text of one attribute.
+pub(super) const FIELD_ITEMS: usize = 4096;
+/// Bytes of data a field has cached.
+pub(super) const CACHED_BYTES: usize = 1024 * 1024;
 
 struct Bounded<T> {
     max: usize,
@@ -81,6 +85,16 @@ pub(super) fn vertices<'de, D: Deserializer<'de>, T: Deserialize<'de>>(
     d: D,
 ) -> Result<Vec<T>, D::Error> {
     bounded(d, VERTICES, "points in a shape")
+}
+
+pub(super) fn field_items<'de, D: Deserializer<'de>, T: Deserialize<'de>>(
+    d: D,
+) -> Result<Vec<T>, D::Error> {
+    bounded(d, FIELD_ITEMS, "parts of a field")
+}
+
+pub(super) fn cached_bytes<'de, D: Deserializer<'de>>(d: D) -> Result<Vec<u8>, D::Error> {
+    bounded(d, CACHED_BYTES, "bytes of cached field data")
 }
 
 #[cfg(test)]

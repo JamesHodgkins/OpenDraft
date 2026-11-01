@@ -80,6 +80,9 @@ impl Entity {
             Entity::MLeader(m) => Entity::MLeader(Box::new(m.translated(dx, dy))),
             Entity::Leader(l) => Entity::Leader(Box::new(l.translated(dx, dy))),
             Entity::Insert(i) => Entity::Insert(Box::new(i.translated(dx, dy))),
+            Entity::AttributeDefinition(d) => {
+                Entity::AttributeDefinition(Box::new(d.translated(dx, dy)))
+            }
             Entity::Point { at } => Entity::Point {
                 at: at.translated(dx, dy),
             },
@@ -136,6 +139,9 @@ impl Entity {
             Entity::MLeader(m) => Entity::MLeader(Box::new(m.rotated(center, angle))),
             Entity::Leader(l) => Entity::Leader(Box::new(l.rotated(center, angle))),
             Entity::Insert(i) => Entity::Insert(Box::new(i.rotated(center, angle))),
+            Entity::AttributeDefinition(d) => {
+                Entity::AttributeDefinition(Box::new(d.rotated(center, angle)))
+            }
             Entity::Point { at } => Entity::Point {
                 at: at.rotated(center, angle),
             },
@@ -212,6 +218,9 @@ impl Entity {
             Entity::MLeader(m) => Entity::MLeader(Box::new(m.mirrored(a, b))),
             Entity::Leader(l) => Entity::Leader(Box::new(l.mirrored(a, b))),
             Entity::Insert(i) => Entity::Insert(Box::new(i.mirrored(a, b))),
+            Entity::AttributeDefinition(d) => {
+                Entity::AttributeDefinition(Box::new(d.mirrored(a, b)))
+            }
             Entity::Point { at } => Entity::Point {
                 at: at.mirrored(a, b),
             },
@@ -306,6 +315,9 @@ impl Entity {
             Entity::MLeader(m) => Entity::MLeader(Box::new(m.scaled(base, factor))),
             Entity::Leader(l) => Entity::Leader(Box::new(l.scaled(base, factor))),
             Entity::Insert(i) => Entity::Insert(Box::new(i.scaled(base, factor))),
+            Entity::AttributeDefinition(d) => {
+                Entity::AttributeDefinition(Box::new(d.scaled(base, factor)))
+            }
             Entity::Point { at } => Entity::Point {
                 at: at.scaled(base, factor),
             },

@@ -2,6 +2,7 @@ use od_core::Point;
 
 use super::*;
 use crate::block_cmd::define_block;
+use crate::files::Choice;
 
 fn p(x: f64, y: f64) -> Point {
     Point::new(x, y)
@@ -86,12 +87,25 @@ fn bclose_asks_about_unsaved_changes_and_can_discard_them() {
         radius: 9.0,
     });
     state.bclose();
-    state.settle_command();
-    assert!(state
-        .cmd_prompt()
-        .text
-        .contains("Save changes to block \"Box\"?"));
-    submit_all(&mut state, &["D"]);
+    assert!(state.in_block_editor(), "it waits for the answer");
+    assert!(
+        state.docs[state.active]
+            .block_edit
+            .as_ref()
+            .unwrap()
+            .closing
+    );
+    state.answer_block_close(Choice::Cancel);
+    assert!(state.in_block_editor(), "Cancel stays in the Block Editor");
+    assert!(
+        !state.docs[state.active]
+            .block_edit
+            .as_ref()
+            .unwrap()
+            .closing
+    );
+    state.bclose();
+    state.answer_block_close(Choice::Discard);
     assert!(!state.in_block_editor());
     assert_eq!(reference_bounds(&state), before);
 }
@@ -105,8 +119,7 @@ fn bclose_can_save_on_the_way_out() {
         radius: 9.0,
     });
     state.bclose();
-    state.settle_command();
-    submit_all(&mut state, &[""]);
+    state.answer_block_close(Choice::Save);
     assert!(!state.in_block_editor());
     assert!((reference_bounds(&state).min.x - 1.0).abs() < 1e-9);
 }
@@ -136,6 +149,6 @@ fn a_drawing_with_unsaved_block_changes_does_not_close() {
     state.request_close(0);
     assert_eq!(state.docs.len(), 2);
     assert!(state.confirm.is_none());
-    assert!(said(&state, "Run BCLOSE"));
+    assert!(state.docs[0].block_edit.as_ref().unwrap().closing);
     assert!(!state.try_exit());
 }

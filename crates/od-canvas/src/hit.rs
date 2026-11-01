@@ -76,6 +76,10 @@ pub fn distance_to_entity(entity: &Entity, p: Point) -> f64 {
             .fold(f64::INFINITY, f64::min),
         // The area the text fills stands for the glyphs; empty space in a
         // bigger box is not picked, so what is drawn there still can be.
+        // A template is picked by its tag, as text is.
+        Entity::AttributeDefinition(d) => {
+            distance_to_entity(&Entity::MText(Box::new(d.tag_view())), p)
+        }
         Entity::MText(m) if m.text_contains(p) => 0.0,
         Entity::MText(m) => {
             let corners = m.text_frame();

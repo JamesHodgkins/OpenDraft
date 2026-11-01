@@ -9,7 +9,6 @@ use od_commands::{Command, Registry, RemoveEntities};
 
 use crate::array_cmd::{array_objects, array_polar, array_rect};
 use crate::array_path::array_path;
-use crate::block_cmd::define_block;
 use crate::break_cmd::break_object;
 use crate::corners::{chamfer_objects, fillet_objects};
 use crate::draw::draw_line;
@@ -18,7 +17,6 @@ use crate::ellipse_cmd::draw_ellipse;
 use crate::explode::explode_objects;
 use crate::hatch_cmd::hatch_objects;
 use crate::hatch_edit::hatch_edit;
-use crate::insert_cmd::insert_block;
 use crate::join::join_objects;
 use crate::layout_cmd::{layout_command, mview, vplayer, vpscale};
 use crate::leader_cmd::draw_leader;
@@ -52,6 +50,7 @@ pub fn build_registry() -> Registry<AppState> {
     // The Home page has no drawing behind it: see `Command::global`.
     registry.needs_drawing_when(|s| s.home);
     let tables = [
+        crate::block_commands::commands(),
         crate::clipboard::commands(),
         crate::layer_cmd::commands(),
         crate::circle_arc_commands::commands(),
@@ -218,8 +217,6 @@ fn all() -> Vec<Command<AppState>> {
             "MATCHPROP",
             match_properties
         ),
-        editor_command!("block.create", "Create Block", "BLOCK", define_block),
-        editor_command!("block.insert", "Insert Block", "INSERT", insert_block),
         cmd("block.purge", "Purge", |s| s.open_purge()),
         editor_command!("block.purge_all", "-PURGE", "-PURGE", purge_prompt),
         // The Block Editor (`block_editor.rs`).

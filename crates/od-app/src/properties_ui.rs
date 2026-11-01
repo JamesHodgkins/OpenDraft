@@ -7,6 +7,7 @@ use od_core::{Document, Entity, EntityKind, Object, Units};
 use od_ui::{icons, menu, Theme};
 
 use crate::attr_rows;
+use crate::attribute_rows;
 use crate::layers::AttrEdit;
 use crate::properties::{self, Field, Row};
 use crate::state::AppState;
@@ -37,6 +38,12 @@ pub enum Edit {
     },
     /// The dimension style of dimensions or the text style of text.
     Style(StyleEdit),
+    /// The value of an attribute of the selected block references.
+    Attribute {
+        tag: String,
+        value: String,
+        kind: Option<EntityKind>,
+    },
 }
 
 pub fn show(ui: &mut Ui, theme: &Theme, state: &AppState) -> Option<Edit> {
@@ -147,6 +154,29 @@ fn body(ui: &mut Ui, theme: &Theme, document: &Document, selected: &[&Object]) -
                 value,
                 kind: filter,
             });
+        }
+    }
+    // The attributes of block references, when that is all that is shown.
+    let inserts: Vec<&od_core::Insert> = shown
+        .iter()
+        .filter_map(|o| match &o.entity {
+            Entity::Insert(i) => Some(&**i),
+            _ => None,
+        })
+        .collect();
+    if inserts.len() == shown.len() {
+        let rows = attribute_rows::rows(&inserts);
+        if !rows.is_empty() {
+            let changed = section(ui, theme, "Attributes", |ui| {
+                attribute_rows::show(ui, theme, &rows)
+            });
+            if let Some((tag, value)) = changed {
+                edit = Some(Edit::Attribute {
+                    tag,
+                    value,
+                    kind: filter,
+                });
+            }
         }
     }
     // The style of dimensions or of text, when that is all that is shown.

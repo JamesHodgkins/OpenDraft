@@ -1,108 +1,97 @@
-//! DXF writing for blocks. The writers have no BLOCKS section yet, so a
-//! block reference goes out as the objects it draws, each on its inherited
-//! layer. It looks the same but is no longer one block.
-
-use std::borrow::Cow;
+//! What DXF export checks about blocks before it writes them.
 
 use od_core::{Document, Entity};
 
-/// The drawing with each block reference replaced by its pieces, and how
-/// many were replaced. A drawing with none is borrowed, not copied.
-pub(super) fn exploded(document: &Document) -> (Cow<'_, Document>, usize) {
-    if !document
-        .objects()
-        .iter()
-        .any(|o| matches!(o.entity, Entity::Insert(_)))
-    {
-        return (Cow::Borrowed(document), 0);
-    }
-    let mut flat = document.clone();
-    let replaced = flat.replace_each(|object| match &object.entity {
-        Entity::Insert(insert) => Some(
-            insert
-                .picture_with(&object.attrs, &|l| document.layer_look(l))
-                .into_iter()
-                .map(|piece| (piece.entity, piece.attrs))
-                .collect(),
-        ),
+/// The tag of the first attribute, in the drawing or in a block, whose text
+/// holds a data field.
+pub(super) fn first_field(document: &Document) -> Option<String> {
+    let loose = document.objects().iter().filter_map(|o| match &o.entity {
+        Entity::AttributeDefinition(d) => d.default_value.has_fields().then(|| d.tag.clone()),
+        Entity::Insert(i) => i
+            .attributes
+            .iter()
+            .find(|r| r.value.has_fields())
+            .map(|r| r.tag.clone()),
         _ => None,
     });
-    (Cow::Owned(flat), replaced)
+    let in_blocks = document.blocks().iter().flat_map(|b| {
+        b.attribute_definitions()
+            .filter(|(_, d)| d.default_value.has_fields())
+            .map(|(_, d)| d.tag.clone())
+    });
+    loose.chain(in_blocks).next()
 }
 
 #[cfg(test)]
 mod tests {
     use std::sync::Arc;
 
-    use od_core::{Attributes, BlockDef, BlockEntity, BlockId, Insert, LayerId, Point};
+    use od_core::block::{
+        AttributeDefinition, AttributeFlags, AttributeText, DataField, FieldRun, FieldText,
+    };
+    use od_core::{Attributes, BlockDef, BlockEntity, Insert, LayerId, Point};
 
     use super::*;
+    use crate::{FileError, FileFormat};
 
-    #[test]
-    fn a_block_reference_becomes_its_pieces_in_place() {
-        let mut doc = Document::default();
-        let def = Arc::new(BlockDef {
-            id: BlockId(1),
-            name: "Tick".into(),
-            base: Point::new(0.0, 0.0),
-            description: String::new(),
-            entities: vec![BlockEntity {
-                entity: Entity::Line {
-                    start: Point::new(0.0, 0.0),
-                    end: Point::new(1.0, 0.0),
-                },
-                attrs: Attributes::on_layer(LayerId::DEFAULT),
-            }],
-        });
-        doc.push_block(def.clone());
-        doc.add(Entity::Insert(Box::new(Insert::new(
-            def,
-            Point::new(5.0, 5.0),
-        ))));
-        let (flat, count) = exploded(&doc);
-        assert_eq!(count, 1);
-        assert_eq!(
-            flat.objects()[0].entity,
-            Entity::Line {
-                start: Point::new(5.0, 5.0),
-                end: Point::new(6.0, 5.0)
-            }
-        );
+    /// A drawing with one insert of a block holding the attribute NAME, whose
+    /// value is `value`.
+    fn attributed(value: FieldText) -> Document {
+        attributed_in(value, od_core::InsertUnits::UNITLESS)
     }
 
-    /// Exploding many references is one pass over the drawing. Done with a
-    /// removal and an insertion for each, 8,000 took nearly three minutes in a
-    /// release build, so ten seconds, even unoptimised, is loose and catches it.
-    #[test]
-    fn exploding_a_great_many_references_scales() {
+    fn attributed_in(value: FieldText, unit: od_core::InsertUnits) -> Document {
         let mut doc = Document::default();
-        let def = Arc::new(BlockDef {
-            id: BlockId(1),
-            name: "Tick".into(),
+        let def = AttributeDefinition {
+            id: doc.allocate_attribute_definition_id(),
+            tag: "NAME".into(),
+            prompt: String::new(),
+            default_value: "n/a".into(),
+            flags: AttributeFlags(0),
+            lock_position: false,
+            field_length: 0,
+            text: AttributeText::new(Point::new(0.0, 1.0), 1.0, od_core::TextStyleId::STANDARD),
+        };
+        let block = Arc::new(BlockDef {
+            unit,
+            id: doc.allocate_block_id(),
+            name: "Tag".into(),
             base: Point::new(0.0, 0.0),
             description: String::new(),
             entities: vec![BlockEntity {
-                entity: Entity::Line {
-                    start: Point::new(0.0, 0.0),
-                    end: Point::new(1.0, 0.0),
-                },
+                entity: Entity::AttributeDefinition(Box::new(def)),
                 attrs: Attributes::on_layer(LayerId::DEFAULT),
             }],
         });
-        doc.push_block(def.clone());
-        for i in 0..20_000 {
-            doc.add(Entity::Insert(Box::new(Insert::new(
-                def.clone(),
-                Point::new(f64::from(i), 0.0),
-            ))));
-        }
-        let started = std::time::Instant::now();
-        let (flat, count) = exploded(&doc);
-        assert_eq!((count, flat.len()), (20_000, 20_000));
-        assert!(
-            started.elapsed() < std::time::Duration::from_secs(10),
-            "took {:?}",
-            started.elapsed()
-        );
+        doc.push_block(block.clone());
+        let mut insert = Insert::new(block.clone(), Point::new(5.0, 5.0));
+        insert.attributes = block.new_references(|_| value.clone());
+        doc.add(Entity::Insert(Box::new(insert)));
+        doc
+    }
+
+    #[test]
+    fn export_refuses_a_drawing_with_a_data_field() {
+        let field = DataField::new("AcVar", "x", None);
+        let doc = attributed(FieldText::Runs(vec![FieldRun::Field(field)]));
+        assert_eq!(first_field(&doc), Some("NAME".to_string()));
+        let Err(FileError::Unsupported(why)) = crate::DxfFormat.write(&doc) else {
+            panic!("a field cannot be written to DXF yet")
+        };
+        assert!(why.contains("NAME") && why.contains("data field"), "{why}");
+    }
+
+    #[test]
+    fn a_blocks_units_survive_a_dxf_round_trip() {
+        let doc = attributed_in("Bob".into(), od_core::InsertUnits::from_code(5).unwrap());
+        let bytes = crate::DxfFormat.write(&doc).unwrap().bytes;
+        let back = crate::DxfFormat.read(&bytes).unwrap().document;
+        let unit = back.blocks().first().unwrap().unit;
+        assert_eq!(unit.label(), "Centimeters");
+    }
+
+    #[test]
+    fn plain_values_are_not_fields() {
+        assert_eq!(first_field(&attributed("Bob".into())), None);
     }
 }

@@ -67,6 +67,8 @@ pub enum DocumentError {
     /// An insert refers to a block not in the table, or has a zero or
     /// non-finite scale.
     BadInsert(EntityId),
+    /// An attribute definition or reference that could not exist, with the reason.
+    BadAttribute(String),
 }
 
 impl fmt::Display for DocumentError {
@@ -125,6 +127,7 @@ impl fmt::Display for DocumentError {
             Self::BadInsert(object) => {
                 write!(f, "object {} is not a valid block insert", object.0)
             }
+            Self::BadAttribute(why) => write!(f, "attribute: {why}"),
         }
     }
 }
@@ -199,6 +202,7 @@ impl Document {
         self.validate_leaders()?;
         self.validate_dim_styles()?;
         self.validate_blocks()?;
+        self.validate_attributes()?;
         self.validate_layouts()
     }
 

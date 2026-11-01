@@ -200,6 +200,7 @@ pub fn measure(id: WireId, entity: &Entity) -> Measurement {
         }
         Entity::MText(_)
         | Entity::Insert(_)
+        | Entity::AttributeDefinition(_)
         | Entity::Dimension(_)
         | Entity::MLeader(_)
         | Entity::Leader(_)

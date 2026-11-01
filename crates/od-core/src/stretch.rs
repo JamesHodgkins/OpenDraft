@@ -37,6 +37,9 @@ impl Entity {
             Entity::MText(m) => inside(m.insertion).then(|| self.translated(dx, dy)),
             // A block moves when its insertion point is caught, as in AutoCAD.
             Entity::Insert(i) => inside(i.insertion).then(|| self.translated(dx, dy)),
+            Entity::AttributeDefinition(d) => {
+                inside(d.text.position).then(|| self.translated(dx, dy))
+            }
             // Moved whole when the crossing window holds all of it; its
             // boundary is not stretched piece by piece.
             Entity::Hatch(_) => {

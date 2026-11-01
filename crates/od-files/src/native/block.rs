@@ -16,6 +16,7 @@ use od_core::{
 };
 use serde::{Deserialize, Serialize};
 
+use super::attribute::AttributeReferenceDto;
 use super::dimension_style::StylePool;
 use super::entity::{from_point, invalid, point, EntityDto, PointDto};
 use super::{attr_from_dto, attr_to_dto, AttrDto, ColorDto};
@@ -31,6 +32,9 @@ pub(super) struct BlockDto {
     base: PointDto,
     #[serde(default, skip_serializing_if = "String::is_empty")]
     description: String,
+    /// `INSUNITS` code of the block's units; 0 (unitless) is left out.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    unit: u8,
     /// In draw order.
     #[serde(deserialize_with = "super::limits::block_objects")]
     objects: Vec<BlockObjectDto>,
@@ -45,6 +49,10 @@ struct BlockObjectDto {
     #[serde(flatten)]
     scale: super::linetype::ScaleDto,
     entity: EntityDto,
+}
+
+fn is_zero(n: &u8) -> bool {
+    *n == 0
 }
 
 impl BlockDto {
@@ -68,6 +76,7 @@ impl BlockDto {
             name: block.name.clone(),
             base: point(block.base),
             description: block.description.clone(),
+            unit: block.unit.code() as u8,
             objects,
         })
     }
@@ -155,6 +164,7 @@ fn resolve(
         });
     }
     let block = Arc::new(BlockDef {
+        unit: od_core::InsertUnits::from_code(i64::from(dto.unit)).unwrap_or_default(),
         id: BlockId(id),
         name: dto.name.trim().to_owned(),
         base: from_point(dto.base)?,
@@ -178,6 +188,7 @@ pub(super) fn insert_entity(
     insertion: PointDto,
     scale: [f64; 2],
     rotation: f64,
+    attributes: &[AttributeReferenceDto],
 ) -> Result<Entity, FileError> {
     let Some(def) = blocks.get(&block) else {
         return invalid(format!(
@@ -190,6 +201,10 @@ pub(super) fn insert_entity(
         scale_x: scale[0],
         scale_y: scale[1],
         rotation,
+        attributes: attributes
+            .iter()
+            .map(AttributeReferenceDto::to_reference)
+            .collect::<Result<_, _>>()?,
     };
     if !insert.is_valid() {
         return invalid("a block insert has a zero or non-finite scale or rotation");
@@ -216,6 +231,7 @@ mod tests {
         let walls = doc.allocate_layer_id();
         doc.push_layer(Layer::new(walls, "Walls"));
         let inner = Arc::new(BlockDef {
+            unit: od_core::InsertUnits::from_code(4).unwrap(),
             id: doc.allocate_block_id(),
             name: "Inner".into(),
             base: p(1.0, 1.0),
@@ -253,6 +269,7 @@ mod tests {
         placed.scale_x = -2.0;
         placed.rotation = 0.5;
         let outer = Arc::new(BlockDef {
+            unit: Default::default(),
             id: doc.allocate_block_id(),
             name: "Outer".into(),
             base: p(0.0, 0.0),
@@ -277,6 +294,14 @@ mod tests {
     fn round_trip(doc: &Document) -> Document {
         let bytes = NativeFormat.write(doc).unwrap().bytes;
         NativeFormat.read(&bytes).unwrap().document
+    }
+
+    #[test]
+    fn a_blocks_units_survive_a_round_trip() {
+        let back = round_trip(&nested());
+        let unit = |name: &str| back.block_named(name).unwrap().unit;
+        assert_eq!(unit("Inner").label(), "Millimeters");
+        assert_eq!(unit("Outer"), od_core::InsertUnits::UNITLESS);
     }
 
     #[test]

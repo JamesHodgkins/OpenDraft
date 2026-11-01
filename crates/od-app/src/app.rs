@@ -2,8 +2,12 @@
 //! canvas and status bar. Everything the user can do goes through the command
 //! registry (see `commands.rs`); this file only draws UI and dispatches.
 
+mod attribute_definition_dialog;
+mod attribute_editor_dialog;
+mod attribute_editor_table;
 mod automation_update;
 mod badge;
+mod block_dialog;
 mod chrome;
 mod command_line;
 mod consent_dialog;
@@ -409,6 +413,7 @@ impl eframe::App for OpenDraftApp {
         self.context_menu(ctx);
         self.tool_windows(ctx);
         self.confirm_dialog(ctx);
+        self.block_close_dialog(ctx);
         self.consent_dialog(ctx);
         self.autosave_when_due(ctx);
         self.update_window_title(ctx);

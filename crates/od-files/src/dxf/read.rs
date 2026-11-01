@@ -12,6 +12,7 @@ use od_core::{
 use crate::{FileError, Loaded};
 use od_core::aci::aci_rgb;
 
+mod attribute;
 mod basic;
 mod blocks;
 mod dimension;
@@ -30,12 +31,14 @@ mod spline;
 mod text;
 
 /// One group: a code and its value.
+#[derive(Clone)]
 struct Group {
     code: i32,
     value: String,
 }
 
 /// A record: a group with code 0 (its name) and the groups that follow it.
+#[derive(Clone)]
 struct Record {
     name: String,
     groups: Vec<Group>,
@@ -269,6 +272,7 @@ impl Importer {
         open: &mut Option<(&'a Record, Vec<polyline::Vertex>)>,
     ) {
         match record.name.as_str() {
+            _ if self.attribute_record(record) => {}
             "VERTEX" => {
                 if let Some((_, vertices)) = open.as_mut() {
                     // Spline control points (flag 16) are not on the curve.
@@ -378,8 +382,7 @@ pub fn read(bytes: &[u8]) -> Result<Loaded, FileError> {
             "ENDBLK" => block.clear(),
             "TABLE" => table = record.text(2).unwrap_or("").to_owned(),
             "ENDTAB" => table.clear(),
-            "LAYER" if section == "TABLES" && table == "LAYER" => importer.layer_record(record),
-            "LTYPE" if section == "TABLES" && table == "LTYPE" => importer.linetype_record(record),
+            "LAYER" | "LTYPE" | "BLOCK_RECORD" => importer.table_record(record, &section, &table),
             _ if section != "ENTITIES"
                 && !(section == "BLOCKS" && spaces.is_sheet_block(&block)) => {}
             "VERTEX" | "SEQEND" => importer.shape(record, &mut open_polyline),
@@ -404,6 +407,7 @@ pub fn read(bytes: &[u8]) -> Result<Loaded, FileError> {
             }
         }
     }
+    importer.drop_open_insert();
     importer.resolve_hatch_sources();
     importer.resolve_leaders();
     importer.resolve_linetypes();

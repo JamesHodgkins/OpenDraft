@@ -77,6 +77,7 @@ impl Document {
             if let Some((position, object)) = items.pop() {
                 let position = position.min(self.objects.len());
                 self.next_id = self.next_id.max(after(object.id.0));
+                self.note_attribute_id(&object.entity);
                 self.objects.insert(position, object);
                 self.reindex_from(position);
                 self.spatial
@@ -106,6 +107,7 @@ impl Document {
             };
             let Some(object) = object else { break };
             self.next_id = self.next_id.max(after(object.id.0));
+            self.note_attribute_id(&object.entity);
             self.objects.push(object);
         }
         self.reindex_from(first);

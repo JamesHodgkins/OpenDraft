@@ -2,6 +2,7 @@
 //! exchange format: opening one is an import (a new unsaved drawing), and what
 //! did not come across is reported. Writing is not built yet.
 
+mod attribute;
 mod convert;
 mod text;
 mod warnings;

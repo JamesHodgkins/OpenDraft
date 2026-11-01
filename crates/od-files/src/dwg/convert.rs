@@ -13,6 +13,7 @@ use od_dwg::{
     Drawing, DwgColor, DwgEntity, DwgHandle, DwgHeader, DwgLinetype, DwgLineweight, Shape,
 };
 
+use super::attribute;
 use super::text::{self, Styles};
 use crate::block_import::{ImportedBlocks, Item, PendingBlock, PendingInsert};
 use crate::native::spline::MAX_FILE_SPLINE_POINTS;
@@ -217,6 +218,7 @@ fn item(shape: &Shape, styles: &Styles) -> Result<Item<DwgHandle>, Refused> {
             insertion,
             scale,
             rotation,
+            attributes,
         } => {
             return Ok(Item::Insert(PendingInsert {
                 block: *block,
@@ -224,7 +226,14 @@ fn item(shape: &Shape, styles: &Styles) -> Result<Item<DwgHandle>, Refused> {
                 scale_x: scale[0],
                 scale_y: scale[1],
                 rotation: *rotation,
+                attributes: attributes
+                    .iter()
+                    .filter_map(|a| attribute::reference(a, styles))
+                    .collect(),
             }));
+        }
+        Shape::AttributeDefinition { .. } => {
+            attribute::definition(shape, styles).ok_or(Refused::Text)?
         }
     }))
 }
@@ -379,12 +388,14 @@ pub(super) fn to_document(
         let mut items = Vec::with_capacity(b.entities.len());
         for e in &b.entities {
             let attrs = attributes(e, &ids, &mut document, &mut notes.linetypes)?;
+            notes.bad_text += attribute::dropped(&e.shape, &styles);
             match item(&e.shape, &styles) {
-                Ok(made) => items.push((made, attrs)),
+                Ok(made) => items.push((attribute::numbered(made, &mut document), attrs)),
                 Err(why) => notes.refused(why),
             }
         }
         pending.push(PendingBlock {
+            unit: Default::default(),
             key: b.handle,
             name: b.name.clone(),
             base: point(b.base),
@@ -399,14 +410,16 @@ pub(super) fn to_document(
             return Err(FileError::Cancelled);
         }
         let attrs = attributes(e, &ids, &mut document, &mut notes.linetypes)?;
-        let entity = match item(&e.shape, &styles) {
-            Ok(Item::Entity(entity)) => Some(entity),
-            Ok(Item::Insert(insert)) => blocks.insert(insert),
-            Err(why) => {
-                notes.refused(why);
-                None
-            }
-        };
+        notes.bad_text += attribute::dropped(&e.shape, &styles);
+        let entity =
+            match item(&e.shape, &styles).map(|made| attribute::numbered(made, &mut document)) {
+                Ok(Item::Entity(entity)) => Some(entity),
+                Ok(Item::Insert(insert)) => blocks.insert(insert),
+                Err(why) => {
+                    notes.refused(why);
+                    None
+                }
+            };
         if let Some(entity) = entity {
             document.add_with(entity, attrs);
         }
@@ -520,5 +533,83 @@ mod tests {
         };
         assert!(s.distance_to(Point::new(1.0, 1.0)) < 1e-9);
         assert_eq!(s.fit.as_ref().map(|f| f.tolerance), Some(0.5));
+    }
+
+    fn attribute_text(value: &str, horizontal: u8) -> Shape {
+        Shape::Text {
+            at: [10.0, 20.0],
+            rotation: 0.25,
+            height: 3.5,
+            width_factor: 1.0,
+            oblique: 0.0,
+            value: value.into(),
+            horizontal,
+            vertical: 2,
+            backward: false,
+            upside_down: false,
+            style: None,
+        }
+    }
+
+    #[test]
+    fn a_definition_shape_becomes_a_definition_with_its_modes_and_lock() {
+        let shape = Shape::AttributeDefinition {
+            tag: "REVISION".into(),
+            prompt: "Revision".into(),
+            flags: 1 | 8,
+            lock_position: true,
+            field_length: 4,
+            text: Box::new(attribute_text("A", 1)),
+        };
+        let Ok(Item::Entity(Entity::AttributeDefinition(d))) = item(&shape, &Styles::default())
+        else {
+            panic!("a definition")
+        };
+        assert_eq!(
+            (d.tag.as_str(), d.prompt.as_str()),
+            ("REVISION", "Revision")
+        );
+        assert!(d.flags.invisible() && d.flags.preset() && d.lock_position);
+        assert_eq!(d.default_value.display(), "A");
+        assert_eq!(d.text.position, Point::new(10.0, 20.0));
+        assert_eq!(
+            (d.text.horizontal, d.text.vertical),
+            (
+                od_core::block::TextHorizontal::Center,
+                od_core::block::TextVertical::Middle
+            )
+        );
+    }
+
+    #[test]
+    fn an_inserts_attributes_travel_with_it_empty_values_included() {
+        let attribute = |tag: &str, value: &str, flags: u8| od_dwg::DwgAttribute {
+            tag: tag.into(),
+            flags,
+            lock_position: false,
+            field_length: 0,
+            text: attribute_text(value, 0),
+        };
+        let shape = Shape::Insert {
+            block: DwgHandle(7),
+            insertion: [1.0, 2.0],
+            scale: [1.0, 1.0],
+            rotation: 0.0,
+            attributes: vec![
+                attribute("A", "x", 0),
+                attribute("B", "", 1),
+                // A constant attribute is not held by an insert.
+                attribute("C", "k", 2),
+                attribute("bad tag", "v", 0),
+            ],
+        };
+        let Ok(Item::Insert(insert)) = item(&shape, &Styles::default()) else {
+            panic!("an insert")
+        };
+        let tags: Vec<_> = insert.attributes.iter().map(|r| r.tag.as_str()).collect();
+        assert_eq!(tags, ["A", "B"]);
+        assert!(insert.attributes[1].flags.invisible());
+        assert_eq!(insert.attributes[1].value.display(), "");
+        assert_eq!(attribute::dropped(&shape, &Styles::default()), 2);
     }
 }

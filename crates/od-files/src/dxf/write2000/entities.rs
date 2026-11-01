@@ -1,9 +1,9 @@
 //! Viewports and drawing objects as R2000 entities.
 
-use od_core::{arc, Attr, Document, Entity, Layout, Object, Viewport};
+use od_core::{arc, Attr, Attributes, Document, Entity, EntityId, Layout, Object, Viewport};
 
 use super::{hex, true_color, weight_code, Handles, Ids};
-use crate::dxf::write::{aci_for, dxf_name, finite, unexploded, Out};
+use crate::dxf::write::{aci_for, dxf_name, finite, Out};
 use crate::FileError;
 
 /// The sheet-wide viewport AutoCAD keeps first in a layout, then each viewport.
@@ -100,6 +100,61 @@ pub(super) fn write_viewports(
     Ok(())
 }
 
+/// The start of an entity: its kind, handle, owner, layer and properties.
+/// Returns the handle (an `INSERT`'s attributes are owned by it).
+#[allow(clippy::too_many_arguments)]
+pub(super) fn entity_head(
+    out: &mut Out,
+    h: &mut Handles,
+    ids: &Ids,
+    document: &Document,
+    (id, attrs): (EntityId, &Attributes),
+    kind: &str,
+    owner: u32,
+    paper: bool,
+) -> u32 {
+    let layer = document
+        .layer(attrs.layer)
+        .map_or_else(|| "0".to_owned(), |l| dxf_name(&l.name));
+    out.pair(0, kind);
+    let handle = ids
+        .annotations
+        .get(&id)
+        .copied()
+        .unwrap_or_else(|| h.next());
+    out.pair(5, hex(handle));
+    out.pair(330, hex(owner));
+    out.pair(100, "AcDbEntity");
+    if paper {
+        out.pair(67, 1);
+    }
+    out.pair(8, &layer);
+    match &attrs.linetype {
+        Attr::Set(id) => out.pair(6, crate::dxf::linetypes::name_for(document, *id)),
+        Attr::ByBlock => out.pair(6, "ByBlock"),
+        Attr::ByLayer => {}
+    }
+    if attrs.linetype_scale != 1.0 {
+        out.pair(48, attrs.linetype_scale);
+    }
+    match attrs.color {
+        Attr::Set(color) => out.pair(62, aci_for(color).0),
+        Attr::ByBlock => out.pair(62, 0),
+        Attr::ByLayer => {}
+    }
+    match attrs.lineweight {
+        Attr::Set(weight) => out.pair(370, weight_code(weight)),
+        Attr::ByBlock => out.pair(370, -2),
+        Attr::ByLayer => {}
+    }
+    if let Attr::Set(color) = attrs.color {
+        if let Some(rgb) = true_color(color) {
+            out.pair(420, rgb);
+        }
+    }
+    handle
+}
+
 /// One drawing object as an entity owned by `owner`; `paper` marks sheet entities (group 67).
 pub(super) fn write_object(
     out: &mut Out,
@@ -110,49 +165,30 @@ pub(super) fn write_object(
     owner: u32,
     paper: bool,
 ) -> Result<(), FileError> {
-    let layer = document
-        .layer(object.attrs.layer)
-        .map_or_else(|| "0".to_owned(), |l| dxf_name(&l.name));
     let head = |out: &mut Out, h: &mut Handles, kind: &str| {
-        out.pair(0, kind);
-        let handle = ids.annotations.get(&object.id).copied();
-        out.pair(5, hex(handle.unwrap_or_else(|| h.next())));
-        out.pair(330, hex(owner));
-        out.pair(100, "AcDbEntity");
-        if paper {
-            out.pair(67, 1);
-        }
-        out.pair(8, &layer);
-        match &object.attrs.linetype {
-            Attr::Set(id) => out.pair(6, crate::dxf::linetypes::name_for(document, *id)),
-            Attr::ByBlock => out.pair(6, "ByBlock"),
-            Attr::ByLayer => {}
-        }
-        if object.attrs.linetype_scale != 1.0 {
-            out.pair(48, object.attrs.linetype_scale);
-        }
-        match object.attrs.color {
-            Attr::Set(color) => out.pair(62, aci_for(color).0),
-            Attr::ByBlock => out.pair(62, 0),
-            Attr::ByLayer => {}
-        }
-        match object.attrs.lineweight {
-            Attr::Set(weight) => out.pair(370, weight_code(weight)),
-            Attr::ByBlock => out.pair(370, -2),
-            Attr::ByLayer => {}
-        }
-        if let Attr::Set(color) = object.attrs.color {
-            if let Some(rgb) = true_color(color) {
-                out.pair(420, rgb);
-            }
-        }
+        entity_head(
+            out,
+            h,
+            ids,
+            document,
+            (object.id, &object.attrs),
+            kind,
+            owner,
+            paper,
+        )
     };
     match &object.entity {
         Entity::Dimension(d) => {
             head(out, h, "DIMENSION");
             super::dimension::entity(out, ids, document, object, d)?;
         }
-        Entity::Insert(_) => return Err(unexploded()),
+        Entity::Insert(i) => {
+            super::insert::insert(out, h, ids, document, (object, i), owner, paper)?
+        }
+        Entity::AttributeDefinition(d) => {
+            head(out, h, "ATTDEF");
+            super::insert::attribute_definition(out, document, d)?;
+        }
         Entity::Leader(l) => {
             head(out, h, "LEADER");
             super::leader::entity(out, ids, document, l)?;

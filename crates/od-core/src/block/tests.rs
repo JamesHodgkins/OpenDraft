@@ -27,6 +27,7 @@ fn on_zero(entity: Entity) -> BlockEntity {
 /// circle in the middle.
 pub(crate) fn square_block() -> Arc<BlockDef> {
     Arc::new(BlockDef {
+        unit: Default::default(),
         id: BlockId(1),
         name: "Square".into(),
         base: p(10.0, 10.0),
@@ -91,6 +92,7 @@ fn nested_doc() -> (Document, Arc<BlockDef>, Arc<BlockDef>) {
     let mut placed = Insert::new(inner.clone(), p(100.0, 0.0));
     placed.rotation = FRAC_PI_2;
     let outer = Arc::new(BlockDef {
+        unit: Default::default(),
         id: doc.allocate_block_id(),
         name: "Pair".into(),
         base: p(0.0, 0.0),
@@ -263,6 +265,7 @@ fn doubling_chain(leaf: Arc<BlockDef>, levels: u64) -> Arc<BlockDef> {
             attrs: Attributes::on_layer(LayerId::DEFAULT),
         };
         below = Arc::new(BlockDef {
+            unit: Default::default(),
             id: BlockId(id + 10),
             name: format!("level{id}"),
             base: p(0.0, 0.0),
@@ -291,6 +294,7 @@ fn expansion_size_counts_nested_objects_once_per_definition() {
 fn a_block_that_fans_out_is_cut_short_not_expanded_forever() {
     // An empty leaf draws nothing, so only the budget stops the walk.
     let empty = Arc::new(BlockDef {
+        unit: Default::default(),
         id: BlockId(1),
         name: "Empty".into(),
         base: p(0.0, 0.0),
@@ -313,6 +317,7 @@ fn by_block_line(id: u64, layer: LayerId) -> Arc<BlockDef> {
         ..Attributes::on_layer(layer)
     };
     Arc::new(BlockDef {
+        unit: Default::default(),
         id: BlockId(id),
         name: format!("Line{id}"),
         base: p(0.0, 0.0),
@@ -374,6 +379,7 @@ fn by_block_passes_through_nested_inserts_to_the_outermost_setting() {
     let doc = Document::default();
     let inner = by_block_line(12, LayerId::DEFAULT);
     let middle = Arc::new(BlockDef {
+        unit: Default::default(),
         id: BlockId(13),
         name: "Middle".into(),
         base: p(0.0, 0.0),

@@ -25,6 +25,9 @@ impl OpenDraftApp {
         self.point_style_window(ctx);
         self.power_select_window(ctx);
         self.overkill_window(ctx);
+        self.attribute_definition_window(ctx);
+        self.attribute_editor_window(ctx);
+        self.block_dialog_window(ctx);
         self.purge_window(ctx);
         self.linetype_window(ctx);
         self.text_style_window(ctx);

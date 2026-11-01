@@ -2,8 +2,9 @@
 //! in `od_core::block`; INSERT is in `insert_cmd.rs`.
 
 use od_commands::{Answer, Cancelled, Editor, ModifyEntities, Options, RemoveEntities, SetBlocks};
+use od_core::block::block_draft::ObjectsAction;
 use od_core::block::block_name_problem;
-use od_core::{BlockDef, BlockId, Document, Entity, Insert};
+use od_core::{BlockDef, BlockId, Document, Entity, EntityId, Insert, Point};
 
 use crate::text::plural;
 
@@ -88,13 +89,61 @@ pub fn define_block(ed: &mut Editor) -> Result<(), Cancelled> {
         ed.say("No objects selected; the block was not made.");
         return Ok(());
     }
+    let made = Made {
+        name,
+        existing,
+        base,
+        chosen,
+        action: ObjectsAction::Convert,
+        description: String::new(),
+        unit: ed.read(|doc| doc.units().insert)?,
+    };
+    make_block(ed, made)?;
+    Ok(())
+}
+
+/// What a block is made from and how.
+pub(crate) struct Made {
+    pub name: String,
+    /// The block this redefines, if the name is in use.
+    pub existing: Option<BlockId>,
+    pub base: Point,
+    pub chosen: Vec<EntityId>,
+    pub action: ObjectsAction,
+    pub description: String,
+    pub unit: od_core::InsertUnits,
+}
+
+/// Makes (or redefines) the block, in one undo step, and says so. What
+/// becomes of the objects is `action`: left alone, replaced by a reference
+/// at the base point, or deleted. Returns the block, or `None` when it could
+/// not be made (the reason has been said).
+pub(crate) fn make_block(ed: &Editor, made: Made) -> Result<Option<BlockId>, Cancelled> {
+    let Made {
+        name,
+        existing,
+        base,
+        chosen,
+        action,
+        description,
+        unit,
+    } = made;
     let redefining = existing.is_some();
     let label = name.clone();
-    let made = ed.transaction("Block", move |tx| {
+    let result = ed.transaction("Block", move |tx| {
         let doc = tx.document();
         let id = existing.unwrap_or(BlockId(doc.next_block_id()));
         let objects = doc.objects().iter().filter(|o| chosen.contains(&o.id));
-        let def = BlockDef::from_objects(id, &name, base, objects);
+        let mut def = BlockDef::from_objects(id, &name, base, objects);
+        def.description = description;
+        def.unit = unit;
+        // Copies of one definition share an id; a block needs each its own.
+        let mut next = doc.next_attribute_definition_id();
+        def.renumber_duplicate_attributes(|| {
+            let id = od_core::AttributeDefinitionId(next);
+            next += 1;
+            id
+        });
         let count = def.entities.len();
         let change = match doc.redefined_blocks(def) {
             Ok(change) => change,
@@ -109,21 +158,30 @@ pub fn define_block(ed: &mut Editor) -> Result<(), Cancelled> {
         if !change.objects.is_empty() {
             tx.perform(ModifyEntities::new("Redefine block", change.objects));
         }
-        tx.perform(RemoveEntities::new(chosen));
-        tx.add(Entity::Insert(Box::new(Insert::new(record, base))));
-        Ok(Ok(count))
+        if action != ObjectsAction::Retain {
+            tx.perform(RemoveEntities::new(chosen));
+        }
+        if action == ObjectsAction::Convert {
+            let mut insert = Insert::new(record.clone(), base);
+            insert.attributes = record.new_references(|d| d.default_value.clone());
+            tx.add(Entity::Insert(Box::new(insert)));
+        }
+        Ok(Ok((count, id)))
     })?;
-    match made {
-        Ok(count) => {
+    Ok(match result {
+        Ok((count, id)) => {
             let done = if redefining { "redefined" } else { "defined" };
             ed.say(format!(
                 "Block \"{label}\" {done} with {}.",
                 plural(count, "object")
             ));
+            Some(id)
         }
-        Err(why) => ed.say(why),
-    }
-    Ok(())
+        Err(why) => {
+            ed.say(why);
+            None
+        }
+    })
 }
 
 #[cfg(test)]

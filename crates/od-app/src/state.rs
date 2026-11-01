@@ -120,6 +120,8 @@ pub struct AppState {
     /// The OVERKILL dialog while it is open: the settings as edited.
     pub purge: crate::purge_cmd::Dialog,
     pub overkill_draft: Option<od_core::overkill::Settings>,
+    /// The dialogs commands open, while they are open: what they hold.
+    pub command_dialogs: crate::dialogs::CommandDialogs,
     /// The Linetype Manager is open.
     pub show_linetypes: bool,
     /// The Text Style dialog is open.
@@ -216,6 +218,7 @@ impl AppState {
             power_select: Default::default(),
             purge: Default::default(),
             overkill_draft: None,
+            command_dialogs: Default::default(),
             show_linetypes: false,
             show_text_styles: false,
             show_dim_style: false,
@@ -370,7 +373,7 @@ impl AppState {
     /// clear the selection.
     pub fn cancel(&mut self) {
         if self.command_running() {
-            self.cancel_command();
+            self.esc_in_command();
         } else if self.end_sysvar_prompt() {
             self.cmdline.say("*Cancel*");
         } else if self.file_work_stalled() {

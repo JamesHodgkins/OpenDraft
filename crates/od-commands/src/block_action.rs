@@ -56,6 +56,7 @@ mod tests {
     fn the_table_changes_and_comes_back() {
         let mut doc = Document::default();
         let block = Arc::new(BlockDef {
+            unit: Default::default(),
             id: doc.allocate_block_id(),
             name: "Empty".into(),
             base: Point::new(0.0, 0.0),

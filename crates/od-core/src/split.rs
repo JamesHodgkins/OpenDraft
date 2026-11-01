@@ -38,6 +38,7 @@ impl Entity {
             | Entity::MLeader(_)
             | Entity::Leader(_)
             | Entity::Insert(_)
+            | Entity::AttributeDefinition(_)
             | Entity::Point { .. }
             | Entity::Hatch(_)
             | Entity::Spline(_) => {

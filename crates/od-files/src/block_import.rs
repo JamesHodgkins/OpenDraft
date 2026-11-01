@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use std::sync::Arc;
 
-use od_core::block::{block_name_problem, MAX_NESTING};
+use od_core::block::{block_name_problem, AttributeReference, MAX_NESTING};
 use od_core::{Attributes, BlockDef, BlockEntity, BlockId, Document, Entity, Insert, Point};
 
 use crate::plural;
@@ -25,6 +25,41 @@ pub(crate) struct PendingInsert<K> {
     pub scale_y: f64,
     /// Radians counter-clockwise.
     pub rotation: f64,
+    /// The attributes it held, placed in the drawing (file coordinates).
+    pub attributes: Vec<AttributeReference>,
+}
+
+/// Gives `insert` its attributes, brought from the drawing into the block's
+/// coordinates and matched to the block's definitions: the first unused
+/// non-constant definition with the same tag (ignoring case) is each one's
+/// source, so duplicate tags pair up in order; one that matches nothing is
+/// kept as an orphan. `false` when the insert's transform cannot be undone.
+fn attach_attributes(insert: &mut Insert, placed: &[AttributeReference]) -> bool {
+    let mut taken = std::collections::HashSet::new();
+    for r in placed {
+        let Some(text) = insert.attribute_text_in_block(&r.text) else {
+            return false;
+        };
+        let source = insert
+            .block
+            .attribute_definitions()
+            .filter(|(_, d)| !d.flags.constant() && d.tag.eq_ignore_ascii_case(&r.tag))
+            .map(|(_, d)| d.id)
+            .find(|id| taken.insert(*id));
+        // Properties the definition already has are not the attribute's own.
+        let own = r.attrs.clone().filter(|a| {
+            source
+                .and_then(|id| insert.block.attribute_definition(id))
+                .is_none_or(|d| d.attrs != *a)
+        });
+        insert.attributes.push(AttributeReference {
+            source,
+            text,
+            attrs: own,
+            ..r.clone()
+        });
+    }
+    true
 }
 
 /// One object of a definition being read.
@@ -41,6 +76,7 @@ pub(crate) struct PendingBlock<K> {
     pub name: String,
     pub base: Point,
     pub description: String,
+    pub unit: od_core::InsertUnits,
     pub items: Vec<(Item<K>, Attributes)>,
 }
 
@@ -153,8 +189,10 @@ impl<K: Clone + Eq + Hash> ImportedBlocks<K> {
             scale_x: p.scale_x,
             scale_y: p.scale_y,
             rotation: p.rotation,
+            attributes: Vec::new(),
         };
-        if insert.is_valid() {
+        let mut insert = insert;
+        if insert.is_valid() && attach_attributes(&mut insert, &p.attributes) {
             Some(Entity::Insert(Box::new(insert)))
         } else {
             self.invalid += 1;
@@ -226,6 +264,7 @@ impl<K: Clone + Eq + Hash> Builder<'_, K> {
             }
         }
         let def = BlockDef {
+            unit: p.unit,
             id: self.ids[i],
             name: p.name.trim().to_owned(),
             base: p.base,
@@ -280,6 +319,7 @@ mod tests {
             scale_x: 1.0,
             scale_y: 1.0,
             rotation: 0.0,
+            attributes: Vec::new(),
         };
         (Item::Insert(i), Attributes::on_layer(LayerId::DEFAULT))
     }
@@ -289,6 +329,7 @@ mod tests {
         items: Vec<(Item<&'static str>, Attributes)>,
     ) -> PendingBlock<&'static str> {
         PendingBlock {
+            unit: Default::default(),
             key,
             name: key.to_owned(),
             base: Point::new(0.0, 0.0),
@@ -319,6 +360,7 @@ mod tests {
             scale_x: 2.0,
             scale_y: 2.0,
             rotation: 0.0,
+            attributes: Vec::new(),
         });
         doc.add(entity.unwrap());
         doc.validate().unwrap();
@@ -346,6 +388,7 @@ mod tests {
                 scale_x: 0.0,
                 scale_y: 1.0,
                 rotation: 0.0,
+                attributes: Vec::new(),
             })
             .is_none());
         assert_eq!(

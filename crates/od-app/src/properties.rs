@@ -153,6 +153,13 @@ const MTEXT: &[Row] = &[
     row(Field::Width, "Width", Unit::Length, true),
 ];
 
+const ATTRIBUTE_DEFINITION: &[Row] = &[
+    row(Field::X1, "Position X", Unit::Length, true),
+    row(Field::Y1, "Position Y", Unit::Length, true),
+    row(Field::Angle, "Rotation", Unit::Angle, true),
+    row(Field::Height, "Text height", Unit::Length, true),
+];
+
 const INSERT: &[Row] = &[
     row(Field::X1, "Position X", Unit::Length, true),
     row(Field::Y1, "Position Y", Unit::Length, true),
@@ -178,6 +185,7 @@ pub fn rows(entity: &Entity) -> &'static [Row] {
         Entity::MLeader(m) => mleader::rows(m),
         Entity::Leader(_) => LEADER,
         Entity::Insert(_) => INSERT,
+        Entity::AttributeDefinition(_) => ATTRIBUTE_DEFINITION,
         Entity::Hatch(h) => hatch::rows(h),
     }
 }
@@ -217,6 +225,13 @@ pub fn value(entity: &Entity, field: Field) -> f64 {
         Entity::Ellipse(e) => ellipse::value(e, field),
         Entity::Spline(s) => spline::value(s, field),
         Entity::Hatch(h) => hatch::value(h, field),
+        Entity::AttributeDefinition(d) => match field {
+            Field::X1 => d.text.position.x,
+            Field::Y1 => d.text.position.y,
+            Field::Angle => d.text.rotation.to_degrees(),
+            Field::Height => d.text.height,
+            _ => f64::NAN,
+        },
         Entity::Insert(i) => match field {
             Field::X1 => i.insertion.x,
             Field::Y1 => i.insertion.y,
@@ -375,6 +390,13 @@ pub fn with_value(entity: &Entity, field: Field, new: f64) -> Option<Entity> {
             Field::Height if positive => m.nominal_height = new,
             // Zero turns wrapping off.
             Field::Width if new >= 0.0 => m.reference_width = new,
+            _ => return None,
+        },
+        Entity::AttributeDefinition(d) => match field {
+            Field::X1 => d.text.position.x = new,
+            Field::Y1 => d.text.position.y = new,
+            Field::Angle => d.text.rotation = arc::normalize(new.to_radians()),
+            Field::Height if positive => d.text.height = new,
             _ => return None,
         },
         Entity::Insert(i) => match field {

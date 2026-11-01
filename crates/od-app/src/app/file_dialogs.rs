@@ -7,6 +7,61 @@ use super::OpenDraftApp;
 use crate::files::{After, Choice};
 
 impl OpenDraftApp {
+    /// Asks what to do with a block's unsaved changes before the Block
+    /// Editor closes: Save, Don't Save or Cancel. Escape and the close
+    /// button mean Cancel.
+    pub(super) fn block_close_dialog(&mut self, ctx: &egui::Context) {
+        let Some(name) = self
+            .state
+            .docs
+            .get(self.state.active)
+            .and_then(|d| d.block_edit.as_ref())
+            .filter(|edit| edit.closing)
+            .map(|edit| edit.name.clone())
+        else {
+            return;
+        };
+        let mut open = true;
+        let mut choice = None;
+        widgets::dialog(
+            ctx,
+            &self.theme,
+            "Save block changes",
+            &mut open,
+            420.0,
+            |ui| {
+                ui.label(format!("Save changes to block \"{name}\"?"));
+                ui.add_space(4.0);
+                ui.label(
+                    egui::RichText::new(
+                        "Your changes to the block will be lost if you do not save them.",
+                    )
+                    .color(self.theme.colors.text_weak),
+                );
+                ui.add_space(14.0);
+                ui.horizontal(|ui| {
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if widgets::primary_button(ui, &self.theme, "Save").clicked() {
+                            choice = Some(Choice::Save);
+                        }
+                        if widgets::secondary_button(ui, &self.theme, "Don't Save").clicked() {
+                            choice = Some(Choice::Discard);
+                        }
+                        if widgets::secondary_button(ui, &self.theme, "Cancel").clicked() {
+                            choice = Some(Choice::Cancel);
+                        }
+                    });
+                });
+            },
+        );
+        if !open {
+            choice = Some(Choice::Cancel);
+        }
+        if let Some(choice) = choice {
+            self.state.answer_block_close(choice);
+        }
+    }
+
     /// Asks what to do with a drawing's unsaved changes: Save, Don't Save or
     /// Cancel. Escape and the close button mean Cancel.
     pub(super) fn confirm_dialog(&mut self, ctx: &egui::Context) {

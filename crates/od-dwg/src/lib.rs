@@ -25,6 +25,7 @@
 //!   MTEXT, with the style table) is read; anonymous blocks, paper space and
 //!   the rest are counted, not read.
 
+mod attrib;
 mod bit;
 mod checksum;
 mod classes;
@@ -69,7 +70,7 @@ pub use limits::DwgLimits;
 pub use lineweight::DwgLineweight;
 pub use report::{Degradation, ImportReport, Normalization, Skipped};
 pub use section_map::SectionInfo;
-pub use shapes::{Shape, MAX_ABS_COORDINATE};
+pub use shapes::{DwgAttribute, Shape, MAX_ABS_COORDINATE};
 pub use tables::DwgLinetypeDef;
 pub use text::DwgTextStyle;
 pub use types::{FixedType, ObjectKind};

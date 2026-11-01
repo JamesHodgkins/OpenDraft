@@ -14,9 +14,7 @@ use std::collections::BTreeSet;
 use std::sync::{Arc, Mutex};
 
 use od_canvas::View;
-use od_commands::{
-    AddLayer, Cancelled, Editor, ModifyEntities, ModifyLayers, Options, Session, SetBlocks,
-};
+use od_commands::{AddLayer, Cancelled, Editor, ModifyEntities, ModifyLayers, Session, SetBlocks};
 use od_core::{BlockId, Entity, EntityId};
 
 use crate::insert_cmd::choose_block;
@@ -30,6 +28,8 @@ pub struct BlockEdit {
     pub drawing: Session,
     view: View,
     selection: BTreeSet<EntityId>,
+    /// Asking whether to save the block's changes before closing.
+    pub closing: bool,
 }
 
 /// What a command, running on its own thread, asks the app to do with the
@@ -37,7 +37,6 @@ pub struct BlockEdit {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BlockEditRequest {
     Open(BlockId),
-    Close { save: bool },
 }
 
 pub type BlockEditRequests = Arc<Mutex<Vec<BlockEditRequest>>>;
@@ -45,6 +44,16 @@ pub type BlockEditRequests = Arc<Mutex<Vec<BlockEditRequest>>>;
 fn push(requests: &BlockEditRequests, request: BlockEditRequest) {
     if let Ok(mut list) = requests.lock() {
         list.push(request);
+    }
+}
+
+/// Ask the app to open the Block Editor on `id` when the command ends.
+pub(crate) fn request_edit(ed: &Editor, id: BlockId) {
+    if let Some(requests) = ed
+        .context()
+        .get::<std::sync::Mutex<Vec<BlockEditRequest>>>()
+    {
+        push(&requests, BlockEditRequest::Open(id));
     }
 }
 
@@ -142,6 +151,7 @@ impl AppState {
             drawing,
             view,
             selection,
+            closing: false,
         }));
         self.tell(format!(
             "Editing block \"{name}\". The origin is its base point. BSAVE saves it, BCLOSE closes the Block Editor."
@@ -194,14 +204,36 @@ impl AppState {
     /// unsaved changes.
     pub fn bclose(&mut self) {
         let doc = &self.docs[self.active];
-        let Some(edit) = doc.block_edit.as_ref() else {
+        if doc.block_edit.is_none() {
             return;
-        };
+        }
         if !doc.session.is_modified() {
             return self.close_block_editor(false);
         }
-        let (name, requests) = (edit.name.clone(), self.block_requests.clone());
-        self.start_command("BCLOSE", move |ed| ask_save(ed, &name, &requests));
+        self.ask_to_save_block(self.active);
+    }
+
+    /// Ask, in a dialog, what to do with the block's unsaved changes.
+    fn ask_to_save_block(&mut self, index: usize) {
+        self.abort_command();
+        if let Some(edit) = self.docs.get_mut(index).and_then(|d| d.block_edit.as_mut()) {
+            edit.closing = true;
+        }
+    }
+
+    /// The answer to that question: Save closes the Block Editor after
+    /// saving, Discard closes it without, Cancel stays in it.
+    pub fn answer_block_close(&mut self, choice: crate::files::Choice) {
+        use crate::files::Choice;
+        let Some(edit) = self.docs[self.active].block_edit.as_mut() else {
+            return;
+        };
+        edit.closing = false;
+        match choice {
+            Choice::Save => self.close_block_editor(true),
+            Choice::Discard => self.close_block_editor(false),
+            Choice::Cancel => {}
+        }
     }
 
     /// Put the drawing back, saving the block first when `save` (and staying
@@ -233,10 +265,10 @@ impl AppState {
             self.docs[index].end_block_edit();
             return true;
         }
-        self.abort_command();
         self.active = index;
+        self.ask_to_save_block(index);
         self.tell(format!(
-            "Block \"{name}\" has unsaved changes. Run BCLOSE to save or discard them first."
+            "Block \"{name}\" has unsaved changes: save or discard them, then close again."
         ));
         false
     }
@@ -251,22 +283,9 @@ impl AppState {
         for request in requests {
             match request {
                 BlockEditRequest::Open(id) => self.open_block_editor(id),
-                BlockEditRequest::Close { save } => self.close_block_editor(save),
             }
         }
     }
-}
-
-/// The question BCLOSE asks when there are unsaved changes. Esc stays in
-/// the Block Editor.
-fn ask_save(ed: &Editor, name: &str, requests: &BlockEditRequests) -> Result<(), Cancelled> {
-    let options = Options::new(format!("Save changes to block \"{name}\"?"))
-        .keyword("Save", "S")
-        .keyword("Discard", "D")
-        .default("Save".to_owned());
-    let save = ed.get_keyword(options)? == "Save";
-    push(requests, BlockEditRequest::Close { save });
-    Ok(())
 }
 
 #[cfg(test)]

@@ -27,7 +27,7 @@ pub enum Outcome {
 enum State {
     /// The command is working, or about to send its next request.
     Running,
-    Waiting(Prompt),
+    Waiting(Box<Prompt>),
     Finished(Outcome),
 }
 
@@ -101,7 +101,7 @@ impl Runner {
     /// The prompt waiting for an answer.
     pub fn prompt(&self) -> Option<&Prompt> {
         match &self.state {
-            State::Waiting(prompt) => Some(prompt),
+            State::Waiting(prompt) => Some(&**prompt),
             _ => None,
         }
     }
@@ -197,7 +197,7 @@ impl Runner {
                 }
                 Ok(Request::Say(text)) => self.said.push(text),
                 Ok(Request::Select { ids, remove }) => self.selections.push((ids, remove)),
-                Ok(Request::Ask(prompt)) => self.state = State::Waiting(prompt),
+                Ok(Request::Ask(prompt)) => self.state = State::Waiting(Box::new(prompt)),
                 Ok(Request::Done(result)) => {
                     self.state = State::Finished(match result {
                         Ok(()) => Outcome::Completed,
