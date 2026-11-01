@@ -85,6 +85,7 @@ impl AppState {
                 attribute_definition: None,
                 attribute_editor: None,
                 block_dialog: None,
+                field_dialog: None,
                 dynamic_dimensions: DynamicDimensions::None,
             })
         })
@@ -115,6 +116,7 @@ impl AppState {
             attribute_definition: None,
             attribute_editor: None,
             block_dialog: None,
+            field_dialog: None,
             dynamic_dimensions: DynamicDimensions::None,
         })
     }

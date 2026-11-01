@@ -22,6 +22,7 @@ mod dynamic_input;
 mod dynamic_overlay;
 #[cfg(test)]
 mod dynamic_tests;
+mod field_dialog;
 mod file_dialogs;
 mod history_keys;
 mod home_page;

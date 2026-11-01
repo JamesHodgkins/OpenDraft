@@ -3,6 +3,7 @@
 
 use od_core::block::attribute_draft::{DefinitionDraft, EditorDraft};
 use od_core::block::block_draft::BlockDraft;
+use od_core::block::{DataField, FieldDraft};
 
 use super::{Cancelled, Editor, Options, Prompt, Reply, Wants};
 use crate::BlockDialogButton;
@@ -17,6 +18,16 @@ pub enum AttributeEditorAnswer {
     /// Select block: choose another block reference. What was typed comes
     /// back, to be offered again if the user backs out of the pick.
     SelectBlock(EditorDraft),
+}
+
+/// What the user did with the Field dialog.
+#[derive(Clone, Debug, PartialEq)]
+pub enum FieldAnswer {
+    /// OK: the field to use.
+    Ok(Box<DataField>),
+    /// Select object: the dialog closed for the user to pick one. What was
+    /// chosen so far comes back, to be offered again.
+    PickObject(Box<FieldDraft>),
 }
 
 impl Editor {
@@ -48,6 +59,19 @@ impl Editor {
             Reply::AttributeEditor(draft, true) => Ok(AttributeEditorAnswer::Ok(*draft)),
             Reply::AttributeEditor(draft, false) => Ok(AttributeEditorAnswer::Apply(*draft)),
             Reply::AttributeEditorSelect(draft) => Ok(AttributeEditorAnswer::SelectBlock(*draft)),
+            _ => Err(Cancelled),
+        }
+    }
+
+    /// Open the Field dialog on `draft` and wait for what the user does with
+    /// it. Cancel is `Err(Cancelled)`.
+    pub fn ask_field_dialog(&self, draft: FieldDraft) -> Result<FieldAnswer, Cancelled> {
+        let options = Options::<()>::new("Field");
+        let mut prompt = Prompt::new(Wants::FieldDialog, &options, None);
+        prompt.field_dialog = Some(Box::new(draft));
+        match self.ask(prompt)? {
+            Reply::Field(field) => Ok(FieldAnswer::Ok(field)),
+            Reply::FieldPick(draft) => Ok(FieldAnswer::PickObject(draft)),
             _ => Err(Cancelled),
         }
     }

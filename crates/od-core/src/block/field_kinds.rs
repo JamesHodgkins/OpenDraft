@@ -166,15 +166,17 @@ pub fn apply_case(text: &str, code: &str) -> String {
 pub enum FieldCategory {
     DateTime,
     Document,
+    Objects,
 }
 
 impl FieldCategory {
-    pub const ALL: [FieldCategory; 2] = [Self::DateTime, Self::Document];
+    pub const ALL: [FieldCategory; 3] = [Self::DateTime, Self::Document, Self::Objects];
 
     pub fn label(self) -> &'static str {
         match self {
             Self::DateTime => "Date & Time",
             Self::Document => "Document",
+            Self::Objects => "Objects",
         }
     }
 }
@@ -187,7 +189,11 @@ pub struct FieldKind {
 }
 
 /// The fields offered, in the order the dialog lists them.
-pub const KINDS: [FieldKind; 2] = [
+/// The field that shows a property of an object in the drawing; it is made
+/// from the object picked, not from a format.
+pub const OBJECT: &str = "Object";
+
+pub const KINDS: [FieldKind; 3] = [
     FieldKind {
         name: "Date",
         category: FieldCategory::DateTime,
@@ -195,6 +201,10 @@ pub const KINDS: [FieldKind; 2] = [
     FieldKind {
         name: "Filename",
         category: FieldCategory::Document,
+    },
+    FieldKind {
+        name: OBJECT,
+        category: FieldCategory::Objects,
     },
 ];
 
@@ -253,7 +263,7 @@ impl DataField {
     pub fn of_kind(name: &str, format: &str) -> Option<Self> {
         KINDS
             .iter()
-            .any(|k| k.name == name)
+            .any(|k| k.name == name && name != OBJECT)
             .then(|| Self::variable(name, format))
     }
 

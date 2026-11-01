@@ -197,7 +197,7 @@ impl Runner {
                 }
                 Ok(Request::Say(text)) => self.said.push(text),
                 Ok(Request::Select { ids, remove }) => self.selections.push((ids, remove)),
-                Ok(Request::Ask(prompt)) => self.state = State::Waiting(Box::new(prompt)),
+                Ok(Request::Ask(prompt)) => self.state = State::Waiting(prompt),
                 Ok(Request::Done(result)) => {
                     self.state = State::Finished(match result {
                         Ok(()) => Outcome::Completed,

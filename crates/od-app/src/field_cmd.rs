@@ -12,7 +12,7 @@ use crate::text::plural;
 
 /// What the drawing knows about itself that a field may show, as the command
 /// was started with it.
-fn field_context(ed: &Editor) -> FieldContext {
+pub(crate) fn field_context(ed: &Editor) -> FieldContext {
     ed.context()
         .get::<FieldContext>()
         .map(|c| (*c).clone())

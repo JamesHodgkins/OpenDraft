@@ -148,6 +148,7 @@ pub const ALIASES: &[(&str, &str, &str)] = &[
     ("-ATTEDIT", "-ATTEDIT", "block.attedit_line"),
     ("ATTSYNC", "ATTSYNC", "block.attsync"),
     ("FIELD", "FIELD", "block.field"),
+    ("-FIELD", "-FIELD", "block.field_line"),
     ("UPDATEFIELD", "UPDATEFIELD", "block.updatefield"),
     ("PU", "PURGE", "block.purge"),
     ("-PU", "-PURGE", "block.purge_all"),

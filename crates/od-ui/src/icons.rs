@@ -183,7 +183,9 @@ icons! {
     INQUIRY_RADIUS = '\u{e531}';
     INQUIRY_VOLUME = '\u{e065}';
     INSERT_EXPORT = '\u{e19d}';
+    INSERT_FIELD = '\u{e264}';
     INSERT_IMPORT = '\u{e0b6}';
+    INSERT_UPDATEFIELD = '\u{e4b6}';
     LAYER_FREEZE = '\u{e168}';
     LAYER_HIDE = '\u{e207}';
     LAYER_ISOLATE = '\u{e29d}';

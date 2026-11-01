@@ -70,6 +70,7 @@ mod ellipse_cmd;
 mod explode;
 mod field_cmd;
 mod field_context;
+mod field_dialog_cmd;
 mod field_picker;
 mod file_io;
 mod files;

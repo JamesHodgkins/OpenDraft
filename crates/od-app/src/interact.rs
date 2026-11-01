@@ -448,6 +448,7 @@ mod tests {
             attribute_definition: None,
             attribute_editor: None,
             block_dialog: None,
+            field_dialog: None,
             allow_empty: false,
             pick_locked: false,
             esc_backs: false,

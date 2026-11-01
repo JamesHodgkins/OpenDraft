@@ -35,7 +35,7 @@ pub use changes::Changes;
 pub use context::Context;
 pub use dim_style_action::SetDimStyle;
 pub use dim_styles_action::SetDimStyles;
-pub use editor::{AttributeEditorAnswer, Editor};
+pub use editor::{AttributeEditorAnswer, Editor, FieldAnswer};
 pub use history::{History, Provenance, Step, StepInfo};
 pub use layer_action::{AddLayer, ModifyLayers, RemoveLayer, SetCurrentLayer, SetNewObjectStyle};
 pub use layout_action::SetLayouts;

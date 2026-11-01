@@ -158,7 +158,9 @@ The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
 | ![](inquiry-radius.svg) | `inquiry-radius.svg` | radius | Radius |
 | ![](inquiry-volume.svg) | `inquiry-volume.svg` | box | Volume |
 | ![](insert-export.svg) | `insert-export.svg` | upload | Export File |
+| ![](insert-field.svg) | `insert-field.svg` | text-cursor-input | Field |
 | ![](insert-import.svg) | `insert-import.svg` | download | Import File |
+| ![](insert-updatefield.svg) | `insert-updatefield.svg` | refresh-ccw-dot | Update Fields |
 | ![](layer-freeze.svg) | `layer-freeze.svg` | snowflake | Freeze |
 | ![](layer-hide.svg) | `layer-hide.svg` | lightbulb-off | Off |
 | ![](layer-isolate.svg) | `layer-isolate.svg` | focus | Isolate |
