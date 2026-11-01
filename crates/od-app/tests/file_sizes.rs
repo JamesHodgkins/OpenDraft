@@ -9,10 +9,7 @@ use std::path::{Path, PathBuf};
 const LIMIT: usize = 450;
 
 /// Known over the limit: (path from the repository root, most lines allowed).
-const TO_SPLIT: &[(&str, usize)] = &[
-    ("crates/od-ui/src/widgets.rs", 661),
-    ("crates/od-files/src/dxf/read.rs", 425),
-];
+const TO_SPLIT: &[(&str, usize)] = &[("crates/od-files/src/dxf/read.rs", 425)];
 
 fn sources(dir: &Path, found: &mut Vec<PathBuf>) {
     let Ok(entries) = fs::read_dir(dir) else {

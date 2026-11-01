@@ -731,7 +731,7 @@ Found while polishing the issue forms: `opendraft.exe` in 0.1.0 to 0.1.2 was a c
 4a. Layouts, next: plot margins and linetypes, non-rectangular viewport clips, checking the R2000 export in AutoCAD (see "Layouts and viewports").
 4b. OD Roman stroke font (`private_material/od_roman_font_specification.md`): data format, parser, SVG converter, outlines and layout (stroke shaper, weight per glyph, painting, plotting, `.odx`) are built (milestones 1 to 5, checked in the real app: the style dialog has the font list and Line Weight, the MTEXT toolbar has Weight %); the weight is stored in the font control as the `|w` field. Next: the PDF hidden text layer and the DXF round trip (`RomanS.shx` plus OpenDraft XDATA, and whether AutoCAD accepts `|w`). The font is drawn as one SVG per glyph in `fonts/od_roman/` (see the specification, section 2; `scripts/od_roman_new_glyph.py`, `od_roman_import.py`, `od_roman_preview.py`). Still to draw: `$ % / : < > @ [ \ ] ^ ` { | } ~`, `Ø`, `±`, `×`.
 5. Annotation: multiline text (slices 1 to 7 are built, see "Multiline text"; next is a font and style menu in the toolbar, symbols and fields, then the ruler once there are AutoCAD paragraph fixtures), then the dimensions that are left (see "Dimensions: what is done and what is outstanding" below, starting with DWG dimension import), then blocks (see "Blocks": DXF blocks, ByBlock, attributes, dynamic blocks).
-6. Housekeeping: split `widgets.rs` and `dxf/read.rs`; make Document mutators return `Result`; run on Linux for the first time; progress bar for large files.
+6. Housekeeping: split `dxf/read.rs` (`widgets.rs` was split into `widgets/cards.rs` and `widgets/containers.rs`, 1-11-2026); make Document mutators return `Result`; run on Linux for the first time; progress bar for large files.
 7. Linetypes (see "Linetypes": slices 1 to 5 are built (table, dashes, scales and generation, DXF and DWG patterns, the Manager and lists); left are `CELTYPE`, `.lin` loading and `ByBlock`).
 8. Properties panel parity with AutoCAD: `private_material/properties_gap.md` lists every row in the AutoCAD screenshots against what we have, per object kind, with a suggested order (cheap rows first, dimension style table last).
 9. Object snap is complete to the spec apart from the items in ARCHITECTURE.md's "Not built" and the AutoCAD fixtures noted in the spec (see "Object snap").
@@ -934,3 +934,23 @@ The format version had reached 8 with no users, so it is reset to 0 and split in
 **Context menu.** Esc closes an open context menu before `edit.cancel` can take the key (it used to clear the selection and leave the menu up). The menu grows past its nominal width to fit its longest label (a long "Repeat ..." row ran off the edge). It also closes when a Save changes prompt opens or the window loses focus, as menus do elsewhere.
 
 **Command history.** With no command running, Up and Down at the command line (or with the canvas focused) walk the commands run before, oldest to newest, as in AutoCAD; Down past the newest empties the line. `CommandLine::history` records every command that runs, typed or from the ribbon, under its AutoCAD name (`note_typed`, from `run`); `browse_history` steps it, `app/history_keys.rs` reads the keys. `capture_dynamic_keys` takes Up and Down out of the raw input first (also when the command line has focus), because egui otherwise moves focus between controls. While a history line is shown the suggestion list is hidden. Suggestions rank an exact full-name match first (LINE before LINETYPE). **Not done:** the history is not kept between sessions and does not record answers typed inside a command.
+
+## UX accessibility audit: shared keyboard focus (30-10-2026)
+
+Custom-painted controls were reachable with Tab and activated with Enter or
+Space through egui, but several important families did not paint a focus state.
+`od_ui::widgets::focus_ring` is now the single treatment for custom controls: a
+2 px `accent_text` ring, whose contrast is already guarded by
+`theme_contrast_tests`. It is used by the shared text tabs, icon toggles, preset
+and template cards, all `Icon` controls, document tabs and their close actions,
+and ribbon tabs. Document tabs and close actions also expose their full names in
+tooltips. Native egui buttons and fields retain egui's own focus treatment.
+
+The next UX architecture work should be a reusable roving-focus/tab-list
+controller (arrow keys, Home/End, and semantic selection) for ribbon and
+document tabs, followed by the same controller for card grids. Context menus
+should then share one keyboard-navigable menu implementation rather than each
+overlay owning navigation and dismissal. Longer term, UI scaling and a
+comfortable-density option should raise the current 26–28 px dense desktop
+targets for touch or motor-access needs without diluting the CAD layout by
+default.

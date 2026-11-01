@@ -38,7 +38,7 @@ This table is a test: `od-app/tests/crate_rules.rs` reads each crate's declared 
    persisted; **state that belongs to the drawing** lives in `Doc`.
 5. **Files stay under about 400 lines of production code** (tests do not
    count). `od-app/tests/file_sizes.rs` enforces it at 450 and lists the
-   files still over, which may not grow: `widgets.rs` and `dxf/read.rs`
+   files still over, which may not grow: `dxf/read.rs`
    (`view.rs` is done: its painting moved to `view/paint.rs`). Split them, then remove them from the list. Split by
    responsibility, not by layer. `od-app/src/app/` shows the pattern: `app.rs`
    owns the struct and the frame loop, and each submodule adds one area as an
