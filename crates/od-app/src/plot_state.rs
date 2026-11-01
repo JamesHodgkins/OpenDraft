@@ -38,6 +38,7 @@ impl AppState {
         } else {
             chosen.with_extension("pdf")
         };
+        self.refresh_fields(self.active, crate::field_refresh::ON_PLOT);
         self.begin_plot(&path, id);
         true
     }

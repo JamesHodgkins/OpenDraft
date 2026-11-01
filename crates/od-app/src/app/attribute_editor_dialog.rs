@@ -26,6 +26,7 @@ enum Pressed {
     Apply,
     Cancel,
     SelectBlock,
+    Field,
 }
 
 fn unavailable(ui: &mut egui::Ui, label: &str, why: &str) {
@@ -77,7 +78,7 @@ impl OpenDraftApp {
             ui.vertical(|ui| {
                 ui.set_min_height(190.0);
                 match draft.tab {
-                    0 => attribute_tab(ui, theme, &mut draft),
+                    0 => attribute_tab(ui, theme, &mut draft, &mut pressed),
                     1 => text_tab(ui, &mut draft, document),
                     _ => properties_tab(ui, theme, &mut draft, document),
                 }
@@ -117,6 +118,9 @@ impl OpenDraftApp {
             Pressed::SelectBlock => self
                 .state
                 .reply(Reply::AttributeEditorSelect(Box::new(draft))),
+            Pressed::Field => self
+                .state
+                .reply(Reply::AttributeEditorField(Box::new(draft))),
             Pressed::Cancel => self.state.cancel_command(),
             Pressed::Nothing if !open => self.state.cancel_command(),
             Pressed::Nothing => self.state.command_dialogs.editor = Some(draft),
@@ -152,7 +156,12 @@ fn header(ui: &mut egui::Ui, theme: &od_ui::Theme, draft: &EditorDraft, pressed:
     });
 }
 
-fn attribute_tab(ui: &mut egui::Ui, theme: &od_ui::Theme, draft: &mut EditorDraft) {
+fn attribute_tab(
+    ui: &mut egui::Ui,
+    theme: &od_ui::Theme,
+    draft: &mut EditorDraft,
+    pressed: &mut Pressed,
+) {
     table::list(ui, theme, draft);
     ui.add_space(8.0);
     let selected = draft.selected;
@@ -161,12 +170,15 @@ fn attribute_tab(ui: &mut egui::Ui, theme: &od_ui::Theme, draft: &mut EditorDraf
             ui.label("Value:");
             let edit = ui.add_enabled(
                 !row.is_field,
-                egui::TextEdit::singleline(&mut row.value).desired_width(WIDTH - 90.0),
+                egui::TextEdit::singleline(&mut row.value).desired_width(WIDTH - 160.0),
             );
             if row.is_field {
                 edit.on_disabled_hover_text(
-                    "This value is a data field. Fields are not edited here yet.",
+                    "This value is a data field. Choose another with Field.",
                 );
+            }
+            if widgets::secondary_button(ui, theme, "Field...").clicked() {
+                *pressed = Pressed::Field;
             }
         });
     }

@@ -163,7 +163,7 @@ impl AppState {
 
     fn finish_open(&mut self, path: &Path, result: Result<od_files::Loaded, od_files::FileError>) {
         self.opening.retain(|p| p != path);
-        let loaded = match result {
+        let mut loaded = match result {
             Ok(loaded) => loaded,
             Err(error) => {
                 self.locate.retain(|(p, _)| p != path);
@@ -182,6 +182,7 @@ impl AppState {
             return;
         }
         self.abort_command();
+        self.refresh_loaded(&mut loaded.document, path);
         let title = display_name(path);
         for warning in &loaded.warnings {
             self.cmdline.say(warning.clone());
@@ -232,6 +233,9 @@ impl AppState {
             self.message = format!("{} is already being saved", doc.title);
             return None;
         }
+        // What is written shows the fields as they are now.
+        self.refresh_fields(index, crate::field_refresh::ON_SAVE);
+        let doc = &self.docs[index];
         let (uid, position) = (doc.uid, doc.drawing().history().position());
         let copy = doc.drawing().document().clone();
         self.saving.push(uid);

@@ -102,6 +102,15 @@ pub fn eattedit_dialog(ed: &mut Editor) -> Result<(), Cancelled> {
                 // Esc: the same block, with what was typed.
                 Err(_) => back = Some(draft),
             },
+            AttributeEditorAnswer::InsertField(mut draft) => {
+                // Cancelling the Field dialog comes back to the editor as it was.
+                if let Ok(field) = crate::field_dialog_cmd::choose_field(ed) {
+                    let context = crate::field_cmd::field_context(ed);
+                    let field = ed.read(move |doc| field.evaluated(doc, &context))?;
+                    draft.set_field(field);
+                }
+                back = Some(draft);
+            }
             AttributeEditorAnswer::Apply(draft) => {
                 keep = Some((draft.selected, draft.tab));
                 change(ed, id, &draft, &insert, &own)?;
@@ -255,6 +264,66 @@ mod tests {
         assert_eq!(state.session().document().validate(), Ok(()));
         state.undo();
         assert_eq!(values(&state, id), ["dflt", "dflt"]);
+    }
+
+    #[test]
+    fn the_field_button_asks_for_a_field_and_ok_puts_it_in_the_attribute() {
+        use od_core::block::DataField;
+        use od_core::drawing_properties::DrawingProperties;
+        let (mut state, id) = attributed_insert();
+        state.set_drawing_properties(DrawingProperties {
+            title: "Plot 7".into(),
+            ..DrawingProperties::default()
+        });
+        state.select_ids([id], false);
+        let mut draft = open_editor(&mut state);
+        draft.selected = 1;
+        state.reply(Reply::AttributeEditorField(Box::new(draft)));
+        state.settle_command();
+        dialog(&mut state, Wants::FieldDialog);
+        state.reply(Reply::Field(Box::new(DataField::variable("Title", ""))));
+        state.settle_command();
+        dialog(&mut state, Wants::AttributeEditorDialog);
+        let back = state
+            .waiting()
+            .and_then(|a| a.attribute_editor.clone())
+            .map(|d| *d)
+            .unwrap();
+        assert_eq!(back.selected, 1, "the editor comes back where it was");
+        assert_eq!(back.rows[1].value, "Plot 7", "the field shows at once");
+        assert!(back.rows[1].is_field);
+        state.reply(Reply::AttributeEditor(Box::new(back), true));
+        state.settle_command();
+        assert_eq!(values(&state, id), ["dflt", "Plot 7"]);
+        let Some(Entity::Insert(insert)) = state.session().document().get(id) else {
+            panic!("an insert")
+        };
+        assert!(insert.attributes[1].value.has_fields(), "a field, not text");
+        assert!(!insert.attributes[0].value.has_fields());
+        state.undo();
+        assert_eq!(values(&state, id), ["dflt", "dflt"], "one undo step");
+    }
+
+    #[test]
+    fn cancelling_the_field_dialog_returns_to_the_editor_unchanged() {
+        let (mut state, id) = attributed_insert();
+        state.select_ids([id], false);
+        let mut draft = open_editor(&mut state);
+        draft.rows[0].value = "typed".into();
+        state.reply(Reply::AttributeEditorField(Box::new(draft)));
+        state.settle_command();
+        dialog(&mut state, Wants::FieldDialog);
+        state.reply(Reply::Back);
+        state.settle_command();
+        assert!(state.command_running(), "the command carries on");
+        dialog(&mut state, Wants::AttributeEditorDialog);
+        let back = state
+            .waiting()
+            .and_then(|a| a.attribute_editor.clone())
+            .map(|d| *d)
+            .unwrap();
+        assert_eq!(back.rows[0].value, "typed", "what was typed is kept");
+        assert!(back.rows.iter().all(|r| r.field.is_none()));
     }
 
     #[test]

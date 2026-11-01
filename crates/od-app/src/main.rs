@@ -72,6 +72,7 @@ mod field_cmd;
 mod field_context;
 mod field_dialog_cmd;
 mod field_picker;
+mod field_refresh;
 mod file_io;
 mod files;
 mod grips;

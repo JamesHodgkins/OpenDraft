@@ -353,6 +353,8 @@ pub enum Reply {
     AttributeEditor(Box<EditorDraft>, bool),
     /// The Attribute Editor, closed to choose another block reference.
     AttributeEditorSelect(Box<EditorDraft>),
+    /// The Attribute Editor, closed to choose a data field for a value.
+    AttributeEditorField(Box<EditorDraft>),
     /// The Block Definition dialog, closed by a button.
     BlockDialog(Box<BlockDraft>, BlockDialogButton),
     /// The Field dialog, accepted: the field it made.

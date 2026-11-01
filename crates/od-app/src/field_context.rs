@@ -28,17 +28,19 @@ impl AppState {
     /// The context fields are evaluated in: the active drawing's file name
     /// (none until it is saved) and the time now.
     pub(crate) fn field_context(&self) -> FieldContext {
+        self.field_context_for(self.active)
+    }
+
+    /// As [`Self::field_context`] for drawing `index`.
+    pub(crate) fn field_context_for(&self, index: usize) -> FieldContext {
+        let doc = self.docs.get(index);
         FieldContext {
-            file_name: self
-                .docs
-                .get(self.active)
+            file_name: doc
                 .and_then(|d| d.path.as_deref())
                 .and_then(|p| p.file_name())
                 .map(|n| n.to_string_lossy().into_owned()),
             now: Some(current_time()),
-            properties: self
-                .docs
-                .get(self.active)
+            properties: doc
                 .map(|d| d.session.document().properties().clone())
                 .unwrap_or_default(),
         }

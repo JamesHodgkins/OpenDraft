@@ -188,6 +188,16 @@ fn build() -> Vec<SysVar<AppState>> {
                 Ok(())
             },
         ),
+        SysVar::int(
+            "FIELDEVAL",
+            "When fields are updated: 1 on open, 2 on save, 4 on plot",
+            (0, i64::from(crate::settings::FIELD_EVAL_ALL)),
+            |s| Value::Int(i64::from(s.settings.field_eval)),
+            |s, v| {
+                s.settings.field_eval = u8::try_from(int(v)).unwrap_or(0);
+                Ok(())
+            },
+        ),
         SysVar::real(
             "TEXTSIZE",
             "Height of new text",

@@ -18,6 +18,8 @@ pub enum AttributeEditorAnswer {
     /// Select block: choose another block reference. What was typed comes
     /// back, to be offered again if the user backs out of the pick.
     SelectBlock(EditorDraft),
+    /// Field: choose a data field for the value; what was typed comes back.
+    InsertField(EditorDraft),
 }
 
 /// What the user did with the Field dialog.
@@ -59,6 +61,7 @@ impl Editor {
             Reply::AttributeEditor(draft, true) => Ok(AttributeEditorAnswer::Ok(*draft)),
             Reply::AttributeEditor(draft, false) => Ok(AttributeEditorAnswer::Apply(*draft)),
             Reply::AttributeEditorSelect(draft) => Ok(AttributeEditorAnswer::SelectBlock(*draft)),
+            Reply::AttributeEditorField(draft) => Ok(AttributeEditorAnswer::InsertField(*draft)),
             _ => Err(Cancelled),
         }
     }
