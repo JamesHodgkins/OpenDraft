@@ -68,6 +68,7 @@ mod dynamic_settings;
 mod edges;
 mod ellipse_cmd;
 mod explode;
+mod field_cmd;
 mod file_io;
 mod files;
 mod grips;

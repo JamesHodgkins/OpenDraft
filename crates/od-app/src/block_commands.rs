@@ -9,6 +9,7 @@ use crate::attribute_edit::edit_attributes;
 use crate::attribute_sync_cmd::sync_attributes;
 use crate::block_cmd::define_block;
 use crate::block_dialog_cmd::define_block_dialog;
+use crate::field_cmd::{insert_field, update_field};
 use crate::insert_cmd::insert_block;
 use crate::state::AppState;
 
@@ -46,6 +47,13 @@ pub fn commands() -> Vec<Command<AppState>> {
             "Sync Attributes",
             "ATTSYNC",
             sync_attributes
+        ),
+        editor!("block.field", "Insert Field", "FIELD", insert_field),
+        editor!(
+            "block.updatefield",
+            "Update Fields",
+            "UPDATEFIELD",
+            update_field
         ),
     ]
 }

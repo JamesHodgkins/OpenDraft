@@ -133,6 +133,8 @@ pub const TABLE: &[(&str, AutomationPolicy, CommandEffect)] = &[
     ("block.attedit", InteractiveInApp, Mutation),
     ("block.attedit_line", InteractiveInApp, Mutation),
     ("block.attsync", InteractiveInApp, Mutation),
+    ("block.field", InteractiveInApp, Mutation),
+    ("block.updatefield", InteractiveInApp, Mutation),
     ("block.purge", InteractiveInApp, Ui),
     ("block.purge_all", InteractiveInApp, Mutation),
     ("block.edit", Denied, Lifecycle),
