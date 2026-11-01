@@ -123,6 +123,11 @@ fn key_pressed(editor: &mut MTextEditor, key: Key, m: Modifiers, now: f64, done:
         return;
     }
     match key {
+        // Esc while picking an object for a field goes back to the dialog.
+        Key::Escape if editor.field_pick => {
+            editor.field_pick = false;
+            editor.notice = None;
+        }
         Key::Escape => done.outcome = Some(Outcome::Cancel),
         Key::Enter if m.command => done.outcome = Some(Outcome::Accept),
         Key::Enter => done.touched |= editor.insert("\n", now),
@@ -289,6 +294,18 @@ mod tests {
             modifiers: Modifiers::NONE,
         };
         assert_eq!(handle_events(&mut e, &[release], 2.0), Handled::default());
+    }
+
+    #[test]
+    fn escape_while_picking_an_object_for_a_field_goes_back_and_does_not_cancel() {
+        let mut e = editor("a");
+        e.field_pick = true;
+        e.notice = Some("Select an object".into());
+        let done = handle_events(&mut e, &[plain(Key::Escape)], 0.0);
+        assert_eq!(done.outcome, None, "the editor stays open");
+        assert!(!e.field_pick && e.notice.is_none());
+        let done = handle_events(&mut e, &[plain(Key::Escape)], 1.0);
+        assert_eq!(done.outcome, Some(Outcome::Cancel), "the next Esc cancels");
     }
 
     #[test]

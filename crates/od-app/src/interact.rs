@@ -140,6 +140,19 @@ impl AppState {
             }
             None => {
                 let mut prompt = runner.prompt().and_then(canvas_prompt);
+                // Picking an object for a field while the text editor is open.
+                if prompt.is_none() && doc.mtext_editor.as_ref().is_some_and(|e| e.field_pick) {
+                    prompt = Some(PointPrompt {
+                        base: None,
+                        ghost: None,
+                        ghost_style: od_canvas::GhostStyle::Normal,
+                        snap_geometry: Default::default(),
+                        rubber_band: false,
+                        marker: None,
+                        pick: true,
+                        pick_locked: false,
+                    });
+                }
                 // After the base of `FRO` or the first of `M2P` the rubber
                 // band starts there.
                 if let (Some(p), Some(base)) = (prompt.as_mut(), self.once.rubber_base()) {
