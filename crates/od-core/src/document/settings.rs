@@ -2,6 +2,7 @@
 
 use super::Document;
 use crate::dimension::DimStyle;
+use crate::drawing_properties::DrawingProperties;
 use crate::units::Units;
 use crate::{Entity, EntityId};
 
@@ -16,6 +17,18 @@ impl Document {
     /// Returns the old ones.
     pub fn set_units(&mut self, units: Units) -> Units {
         std::mem::replace(&mut self.units, units.sanitized())
+    }
+
+    // ---- drawing properties ----
+
+    pub fn properties(&self) -> &DrawingProperties {
+        &self.properties
+    }
+
+    /// Replace the drawing's properties (cleaned to the limits). Returns the
+    /// old ones.
+    pub fn set_properties(&mut self, properties: DrawingProperties) -> DrawingProperties {
+        std::mem::replace(&mut self.properties, properties.sanitized())
     }
 
     // ---- dimension style ----

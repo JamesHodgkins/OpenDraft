@@ -9,6 +9,7 @@ use od_core::mtext::{
 use od_core::{Document, FontDescriptor, MText, TextStyle, TextStyleId};
 use serde::{Deserialize, Serialize};
 
+use super::attribute::DataFieldDto;
 use super::entity::{from_point, invalid, point, PointDto};
 use super::names::{AttachmentPointDto, FlowDto, SpacingStyleDto};
 use super::ColorDto;
@@ -254,6 +255,13 @@ pub(super) struct MTextDto {
     style: u64,
     /// The AutoCAD format-code stream, exactly.
     contents: String,
+    /// The data fields the contents' markers point at.
+    #[serde(
+        default,
+        skip_serializing_if = "Vec::is_empty",
+        deserialize_with = "super::limits::field_items"
+    )]
+    fields: Vec<DataFieldDto>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     line_spacing: Option<SpacingDto>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -303,6 +311,7 @@ impl MTextDto {
             flow: m.flow.into(),
             style: m.style.0,
             contents: m.contents.clone(),
+            fields: m.fields.iter().map(DataFieldDto::of).collect(),
             line_spacing: (spacing != EntityLineSpacing::default()).then(|| SpacingDto {
                 style: spacing.style.into(),
                 factor: spacing.factor,
@@ -354,6 +363,7 @@ impl MTextDto {
             flow: self.flow.into(),
             style: TextStyleId(self.style),
             contents: self.contents.clone(),
+            fields: self.fields.iter().map(DataFieldDto::field).collect(),
             line_spacing,
             background,
             columns,

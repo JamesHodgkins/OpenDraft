@@ -29,6 +29,9 @@ mod budget;
 mod edit;
 mod editing;
 pub mod field;
+mod field_draft;
+mod field_eval;
+pub mod field_kinds;
 mod picture;
 mod table;
 
@@ -42,7 +45,12 @@ pub use attribute::{
 pub use attribute_sync::{sync_references, Synced};
 pub use budget::MAX_EXPANSION;
 pub use editing::BlockEditSave;
-pub use field::{DataField, FieldObjectRef, FieldRun, FieldStatus, FieldText, FieldValue};
+pub use field::{
+    DataField, FieldObjectRef, FieldRun, FieldStatus, FieldText, FieldValue, MAX_FIELDS_PER_TEXT,
+};
+pub use field_draft::{FieldDraft, ObjectChoice};
+pub use field_eval::{update_fields, FieldContext, FieldUpdate, ObjectProperty};
+pub use field_kinds::{FieldCategory, FieldKind, FieldTime, FormatChoice};
 pub use picture::Piece;
 pub use table::{block_name_problem, Redefinition};
 

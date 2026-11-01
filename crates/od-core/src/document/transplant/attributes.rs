@@ -35,7 +35,7 @@ impl Merge<'_> {
     /// Text whose data fields point at the source's objects, for the target:
     /// a field keeps its code and last value, but what it pointed at has
     /// other ids there, so those references become unresolved.
-    fn detached(&mut self, text: &FieldText) -> FieldText {
+    pub(super) fn detached(&mut self, text: &FieldText) -> FieldText {
         if !text.has_fields() {
             return text.clone();
         }

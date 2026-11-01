@@ -21,6 +21,7 @@ mod mleader_style_action;
 mod paste_action;
 mod point_style_action;
 mod prompt;
+mod properties_action;
 mod registry;
 mod runner;
 mod session;
@@ -35,7 +36,7 @@ pub use changes::Changes;
 pub use context::Context;
 pub use dim_style_action::SetDimStyle;
 pub use dim_styles_action::SetDimStyles;
-pub use editor::{AttributeEditorAnswer, Editor};
+pub use editor::{AttributeEditorAnswer, Editor, FieldAnswer};
 pub use history::{History, Provenance, Step, StepInfo};
 pub use layer_action::{AddLayer, ModifyLayers, RemoveLayer, SetCurrentLayer, SetNewObjectStyle};
 pub use layout_action::SetLayouts;
@@ -48,6 +49,7 @@ pub use prompt::{
     Marker, NumberOptions, NumberOrPoint, Options, Picked, PointOptions, Prompt, Reply,
     TextOptions, Wants,
 };
+pub use properties_action::SetProperties;
 pub use registry::{
     always, never, AutomationPolicy, Command, CommandEffect, ExecuteError, Registry, RegistryError,
 };

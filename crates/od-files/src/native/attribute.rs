@@ -328,7 +328,7 @@ enum ValueDto {
 }
 
 #[derive(Serialize, Deserialize)]
-struct DataFieldDto {
+pub(super) struct DataFieldDto {
     evaluator: String,
     code: String,
     #[serde(default, skip_serializing_if = "String::is_empty")]
@@ -351,7 +351,7 @@ struct DataFieldDto {
 }
 
 impl DataFieldDto {
-    fn of(f: &DataField) -> Self {
+    pub(super) fn of(f: &DataField) -> Self {
         Self {
             evaluator: f.evaluator.clone(),
             code: f.code.clone(),
@@ -394,7 +394,7 @@ impl DataFieldDto {
         }
     }
 
-    fn field(&self) -> DataField {
+    pub(super) fn field(&self) -> DataField {
         DataField {
             evaluator: self.evaluator.clone(),
             code: self.code.clone(),

@@ -7,12 +7,15 @@
 //! picked as its reference frame, sized by [`MText::frame`].
 
 mod corners;
+mod fields;
 mod frame;
 mod transform;
 
 pub use corners::place_in_corners;
+pub use fields::{marker, marker_index};
 use std::fmt;
 
+use crate::block::DataField;
 use crate::layer::Color;
 use crate::text::{self, TextError};
 use crate::text_style::TextStyleId;
@@ -195,6 +198,8 @@ pub struct MText {
     pub style: TextStyleId,
     /// The format-code stream, exactly as written. See [`text`].
     pub contents: String,
+    /// The data fields that markers in `contents` point at; see [`fields`].
+    pub fields: Vec<DataField>,
     pub line_spacing: EntityLineSpacing,
     pub background: Option<MTextBackground>,
     pub columns: MTextColumns,
@@ -207,6 +212,7 @@ pub enum MTextError {
     NotFinite(&'static str),
     OutOfRange(&'static str),
     Contents(TextError),
+    Fields(String),
 }
 
 impl fmt::Display for MTextError {
@@ -215,6 +221,7 @@ impl fmt::Display for MTextError {
             Self::NotFinite(what) => write!(f, "{what} is not a finite number"),
             Self::OutOfRange(what) => write!(f, "{what} is out of range"),
             Self::Contents(e) => e.fmt(f),
+            Self::Fields(why) => write!(f, "the data fields are not valid: {why}"),
         }
     }
 }
@@ -240,6 +247,7 @@ impl MText {
             flow: MTextFlow::LeftToRight,
             style,
             contents: contents.into(),
+            fields: Vec::new(),
             line_spacing: EntityLineSpacing::default(),
             background: None,
             columns: MTextColumns::default(),
@@ -286,6 +294,9 @@ impl MText {
         }
         self.validate_columns()?;
         text::parse(&self.contents).map_err(MTextError::Contents)?;
+        self.fields_as_text()
+            .validate()
+            .map_err(MTextError::Fields)?;
         Ok(())
     }
 

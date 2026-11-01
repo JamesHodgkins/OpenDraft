@@ -133,6 +133,9 @@ pub const TABLE: &[(&str, AutomationPolicy, CommandEffect)] = &[
     ("block.attedit", InteractiveInApp, Mutation),
     ("block.attedit_line", InteractiveInApp, Mutation),
     ("block.attsync", InteractiveInApp, Mutation),
+    ("block.field", InteractiveInApp, Mutation),
+    ("block.field_line", InteractiveInApp, Mutation),
+    ("block.updatefield", InteractiveInApp, Mutation),
     ("block.purge", InteractiveInApp, Ui),
     ("block.purge_all", InteractiveInApp, Mutation),
     ("block.edit", Denied, Lifecycle),
@@ -152,6 +155,7 @@ pub const TABLE: &[(&str, AutomationPolicy, CommandEffect)] = &[
     // Dialogs and variables.
     ("tools.setvar", Denied, Lifecycle),
     ("format.units", Denied, Lifecycle),
+    ("format.properties", Denied, Lifecycle),
     ("format.linetype", Denied, Lifecycle),
     ("annotate.textstyle", Denied, Lifecycle),
     ("dim.style", Denied, Lifecycle),

@@ -163,6 +163,20 @@ pub fn replace_text(
     range: Range<usize>,
     inserted: &str,
 ) -> Result<Edited, EditRefusal> {
+    splice(contents, range, &escape_for_contents(inserted))
+}
+
+/// As [`replace_text`] for `control`, which is already format code (a data
+/// field's marker) and so is not escaped.
+pub fn replace_with_control(
+    contents: &str,
+    range: Range<usize>,
+    control: &str,
+) -> Result<Edited, EditRefusal> {
+    splice(contents, range, control)
+}
+
+fn splice(contents: &str, range: Range<usize>, escaped: &str) -> Result<Edited, EditRefusal> {
     let limits = TextLimits::default();
     let parsed = parse_with(contents, limits).map_err(|_| EditRefusal::TooLarge)?;
     let kept = match check(&parsed, contents, &range) {
@@ -170,7 +184,6 @@ pub fn replace_text(
         Err(EditRefusal::SplitsGroup) => dangling(&parsed, &range),
         Err(why) => return Err(why),
     };
-    let escaped = escape_for_contents(inserted);
     let kept_len: usize = kept.iter().map(|r| r.len()).sum();
     let new_len = contents.len() - range.len() + kept_len + escaped.len();
     if new_len > limits.max_content_bytes {
@@ -178,7 +191,7 @@ pub fn replace_text(
     }
     let mut out = String::with_capacity(new_len);
     out.push_str(&contents[..range.start]);
-    out.push_str(&escaped);
+    out.push_str(escaped);
     for piece in &kept {
         out.push_str(&contents[piece.clone()]);
     }

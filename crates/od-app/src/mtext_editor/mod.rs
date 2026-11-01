@@ -4,6 +4,7 @@
 
 mod app_state;
 mod box_handles;
+mod field_dialog;
 mod history;
 mod input;
 mod paragraph_dialog;

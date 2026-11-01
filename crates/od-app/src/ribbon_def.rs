@@ -81,6 +81,18 @@ fn insert() -> Tab {
                 ..Default::default()
             },
             Panel {
+                title: "Data",
+                columns: vec![
+                    Column::Large(Item::new("block.field", "Field", icons::INSERT_FIELD)),
+                    Column::Large(Item::new(
+                        "block.updatefield",
+                        "Update Fields",
+                        icons::INSERT_UPDATEFIELD,
+                    )),
+                ],
+                ..Default::default()
+            },
+            Panel {
                 title: "Import",
                 columns: vec![
                     Column::Large(Item::new(
@@ -244,6 +256,11 @@ fn manage() -> Tab {
                 title: "Drawing",
                 columns: vec![
                     Column::Large(Item::new("format.units", "Units", icons::FORMAT_UNITS)),
+                    Column::Large(Item::new(
+                        "format.properties",
+                        "Properties",
+                        icons::FORMAT_PROPERTIES,
+                    )),
                     Column::Large(Item::new(
                         "format.linetype",
                         "Linetypes",

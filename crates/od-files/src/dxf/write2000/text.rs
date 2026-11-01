@@ -58,7 +58,7 @@ pub(super) fn mtext(out: &mut Out, document: &Document, text: &MText) -> Result<
             MTextFlow::ByStyle => 5,
         },
     );
-    let contents: Vec<char> = escaped(&text.contents).chars().collect();
+    let contents: Vec<char> = escaped(&text.flattened_contents()).chars().collect();
     let mut chunks = contents.chunks(CHUNK).map(|c| c.iter().collect::<String>());
     let last = chunks.next_back().unwrap_or_default();
     for chunk in chunks {

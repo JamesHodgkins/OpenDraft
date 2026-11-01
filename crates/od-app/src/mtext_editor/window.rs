@@ -6,7 +6,7 @@
 use eframe::egui::{self, Color32, Pos2, Rect, Sense, Shape, Stroke};
 use od_canvas::{paint_text, Camera, CanvasStyle};
 use od_core::aci::aci_rgb;
-use od_core::text::{TextColor, TextLayout};
+use od_core::text::{SelectionRect, TextColor, TextLayout};
 use od_core::MText;
 use od_ui::Theme;
 
@@ -154,20 +154,38 @@ pub fn show(
         Stroke::new(1.0_f32, style.selected),
     ));
     super::box_handles::paint(&painter, editor, camera, canvas, pad, style.selected);
-    let (from, to) = editor.selection();
-    let highlight = style.selected.gamma_multiply(0.45);
-    for r in layout.selection_rects(from, to) {
-        let quad = [
-            (r.x0, r.top),
-            (r.x1, r.top),
-            (r.x1, r.bottom),
-            (r.x0, r.bottom),
-        ]
-        .iter()
-        .map(|&(x, y)| to_screen(x, y))
-        .collect();
-        painter.add(Shape::convex_polygon(quad, highlight, Stroke::NONE));
+    let fill = |rects: Vec<SelectionRect>, colour: Color32| {
+        for r in rects {
+            let quad = [
+                (r.x0, r.top),
+                (r.x1, r.top),
+                (r.x1, r.bottom),
+                (r.x0, r.bottom),
+            ]
+            .iter()
+            .map(|&(x, y)| to_screen(x, y))
+            .collect();
+            painter.add(Shape::convex_polygon(quad, colour, Stroke::NONE));
+        }
+    };
+    // A data field sits on a translucent grey block, so it can be told from
+    // typed text; the selection is drawn over it.
+    let grey = fg.gamma_multiply(0.22);
+    for span in text.field_spans() {
+        // The rectangles are asked for by caret index, not by byte.
+        let ends = (
+            layout.caret_at(span.start, false),
+            layout.caret_at(span.end, true),
+        );
+        if let (Some(from), Some(to)) = ends {
+            fill(layout.selection_rects(from, to), grey);
+        }
     }
+    let (from, to) = editor.selection();
+    fill(
+        layout.selection_rects(from, to),
+        style.selected.gamma_multiply(0.45),
+    );
     let color = |c: TextColor| match c {
         TextColor::Entity | TextColor::Aci(7) => fg,
         TextColor::Aci(n) => {
@@ -207,10 +225,16 @@ pub fn show(
     }
     ctx.request_repaint_after(std::time::Duration::from_millis(250));
 
-    let (chosen, tools) =
-        super::toolbar::show(&ctx, theme, editor, styles, bounds.union(ruler), canvas);
+    // The Field dialog is modal: the toolbar steps aside while it is open
+    // (it would be drawn over the dialog).
+    let (chosen, tools) = if editor.field_dialog {
+        (None, Rect::NOTHING)
+    } else {
+        super::toolbar::show(&ctx, theme, editor, styles, bounds.union(ruler), canvas)
+    };
     outcome = outcome.or(chosen);
-    let dialog = super::paragraph_dialog::show(&ctx, theme, editor, now);
+    let dialog = super::paragraph_dialog::show(&ctx, theme, editor, now)
+        .or_else(|| super::field_dialog::show(&ctx, theme, editor, now));
 
     // A click on the drawing outside the box and the toolbar accepts.
     if pressed {

@@ -22,12 +22,14 @@ impl OpenDraftApp {
     pub(super) fn tool_windows(&mut self, ctx: &egui::Context) {
         self.settings_window(ctx);
         self.units_window(ctx);
+        self.properties_window(ctx);
         self.point_style_window(ctx);
         self.power_select_window(ctx);
         self.overkill_window(ctx);
         self.attribute_definition_window(ctx);
         self.attribute_editor_window(ctx);
         self.block_dialog_window(ctx);
+        self.field_dialog_window(ctx);
         self.purge_window(ctx);
         self.linetype_window(ctx);
         self.text_style_window(ctx);

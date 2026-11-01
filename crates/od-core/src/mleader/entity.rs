@@ -63,7 +63,7 @@ pub struct MLeaderText {
 #[derive(Clone, Debug, PartialEq)]
 pub enum MLeaderContent {
     None,
-    MText(MLeaderText),
+    MText(Box<MLeaderText>),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -149,10 +149,10 @@ impl MLeader {
             );
             let mut text = MText::new(at, height, contents, c.text_style);
             text.attachment = kind;
-            mleader.content = MLeaderContent::MText(MLeaderText {
+            mleader.content = MLeaderContent::MText(Box::new(MLeaderText {
                 text,
                 frame: c.frame,
-            });
+            }));
         }
         Some(mleader)
     }

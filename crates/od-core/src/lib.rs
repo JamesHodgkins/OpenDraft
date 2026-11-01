@@ -17,6 +17,7 @@ pub mod dimension;
 pub mod divide;
 mod document;
 pub mod donut;
+pub mod drawing_properties;
 pub mod ellipse;
 mod entity_kind;
 mod explode;

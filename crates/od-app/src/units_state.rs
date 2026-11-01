@@ -2,7 +2,8 @@
 //! settings, writing prompt defaults in them, and changing them (the UNITS
 //! command and the `LUNITS`... variables).
 
-use od_commands::{Hint, SetUnits, Wants};
+use od_commands::{Hint, SetProperties, SetUnits, Wants};
+use od_core::drawing_properties::DrawingProperties;
 use od_core::units::{format_angle, format_length, format_point};
 use od_core::{AngleFormat, Units};
 
@@ -23,6 +24,24 @@ impl AppState {
         }
         self.perform(SetUnits::new(units));
         self.message = "Units changed".to_owned();
+    }
+}
+
+impl AppState {
+    /// The active drawing's properties.
+    pub fn drawing_properties(&self) -> DrawingProperties {
+        self.session().document().properties().clone()
+    }
+
+    /// Change the active drawing's properties as one undo step. Nothing is
+    /// done when they are already these.
+    pub fn set_drawing_properties(&mut self, properties: DrawingProperties) {
+        let properties = properties.sanitized();
+        if properties == self.drawing_properties() {
+            return;
+        }
+        self.perform(SetProperties::new(properties));
+        self.message = "Drawing properties changed".to_owned();
     }
 }
 
@@ -116,5 +135,38 @@ mod tests {
         assert!(state.session().is_modified());
         state.undo();
         assert_eq!(state.units(), before);
+    }
+}
+
+#[cfg(test)]
+mod property_tests {
+    use od_core::drawing_properties::DrawingProperties;
+
+    use crate::state::AppState;
+
+    fn ada() -> DrawingProperties {
+        DrawingProperties {
+            author: "Ada".into(),
+            ..DrawingProperties::default()
+        }
+    }
+
+    #[test]
+    fn changing_the_properties_is_one_undo_step_and_the_same_again_is_none() {
+        let mut state = AppState::new();
+        state.set_drawing_properties(ada());
+        assert_eq!(state.drawing_properties().author, "Ada");
+        let before = state.session().revision();
+        state.set_drawing_properties(ada());
+        assert_eq!(state.session().revision(), before, "nothing to change");
+        state.undo();
+        assert!(state.drawing_properties().is_empty());
+    }
+
+    #[test]
+    fn fields_are_given_the_drawings_properties() {
+        let mut state = AppState::new();
+        state.set_drawing_properties(ada());
+        assert_eq!(state.field_context().properties.author, "Ada");
     }
 }

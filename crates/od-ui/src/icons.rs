@@ -161,6 +161,7 @@ icons! {
     FILE_OPEN = '\u{e246}';
     FILE_SAVE = '\u{e150}';
     FORMAT_LINETYPE = '\u{e0ba}';
+    FORMAT_PROPERTIES = '\u{e0d0}';
     FORMAT_UNITS = '\u{e14e}';
     GALLERY_LANDSCAPE = '\u{e379}';
     GALLERY_PORTRAIT = '\u{e37a}';
@@ -183,7 +184,9 @@ icons! {
     INQUIRY_RADIUS = '\u{e531}';
     INQUIRY_VOLUME = '\u{e065}';
     INSERT_EXPORT = '\u{e19d}';
+    INSERT_FIELD = '\u{e264}';
     INSERT_IMPORT = '\u{e0b6}';
+    INSERT_UPDATEFIELD = '\u{e4b6}';
     LAYER_FREEZE = '\u{e168}';
     LAYER_HIDE = '\u{e207}';
     LAYER_ISOLATE = '\u{e29d}';

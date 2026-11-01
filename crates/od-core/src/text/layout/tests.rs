@@ -372,3 +372,28 @@ fn a_word_wider_than_the_width_runs_past_the_frame_and_the_layout_says_so() {
     assert!(l.frame_width <= 3.0 + 1e-9);
     assert!(l.actual_width > l.frame_width, "an editor must cover this");
 }
+
+#[test]
+fn a_field_marker_draws_the_fields_value_like_text_typed_there() {
+    use crate::block::{DataField, FieldValue};
+    let mut field = text(&format!("a{}b", crate::mtext::marker(0)));
+    field.fields = vec![DataField::new(
+        "AcVar",
+        "x",
+        Some(FieldValue::Text("XY".into())),
+    )];
+    let shown = lay(&field);
+    let typed = lay(&text("aXYb"));
+    let ids = |l: &TextLayout| l.glyphs.iter().map(|g| g.id).collect::<Vec<_>>();
+    assert_eq!(ids(&shown), ids(&typed));
+    assert!(shown.diagnostics.is_empty());
+    // A field with no value shows the placeholder, never its code; a marker
+    // that points at no field, and any other span, are still skipped.
+    field.fields = vec![DataField::new("AcVar", "x", None)];
+    assert_eq!(ids(&lay(&field)), ids(&lay(&text("a####b"))));
+    field.fields.clear();
+    assert_eq!(
+        lay(&field).diagnostics[0].issue,
+        LayoutIssue::FieldNotEvaluated
+    );
+}

@@ -9,7 +9,7 @@ use crate::{Context, Session, Transaction};
 
 /// What a running command sends the UI thread.
 pub(crate) enum Request {
-    Ask(Prompt),
+    Ask(Box<Prompt>),
     /// Work on the drawing, run on the UI thread between frames.
     Run(Box<dyn FnOnce(&mut Session) + Send>),
     /// A line of feedback for the command line.
@@ -52,7 +52,7 @@ pub struct Editor {
 
 mod dialog_asks;
 
-pub use dialog_asks::AttributeEditorAnswer;
+pub use dialog_asks::{AttributeEditorAnswer, FieldAnswer};
 
 impl Editor {
     pub(crate) fn new(
@@ -160,7 +160,7 @@ impl Editor {
 
     fn ask(&self, prompt: Prompt) -> Result<Reply, Cancelled> {
         self.requests
-            .send(Request::Ask(prompt))
+            .send(Request::Ask(Box::new(prompt)))
             .map_err(|_| Cancelled)?;
         match self.replies.recv() {
             Ok(Reply::Cancel | Reply::Back) | Err(_) => Err(Cancelled),

@@ -60,6 +60,7 @@ mod mleader_style;
 mod names;
 mod new_style;
 mod point_style;
+mod properties;
 pub(crate) mod spline;
 mod text;
 mod units;
@@ -68,6 +69,7 @@ use block::BlockDto;
 use dimension_style::{DimStylesDto, StylePool};
 use entity::EntityDto;
 use layout::LayoutDto;
+use properties::PropertiesDto;
 use text::TextStyleDto;
 use units::UnitsDto;
 
@@ -225,6 +227,9 @@ struct DrawingDto {
     next_layer_id: u64,
     current_layer: u64,
     units: UnitsDto,
+    /// Title, author and the rest of the drawing's description.
+    #[serde(default, skip_serializing_if = "PropertiesDto::is_empty")]
+    properties: PropertiesDto,
     /// The dimension styles, in full: see `dimension_style.rs`.
     #[serde(flatten)]
     dim_styles: DimStylesDto,
@@ -393,6 +398,7 @@ impl DrawingDto {
             next_layer_id,
             current_layer: document.current_layer().0,
             units: UnitsDto::from(document.units()),
+            properties: PropertiesDto::of(document.properties()),
             dim_styles: DimStylesDto::of(document, &styles, named_styles)?,
             layers,
             objects,
@@ -1254,6 +1260,97 @@ mod tests {
             text.contains(r"\\pxi-3,l3;"),
             "contents are written verbatim"
         );
+    }
+
+    #[test]
+    fn data_fields_in_multiline_text_survive_a_round_trip_and_are_checked_on_load() {
+        use od_core::block::{DataField, FieldValue};
+        let mut document = Document::default();
+        let mut text = od_core::MText::new(Point::new(0.0, 0.0), 2.5, "", TextStyleId::STANDARD);
+        let mut field = DataField::file_name();
+        field.cached = Some(FieldValue::Text("plan.odx".into()));
+        text.insert_field(0, field);
+        document.add(Entity::MText(Box::new(text)));
+        assert_eq!(roundtrip(&document), document);
+        let written = String::from_utf8(NativeFormat.write(&document).unwrap().bytes).unwrap();
+        assert!(written.contains("\"fields\""));
+        // Text without fields writes no `fields` at all.
+        let plain = Document::from_entities([Entity::MText(Box::new(od_core::MText::new(
+            Point::new(0.0, 0.0),
+            2.5,
+            "x",
+            TextStyleId::STANDARD,
+        )))]);
+        let plain = String::from_utf8(NativeFormat.write(&plain).unwrap().bytes).unwrap();
+        assert!(!plain.contains("\"fields\""));
+    }
+
+    #[test]
+    fn an_object_field_in_text_still_points_at_its_object_after_a_save_and_load() {
+        use od_core::block::{update_fields, DataField, FieldContext, ObjectProperty};
+        let mut document = Document::default();
+        let circle = document.add(Entity::Circle {
+            center: Point::new(0.0, 0.0),
+            radius: 2.0,
+        });
+        let mut text = od_core::MText::new(Point::new(5.0, 5.0), 2.5, "", TextStyleId::STANDARD);
+        text.insert_field(
+            0,
+            DataField::object_property(circle, ObjectProperty::Radius),
+        );
+        let label = document.add(Entity::MText(Box::new(text)));
+        let loaded = roundtrip(&document);
+        assert_eq!(loaded, document, "the whole drawing comes back as it was");
+        // Make the circle bigger in the loaded drawing: updating follows it.
+        let mut loaded = loaded;
+        loaded.replace(
+            circle,
+            Entity::Circle {
+                center: Point::new(0.0, 0.0),
+                radius: 7.0,
+            },
+        );
+        let update = update_fields(&loaded, &[label], &FieldContext::default());
+        let Some((_, Entity::MText(after))) = update.edits.first() else {
+            panic!("the field found its circle again")
+        };
+        let expected = od_core::units::format_length(loaded.units(), 7.0);
+        assert_eq!(after.field_values(), [expected]);
+    }
+
+    #[test]
+    fn drawing_properties_survive_a_round_trip_and_are_left_out_when_empty() {
+        use od_core::drawing_properties::DrawingProperties;
+        let mut document = Document::default();
+        let empty = String::from_utf8(NativeFormat.write(&document).unwrap().bytes).unwrap();
+        assert!(!empty.contains("\"properties\""));
+        document.set_properties(DrawingProperties {
+            title: "Plan".into(),
+            author: "Ada".into(),
+            comments: "two\nlines".into(),
+            ..DrawingProperties::default()
+        });
+        assert_eq!(roundtrip(&document), document);
+        assert_eq!(roundtrip(&document).properties().author, "Ada");
+        let written = String::from_utf8(NativeFormat.write(&document).unwrap().bytes).unwrap();
+        assert!(written.contains("\"properties\""));
+        assert!(
+            !written.contains("\"subject\""),
+            "an empty value is not written"
+        );
+    }
+
+    #[test]
+    fn a_property_over_the_limit_is_refused_on_load() {
+        use od_core::drawing_properties::{DrawingProperties, MAX_PROPERTY_BYTES};
+        let mut document = Document::default();
+        document.set_properties(DrawingProperties {
+            title: "TITLE_MARK".into(),
+            ..DrawingProperties::default()
+        });
+        let written = String::from_utf8(NativeFormat.write(&document).unwrap().bytes).unwrap();
+        let hostile = written.replace("TITLE_MARK", &"x".repeat(MAX_PROPERTY_BYTES + 1));
+        assert!(NativeFormat.read(hostile.as_bytes()).is_err());
     }
 
     #[test]

@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 use od_core::block::attribute_draft::{DefinitionDraft, EditorDraft};
 use od_core::block::block_draft::BlockDraft;
+use od_core::block::{DataField, FieldDraft};
 use od_core::{overkill, Entity, EntityId, MText, Point};
 
 /// The user cancelled (Esc), or the command was abandoned. Commands pass it up
@@ -244,6 +245,8 @@ pub enum Wants {
     AttributeEditorDialog,
     /// The Block Definition dialog, opened on [`Prompt::block_dialog`].
     BlockDialog,
+    /// The Field dialog, opened on [`Prompt::field_dialog`].
+    FieldDialog,
 }
 
 /// The default a prompt offers, left as a value so the UI can write it in the
@@ -292,6 +295,8 @@ pub struct Prompt {
     pub attribute_editor: Option<Box<EditorDraft>>,
     /// For [`Wants::BlockDialog`]: what it opens with.
     pub block_dialog: Option<Box<BlockDraft>>,
+    /// For [`Wants::FieldDialog`]: what it opens with.
+    pub field_dialog: Option<Box<FieldDraft>>,
 }
 
 impl Prompt {
@@ -317,6 +322,7 @@ impl Prompt {
             attribute_definition: None,
             attribute_editor: None,
             block_dialog: None,
+            field_dialog: None,
         }
     }
 }
@@ -349,6 +355,10 @@ pub enum Reply {
     AttributeEditorSelect(Box<EditorDraft>),
     /// The Block Definition dialog, closed by a button.
     BlockDialog(Box<BlockDraft>, BlockDialogButton),
+    /// The Field dialog, accepted: the field it made.
+    Field(Box<DataField>),
+    /// The Field dialog, closed to pick an object for an object field.
+    FieldPick(Box<FieldDraft>),
     /// The label of a chosen keyword.
     Keyword(String),
     Selection(Vec<EntityId>),

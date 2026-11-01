@@ -80,10 +80,10 @@ impl MLeaderDto {
             })
             .collect::<Result<_, _>>()?;
         let content = match &self.content {
-            Some(t) => MLeaderContent::MText(MLeaderText {
+            Some(t) => MLeaderContent::MText(Box::new(MLeaderText {
                 text: t.text.to_mtext()?,
                 frame: t.frame,
-            }),
+            })),
             None => MLeaderContent::None,
         };
         let m = MLeader {

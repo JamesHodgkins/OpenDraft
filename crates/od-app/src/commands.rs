@@ -284,6 +284,9 @@ fn all() -> Vec<Command<AppState>> {
             .when(|s| s.space().layout().is_some()),
         cmd("tools.setvar", "Set Variable", |s| s.begin_setvar()),
         cmd("format.units", "Units", |s| s.show_units = true),
+        cmd("format.properties", "Drawing Properties", |s| {
+            s.command_dialogs.properties = Some(s.drawing_properties());
+        }),
         cmd("select.power", "Power Select", |s| {
             s.power_select.open = true
         }),

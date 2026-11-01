@@ -319,3 +319,61 @@ fn changing_the_style_relays_out_the_text_and_counts_as_a_change() {
     e.set_style(&TextStyle::standard());
     assert!(!e.is_changed(), "back where it started");
 }
+
+fn named(value: &str) -> od_core::block::DataField {
+    od_core::block::DataField::new(
+        "AcVar",
+        "x",
+        Some(od_core::block::FieldValue::Text(value.into())),
+    )
+}
+
+#[test]
+fn a_field_goes_in_at_the_caret_as_a_marker_and_shows_its_value() {
+    let mut e = editor("ab");
+    caret_at(&mut e, 1);
+    assert!(e.insert_field(named("XY"), 0.0));
+    assert_eq!(e.contents(), format!("a{}b", od_core::mtext::marker(0)));
+    assert_eq!(e.text().field_values(), ["XY"]);
+    // The layout draws "aXYb": four glyphs, none skipped.
+    assert_eq!(e.layout().glyphs.len(), 4);
+    assert!(e.layout().diagnostics.is_empty());
+    assert!(e.is_changed());
+}
+
+#[test]
+fn inserting_a_field_replaces_the_selection_and_undoes_in_one_step() {
+    let mut e = editor("abcd");
+    e.anchor = Pos {
+        source: 1,
+        upstream: false,
+    };
+    e.active = Pos {
+        source: 3,
+        upstream: false,
+    };
+    assert!(e.insert_field(named("F"), 0.0));
+    assert_eq!(e.contents(), format!("a{}d", od_core::mtext::marker(0)));
+    assert!(e.undo());
+    assert_eq!(e.contents(), "abcd");
+    assert!(e.redo());
+    assert_eq!(e.text().field_values(), ["F"], "redo finds its field again");
+}
+
+#[test]
+fn a_second_field_gets_the_next_marker_and_pruning_drops_an_undone_one() {
+    let mut e = editor("");
+    assert!(e.insert_field(named("one"), 0.0));
+    assert!(e.insert_field(named("two"), 1.0));
+    assert!(e.contents().contains(&od_core::mtext::marker(1)));
+    assert!(e.undo());
+    let mut done = e.text().clone();
+    assert_eq!(
+        done.fields.len(),
+        2,
+        "the undone field lingers until the end"
+    );
+    done.prune_fields();
+    assert_eq!(done.field_values(), ["one"]);
+    assert_eq!(done.contents, od_core::mtext::marker(0));
+}

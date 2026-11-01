@@ -133,6 +133,7 @@ impl DrawingDto {
         }
         document.set_current_layer(LayerId(self.current_layer));
         document.set_units(self.units.into_units()?);
+        document.set_properties(self.properties.into_properties()?);
         dim_styles.install(&mut document)?;
         document.set_layouts(into_layouts(self.layouts)?);
         document.reserve_layout_ids(self.next_layout_id, self.next_viewport_id);

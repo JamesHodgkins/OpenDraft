@@ -26,7 +26,9 @@ mod stroke_font;
 mod stroke_outline;
 
 pub use caret::SelectionRect;
-pub use edit::{escape_for_contents, plain_text_of, replace_text, EditRefusal, Edited};
+pub use edit::{
+    escape_for_contents, plain_text_of, replace_text, replace_with_control, EditRefusal, Edited,
+};
 pub use error::{TextError, TextResource};
 pub use font::{glyph_contours, glyph_outline, Contour, FontFace};
 pub use fontctl::{font_control, font_parts, FontFlags, FontParts};
