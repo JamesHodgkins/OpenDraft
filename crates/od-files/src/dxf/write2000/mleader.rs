@@ -126,7 +126,7 @@ pub(super) fn entity(
     if let Some(t) = mtext {
         let text = &t.text;
         out.pair(290, 1);
-        out.pair(304, escaped(&text.contents));
+        out.pair(304, escaped(&text.flattened_contents()));
         out.point3(11, 0.0, 0.0, 1.0);
         out.pair(340, hex(text_style(text.style)));
         point(out, 12, text.insertion.x, text.insertion.y)?;

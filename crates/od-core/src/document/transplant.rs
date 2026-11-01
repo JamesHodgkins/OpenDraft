@@ -406,6 +406,8 @@ impl Merge<'_> {
             Entity::MText(m) => {
                 let mut m = m.clone();
                 m.style = self.text_style(m.style);
+                let fields = self.detached(&m.fields_as_text());
+                m.set_fields_from(fields);
                 Entity::MText(m)
             }
             Entity::Insert(i) => {

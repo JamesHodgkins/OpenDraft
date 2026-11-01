@@ -264,42 +264,59 @@ pub struct FieldUpdate {
     pub failed: usize,
 }
 
-/// The fields of the attributes of the inserts `ids`, evaluated. Objects that
-/// are not inserts, and inserts without data fields, are passed over.
+/// The data fields of the objects `ids` that hold any, evaluated: the
+/// attributes of block references and multiline text. Other objects, and
+/// ones without fields, are passed over.
 pub fn update_fields(doc: &Document, ids: &[EntityId], context: &FieldContext) -> FieldUpdate {
     let mut update = FieldUpdate::default();
     for id in ids {
-        let Some(Entity::Insert(insert)) = doc.get(*id) else {
-            continue;
+        let edited = match doc.get(*id) {
+            Some(Entity::Insert(insert)) => update_insert(doc, insert, context, &mut update),
+            Some(Entity::MText(text)) if !text.fields.is_empty() => {
+                let after = text.evaluated(doc, context);
+                text.tally(&after, &mut update);
+                (after != **text).then(|| Entity::MText(Box::new(after)))
+            }
+            _ => None,
         };
-        let mut changed = (**insert).clone();
-        let mut touched = false;
-        for r in &mut changed.attributes {
-            if !r.value.has_fields() {
-                continue;
-            }
-            let value = r.value.evaluated(doc, context);
-            update.found += r.value.fields().count();
-            update.failed += value
-                .fields()
-                .filter(|f| f.status == FieldStatus::EvaluationFailed)
-                .count();
-            update.changed += r
-                .value
-                .fields()
-                .zip(value.fields())
-                .filter(|(before, after)| before != after)
-                .count();
-            if value != r.value {
-                r.value = value;
-                touched = true;
-            }
-        }
-        if touched {
-            update.edits.push((*id, Entity::Insert(Box::new(changed))));
+        if let Some(entity) = edited {
+            update.edits.push((*id, entity));
         }
     }
     update
+}
+
+/// `insert` with its attributes' fields evaluated, if that changes it.
+fn update_insert(
+    doc: &Document,
+    insert: &crate::block::Insert,
+    context: &FieldContext,
+    update: &mut FieldUpdate,
+) -> Option<Entity> {
+    let mut changed = insert.clone();
+    let mut touched = false;
+    for r in &mut changed.attributes {
+        if !r.value.has_fields() {
+            continue;
+        }
+        let value = r.value.evaluated(doc, context);
+        update.found += r.value.fields().count();
+        update.failed += value
+            .fields()
+            .filter(|f| f.status == FieldStatus::EvaluationFailed)
+            .count();
+        update.changed += r
+            .value
+            .fields()
+            .zip(value.fields())
+            .filter(|(before, after)| before != after)
+            .count();
+        if value != r.value {
+            r.value = value;
+            touched = true;
+        }
+    }
+    touched.then(|| Entity::Insert(Box::new(changed)))
 }
 
 #[cfg(test)]
@@ -475,5 +492,26 @@ mod tests {
         assert!(ObjectProperty::of(&circle).contains(&ObjectProperty::Area));
         assert!(!ObjectProperty::of(&circle).contains(&ObjectProperty::Length));
         assert!(ObjectProperty::from_name("aREA") == Some(ObjectProperty::Area));
+    }
+
+    #[test]
+    fn multiline_text_fields_are_updated_with_the_inserts() {
+        let mut text =
+            crate::MText::new(Point::new(0.0, 0.0), 2.5, "", crate::TextStyleId::STANDARD);
+        text.insert_field(0, DataField::file_name());
+        let (doc, id) = doc_with(Entity::MText(Box::new(text)));
+        let named = FieldContext {
+            file_name: Some("plan.odx".into()),
+        };
+        let update = update_fields(&doc, &[id], &named);
+        assert_eq!((update.found, update.changed, update.failed), (1, 1, 0));
+        let Some((_, Entity::MText(after))) = update.edits.first() else {
+            panic!("one edit")
+        };
+        assert_eq!(after.field_values(), ["plan.odx"]);
+        // Nothing to do the second time.
+        let mut again = doc.clone();
+        again.replace(id, Entity::MText(after.clone()));
+        assert!(update_fields(&again, &[id], &named).edits.is_empty());
     }
 }

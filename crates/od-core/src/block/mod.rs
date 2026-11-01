@@ -43,7 +43,9 @@ pub use attribute::{
 pub use attribute_sync::{sync_references, Synced};
 pub use budget::MAX_EXPANSION;
 pub use editing::BlockEditSave;
-pub use field::{DataField, FieldObjectRef, FieldRun, FieldStatus, FieldText, FieldValue};
+pub use field::{
+    DataField, FieldObjectRef, FieldRun, FieldStatus, FieldText, FieldValue, MAX_FIELDS_PER_TEXT,
+};
 pub use field_eval::{update_fields, FieldContext, FieldUpdate, ObjectProperty};
 pub use picture::Piece;
 pub use table::{block_name_problem, Redefinition};

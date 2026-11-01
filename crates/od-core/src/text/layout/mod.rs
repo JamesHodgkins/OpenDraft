@@ -185,6 +185,8 @@ pub(super) struct Params {
 pub(super) struct Context {
     pub metrics: Metrics,
     pub params: Params,
+    /// What each data field of the text shows, by index.
+    pub fields: Vec<String>,
 }
 
 /// Lay `text` out in `style`.
@@ -232,6 +234,7 @@ pub fn layout_text(text: &MText, style: &TextStyle) -> TextLayout {
         });
     }
     let cx = Context {
+        fields: text.field_values(),
         metrics: stroke_font.map_or_else(
             || font::metrics(face),
             |f| font::Metrics {

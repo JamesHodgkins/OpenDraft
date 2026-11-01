@@ -135,7 +135,13 @@ pub(super) fn build(parsed: &ParsedMText, source: &str, cx: &Context) -> Built {
                 source: range,
             }),
             NodeKind::Stack => b.stack(text, range, state),
-            NodeKind::Field => b.issue(range, LayoutIssue::FieldNotEvaluated),
+            NodeKind::Field => match crate::mtext::marker_index(text)
+                .and_then(|n| b.cx.fields.get(n))
+                .cloned()
+            {
+                Some(shown) => b.segment(&shown, range, false, state),
+                None => b.issue(range, LayoutIssue::FieldNotEvaluated),
+            },
             NodeKind::Opaque(reason) => b.issue(range, LayoutIssue::Skipped(*reason)),
             NodeKind::Push => b.stack.push(state),
             NodeKind::Pop => state = b.stack.pop().unwrap_or(state),

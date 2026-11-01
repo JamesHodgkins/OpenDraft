@@ -1257,6 +1257,29 @@ mod tests {
     }
 
     #[test]
+    fn data_fields_in_multiline_text_survive_a_round_trip_and_are_checked_on_load() {
+        use od_core::block::{DataField, FieldValue};
+        let mut document = Document::default();
+        let mut text = od_core::MText::new(Point::new(0.0, 0.0), 2.5, "", TextStyleId::STANDARD);
+        let mut field = DataField::file_name();
+        field.cached = Some(FieldValue::Text("plan.odx".into()));
+        text.insert_field(0, field);
+        document.add(Entity::MText(Box::new(text)));
+        assert_eq!(roundtrip(&document), document);
+        let written = String::from_utf8(NativeFormat.write(&document).unwrap().bytes).unwrap();
+        assert!(written.contains("\"fields\""));
+        // Text without fields writes no `fields` at all.
+        let plain = Document::from_entities([Entity::MText(Box::new(od_core::MText::new(
+            Point::new(0.0, 0.0),
+            2.5,
+            "x",
+            TextStyleId::STANDARD,
+        )))]);
+        let plain = String::from_utf8(NativeFormat.write(&plain).unwrap().bytes).unwrap();
+        assert!(!plain.contains("\"fields\""));
+    }
+
+    #[test]
     fn a_drawing_without_text_still_writes_its_style_table_in_full() {
         let text = String::from_utf8(NativeFormat.write(&rich()).unwrap().bytes).unwrap();
         assert!(text.contains("\"text_styles\"") && !text.contains("\"mtext\""));

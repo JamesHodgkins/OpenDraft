@@ -425,10 +425,10 @@ fn read(
             );
             mtext.attachment = kind;
             mtext.reference_width = ctx.width.max(0.0);
-            MLeaderContent::MText(MLeaderText {
+            MLeaderContent::MText(Box::new(MLeaderText {
                 text: mtext,
                 frame: outer.frame,
-            })
+            }))
         }
         (Some(0), _, _) => MLeaderContent::None,
         _ => return Err("unknown content"),
