@@ -208,6 +208,37 @@ mod tests {
         assert_eq!(&t.contents[spans[0].clone()], marker(0));
     }
 
+    /// The boxes a field is painted on, as the editor asks for them.
+    fn field_boxes(t: &MText) -> Vec<crate::text::SelectionRect> {
+        let layout = crate::text::layout_text(t, &crate::TextStyle::standard());
+        t.field_spans()
+            .iter()
+            .flat_map(|s| {
+                let from = layout.caret_at(s.start, false).unwrap();
+                let to = layout.caret_at(s.end, true).unwrap();
+                layout.selection_rects(from, to)
+            })
+            .collect()
+    }
+
+    #[test]
+    fn a_fields_block_covers_the_field_alone_not_the_text_typed_after_it() {
+        let mut t = text(&format!(r"The date is: {}\Pe\Peee\Pe", marker(0)));
+        t.fields = vec![shown("11/1/2026")];
+        let layout = crate::text::layout_text(&t, &crate::TextStyle::standard());
+        let boxes = field_boxes(&t);
+        assert_eq!(boxes.len(), 1, "one line holds the field");
+        // The block is on the first line: above the second line's baseline.
+        assert!(boxes[0].bottom > layout.lines[1].baseline);
+        // It ends where the field's text ends, before anything typed later.
+        let typed = crate::text::layout_text(
+            &text("The date is: 11/1/2026"),
+            &crate::TextStyle::standard(),
+        );
+        let end = typed.glyphs.last().map(|g| g.x).unwrap_or(0.0);
+        assert!(boxes[0].x1 >= end && boxes[0].x1 < end + 3.0 * 2.5);
+    }
+
     #[test]
     fn pruning_drops_unused_fields_and_renumbers_the_rest_in_order() {
         let mut t = text(&format!("{}x{}", marker(2), marker(0)));

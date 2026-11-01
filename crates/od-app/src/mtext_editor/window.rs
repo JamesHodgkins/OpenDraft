@@ -172,7 +172,14 @@ pub fn show(
     // typed text; the selection is drawn over it.
     let grey = fg.gamma_multiply(0.22);
     for span in text.field_spans() {
-        fill(layout.selection_rects(span.start, span.end), grey);
+        // The rectangles are asked for by caret index, not by byte.
+        let ends = (
+            layout.caret_at(span.start, false),
+            layout.caret_at(span.end, true),
+        );
+        if let (Some(from), Some(to)) = ends {
+            fill(layout.selection_rects(from, to), grey);
+        }
     }
     let (from, to) = editor.selection();
     fill(
