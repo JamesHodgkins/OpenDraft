@@ -154,6 +154,14 @@ impl View {
             }
             // A preview of text (a ghost) is the glyphs in the stock style, in
             // the preview's colour.
+            Entity::AttributeDefinition(d) => {
+                self.stroke_entity(
+                    painter,
+                    rect,
+                    &Entity::MText(Box::new(d.tag_view())),
+                    stroke,
+                );
+            }
             Entity::MText(m) => {
                 let layout = m.layout(&od_core::TextStyle::standard());
                 self.fill_text(painter, rect, m, &layout, &|_| stroke.color);
@@ -329,6 +337,14 @@ impl View {
                 let (selected, hovered) = (selection.contains(id), hover == Some(*id));
                 self.paint_mtext(
                     painter, rect, style, document, text, line, selected, hovered,
+                );
+                continue;
+            }
+            if let Entity::AttributeDefinition(d) = entity {
+                let (selected, hovered) = (selection.contains(id), hover == Some(*id));
+                let tag = d.tag_view();
+                self.paint_mtext(
+                    painter, rect, style, document, &tag, line, selected, hovered,
                 );
                 continue;
             }

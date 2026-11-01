@@ -126,7 +126,13 @@ pub const TABLE: &[(&str, AutomationPolicy, CommandEffect)] = &[
     ("modify.erase", Denied, Mutation),
     // Blocks and the Block Editor.
     ("block.create", InteractiveInApp, Mutation),
+    ("block.create_line", InteractiveInApp, Mutation),
     ("block.insert", InteractiveInApp, Mutation),
+    ("block.attdef", InteractiveInApp, Mutation),
+    ("block.attdef_line", InteractiveInApp, Mutation),
+    ("block.attedit", InteractiveInApp, Mutation),
+    ("block.attedit_line", InteractiveInApp, Mutation),
+    ("block.attsync", InteractiveInApp, Mutation),
     ("block.purge", InteractiveInApp, Ui),
     ("block.purge_all", InteractiveInApp, Mutation),
     ("block.edit", Denied, Lifecycle),

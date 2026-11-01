@@ -109,7 +109,10 @@ pub(crate) fn typed_reply_with_mode(
         | Wants::Selection
         | Wants::Object
         | Wants::MTextEditor
-        | Wants::OverkillDialog => None,
+        | Wants::OverkillDialog
+        | Wants::AttributeDefinitionDialog
+        | Wants::AttributeEditorDialog
+        | Wants::BlockDialog => None,
     };
     answer.or_else(|| keyword_reply(ask, text))
 }

@@ -67,7 +67,10 @@ mod validate;
 mod validate_id_tests;
 pub mod width;
 
-pub use block::{Affine, BlockDef, BlockEntity, BlockId, Insert};
+pub use block::{
+    Affine, AttributeDefinition, AttributeDefinitionId, AttributeReference, BlockDef, BlockEntity,
+    BlockId, Insert,
+};
 pub use corner::{Chamfer, CornerError, Joined};
 pub use corner_infinite::{chamfer_lines, fillet};
 pub use dimension::{Arrow, DimKind, DimStyle, DimText, Dimension};
@@ -169,6 +172,9 @@ pub enum Entity {
     /// Multiline text. See [`mtext`]. Its geometry comes from the text
     /// engine, so the other kinds of object only see it as a frame.
     MText(Box<MText>),
+    /// A template text in a block, filled in by each insert. See
+    /// [`block::attribute`]. Other kinds of object see it as its text.
+    AttributeDefinition(Box<AttributeDefinition>),
     /// A block placed in the drawing. See [`block`]. Other kinds of object
     /// see it through [`Insert::picture`].
     Insert(Box<Insert>),
@@ -201,6 +207,7 @@ impl Entity {
     pub fn kind(&self) -> EntityKind {
         match self {
             Entity::Insert(_) => EntityKind::Insert,
+            Entity::AttributeDefinition(_) => EntityKind::AttributeDefinition,
             Entity::Line { .. } => EntityKind::Line,
             Entity::Circle { .. } => EntityKind::Circle,
             Entity::Arc { .. } => EntityKind::Arc,
@@ -287,6 +294,7 @@ impl Entity {
             Entity::Dimension(d) => d.bounds(),
             Entity::MText(m) => m.bounds(),
             Entity::Insert(i) => i.bounds(),
+            Entity::AttributeDefinition(d) => d.tag_view().bounds(),
             Entity::MLeader(m) => m.bounds(),
             Entity::Leader(l) => l.bounds(),
             Entity::Point { at } => Bounds::from_points(*at, *at),

@@ -40,6 +40,7 @@ impl BlockDef {
         objects: impl IntoIterator<Item = &'a Object>,
     ) -> BlockDef {
         BlockDef {
+            unit: Default::default(),
             id,
             name: name.trim().to_owned(),
             base,
@@ -111,9 +112,8 @@ impl Document {
             .iter()
             .filter_map(|o| match &o.entity {
                 Entity::Insert(i) if i.block.holds(target) => {
-                    let mut i = (**i).clone();
-                    i.block = self.repointed(&i.block, target, &mut done);
-                    Some((o.id, Entity::Insert(Box::new(i))))
+                    let block = self.repointed(&i.block, target, &mut done);
+                    Some((o.id, Entity::Insert(Box::new(i.rebound(block)))))
                 }
                 _ => None,
             })
@@ -139,7 +139,8 @@ impl Document {
         for child in &mut new.entities {
             if let Entity::Insert(i) = &mut child.entity {
                 let current = self.block(i.block.id).cloned().unwrap_or(i.block.clone());
-                i.block = self.repointed(&current, target, done);
+                let block = self.repointed(&current, target, done);
+                **i = i.rebound(block);
             }
         }
         let new = Arc::new(new);

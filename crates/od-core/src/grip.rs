@@ -62,6 +62,7 @@ impl Entity {
         use GripKind::{Move, Resize, Stretch};
         match self {
             Entity::Insert(i) => vec![grip(i.insertion, Move)],
+            Entity::AttributeDefinition(d) => vec![grip(d.text.position, Move)],
             Entity::Point { at } => vec![grip(*at, Move)],
             Entity::Xline { .. } | Entity::Ray { .. } => self.line_grips(),
             Entity::Hatch(_) => {
@@ -152,9 +153,10 @@ impl Entity {
                 .with_grip_moved(index, to)
                 .map(|l| Entity::Leader(Box::new(l))),
             Entity::Xline { .. } | Entity::Ray { .. } => self.line_grip_moved(index, to),
-            Entity::Insert(_) | Entity::Hatch(_) | Entity::Point { .. } => {
-                Some(self.translated(dx, dy))
-            }
+            Entity::Insert(_)
+            | Entity::AttributeDefinition(_)
+            | Entity::Hatch(_)
+            | Entity::Point { .. } => Some(self.translated(dx, dy)),
             Entity::Ellipse(e) => e.with_grip_moved(index, to).map(Entity::Ellipse),
             Entity::Spline(s) => s
                 .with_grip_moved(index, to)

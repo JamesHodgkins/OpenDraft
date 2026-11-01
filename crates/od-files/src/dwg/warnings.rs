@@ -27,10 +27,6 @@ fn skipped(why: &Skipped, count: u64) -> Option<String> {
         Skipped::InvalidGeometry => {
             format!("Skipped {} with damaged geometry.", plural(count, "object"))
         }
-        Skipped::AttributeTemplate => format!(
-            "Left out {} in blocks (a block reference shows the values of its own attributes).",
-            plural(count, "attribute template")
-        ),
         Skipped::DegeneratePolyline => {
             format!(
                 "Skipped {} with fewer than two points.",

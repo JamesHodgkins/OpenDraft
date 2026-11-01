@@ -46,6 +46,7 @@ impl Document {
     /// Append a definition that already has an id (a file being read).
     pub fn push_block(&mut self, block: Arc<BlockDef>) {
         self.next_block_id = self.next_block_id.max(after(block.id.0));
+        self.note_block_attribute_ids(&block);
         self.blocks.push(block);
     }
 
@@ -54,6 +55,9 @@ impl Document {
     pub fn set_blocks(&mut self, blocks: Vec<Arc<BlockDef>>) -> Vec<Arc<BlockDef>> {
         if let Some(top) = blocks.iter().map(|b| after(b.id.0)).max() {
             self.next_block_id = self.next_block_id.max(top);
+        }
+        for block in &blocks {
+            self.note_block_attribute_ids(block);
         }
         std::mem::replace(&mut self.blocks, blocks)
     }
@@ -143,6 +147,7 @@ impl Document {
             current_mleader_style: self.current_mleader_style,
             blocks: self.blocks.clone(),
             next_block_id: self.next_block_id,
+            next_attribute_definition_id: self.next_attribute_definition_id,
             linetypes: self.linetypes.clone(),
             linetype_scale: self.linetype_scale,
             point_style: self.point_style,

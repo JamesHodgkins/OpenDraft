@@ -69,6 +69,7 @@ impl DrawingDto {
             document.push_block(block);
         }
         document.reserve_block_ids(self.next_block_id);
+        document.reserve_attribute_definition_ids(self.next_attribute_definition_id);
         let layout_ids: HashSet<u64> = self.layouts.iter().map(LayoutDto::id).collect();
         let mut object_ids = HashSet::new();
         for (index, object) in self.objects.into_iter().enumerate() {

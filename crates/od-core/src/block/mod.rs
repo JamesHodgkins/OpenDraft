@@ -19,21 +19,34 @@
 //! its contents mapped into the drawing, nested blocks expanded.
 
 mod affine;
+pub mod attribute;
+pub mod attribute_draft;
+mod attribute_edit;
+mod attribute_sync;
+mod attribute_world;
+pub mod block_draft;
 mod budget;
 mod edit;
 mod editing;
+pub mod field;
 mod picture;
 mod table;
 
 use std::sync::Arc;
 
 pub use affine::Affine;
+pub use attribute::{
+    AttributeDefinition, AttributeDefinitionId, AttributeFlags, AttributeReference, AttributeText,
+    TextHorizontal, TextVertical,
+};
+pub use attribute_sync::{sync_references, Synced};
 pub use budget::MAX_EXPANSION;
 pub use editing::BlockEditSave;
+pub use field::{DataField, FieldObjectRef, FieldRun, FieldStatus, FieldText, FieldValue};
 pub use picture::Piece;
 pub use table::{block_name_problem, Redefinition};
 
-use crate::{Attributes, Entity, LayerId, LayerLook, Point};
+use crate::{Attributes, Entity, InsertUnits, LayerId, LayerLook, Point};
 
 /// Permanent identity of a block definition. Never reused within a drawing.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -61,6 +74,10 @@ pub struct BlockDef {
     /// insertion point.
     pub base: Point,
     pub description: String,
+    /// What one unit of the block's coordinates is. Inserting it into a
+    /// drawing with other insert units scales it by the ratio (see
+    /// [`InsertUnits::ratio`]); unitless means no scaling.
+    pub unit: InsertUnits,
     /// The objects, in draw order.
     pub entities: Vec<BlockEntity>,
 }
@@ -94,7 +111,8 @@ impl BlockDef {
     pub fn uses_layer(&self, layer: LayerId) -> bool {
         self.entities.iter().any(|e| {
             e.attrs.layer == layer
-                || matches!(&e.entity, Entity::Insert(i) if i.block.uses_layer(layer))
+                || matches!(&e.entity, Entity::Insert(i)
+                    if i.block.uses_layer(layer) || i.uses_layer_for_attributes(layer))
         })
     }
 }
@@ -114,6 +132,9 @@ pub struct Insert {
     pub scale_y: f64,
     /// Radians counter-clockwise.
     pub rotation: f64,
+    /// One reference per non-constant attribute definition of the block, in
+    /// definition order, each with this insert's own value. See [`attribute`].
+    pub attributes: Vec<AttributeReference>,
 }
 
 impl Insert {
@@ -125,6 +146,7 @@ impl Insert {
             scale_x: 1.0,
             scale_y: 1.0,
             rotation: 0.0,
+            attributes: Vec::new(),
         }
     }
 
@@ -134,6 +156,13 @@ impl Insert {
             .then(&Affine::scaling(self.scale_x, self.scale_y))
             .then(&Affine::rotation(self.rotation))
             .then(&Affine::translation(self.insertion.x, self.insertion.y))
+    }
+
+    /// Whether an attribute of this insert has its own properties on `layer`.
+    pub fn uses_layer_for_attributes(&self, layer: LayerId) -> bool {
+        self.attributes
+            .iter()
+            .any(|r| r.attrs.as_ref().is_some_and(|a| a.layer == layer))
     }
 
     /// Whether the scales are finite and not zero, and the rest finite.
@@ -184,5 +213,7 @@ pub fn inherited(
     out
 }
 
+#[cfg(test)]
+mod attribute_tests;
 #[cfg(test)]
 pub(crate) mod tests;

@@ -413,7 +413,6 @@ mod tests {
         "annotate.mleader_collect",
         "annotate.table",
         "annotate.tablestyle",
-        "block.attedit",
         "block.eattedit",
         "group.group",
         "group.ungroup",

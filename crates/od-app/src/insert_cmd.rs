@@ -4,17 +4,26 @@
 use std::sync::Arc;
 
 use od_commands::{Answer, Cancelled, Editor, NumberOptions, Options, PointOptions};
-use od_core::{BlockDef, Entity, Insert, Point};
+use od_core::block::AttributeReference;
+use od_core::{BlockDef, Entity, Insert, InsertUnits, Point};
 
+use crate::attribute_prompt::ask_values;
 use crate::block_cmd::{ask_block_name, list_blocks, NameAnswer};
 
-fn placed(block: &Arc<BlockDef>, at: Point, scale: (f64, f64), rotation: f64) -> Entity {
+fn placed(
+    block: &Arc<BlockDef>,
+    at: Point,
+    scale: (f64, f64),
+    rotation: f64,
+    attributes: Vec<AttributeReference>,
+) -> Entity {
     Entity::Insert(Box::new(Insert {
         block: block.clone(),
         insertion: at,
         scale_x: scale.0,
         scale_y: scale.1,
         rotation,
+        attributes,
     }))
 }
 
@@ -79,19 +88,25 @@ pub(crate) fn choose_block(ed: &Editor) -> Result<Option<Arc<BlockDef>>, Cancell
 /// INSERT, as AutoCAD 2020's INSERT places a block: a block name, then the
 /// insertion point, and the block is placed at full size and unturned.
 /// Scale and Rotate at the point prompt change that first, so the preview
-/// shows them. One undo step.
+/// shows them. A block in other units than the drawing's (their `INSUNITS`)
+/// is scaled by the ratio, on top of the scale chosen. One undo step.
 pub fn insert_block(ed: &mut Editor) -> Result<(), Cancelled> {
     let Some(block) = choose_block(ed)? else {
         return Ok(());
     };
+    let from = block.unit;
+    let units = ed.read(move |doc| InsertUnits::ratio(from, doc.units().insert))?;
     let mut scale = (1.0, 1.0);
     let mut rotation = 0.0;
     let at = loop {
-        let (shown, s, r) = (block.clone(), scale, rotation);
+        let (shown, s, r) = (block.clone(), (scale.0 * units, scale.1 * units), rotation);
         let options = PointOptions::new("Specify insertion point")
             .keyword("Scale", "S")
             .keyword("Rotate", "R")
-            .ghost(move |at| vec![placed(&shown, at, s, r)]);
+            .ghost(move |at| {
+                let defaults = shown.new_references(|d| d.default_value.clone());
+                vec![placed(&shown, at, s, r, defaults)]
+            });
         match ed.ask_point(options)? {
             Answer::Value(at) => break at,
             Answer::Keyword(k) if k == "Scale" => {
@@ -105,7 +120,9 @@ pub fn insert_block(ed: &mut Editor) -> Result<(), Cancelled> {
             Answer::Enter => {}
         }
     };
-    let entity = placed(&block, at, scale, rotation);
+    let attributes = ask_values(ed, &block)?;
+    let scale = (scale.0 * units, scale.1 * units);
+    let entity = placed(&block, at, scale, rotation, attributes);
     ed.transaction("Insert", move |tx| {
         tx.add(entity);
         Ok(())
@@ -125,7 +142,15 @@ mod tests {
     /// A drawing with block "Box": a 2 by 1 rectangle with its base point at
     /// its lower left corner, (10, 10).
     fn with_box() -> AppState {
+        with_box_in(InsertUnits::UNITLESS)
+    }
+
+    /// As [`with_box`], made while the drawing's insert units are `units`.
+    fn with_box_in(units: InsertUnits) -> AppState {
         let mut state = AppState::new();
+        let mut settings = *state.session().document().units();
+        settings.insert = units;
+        state.set_units(settings);
         state.add_entity(Entity::Rectangle {
             min: p(10.0, 10.0),
             max: p(12.0, 11.0),
@@ -165,6 +190,23 @@ mod tests {
         assert_eq!(doc.validate(), Ok(()));
         state.undo();
         assert_eq!(state.session().document().len(), 1);
+    }
+
+    #[test]
+    fn a_block_in_other_units_is_scaled_to_the_drawings() {
+        let mm = InsertUnits::from_code(4).unwrap();
+        let mut state = with_box_in(mm);
+        let mut units = *state.session().document().units();
+        units.insert = InsertUnits::from_code(6).unwrap();
+        state.set_units(units);
+        state.start_command("INSERT", insert_block);
+        state.settle_command();
+        submit_all(&mut state, &["box", "5,5"]);
+        let doc = state.session().document();
+        let Some(Entity::Insert(i)) = doc.objects().last().map(|o| &o.entity) else {
+            panic!("an insert was added")
+        };
+        assert!((i.scale_x - 0.001).abs() < 1e-12, "{}", i.scale_x);
     }
 
     #[test]

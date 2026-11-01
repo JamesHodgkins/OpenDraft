@@ -14,11 +14,14 @@ use std::collections::{BTreeSet, HashMap};
 
 use od_core::{Attr, Color, Document, LayerId, Layout, Lineweight};
 
+mod blocks;
 mod dimension;
 mod entities;
 mod hatch;
+mod insert;
 mod leader;
 mod mleader;
+mod notes;
 mod objects;
 mod tables;
 mod text;
@@ -67,6 +70,8 @@ struct Ids {
     dim_blocks: HashMap<od_core::EntityId, (String, u32)>,
     /// One per dimension style, in table order.
     dim_styles: Vec<u32>,
+    /// The block record of each of the drawing's block definitions.
+    blocks: HashMap<od_core::BlockId, u32>,
 }
 
 /// `*Paper_Space`, `*Paper_Space0`, `*Paper_Space1`... by tab position.
@@ -144,7 +149,11 @@ pub fn write(document: &Document) -> Result<Encoded, FileError> {
         annotations: HashMap::new(),
         dim_blocks: HashMap::new(),
         dim_styles: document.dim_styles().iter().map(|_| h.next()).collect(),
+        blocks: HashMap::new(),
     };
+    for def in document.blocks() {
+        ids.blocks.insert(def.id, h.next());
+    }
     for (id, name) in dimension::block_names(document) {
         ids.dim_blocks.insert(id, (name, h.next()));
     }
@@ -296,6 +305,9 @@ pub fn write(document: &Document) -> Result<Encoded, FileError> {
             Ok(())
         })?;
     }
+    for def in document.blocks() {
+        blocks::write_definition(&mut blocks, &mut h, &ids, document, def)?;
+    }
     blocks.end_section();
     entities.end_section();
 
@@ -346,50 +358,7 @@ pub fn write(document: &Document) -> Result<Encoded, FileError> {
     }
     out.pair(0, "EOF");
 
-    let has = |spline: bool| {
-        document.objects().iter().any(|o| match o.entity {
-            od_core::Entity::Spline(_) => spline,
-            od_core::Entity::Ellipse(_) => !spline,
-            _ => false,
-        })
-    };
-    let hatches = document
-        .objects()
-        .iter()
-        .any(|o| matches!(o.entity, od_core::Entity::Hatch(_)));
-    let texts = document
-        .objects()
-        .iter()
-        .any(|o| matches!(o.entity, od_core::Entity::MText(_)));
-    let why = match (document.layouts().is_empty(), has(false), has(true)) {
-        (true, false, false) if texts && !hatches => {
-            "Written as DXF 2000 so that multiline text is kept (DXF R12 has none)."
-        }
-        (true, false, false) if hatches => {
-            "Written as DXF 2000 so that hatches are kept (DXF R12 has none)."
-        }
-        (false, ..) => "Written as DXF 2000 so that layouts and viewports are kept.",
-        (true, true, true) => {
-            "Written as DXF 2000 so that ellipses and splines are kept (DXF R12 has neither)."
-        }
-        (true, false, true) => "Written as DXF 2000 so that splines are kept (DXF R12 has none).",
-        _ => "Written as DXF 2000 so that ellipses are kept (DXF R12 has none).",
-    };
-    let mut notes = vec![
-        why.to_owned(),
-        "Rectangles were written as closed polylines.".to_owned(),
-    ];
-    if texts {
-        notes.push(
-            "Text styles that use the bundled font were written as Arial; columns were not written."
-                .to_owned(),
-        );
-    }
-    if hatches {
-        notes.push(
-            "Hatches were written without the objects they follow (not associative).".to_owned(),
-        );
-    }
+    let notes = notes::notes(document);
     Ok(Encoded {
         bytes: ascii(&out.text),
         notes,
@@ -402,6 +371,23 @@ fn block(
     h: &mut Handles,
     name: &str,
     record: u32,
+    body: impl FnMut(&mut Out, &mut Handles) -> Result<(), FileError>,
+) -> Result<(), FileError> {
+    block_at(
+        out,
+        h,
+        (name, ""),
+        (record, od_core::Point::default()),
+        body,
+    )
+}
+
+/// A BLOCK ... ENDBLK pair with its description and base point.
+fn block_at(
+    out: &mut Out,
+    h: &mut Handles,
+    (name, description): (&str, &str),
+    (record, base): (u32, od_core::Point),
     mut body: impl FnMut(&mut Out, &mut Handles) -> Result<(), FileError>,
 ) -> Result<(), FileError> {
     out.pair(0, "BLOCK");
@@ -413,9 +399,12 @@ fn block(
     out.pair(2, name);
     // Dimension pictures are anonymous blocks.
     out.pair(70, i32::from(name.starts_with("*D")));
-    out.point3(10, 0.0, 0.0, 0.0);
+    out.point3(10, finite(base.x)?, finite(base.y)?, 0.0);
     out.pair(3, name);
     out.pair(1, "");
+    if !description.is_empty() {
+        out.pair(4, description);
+    }
     body(out, h)?;
     out.pair(0, "ENDBLK");
     out.pair(5, hex(h.next()));

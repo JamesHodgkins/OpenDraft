@@ -35,7 +35,7 @@ pub use changes::Changes;
 pub use context::Context;
 pub use dim_style_action::SetDimStyle;
 pub use dim_styles_action::SetDimStyles;
-pub use editor::Editor;
+pub use editor::{AttributeEditorAnswer, Editor};
 pub use history::{History, Provenance, Step, StepInfo};
 pub use layer_action::{AddLayer, ModifyLayers, RemoveLayer, SetCurrentLayer, SetNewObjectStyle};
 pub use layout_action::SetLayouts;
@@ -44,8 +44,9 @@ pub use mleader_style_action::SetMLeaderStyles;
 pub use paste_action::{PasteDrawing, WarningSink};
 pub use point_style_action::SetPointStyle;
 pub use prompt::{
-    Answer, Cancelled, DynamicDimensions, Ghost, GhostStyle, Hint, Keyword, Marker, NumberOptions,
-    NumberOrPoint, Options, Picked, PointOptions, Prompt, Reply, TextOptions, Wants,
+    Answer, BlockDialogButton, Cancelled, DynamicDimensions, Ghost, GhostStyle, Hint, Keyword,
+    Marker, NumberOptions, NumberOrPoint, Options, Picked, PointOptions, Prompt, Reply,
+    TextOptions, Wants,
 };
 pub use registry::{
     always, never, AutomationPolicy, Command, CommandEffect, ExecuteError, Registry, RegistryError,

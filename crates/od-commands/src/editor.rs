@@ -50,6 +50,10 @@ pub struct Editor {
     context: Context,
 }
 
+mod dialog_asks;
+
+pub use dialog_asks::AttributeEditorAnswer;
+
 impl Editor {
     pub(crate) fn new(
         requests: Sender<Request>,
@@ -159,7 +163,7 @@ impl Editor {
             .send(Request::Ask(prompt))
             .map_err(|_| Cancelled)?;
         match self.replies.recv() {
-            Ok(Reply::Cancel) | Err(_) => Err(Cancelled),
+            Ok(Reply::Cancel | Reply::Back) | Err(_) => Err(Cancelled),
             Ok(reply) => Ok(reply),
         }
     }

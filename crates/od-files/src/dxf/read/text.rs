@@ -22,7 +22,7 @@ use super::{aci_color, decode, Importer, Record};
 /// The text styles the file named, by lower-cased name and by handle.
 #[derive(Default)]
 pub(super) struct Styles {
-    by_name: HashMap<String, TextStyleId>,
+    pub(super) by_name: HashMap<String, TextStyleId>,
     pub(super) by_handle: HashMap<String, TextStyleId>,
 }
 

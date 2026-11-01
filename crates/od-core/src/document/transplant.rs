@@ -186,6 +186,7 @@ impl Document {
                     .collect();
                 let id = merge.dst.allocate_block_id();
                 let def = Arc::new(BlockDef {
+                    unit: Default::default(),
                     id,
                     name: name.clone(),
                     base: *base,
@@ -231,6 +232,8 @@ impl Document {
             .unwrap_or_default()
     }
 }
+
+mod attributes;
 
 /// The matching of one drawing's tables to another's while absorbing.
 struct Merge<'a> {
@@ -382,6 +385,7 @@ impl Merge<'_> {
                     })
                     .collect();
                 let copy = Arc::new(BlockDef {
+                    unit: def.unit,
                     id: self.dst.allocate_block_id(),
                     name: def.name.clone(),
                     base: def.base,
@@ -407,7 +411,13 @@ impl Merge<'_> {
             Entity::Insert(i) => {
                 let mut i = i.clone();
                 i.block = self.block(&i.block);
+                self.insert_attributes(&mut i);
                 Entity::Insert(i)
+            }
+            Entity::AttributeDefinition(d) => {
+                let mut d = d.clone();
+                self.attribute_definition(&mut d);
+                Entity::AttributeDefinition(d)
             }
             Entity::Dimension(d) => {
                 let mut d = d.clone();
@@ -457,6 +467,7 @@ mod tests {
     fn block_of(doc: &mut Document, name: &str) -> Arc<BlockDef> {
         let id = doc.allocate_block_id();
         let def = Arc::new(BlockDef {
+            unit: Default::default(),
             id,
             name: name.to_owned(),
             base: Point::new(0.0, 0.0),
@@ -517,6 +528,7 @@ mod tests {
         let inner = block_of(&mut src, "Inner");
         let outer_id = src.allocate_block_id();
         let outer = Arc::new(BlockDef {
+            unit: Default::default(),
             id: outer_id,
             name: "Outer".into(),
             base: Point::new(0.0, 0.0),
@@ -696,6 +708,7 @@ mod tests {
         let mine = with_linetype(&mut src, "Mine", &[Dash(3.0), Gap(1.0)]);
         let id = src.allocate_block_id();
         let def = Arc::new(BlockDef {
+            unit: Default::default(),
             id,
             name: "B".to_owned(),
             base: Point::new(0.0, 0.0),

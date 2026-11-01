@@ -371,6 +371,9 @@ impl PanelViewer<'_> {
             }) => self.state.set_property(field, label, value, kind),
             Some(Edit::Attr { edit, kind }) => self.state.set_attrs(&edit, kind),
             Some(Edit::Style(edit)) => self.state.set_object_style(&edit),
+            Some(Edit::Attribute { tag, value, kind }) => {
+                self.state.set_attribute_value(&tag, &value, kind);
+            }
             None => {}
         }
     }

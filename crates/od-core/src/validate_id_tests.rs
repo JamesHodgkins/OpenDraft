@@ -51,6 +51,7 @@ fn a_text_style_with_the_largest_id_is_refused() {
 fn a_block_with_the_largest_id_is_refused() {
     let mut document = Document::default();
     document.push_block(Arc::new(BlockDef {
+        unit: Default::default(),
         id: BlockId(MAX),
         name: "Last".into(),
         base: Point::new(0.0, 0.0),

@@ -4,6 +4,7 @@
 use od_core::{DimStyle, Ellipse, Entity, Point};
 use serde::{Deserialize, Serialize};
 
+use super::attribute::{AttributeDefinitionDto, AttributeReferenceDto};
 use super::block::{insert_entity, Blocks};
 use super::dimension::DimensionDto;
 use super::dimension_style::StylePool;
@@ -98,7 +99,16 @@ pub(super) enum EntityDto {
         scale: [f64; 2],
         #[serde(default)]
         rotation: f64,
+        /// The values of the block's attributes, in definition order.
+        #[serde(
+            default,
+            skip_serializing_if = "Vec::is_empty",
+            deserialize_with = "super::limits::block_objects"
+        )]
+        attributes: Vec<AttributeReferenceDto>,
     },
+    /// A template text in a block, or loose in the drawing.
+    AttributeDefinition(AttributeDefinitionDto),
 }
 
 fn unit_scale() -> [f64; 2] {
@@ -179,6 +189,9 @@ impl EntityDto {
             Entity::MLeader(m) => EntityDto::MLeader(MLeaderDto::from_mleader(m)?),
             Entity::Leader(l) => EntityDto::Leader(LeaderDto::from_leader(l)?),
             Entity::Hatch(h) => EntityDto::Hatch(HatchDto::from_hatch(h)?),
+            Entity::AttributeDefinition(d) => {
+                EntityDto::AttributeDefinition(AttributeDefinitionDto::of(d))
+            }
             Entity::Insert(i) => {
                 if !i.is_valid() {
                     return invalid("a block insert has a zero or non-finite scale");
@@ -189,6 +202,7 @@ impl EntityDto {
                     insertion: point(i.insertion),
                     scale: [i.scale_x, i.scale_y],
                     rotation: i.rotation,
+                    attributes: i.attributes.iter().map(AttributeReferenceDto::of).collect(),
                 });
             }
             Entity::Polyline {
@@ -221,7 +235,11 @@ impl EntityDto {
                 insertion,
                 scale,
                 rotation,
-            } => insert_entity(blocks, *block, *insertion, *scale, *rotation)?,
+                attributes,
+            } => insert_entity(blocks, *block, *insertion, *scale, *rotation, attributes)?,
+            EntityDto::AttributeDefinition(d) => {
+                Entity::AttributeDefinition(Box::new(d.to_definition()?))
+            }
             EntityDto::Point { at } => Entity::Point {
                 at: from_point(*at)?,
             },

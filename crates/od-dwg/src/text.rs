@@ -19,7 +19,6 @@ use crate::limits::DwgLimits;
 use crate::object::ObjectStreams;
 use crate::report::{Degradation, ImportReport, Skipped};
 use crate::shapes::{all_sane, flatten, Shape};
-use crate::version::DwgVersion;
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct TextData {
@@ -170,47 +169,6 @@ pub(crate) fn read_text(
     })
 }
 
-/// An ATTRIB or ATTDEF: a text with a tag and flags. Only the single-line kind
-/// is read; the multiline kind carries an embedded MTEXT and is noted as such.
-#[derive(Clone, Debug, PartialEq)]
-pub(crate) struct AttribData {
-    pub text: TextData,
-    pub multiline: bool,
-    pub invisible: bool,
-    pub constant: bool,
-}
-
-/// ATTRIB and ATTDEF (§20.4.4 and §20.4.5): the TEXT fields, a version byte,
-/// from 2018 the kind, then (single line) the tag, field length, flags and
-/// the position lock. An ATTDEF's prompt follows and is not needed.
-pub(crate) fn read_attrib(
-    s: &mut ObjectStreams<'_>,
-    base: DwgHandle,
-    version: DwgVersion,
-    limits: &DwgLimits,
-) -> Result<AttribData, DwgError> {
-    let text = read_text(s, base, limits)?;
-    s.data.rc()?; // version
-    let multiline = version >= DwgVersion::R2018 && s.data.rc()? != 1;
-    if multiline {
-        return Ok(AttribData {
-            text,
-            multiline,
-            invisible: false,
-            constant: false,
-        });
-    }
-    s.strings.text(limits.max_string_code_units)?; // tag
-    s.data.bs()?; // field length
-    let flags = s.data.rc()?;
-    Ok(AttribData {
-        text,
-        multiline,
-        invisible: flags & 1 != 0,
-        constant: flags & 2 != 0,
-    })
-}
-
 /// The background of an MTEXT (R2004 and later): flags, then for a fill the
 /// scale, the colour and a transparency.
 fn read_background(
@@ -302,6 +260,16 @@ pub(crate) fn read_mtext(
 /// AutoCAD's codes give them (0 left, 1 centre, 2 right; 0 baseline, 1 bottom,
 /// 2 middle, 3 top); "middle" (4) is centre and middle.
 pub(crate) fn text(d: &TextData, report: &mut ImportReport) -> Result<Shape, Skipped> {
+    line(d, report, false)
+}
+
+/// A line of text; an attribute may have no text, and its OCS may be flipped
+/// (under a mirrored insert), which turns the place and the angle over.
+pub(crate) fn line(
+    d: &TextData,
+    report: &mut ImportReport,
+    attribute: bool,
+) -> Result<Shape, Skipped> {
     let o = Orientation::from_extrusion(d.extrusion).map_err(|_| Skipped::InvalidGeometry)?;
     let other = d.alignment.unwrap_or(d.insertion);
     let numbers = [
@@ -314,11 +282,14 @@ pub(crate) fn text(d: &TextData, report: &mut ImportReport) -> Result<Shape, Ski
         d.oblique,
         d.width_factor,
     ];
-    if o != Orientation::Upright || !all_sane(&numbers) || !all_sane(&[d.height]) || d.height <= 0.0
+    if (o != Orientation::Upright && !attribute)
+        || !all_sane(&numbers)
+        || !all_sane(&[d.height])
+        || d.height <= 0.0
     {
         return Err(Skipped::InvalidGeometry);
     }
-    if d.width_factor <= 0.0 || d.value.trim().is_empty() {
+    if d.width_factor <= 0.0 || (!attribute && d.value.trim().is_empty()) {
         return Err(Skipped::InvalidGeometry);
     }
     flatten(
@@ -342,6 +313,10 @@ pub(crate) fn text(d: &TextData, report: &mut ImportReport) -> Result<Shape, Ski
         (0, 0) => (d.insertion, d.rotation, 0, 0),
         (h, v) => (other, d.rotation, h.min(2), v.min(3)),
     };
+    let (at, rotation) = match o {
+        Orientation::Upright => (at, rotation),
+        Orientation::Mirrored => (o.point(at), std::f64::consts::PI - rotation),
+    };
     Ok(Shape::Text {
         at,
         rotation,
@@ -355,26 +330,6 @@ pub(crate) fn text(d: &TextData, report: &mut ImportReport) -> Result<Shape, Ski
         upside_down: d.generation & 4 != 0,
         style: d.style,
     })
-}
-
-/// The shape of an ATTRIB, which is its text, or of a constant ATTDEF, which
-/// shows its default value. Any other ATTDEF is a template: what a reference
-/// shows is its own ATTRIB.
-pub(crate) fn attrib(
-    d: &AttribData,
-    definition: bool,
-    report: &mut ImportReport,
-) -> Result<Shape, Skipped> {
-    if d.multiline {
-        return Err(Skipped::Unsupported("multiline attribute".into()));
-    }
-    if definition && !d.constant {
-        return Err(Skipped::AttributeTemplate);
-    }
-    if d.invisible {
-        return Err(Skipped::Invisible);
-    }
-    text(&d.text, report)
 }
 
 pub(crate) fn mtext(d: &MTextData, report: &mut ImportReport) -> Result<Shape, Skipped> {
@@ -427,6 +382,8 @@ pub(crate) fn mtext(d: &MTextData, report: &mut ImportReport) -> Result<Shape, S
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::attrib::{attribute, definition, read_attrib, AttribData};
+    use crate::shapes::DwgAttribute;
     use crate::testkit::{BitWriter, Buffers};
     use crate::version::DwgVersion;
 
@@ -603,82 +560,97 @@ mod tests {
         assert_eq!(m.background, Some((2.0, Some(DwgColor::Aci(1)))));
     }
 
-    fn attrib_streams(kind: u8, flags: u8) -> Buffers {
+    /// An ATTRIB (or, with a prompt, ATTDEF) record: the text, the version
+    /// and kind bytes, the tag, field length, flags, lock bit and the prompt.
+    fn attrib_streams(kind: u8, flags: u8, lock: bool, definition: bool) -> Buffers {
         let mut data = BitWriter::new();
         data.rc(0xFF)
             .rd2([5.0, 6.0])
             .extrusion([0.0, 0.0, 1.0])
             .thickness(0.0)
             .rd(2.5);
-        data.rc(0).rc(kind).bs(0).rc(flags);
+        data.rc(0).rc(kind).bs(7).rc(flags).bit(lock);
         let mut strings = BitWriter::new();
         strings.text("Value").text("TAG");
+        if definition {
+            strings.text("Prompt?");
+        }
         Buffers::new(&data, &strings, &handles())
     }
 
-    #[test]
-    fn an_attribute_is_a_text_with_a_tag_and_flags() {
-        let b = attrib_streams(1, 2);
-        let a = read_attrib(
+    fn read(b: &Buffers, definition: bool) -> AttribData {
+        read_attrib(
             &mut b.streams(),
             DwgHandle(0x40),
             DwgVersion::R2018,
             &DwgLimits::default(),
+            definition,
         )
-        .unwrap();
-        assert_eq!(a.text.value, "Value");
-        assert!(a.constant && !a.invisible && !a.multiline);
-        // A reference's attribute shows; a constant definition shows too.
-        assert!(matches!(
-            attrib(&a, false, &mut report()),
-            Ok(Shape::Text { .. })
-        ));
-        assert!(matches!(
-            attrib(&a, true, &mut report()),
-            Ok(Shape::Text { .. })
-        ));
+        .unwrap()
     }
 
     #[test]
-    fn templates_and_invisible_attributes_do_not_show() {
-        let b = attrib_streams(1, 1);
-        let a = read_attrib(
-            &mut b.streams(),
-            DwgHandle(0x40),
-            DwgVersion::R2018,
-            &DwgLimits::default(),
-        )
-        .unwrap();
-        assert!(a.invisible);
-        assert_eq!(attrib(&a, false, &mut report()), Err(Skipped::Invisible));
-        let template = AttribData {
-            constant: false,
-            invisible: false,
-            ..a.clone()
+    fn an_attribute_has_a_tag_modes_a_length_and_a_lock() {
+        let a = read(&attrib_streams(1, 2 | 4, true, false), false);
+        assert_eq!((a.text.value.as_str(), a.tag.as_str()), ("Value", "TAG"));
+        assert_eq!((a.flags, a.field_length, a.lock_position), (6, 7, true));
+        assert!(a.constant && !a.invisible && !a.multiline && a.prompt.is_empty());
+        let reference = attribute(&a, false, &mut report()).unwrap();
+        assert_eq!((reference.tag.as_str(), reference.flags), ("TAG", 6));
+        assert!(matches!(reference.text, Shape::Text { .. }));
+    }
+
+    #[test]
+    fn a_definition_has_its_prompt_and_becomes_a_template_shape() {
+        let a = read(&attrib_streams(1, 0, false, true), true);
+        assert_eq!(a.prompt, "Prompt?");
+        let Ok(Shape::AttributeDefinition {
+            tag, prompt, text, ..
+        }) = definition(&a, &mut report())
+        else {
+            panic!("a definition")
         };
-        assert_eq!(
-            attrib(&template, true, &mut report()),
-            Err(Skipped::AttributeTemplate)
-        );
-        assert!(matches!(
-            attrib(&template, false, &mut report()),
-            Ok(Shape::Text { .. })
-        ));
+        assert_eq!((tag.as_str(), prompt.as_str()), ("TAG", "Prompt?"));
+        assert!(matches!(*text, Shape::Text { .. }));
+    }
+
+    #[test]
+    fn an_attribute_may_be_empty_and_hidden_ones_are_kept_with_their_flag() {
+        let mut a = read(&attrib_streams(1, 0, false, false), false);
+        a.text.value = String::new();
+        let shown = attribute(&a, false, &mut report()).unwrap();
+        assert_eq!(shown.flags & 1, 0);
+        let hidden = attribute(&a, true, &mut report()).unwrap();
+        assert_eq!(hidden.flags & 1, 1, "an entity switched off is invisible");
+    }
+
+    #[test]
+    fn under_a_flipped_plane_the_place_and_angle_are_reflected() {
+        let mut a = read(&attrib_streams(1, 0, false, false), false);
+        a.text.extrusion = [0.0, 0.0, -1.0];
+        a.text.rotation = 0.5;
+        let Ok(DwgAttribute {
+            text: Shape::Text { at, rotation, .. },
+            ..
+        }) = attribute(&a, false, &mut report())
+        else {
+            panic!("text")
+        };
+        assert_eq!(at, [-5.0, 6.0]);
+        assert!((rotation - (std::f64::consts::PI - 0.5)).abs() < 1e-12);
     }
 
     #[test]
     fn a_multiline_attribute_is_named_not_read() {
-        let b = attrib_streams(2, 0);
-        let a = read_attrib(
-            &mut b.streams(),
-            DwgHandle(0x40),
-            DwgVersion::R2018,
-            &DwgLimits::default(),
-        )
-        .unwrap();
+        let b = attrib_streams(2, 0, false, false);
+        let a = read(&b, false);
         assert!(a.multiline);
         assert!(matches!(
-            attrib(&a, false, &mut report()),
+            attribute(&a, false, &mut report()),
+            Err(Skipped::Unsupported(_))
+        ));
+        assert!(matches!(
+            definition(&a, &mut report()),
             Err(Skipped::Unsupported(_))
         ));
     }

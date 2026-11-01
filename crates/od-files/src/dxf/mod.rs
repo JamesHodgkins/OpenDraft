@@ -49,14 +49,13 @@ impl FileFormat for DxfFormat {
     }
 
     fn write(&self, document: &Document) -> Result<Encoded, FileError> {
-        let (flat, block_count) = blocks::exploded(document);
-        let (flat, count) = dimensions::exploded(&flat);
-        let mut encoded = write::write(&flat)?;
-        if block_count > 0 {
-            encoded.notes.push(format!(
-                "Block references were written as the objects they draw: DXF export of blocks is not built yet ({block_count} in this drawing)."
-            ));
+        if let Some(tag) = blocks::first_field(document) {
+            return Err(FileError::Unsupported(format!(
+                "attribute \"{tag}\" holds a data field, which DXF export cannot keep yet; save as .odx"
+            )));
         }
+        let (flat, count) = dimensions::exploded(document);
+        let mut encoded = write::write(&flat)?;
         if count > 0 {
             encoded.notes.push(format!(
                 "{count} arc length, jogged or jog line dimension{} written as plain lines, arcs and multiline text: they have no DIMENSION to map onto yet.",

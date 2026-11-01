@@ -167,6 +167,27 @@ fn build() -> Vec<SysVar<AppState>> {
                 Ok(())
             },
         ),
+        SysVar::int(
+            "AFLAGS",
+            "Attribute modes new definitions start with: 1 invisible, 2 constant, 4 verify, 8 preset, 16 lock position",
+            (0, i64::from(crate::attribute_memory::AFLAGS_MASK)),
+            |st| Value::Int(i64::from(st.defaults().attribute.get().aflags())),
+            |st, v| {
+                let value = u16::try_from(int(v)).unwrap_or(0);
+                st.defaults().attribute.change(|m| m.set_aflags(value));
+                Ok(())
+            },
+        ),
+        SysVar::int(
+            "ATTREQ",
+            "1 to ask for attribute values when a block is inserted, 0 to use the defaults",
+            (0, 1),
+            |st| Value::Int(i64::from(st.defaults().attribute.get().prompt_on_insert)),
+            |st, v| {
+                st.defaults().attribute.change(|m| m.prompt_on_insert = int(v) == 1);
+                Ok(())
+            },
+        ),
         SysVar::real(
             "TEXTSIZE",
             "Height of new text",

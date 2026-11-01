@@ -38,7 +38,9 @@ impl AppState {
         self.end_sysvar_prompt();
         self.command_serial += 1;
         let pickset = self.docs[self.active].selection.iter().copied().collect();
-        let context = Context::default().with(Arc::clone(self.defaults()));
+        let context = Context::default()
+            .with(Arc::clone(self.defaults()))
+            .with(Arc::clone(&self.block_requests));
         self.runner = Some(Runner::start_with(name, pickset, context, command));
         self.run_doc = self.active;
         self.pump_command();
@@ -77,6 +79,17 @@ impl AppState {
     /// the drawing. Says so, like Esc does.
     pub fn interrupt_command(&mut self) {
         self.cancel_command();
+    }
+
+    /// Esc in a running command: back out of a prompt that asked for that
+    /// (a pick made from a dialog, which then opens again), else cancel it.
+    pub(crate) fn esc_in_command(&mut self) {
+        if self.waiting().is_some_and(|ask| ask.esc_backs) {
+            self.cmdline.say("*Cancel*");
+            self.reply(Reply::Back);
+        } else {
+            self.cancel_command();
+        }
     }
 
     /// Esc: cancel the running command, as AutoCAD echoes it.
@@ -431,8 +444,12 @@ mod tests {
             mtext: None,
             mtext_of: None,
             overkill: None,
+            attribute_definition: None,
+            attribute_editor: None,
+            block_dialog: None,
             allow_empty: false,
             pick_locked: false,
+            esc_backs: false,
         }
     }
 

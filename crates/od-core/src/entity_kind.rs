@@ -11,6 +11,7 @@
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum EntityKind {
     Arc,
+    AttributeDefinition,
     Insert,
     Circle,
     Xline,
@@ -30,8 +31,9 @@ pub enum EntityKind {
 
 impl EntityKind {
     /// Every kind, in order.
-    pub const ALL: [EntityKind; 16] = [
+    pub const ALL: [EntityKind; 17] = [
         EntityKind::Arc,
+        EntityKind::AttributeDefinition,
         EntityKind::Insert,
         EntityKind::Circle,
         EntityKind::Xline,
@@ -53,6 +55,7 @@ impl EntityKind {
     pub fn display_name(self) -> &'static str {
         match self {
             EntityKind::Arc => "arc",
+            EntityKind::AttributeDefinition => "attribute definition",
             EntityKind::Insert => "block reference",
             EntityKind::Circle => "circle",
             EntityKind::Xline => "construction line",
@@ -75,6 +78,7 @@ impl EntityKind {
     pub fn title(self) -> &'static str {
         match self {
             EntityKind::Arc => "Arc",
+            EntityKind::AttributeDefinition => "Attribute definition",
             EntityKind::Insert => "Block reference",
             EntityKind::Circle => "Circle",
             EntityKind::Xline => "Construction line",
@@ -98,6 +102,7 @@ impl EntityKind {
     pub fn wire_name(self) -> &'static str {
         match self {
             EntityKind::Arc => "arc",
+            EntityKind::AttributeDefinition => "attribute_definition",
             EntityKind::Insert => "block_reference",
             EntityKind::Circle => "circle",
             EntityKind::Xline => "xline",
@@ -174,6 +179,7 @@ mod tests {
             wire,
             [
                 "arc",
+                "attribute_definition",
                 "block_reference",
                 "circle",
                 "xline",

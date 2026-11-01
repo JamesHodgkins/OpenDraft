@@ -78,9 +78,13 @@ impl AppState {
                 default_hint: None,
                 allow_empty: false,
                 pick_locked: false,
+                esc_backs: false,
                 mtext: None,
                 mtext_of: None,
                 overkill: None,
+                attribute_definition: None,
+                attribute_editor: None,
+                block_dialog: None,
                 dynamic_dimensions: DynamicDimensions::None,
             })
         })
@@ -104,9 +108,13 @@ impl AppState {
             default_hint: None,
             allow_empty: false,
             pick_locked: false,
+            esc_backs: false,
             mtext: None,
             mtext_of: None,
             overkill: None,
+            attribute_definition: None,
+            attribute_editor: None,
+            block_dialog: None,
             dynamic_dimensions: DynamicDimensions::None,
         })
     }

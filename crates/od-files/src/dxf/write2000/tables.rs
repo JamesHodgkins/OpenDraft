@@ -143,22 +143,28 @@ pub(super) fn write_tables(
         out,
         h,
         "BLOCK_RECORD",
-        super::sheets(document).len() + 1 + ids.dim_blocks.len(),
+        super::sheets(document).len() + 1 + ids.dim_blocks.len() + ids.blocks.len(),
     );
-    let block_record = |out: &mut Out, name: &str, handle: u32, layout: u32| {
+    let block_record = |out: &mut Out, name: &str, handle: u32, layout: u32, units: i64| {
         record(out, "BLOCK_RECORD", owner, "AcDbBlockTableRecord", handle);
         out.pair(2, name);
         out.pair(340, hex(layout));
+        out.pair(70, units);
     };
-    block_record(out, "*Model_Space", ids.model_record, ids.model_layout);
+    block_record(out, "*Model_Space", ids.model_record, ids.model_layout, 0);
     for (i, _) in super::sheets(document).iter().enumerate() {
-        block_record(out, &block_name(i), ids.records[i], ids.layouts[i]);
+        block_record(out, &block_name(i), ids.records[i], ids.layouts[i], 0);
     }
     // In handle order, so the same drawing always writes the same file.
     let mut dim_blocks: Vec<_> = ids.dim_blocks.values().collect();
     dim_blocks.sort_by_key(|(_, handle)| *handle);
     for (name, record_handle) in dim_blocks {
-        block_record(out, name, *record_handle, 0);
+        block_record(out, name, *record_handle, 0, 0);
+    }
+    for def in document.blocks() {
+        if let Some(handle) = ids.blocks.get(&def.id) {
+            block_record(out, &def.name, *handle, 0, def.unit.code());
+        }
     }
     out.pair(0, "ENDTAB");
     out.end_section();

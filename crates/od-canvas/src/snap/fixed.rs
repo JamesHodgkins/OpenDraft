@@ -57,6 +57,8 @@ pub fn candidates(entity: &Entity) -> Vec<SnapPoint> {
             found.extend(i.picture().iter().flat_map(candidates));
             found
         }
+        // Its text point, then the corners of its tag.
+        Entity::AttributeDefinition(d) => candidates(&Entity::MText(Box::new(d.tag_view()))),
         // The insertion point and corners, then the edge middles.
         Entity::MText(m) => m
             .snap_points()

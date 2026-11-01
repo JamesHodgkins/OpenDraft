@@ -77,6 +77,7 @@ pub struct Document {
     /// Block definitions, shared with the inserts that place them.
     blocks: Vec<Arc<BlockDef>>,
     next_block_id: u64,
+    next_attribute_definition_id: u64,
     /// The linetype table (`CONTINUOUS`, `BYLAYER` and `BYBLOCK` always exist).
     linetypes: LinetypeTable,
     /// The drawing-wide multiplier of every linetype pattern (`LTSCALE`).
@@ -88,6 +89,7 @@ pub struct Document {
     spatial: spatial::SpatialIndex,
 }
 
+mod attributes;
 mod blocks;
 mod layer_table;
 mod layouts;
@@ -143,6 +145,7 @@ impl Default for Document {
             current_mleader_style: MLeaderStyleId::STANDARD,
             blocks: Vec::new(),
             next_block_id: 1,
+            next_attribute_definition_id: 1,
             linetypes: LinetypeTable::default(),
             linetype_scale: 1.0,
             point_style: PointStyle::default(),
@@ -233,6 +236,7 @@ impl Document {
     /// Append an object that already has an id (redo, undo of an erase).
     pub fn push(&mut self, object: Object) {
         self.next_id = self.next_id.max(after(object.id.0));
+        self.note_attribute_id(&object.entity);
         self.positions.insert(object.id, self.objects.len());
         self.objects.push(object);
         if let Some(added) = self.objects.last() {
@@ -246,6 +250,7 @@ impl Document {
         let first = self.objects.len();
         for object in objects {
             self.next_id = self.next_id.max(after(object.id.0));
+            self.note_attribute_id(&object.entity);
             self.positions.insert(object.id, self.objects.len());
             self.objects.push(object);
         }

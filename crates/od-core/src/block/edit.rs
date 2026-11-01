@@ -31,6 +31,7 @@ impl Insert {
             scale_x: scale_x * s.scale,
             scale_y: self.scale_y * s.scale,
             rotation: arc::normalize(rotation),
+            attributes: self.attributes.clone(),
         }
     }
 

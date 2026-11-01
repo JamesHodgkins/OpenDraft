@@ -129,6 +129,7 @@ fn r12_name(name: &str) -> bool {
 /// do not guess at).
 fn needs_r2000(document: &Document) -> bool {
     !document.layouts().is_empty()
+        || !document.blocks().is_empty()
         || document.layers().iter().any(|l| !r12_name(&l.name))
         || document.text_styles().iter().any(|s| !r12_name(&s.name))
         || super::linetypes::table_names(document).any(|n| !r12_name(&n))
@@ -142,6 +143,8 @@ fn needs_r2000(document: &Document) -> bool {
                     | Entity::Dimension(_)
                     | Entity::MLeader(_)
                     | Entity::Leader(_)
+                    | Entity::Insert(_)
+                    | Entity::AttributeDefinition(_)
                     | Entity::Xline { .. }
                     | Entity::Ray { .. }
             )
@@ -267,9 +270,11 @@ pub(super) fn write_r12(document: &Document) -> Result<Encoded, FileError> {
             Ok(())
         };
         match &object.entity {
-            Entity::Dimension(_) | Entity::MText(_) | Entity::Insert(_) | Entity::MLeader(_) => {
-                return Err(unexploded())
-            }
+            Entity::Dimension(_)
+            | Entity::MText(_)
+            | Entity::Insert(_)
+            | Entity::AttributeDefinition(_)
+            | Entity::MLeader(_) => return Err(unexploded()),
             Entity::Leader(_) => {
                 return Err(FileError::Unsupported(
                     "R12 DXF cannot hold leaders; this drawing needs R2000".into(),

@@ -5,6 +5,7 @@
 
 use std::collections::{HashMap, HashSet};
 
+use od_core::block::{AttributeText, TextHorizontal, TextVertical};
 use od_core::mtext::{
     BackgroundFill, EntityLineSpacing, LineSpacingStyle, MTextAttachment, MTextBackground,
     MTextFlow,
@@ -173,6 +174,49 @@ fn attachment(horizontal: u8, vertical: u8) -> MTextAttachment {
         2 => row(TopRight, MiddleRight, BottomRight),
         _ => row(TopLeft, MiddleLeft, BottomLeft),
     }
+}
+
+/// The settings of an attribute's text (a [`Shape::Text`] placed in the
+/// drawing) and the value it shows, or `None` when it is not valid text.
+pub(super) fn attribute_text(shape: &Shape, styles: &Styles) -> Option<(AttributeText, String)> {
+    let Shape::Text {
+        at,
+        rotation,
+        height,
+        width_factor,
+        oblique,
+        value,
+        horizontal,
+        vertical,
+        backward,
+        upside_down,
+        style,
+    } = shape
+    else {
+        return None;
+    };
+    let text = AttributeText {
+        position: Point::new(at[0], at[1]),
+        height: *height,
+        rotation: *rotation,
+        width_factor: *width_factor,
+        oblique: *oblique,
+        style: styles.id(*style),
+        horizontal: match horizontal {
+            1 => TextHorizontal::Center,
+            2 => TextHorizontal::Right,
+            _ => TextHorizontal::Left,
+        },
+        vertical: match vertical {
+            1 => TextVertical::Bottom,
+            2 => TextVertical::Middle,
+            3 => TextVertical::Top,
+            _ => TextVertical::Baseline,
+        },
+        generation_flags: if *backward { 2 } else { 0 } | if *upside_down { 4 } else { 0 },
+    };
+    text.validate().ok()?;
+    Some((text, percent_codes(value, false)))
 }
 
 /// The object for a text shape, or `None` when its values make no text.

@@ -19,6 +19,18 @@ pub const MAX_ABS_COORDINATE: f64 = 1e12;
 /// A flat shape, in the drawing plane. Angles are counter-clockwise radians
 /// as stored (not normalised); a bulge is the tangent of a quarter of the
 /// segment's arc angle, positive counter-clockwise.
+/// An attribute (ATTRIB) of a block reference: its tag, modes, and its value
+/// as a [`Shape::Text`] placed in the drawing. `flags`: invisible 1,
+/// constant 2, verify 4, preset 8.
+#[derive(Clone, Debug, PartialEq)]
+pub struct DwgAttribute {
+    pub tag: String,
+    pub flags: u8,
+    pub lock_position: bool,
+    pub field_length: u16,
+    pub text: Shape,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Shape {
     Point {
@@ -92,6 +104,19 @@ pub enum Shape {
         insertion: [f64; 2],
         scale: [f64; 2],
         rotation: f64,
+        /// The attributes it owns, in order, each placed in the drawing.
+        attributes: Vec<DwgAttribute>,
+    },
+    /// An attribute definition (ATTDEF), a template in a block or loose in
+    /// the drawing. `text` is a [`Shape::Text`] holding the default value.
+    /// `flags`: invisible 1, constant 2, verify 4, preset 8.
+    AttributeDefinition {
+        tag: String,
+        prompt: String,
+        flags: u8,
+        lock_position: bool,
+        field_length: u16,
+        text: Box<Shape>,
     },
     /// A single line of text. `at` is where the alignment codes hang it:
     /// `horizontal` 0 left, 1 centre, 2 right and `vertical` 0 baseline,
@@ -289,6 +314,7 @@ pub(crate) fn insert(
         insertion: o.point([d.insertion[0], d.insertion[1]]),
         scale,
         rotation,
+        attributes: Vec::new(),
     })
 }
 
@@ -753,7 +779,8 @@ mod tests {
                 block: DwgHandle(9),
                 insertion: [3.0, 4.0],
                 scale: [2.0, 1.0],
-                rotation: 0.5
+                rotation: 0.5,
+                attributes: Vec::new()
             })
         );
         let s = insert(&insert_data(DOWN), DwgHandle(9), &mut report());
@@ -763,7 +790,8 @@ mod tests {
                 block: DwgHandle(9),
                 insertion: [-3.0, 4.0],
                 scale: [-2.0, 1.0],
-                rotation: -0.5
+                rotation: -0.5,
+                attributes: Vec::new()
             })
         );
         let flat = InsertData {

@@ -9,8 +9,8 @@ use od_commands::Editor;
 
 use crate::state::AppState;
 use crate::{
-    corner_memory, donut_cmd, hatch_memory, overkill_memory, pedit_memory, polygon_cmd,
-    purge_memory, rect_memory, spline_memory, text_memory,
+    attribute_memory, corner_memory, donut_cmd, hatch_memory, overkill_memory, pedit_memory,
+    polygon_cmd, purge_memory, rect_memory, spline_memory, text_memory,
 };
 
 /// One remembered section, shared between the application and the commands
@@ -37,6 +37,7 @@ impl<T: Clone> Slot<T> {
 
 #[derive(Default)]
 pub struct CommandDefaults {
+    pub attribute: Slot<attribute_memory::Memory>,
     pub corner: Slot<corner_memory::Memory>,
     pub donut: Slot<donut_cmd::Memory>,
     pub hatch: Slot<hatch_memory::Memory>,
@@ -53,6 +54,7 @@ impl CommandDefaults {
     /// The saved sections, keeping the default for anything missing.
     pub fn load(storage: Option<&dyn eframe::Storage>) -> Self {
         Self {
+            attribute: Slot::new(attribute_memory::load(storage)),
             corner: Slot::new(corner_memory::load(storage)),
             donut: Slot::default(),
             hatch: Slot::new(hatch_memory::load(storage)),
@@ -68,6 +70,7 @@ impl CommandDefaults {
 
     /// Write the sections for the next run.
     pub fn save(&self, storage: &mut dyn eframe::Storage) {
+        attribute_memory::save(&self.attribute.get(), storage);
         corner_memory::save(&self.corner.get(), storage);
         hatch_memory::save(&self.hatch.get(), storage);
         overkill_memory::save(&self.overkill.get(), storage);

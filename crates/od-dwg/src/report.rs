@@ -47,9 +47,6 @@ pub enum Skipped {
     InvalidGeometry,
     /// A polyline with fewer than two usable vertices.
     DegeneratePolyline,
-    /// An attribute definition that is not constant: a template in a block,
-    /// shown only through the attributes its references carry.
-    AttributeTemplate,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

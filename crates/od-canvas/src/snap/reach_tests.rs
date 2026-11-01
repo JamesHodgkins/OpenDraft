@@ -195,6 +195,7 @@ fn perpendicular_and_tangent_work_on_a_spline() {
 /// A block of one 10 unit line along the x axis, inserted at (0, 20).
 fn block_with_a_line() -> Entity {
     let block = BlockDef {
+        unit: Default::default(),
         id: BlockId(1),
         name: "Bar".into(),
         base: p(0.0, 0.0),

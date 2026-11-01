@@ -29,6 +29,9 @@ impl Entity {
             // Text would have to become glyph outlines, losing its meaning;
             // that needs a command of its own.
             Entity::MText(_) => None,
+            // Its tag is not text to keep; the block it sits in explodes into
+            // the value instead.
+            Entity::AttributeDefinition(_) => None,
             // Turning a pattern into its lines loses the hatch; not built.
             Entity::Hatch(_) => None,
             // One level down; the command keeps each part's own layer and

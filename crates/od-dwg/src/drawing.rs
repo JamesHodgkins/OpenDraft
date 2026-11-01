@@ -6,8 +6,9 @@
 
 use std::sync::atomic::AtomicBool;
 
+use crate::attrib;
 use crate::database::{Database, Visit};
-use crate::entities::{self, Vertex2dData};
+use crate::entities::{self, InsertData, Vertex2dData};
 use crate::error::{DwgError, DwgErrorKind, DwgStage};
 use crate::handles::DwgHandle;
 use crate::header::DwgHeader;
@@ -15,7 +16,7 @@ use crate::limits::DwgLimits;
 use crate::lineweight::{lineweight, DwgLineweight, BY_LAYER};
 use crate::pass::{Look, Pass, Record, Stored};
 use crate::report::{Degradation, ImportReport, Skipped};
-use crate::shapes::{self, Shape, MAX_ABS_COORDINATE};
+use crate::shapes::{self, DwgAttribute, Shape, MAX_ABS_COORDINATE};
 use crate::spline;
 use crate::tables::{self, BlockData, DwgLinetypeDef};
 use crate::text::{self, DwgTextStyle};
@@ -134,7 +135,7 @@ fn decode(v: &mut Visit<'_, '_>, limits: &DwgLimits, pass: &mut Pass) -> Result<
             Err(_) => return unread(pass, v.handle, "TEXT"),
         },
         FixedType::Attrib | FixedType::Attdef => {
-            match text::read_attrib(s, v.handle, v.version, limits) {
+            match attrib::read_attrib(s, v.handle, v.version, limits, kind == FixedType::Attdef) {
                 Ok(a) if kind == FixedType::Attrib => Stored::Attrib(a),
                 Ok(a) => Stored::Attdef(a),
                 Err(_) => return unread(pass, v.handle, kind.name()),
@@ -252,11 +253,18 @@ fn shape_of(record: &Record, pass: &Pass, report: &mut ImportReport) -> Result<S
         }
         Stored::Vertex(_) => Err(Skipped::InvalidGeometry),
         Stored::Text(d) => text::text(d, report),
-        Stored::Attrib(d) => text::attrib(d, false, report),
-        Stored::Attdef(d) => text::attrib(d, true, report),
+        // An attribute belongs to the reference that owns it (see `insert`).
+        Stored::Attrib(_) => Err(Skipped::Unsupported("ATTRIB".into())),
+        Stored::Attdef(d) => attrib::definition(d, report),
         Stored::MText(d) => text::mtext(d, report),
         Stored::Insert(d) => match d.block.and_then(|h| Some((h, pass.blocks.get(&h)?))) {
-            Some((h, b)) if is_named(b) => shapes::insert(d, h, report),
+            Some((h, b)) if is_named(b) => {
+                let mut shape = shapes::insert(d, h, report)?;
+                if let Shape::Insert { attributes, .. } = &mut shape {
+                    *attributes = owned_attributes(d, pass, report);
+                }
+                Ok(shape)
+            }
             Some((_, b)) if b.is_xref => Err(Skipped::ExternalReference),
             Some((_, b)) if b.anonymous => Err(Skipped::AnonymousBlockReference),
             _ => Err(Skipped::InvalidGeometry),
@@ -270,6 +278,25 @@ fn is_named(block: &BlockData) -> bool {
     !block.is_xref && !block.anonymous && !block.name.starts_with('*')
 }
 
+/// The attributes a reference owns, in order. One that cannot be read is
+/// counted in the report and left out.
+fn owned_attributes(d: &InsertData, pass: &Pass, report: &mut ImportReport) -> Vec<DwgAttribute> {
+    let mut out = Vec::new();
+    for handle in &d.attribute_handles {
+        let Some(record) = pass.records.get(handle) else {
+            continue;
+        };
+        let Stored::Attrib(data) = &record.stored else {
+            continue;
+        };
+        match attrib::attribute(data, record.look.invisible, report) {
+            Ok(attribute) => out.push(attribute),
+            Err(why) => report.skip(why),
+        }
+    }
+    out
+}
+
 /// The supported entities among `handles` (a block's, in its order), with
 /// everything left out counted in the report.
 fn entities_of(
@@ -278,15 +305,7 @@ fn entities_of(
     report: &mut ImportReport,
 ) -> Result<Vec<DwgEntity>, DwgError> {
     let mut entities = Vec::new();
-    // A reference's attributes are not in the block's list: they follow it.
-    let mut order = Vec::with_capacity(handles.len());
-    for handle in handles {
-        order.push(*handle);
-        if let Some(Stored::Insert(d)) = pass.records.get(handle).map(|r| &r.stored) {
-            order.extend_from_slice(&d.attribute_handles);
-        }
-    }
-    for handle in order {
+    for handle in handles.iter().copied() {
         let Some(record) = pass.records.get(&handle) else {
             if let Some(name) = pass.others.get(&handle) {
                 report.skip(Skipped::Unsupported(name.clone()));

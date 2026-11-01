@@ -43,6 +43,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::{Encoded, FileError, FileFormat, Loaded};
 
+pub(super) mod attribute;
 mod block;
 mod dimension;
 mod dimension_style;
@@ -256,6 +257,7 @@ struct DrawingDto {
     )]
     blocks: Vec<BlockDto>,
     next_block_id: u64,
+    next_attribute_definition_id: u64,
     /// The linetype table and `LTSCALE`.
     #[serde(flatten)]
     linetypes: linetype::TableDto,
@@ -411,6 +413,7 @@ impl DrawingDto {
             mleader_styles: mleader_style::TableDto::of(document),
             blocks,
             next_block_id: document.next_block_id(),
+            next_attribute_definition_id: document.next_attribute_definition_id(),
             linetypes: linetype::TableDto::of(document),
             new_style: new_style::NewStyleDto::of(document),
             point_style: point_style::PointStyleDto::of(document),
@@ -429,7 +432,7 @@ mod tests {
 
     /// The tables a drawing must spell out (styles, linetypes, point style,
     /// units, counters).
-    const TABLE_KEYS: [&str; 18] = [
+    const TABLE_KEYS: [&str; 19] = [
         "dim_styles",
         "named_dim_styles",
         "current_dim_style",
@@ -448,6 +451,7 @@ mod tests {
         "next_layout_id",
         "next_viewport_id",
         "next_block_id",
+        "next_attribute_definition_id",
     ];
 
     fn fill(value: &mut serde_json::Value, defaults: &[(&str, serde_json::Value)]) {

@@ -31,6 +31,7 @@ impl Entity {
             | Entity::MLeader(_)
             | Entity::Leader(_)
             | Entity::Insert(_)
+            | Entity::AttributeDefinition(_)
             | Entity::Point { .. }
             | Entity::Hatch(_) => None,
             Entity::Xline { origin, direction } | Entity::Ray { origin, direction } => {

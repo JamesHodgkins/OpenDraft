@@ -139,6 +139,7 @@ pub fn inserts(n: usize) -> Document {
         })
         .collect();
     let block = Arc::new(BlockDef {
+        unit: Default::default(),
         id: doc.allocate_block_id(),
         name: "Fitting".into(),
         base: Point::new(0.0, 0.0),

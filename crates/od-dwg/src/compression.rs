@@ -98,15 +98,18 @@ pub(crate) fn decompress(input: &[u8], out: &mut [u8]) -> Result<usize, DwgError
         };
         let (length, distance, mut literals) = match opcode {
             0x00..=0x0F => return Err(invalid(r.pos)),
-            0x10 => {
+            // Bit 3 of 0x10..=0x1F adds a second 0x4000 to the distance and the
+            // other three bits are the length less 2; length bits of 0 (0x10,
+            // 0x18) mean a long length follows. 0x11 ends the stream.
+            0x10 | 0x18 => {
                 let length = r.long_length()? + 9;
                 let (offset, lit) = r.two_byte_offset()?;
-                (length, offset + 0x3FFF + 1, lit)
+                (length, offset + far(opcode), lit)
             }
             0x11 => break,
             0x12..=0x1F => {
                 let (offset, lit) = r.two_byte_offset()?;
-                (usize::from(opcode & 0x0F) + 2, offset + 0x3FFF + 1, lit)
+                (usize::from(opcode & 7) + 2, offset + far(opcode), lit)
             }
             0x20 => {
                 let length = r.long_length()? + 0x21;
@@ -143,6 +146,15 @@ pub(crate) fn decompress(input: &[u8], out: &mut [u8]) -> Result<usize, DwgError
         return Err(invalid(r.pos));
     }
     Ok(w)
+}
+
+/// The distance added to a two-byte offset by an opcode of 0x10..=0x1F.
+fn far(opcode: u8) -> usize {
+    if opcode & 8 == 0 {
+        0x4000
+    } else {
+        0x8000
+    }
 }
 
 fn copy_literals(r: &mut Input, out: &mut [u8], w: &mut usize, n: usize) -> Result<(), DwgError> {
@@ -257,6 +269,45 @@ mod tests {
             run(&stream, 1024).is_err(),
             "distance 0x4000 reaches before the start"
         );
+    }
+
+    /// A literal run of 0x8002 bytes, each byte its position's low byte plus
+    /// one (so no two nearby bytes match by accident), as a stream's start.
+    fn far_stream() -> (Vec<u8>, Vec<u8>) {
+        // 0x0F + 128 * 0xFF + 112 + 3 = 0x8002.
+        let mut stream = vec![0x00];
+        stream.extend([0x00; 128]);
+        stream.push(112);
+        let data: Vec<u8> = (0..0x8002u32).map(|i| (i % 251) as u8 + 1).collect();
+        stream.extend(&data);
+        (stream, data)
+    }
+
+    #[test]
+    fn far_copies_add_0x4000_and_bit_3_adds_another() {
+        // Offset 2 (first byte 2 << 2, second 0): distance 0x4002 or 0x8002.
+        let (mut stream, data) = far_stream();
+        // 0x13: length 3 + 2 = 5 from distance 0x4000 + 2.
+        stream.extend([0x13, 0x08, 0x00, 0x11]);
+        let mut want = data.clone();
+        want.extend_from_slice(&data[data.len() - 0x4002..][..5]);
+        assert_eq!(run(&stream, 0x9000).unwrap(), want);
+        // 0x1b: the same length with bit 3 set: distance 0x8000 + 2, the start.
+        let (mut stream, data) = far_stream();
+        stream.extend([0x1B, 0x08, 0x00, 0x11]);
+        let mut want = data.clone();
+        want.extend_from_slice(&data[..5]);
+        assert_eq!(run(&stream, 0x9000).unwrap(), want);
+    }
+
+    #[test]
+    fn opcode_0x18_is_the_long_form_of_the_far_copy() {
+        // 0x18 then a count of 1 (1 + 9 = 10 bytes), offset 2: distance 0x8002.
+        let (mut stream, data) = far_stream();
+        stream.extend([0x18, 0x01, 0x08, 0x00, 0x11]);
+        let mut want = data.clone();
+        want.extend_from_slice(&data[..10]);
+        assert_eq!(run(&stream, 0x9000).unwrap(), want);
     }
 
     #[test]

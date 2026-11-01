@@ -10,10 +10,23 @@ mod arc_cmd;
 mod array_cmd;
 mod array_path;
 mod assistant;
+mod attdef_cmd;
 mod attr_rows;
+mod attribute_dialog_cmd;
+mod attribute_edit;
+#[cfg(test)]
+mod attribute_flow_tests;
+mod attribute_memory;
+mod attribute_prompt;
+mod attribute_rows;
+mod attribute_sync_cmd;
+#[cfg(test)]
+mod attribute_test_util;
 mod automation;
 mod autosave;
 mod block_cmd;
+mod block_commands;
+mod block_dialog_cmd;
 mod block_editor;
 mod boundary_cmd;
 mod break_cmd;
