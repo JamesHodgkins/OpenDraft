@@ -101,6 +101,7 @@ fn plotted(entity: Entity) -> crate::plot::PlotSheet {
         name: "A".into(),
         width: 297.0,
         height: 210.0,
+        plot: crate::PlotSettings::for_layout(297.0, 210.0),
         viewports: vec![viewport],
     }]);
     crate::plot::plot_layout(&doc, id).unwrap()
@@ -157,6 +158,7 @@ fn a_pattern_too_dense_to_plot_is_an_error_not_a_hang() {
         name: "A".into(),
         width: 297.0,
         height: 210.0,
+        plot: crate::PlotSettings::for_layout(297.0, 210.0),
         viewports: vec![Viewport {
             id: ViewportId(1),
             center: p(100.0, 100.0),

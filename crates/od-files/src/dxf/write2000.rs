@@ -279,7 +279,11 @@ pub fn write(document: &Document) -> Result<Encoded, FileError> {
                 .iter()
                 .filter(|o| o.layout == Some(layout.id))
             {
-                write_object(out, h, &ids, document, object, owner, true)?;
+                let mut printable = object.clone();
+                printable.entity = printable
+                    .entity
+                    .translated(-layout.plot.margins_mm[0], -layout.plot.margins_mm[1]);
+                write_object(out, h, &ids, document, &printable, owner, true)?;
             }
             Ok(())
         };
@@ -456,6 +460,7 @@ mod tests {
             name: "Detail".into(),
             width: 200.0,
             height: 150.0,
+            plot: od_core::PlotSettings::for_layout(200.0, 150.0),
             viewports: Vec::new(),
         };
         let detail_id = detail.id;
@@ -510,6 +515,84 @@ mod tests {
             .iter()
             .find(|(c, _)| *c == code)
             .map(|(_, v)| v.as_str())
+    }
+
+    #[test]
+    fn embedded_plot_settings_round_trip_semantically() {
+        let mut original = drawing();
+        let mut layouts = original.layouts().to_vec();
+        let plot = &mut layouts[0].plot;
+        plot.device_name = "Office Printer.pc3".into();
+        plot.canonical_media_name = "ISO_A3_(420.00_x_297.00_MM)".into();
+        plot.margins_mm = [4.0, 5.0, 6.0, 7.0];
+        plot.origin_mm = Point::new(2.0, 3.0);
+        plot.area = od_core::PlotArea::Window {
+            first: Point::new(10.0, 20.0),
+            second: Point::new(300.0, 200.0),
+        };
+        plot.scale = od_core::PlotScale::Custom {
+            paper_units: 1.0,
+            drawing_units: 50.0,
+        };
+        plot.flags = od_core::plot_settings::flags::PRINT_LINEWEIGHTS;
+        plot.rotation = od_core::PlotRotation::CounterClockwise90;
+        plot.style_sheet = "monochrome.ctb".into();
+        plot.shade.resolution = od_core::ShadeResolution::Custom;
+        plot.shade.custom_dpi = 600;
+        plot.paper_image_origin_mm = Point::new(0.5, 1.5);
+        original.set_layouts(layouts);
+        let encoded = write(&original).unwrap();
+        let loaded = crate::dxf::read::read(&encoded.bytes).unwrap();
+        assert!(loaded.warnings.is_empty(), "{:?}", loaded.warnings);
+        assert_eq!(
+            loaded.document.layouts()[0].plot,
+            original.layouts()[0].plot
+        );
+
+        let pairs = pairs(&encoded.bytes);
+        let (model_at, _) = object(&pairs, "LAYOUT", 0).unwrap();
+        let (_, layout) = object(&pairs, "LAYOUT", model_at + 1).unwrap();
+        assert_eq!(value(layout, 2), Some("Office Printer.pc3"));
+        assert_eq!(value(layout, 4), Some("ISO_A3_(420.00_x_297.00_MM)"));
+        assert_eq!(value(layout, 7), Some("monochrome.ctb"));
+        assert_eq!(value(layout, 74), Some("4"));
+        assert_eq!(value(layout, 78), Some("600"));
+    }
+
+    #[test]
+    fn the_model_tabs_plot_settings_are_the_model_layouts() {
+        let mut original = drawing();
+        let mut plot = original.model_plot().clone();
+        plot.paper_width_mm = 420.0;
+        plot.paper_height_mm = 297.0;
+        plot.margins_mm = [3.0, 4.0, 5.0, 6.0];
+        plot.area = od_core::PlotArea::Window {
+            first: Point::new(100.0, 200.0),
+            second: Point::new(900.0, 700.0),
+        };
+        plot.scale = od_core::PlotScale::Custom {
+            paper_units: 1.0,
+            drawing_units: 20.0,
+        };
+        plot.rotation = od_core::PlotRotation::Degrees180;
+        // A numeric scale is not the standard-scale bit; the paper's name is
+        // what DXF derives from its size.
+        plot.flags &= !od_core::plot_settings::flags::USE_STANDARD_SCALE;
+        plot.canonical_media_name = "A3".into();
+        original.set_model_plot(plot.clone());
+        let encoded = write(&original).unwrap();
+        let loaded = crate::dxf::read::read(&encoded.bytes).unwrap();
+        assert!(loaded.warnings.is_empty(), "{:?}", loaded.warnings);
+        let mut expected = plot;
+        expected.flags |= od_core::plot_settings::flags::MODEL_TYPE;
+        assert_eq!(loaded.document.model_plot(), &expected);
+        let sheet = &loaded.document.layouts()[0].plot;
+        assert_eq!(
+            sheet.area,
+            od_core::PlotArea::Layout,
+            "the sheet's setup is its own"
+        );
+        assert_eq!(sheet.margins_mm, [0.0; 4]);
     }
 
     #[test]

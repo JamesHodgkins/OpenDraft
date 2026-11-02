@@ -8,10 +8,47 @@
 //! here, whenever the view's space changes.
 
 use od_canvas::Space;
-use od_commands::{AddCopies, RemoveEntities, SetLayouts};
-use od_core::{LayerId, Layout, LayoutId, Viewport, ViewportId, MIN_SHEET, PAPER_SIZES};
+use od_commands::{AddCopies, RemoveEntities, SetLayouts, SetModelPlot};
+use od_core::plot::PlotSpace;
+use od_core::{
+    Document, LayerId, Layout, LayoutId, PlotSettings, Viewport, ViewportId, MIN_SHEET, PAPER_SIZES,
+};
 
 use crate::state::{AppState, Doc};
+
+impl PageDraft {
+    /// The working copy of the setup of `space`, or `None` if the layout is gone.
+    pub fn of(document: &Document, space: PlotSpace) -> Option<Self> {
+        let (name, width, height, plot) = match space {
+            PlotSpace::Model => {
+                let plot = document.model_plot().clone();
+                (
+                    "Model".to_owned(),
+                    plot.paper_width_mm,
+                    plot.paper_height_mm,
+                    plot,
+                )
+            }
+            PlotSpace::Layout(id) => {
+                let layout = document.layout(id)?;
+                (
+                    layout.name.clone(),
+                    layout.width,
+                    layout.height,
+                    layout.plot.clone(),
+                )
+            }
+        };
+        Some(Self {
+            space,
+            name,
+            width,
+            height,
+            plot,
+            kept_scale: (1.0, 1.0),
+        })
+    }
+}
 
 /// The layouts with one viewport changed, or `None` when it is not there.
 pub fn with_viewport(
@@ -31,13 +68,17 @@ pub fn with_viewport(
     Some(layouts)
 }
 
-/// The Page Setup dialog's working copy of a layout's name and sheet size.
+/// The Page Setup dialog's working copy. It is committed atomically with the layout.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PageDraft {
-    pub layout: LayoutId,
+    /// Whose setup it is: a layout's, or the Model tab's.
+    pub space: PlotSpace,
     pub name: String,
     pub width: f64,
     pub height: f64,
+    pub plot: PlotSettings,
+    /// The custom scale (paper mm, drawing units) to come back to when Fit to paper is turned off.
+    pub kept_scale: (f64, f64),
 }
 
 impl Doc {
@@ -171,33 +212,27 @@ impl AppState {
         self.pspace();
     }
 
-    /// Open the Page Setup dialog on the layout being worked in.
+    /// Open the Page Setup dialog on the layout being worked in, or the Model tab.
     pub fn open_page_setup(&mut self) {
-        let Some(layout) = self
+        let space = self
             .space()
             .layout()
-            .and_then(|l| self.session().document().layout(l))
-        else {
-            self.message = "PAGESETUP works in a layout".to_owned();
-            return;
-        };
-        self.page_setup = Some(PageDraft {
-            layout: layout.id,
-            name: layout.name.clone(),
-            width: layout.width,
-            height: layout.height,
-        });
+            .map_or(PlotSpace::Model, PlotSpace::Layout);
+        self.page_setup = PageDraft::of(self.session().document(), space);
     }
 
     /// Rename a layout and resize its sheet as one undo step. Viewports keep
     /// their places on the sheet. Says what is wrong instead of changing anything.
     pub fn set_page_setup(&mut self, draft: &PageDraft) -> Result<(), String> {
+        let PlotSpace::Layout(layout_id) = draft.space else {
+            return self.set_model_page_setup(draft);
+        };
         let document = &self.session().document();
         let name = draft.name.trim();
         if name.is_empty() {
             return Err("A layout needs a name.".to_owned());
         }
-        if document.layout_name_taken(name, Some(draft.layout)) {
+        if document.layout_name_taken(name, Some(layout_id)) {
             return Err(format!("A layout called \"{name}\" already exists."));
         }
         let size_ok = |v: f64| v.is_finite() && v >= MIN_SHEET;
@@ -206,20 +241,55 @@ impl AppState {
                 "The sheet must be at least {MIN_SHEET} mm each way."
             ));
         }
+        let mut plot = draft.plot.clone();
+        plot.paper_width_mm = draft.width;
+        plot.paper_height_mm = draft.height;
+        if !plot.is_valid() {
+            return Err("The page setup contains an invalid margin, scale, window or DPI.".into());
+        }
         let mut layouts = document.layouts().to_vec();
         let layout = layouts
             .iter_mut()
-            .find(|l| l.id == draft.layout)
+            .find(|l| l.id == layout_id)
             .ok_or("The layout is gone.")?;
-        if (layout.name.as_str(), layout.width, layout.height) == (name, draft.width, draft.height)
+        if (
+            layout.name.as_str(),
+            layout.width,
+            layout.height,
+            &layout.plot,
+        ) == (name, draft.width, draft.height, &plot)
         {
             return Ok(());
         }
         layout.name = name.to_owned();
         layout.width = draft.width;
         layout.height = draft.height;
+        layout.plot = plot;
         self.perform(SetLayouts::new("Page setup", layouts));
         self.docs[self.active].view.request_zoom_extents();
+        self.message = "Page setup changed".to_owned();
+        Ok(())
+    }
+
+    /// The Model tab's page setup, as one undo step (none if nothing differs).
+    fn set_model_page_setup(&mut self, draft: &PageDraft) -> Result<(), String> {
+        let size_ok = |v: f64| v.is_finite() && v >= MIN_SHEET;
+        if !size_ok(draft.width) || !size_ok(draft.height) {
+            return Err(format!(
+                "The paper must be at least {MIN_SHEET} mm each way."
+            ));
+        }
+        let mut plot = draft.plot.clone();
+        plot.paper_width_mm = draft.width;
+        plot.paper_height_mm = draft.height;
+        plot.flags |= od_core::plot_settings::flags::MODEL_TYPE;
+        if !plot.is_valid() {
+            return Err("The page setup contains an invalid margin, scale, window or DPI.".into());
+        }
+        if self.session().document().model_plot() == &plot {
+            return Ok(());
+        }
+        self.perform(SetModelPlot::new("Page setup", plot));
         self.message = "Page setup changed".to_owned();
         Ok(())
     }
@@ -493,9 +563,17 @@ mod tests {
         draft.name = "Plan".into();
         draft.width = 420.0;
         draft.height = 297.0;
+        draft.plot.device_name = "OpenDraft PDF/SVG".into();
+        draft.plot.area = od_core::PlotArea::Extents;
+        draft.plot.scale = od_core::PlotScale::Custom {
+            paper_units: 1.0,
+            drawing_units: 50.0,
+        };
         assert_eq!(state.set_page_setup(&draft), Ok(()));
         let layout = state.session().document().layout(id).unwrap();
         assert_eq!((layout.name.as_str(), layout.width), ("Plan", 420.0));
+        assert_eq!(layout.plot.device_name, "OpenDraft PDF/SVG");
+        assert_eq!(layout.plot.area, od_core::PlotArea::Extents);
         assert_eq!(layout.viewports.len(), 1, "viewports stay where they were");
         for bad in [
             PageDraft {
@@ -518,7 +596,7 @@ mod tests {
             panic!("the new layout is entered");
         };
         let other = PageDraft {
-            layout: second,
+            space: PlotSpace::Layout(second),
             name: "plan".into(),
             ..draft.clone()
         };
@@ -528,17 +606,45 @@ mod tests {
         );
         state.undo();
         state.undo();
-        assert_eq!(
-            state.session().document().layout(id).unwrap().name,
-            "Layout1"
-        );
+        let layout = state.session().document().layout(id).unwrap();
+        assert_eq!(layout.name, "Layout1");
+        assert_eq!(layout.plot.device_name, "none_device");
     }
 
     #[test]
-    fn page_setup_needs_a_layout() {
+    fn page_setup_opens_on_the_model_tab_too_and_is_one_undo_step() {
         let mut state = AppState::new();
         state.open_page_setup();
-        assert!(state.page_setup.is_none());
+        let mut draft = state
+            .page_setup
+            .clone()
+            .expect("the Model tab has a page setup");
+        assert_eq!(
+            (draft.space, draft.name.as_str()),
+            (PlotSpace::Model, "Model")
+        );
+        draft.plot.margins_mm = [7.0; 4];
+        draft.width = 420.0;
+        draft.height = 297.0;
+        assert_eq!(state.set_page_setup(&draft), Ok(()));
+        assert_eq!(state.session().document().model_plot().margins_mm, [7.0; 4]);
+        assert_eq!(
+            state.session().document().model_plot().paper_width_mm,
+            420.0
+        );
+        assert_eq!(
+            state.set_page_setup(&draft),
+            Ok(()),
+            "again changes nothing"
+        );
+        state.undo();
+        assert_eq!(state.session().document().model_plot().margins_mm, [0.0; 4]);
+        assert!(state
+            .set_page_setup(&PageDraft {
+                width: 2.0,
+                ..draft
+            })
+            .is_err());
     }
 
     #[test]

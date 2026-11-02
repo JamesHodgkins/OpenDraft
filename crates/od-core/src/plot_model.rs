@@ -34,23 +34,17 @@ pub fn plot_region(
     let to_paper =
         |p: Point| Point::new((p.x - region.min.x) * scale, (p.y - region.min.y) * scale);
     let tolerance = TOLERANCE_MM / scale;
-    let mut wide = false;
     let objects = document
         .visible_in(None)
         .filter(|o| only.is_none_or(|ids| ids.contains(&o.id)) && o.bounds().intersects(&region));
     for object in objects.flat_map(|o| document.drawn(o)) {
-        wide |= add_viewed(
+        add_viewed(
             &mut sheet,
             document,
             &object,
             tolerance,
             (&to_paper, &frame, &region),
         )?;
-    }
-    if wide {
-        sheet
-            .notes
-            .push("Wide polyline segments were drawn as single lines.".to_owned());
     }
     Ok(sheet)
 }

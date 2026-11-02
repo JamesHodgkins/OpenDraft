@@ -69,6 +69,7 @@ fn a_layout_with_the_largest_id_is_refused() {
         name: "Last".into(),
         width: 297.0,
         height: 210.0,
+        plot: crate::PlotSettings::for_layout(297.0, 210.0),
         viewports: Vec::new(),
     }]);
     refused(&document);

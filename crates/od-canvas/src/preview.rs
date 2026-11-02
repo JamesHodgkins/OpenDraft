@@ -8,7 +8,7 @@
 //! other colours as they are. Every line is one pixel wide whatever its
 //! lineweight.
 
-use od_core::plot::{PlotError, PlotSheet};
+use od_core::plot::{Painted, PlotError, PlotSheet};
 use od_core::plot_model::plot_region;
 use od_core::{Bounds, Document, Point};
 
@@ -195,22 +195,26 @@ pub fn render_sheet(sheet: &PlotSheet) -> Preview {
     }
     let k = f64::from(WIDTH) / sheet.width;
     let to_px = |p: &Point| ((p.x * k) as f32, ((sheet.height - p.y) * k) as f32);
-    for path in &sheet.paths {
-        let points: Vec<(f32, f32)> = path.points.iter().map(to_px).collect();
-        for pair in points.windows(2) {
-            canvas.line(pair[0], pair[1], on_black(path.rgb));
+    for item in sheet.paint_order() {
+        match item {
+            Painted::Path(path) => {
+                let points: Vec<(f32, f32)> = path.points.iter().map(to_px).collect();
+                for pair in points.windows(2) {
+                    canvas.line(pair[0], pair[1], on_black(path.rgb));
+                }
+                if path.closed && points.len() > 2 {
+                    canvas.line(points[points.len() - 1], points[0], on_black(path.rgb));
+                }
+            }
+            Painted::Fill(fill) => {
+                let contours: Vec<Vec<(f32, f32)>> = fill
+                    .contours
+                    .iter()
+                    .map(|c| c.iter().map(to_px).collect())
+                    .collect();
+                canvas.fill(&contours, on_black(fill.rgb));
+            }
         }
-        if path.closed && points.len() > 2 {
-            canvas.line(points[points.len() - 1], points[0], on_black(path.rgb));
-        }
-    }
-    for fill in &sheet.fills {
-        let contours: Vec<Vec<(f32, f32)>> = fill
-            .contours
-            .iter()
-            .map(|c| c.iter().map(to_px).collect())
-            .collect();
-        canvas.fill(&contours, on_black(fill.rgb));
     }
     canvas.into_preview()
 }

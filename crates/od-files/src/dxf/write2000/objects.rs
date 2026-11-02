@@ -1,7 +1,10 @@
 //! The OBJECTS section of the R2000 writer: the dictionaries and the LAYOUT
 //! object of each space.
 
-use od_core::{paper_size_name, Document};
+use od_core::{
+    paper_size_name, Document, PaperUnits, PlotArea, PlotRotation, PlotScale, PlotSettings,
+    ShadePlotMode, ShadeResolution, StandardScale,
+};
 
 use super::{hex, Handles, Ids};
 use crate::dxf::write::{dxf_name, Out};
@@ -66,13 +69,15 @@ pub(super) fn write_objects(
     out.pair(5, hex(ids.placeholder));
     out.pair(330, hex(plot_styles));
 
+    let mut model_plot = document.model_plot().clone();
+    model_plot.flags |= od_core::plot_settings::flags::MODEL_TYPE;
     layout_object(
         out,
         ids.model_layout,
         layout_dict,
         "Model",
         0,
-        (420.0, 297.0),
+        &model_plot,
         ids.model_record,
         None,
     );
@@ -83,7 +88,7 @@ pub(super) fn write_objects(
             layout_dict,
             &dxf_name(&layout.name),
             i32::try_from(i + 1).unwrap_or(1),
-            (layout.width, layout.height),
+            &layout.plot,
             ids.records[i],
             Some(ids.overall[i]),
         );
@@ -103,7 +108,7 @@ fn layout_object(
     dictionary: u32,
     name: &str,
     tab: i32,
-    (width, height): (f64, f64),
+    plot: &PlotSettings,
     record: u32,
     overall: Option<u32>,
 ) {
@@ -112,52 +117,111 @@ fn layout_object(
     out.pair(330, hex(dictionary));
     out.pair(100, "AcDbPlotSettings");
     out.pair(1, "");
-    if overall.is_some() {
-        out.pair(2, "none_device");
+    out.pair(2, &plot.device_name);
+    let paper = if plot.canonical_media_name.is_empty() {
+        paper_size_name(plot.paper_width_mm, plot.paper_height_mm).map_or_else(
+            || {
+                format!(
+                    "OD_({:.2}_x_{:.2}_MM)",
+                    plot.paper_width_mm, plot.paper_height_mm
+                )
+            },
+            str::to_owned,
+        )
+    } else {
+        plot.canonical_media_name.clone()
+    };
+    out.pair(4, paper);
+    let view = match &plot.area {
+        PlotArea::View(name) => name.as_str(),
+        _ => "",
+    };
+    out.pair(6, view);
+    for (code, value) in [40, 41, 42, 43].into_iter().zip(plot.margins_mm) {
+        out.pair(code, value);
     }
-    let paper = paper_size_name(width, height).map_or_else(
-        || format!("OD_({width:.2}_x_{height:.2}_MM)"),
-        str::to_owned,
-    );
+    out.pair(44, plot.paper_width_mm);
+    out.pair(45, plot.paper_height_mm);
+    out.pair(46, plot.origin_mm.x);
+    out.pair(47, plot.origin_mm.y);
+    let (first, second) = match plot.area {
+        PlotArea::Window { first, second } => (first, second),
+        _ => (od_core::Point::new(0.0, 0.0), od_core::Point::new(0.0, 0.0)),
+    };
+    out.pair(48, first.x);
+    out.pair(49, second.x);
+    out.pair(140, first.y);
+    out.pair(141, second.y);
+    let (numerator, denominator, standard, standard_value) = match plot.scale {
+        PlotScale::Standard { kind, value } => (
+            value,
+            1.0,
+            match kind {
+                StandardScale::Fit => 0,
+                StandardScale::Ratio(code) => i32::from(code),
+            },
+            value,
+        ),
+        PlotScale::Custom {
+            paper_units,
+            drawing_units,
+        } => (paper_units, drawing_units, 0, paper_units / drawing_units),
+    };
+    out.pair(142, numerator);
+    out.pair(143, denominator);
+    out.pair(70, i32::from(plot.flags));
     out.pair(
-        4,
-        if overall.is_some() {
-            paper
-        } else {
-            String::new()
+        72,
+        match plot.paper_units {
+            PaperUnits::Inches => 0,
+            PaperUnits::Millimeters => 1,
+            PaperUnits::Pixels => 2,
         },
     );
-    out.pair(6, "");
-    for code in [40, 41, 42, 43] {
-        out.pair(code, 0.0);
-    }
-    out.pair(44, width);
-    out.pair(45, height);
-    for code in [46, 47, 48, 49, 140, 141] {
-        out.pair(code, 0.0);
-    }
-    out.pair(142, 1.0);
-    out.pair(143, 1.0);
-    out.pair(70, if overall.is_some() { 688 } else { 1024 });
-    out.pair(72, 1);
-    out.pair(73, 0);
-    out.pair(74, 5);
-    out.pair(7, "");
-    out.pair(75, 16);
-    out.pair(76, 0);
-    out.pair(77, 2);
-    out.pair(78, 300);
-    out.pair(147, 1.0);
-    out.pair(148, 0.0);
-    out.pair(149, 0.0);
+    out.pair(
+        73,
+        match plot.rotation {
+            PlotRotation::Degrees0 => 0,
+            PlotRotation::CounterClockwise90 => 1,
+            PlotRotation::Degrees180 => 2,
+            PlotRotation::Clockwise90 => 3,
+        },
+    );
+    out.pair(74, plot_area_code(&plot.area));
+    out.pair(7, &plot.style_sheet);
+    out.pair(75, standard);
+    out.pair(
+        76,
+        match plot.shade.mode {
+            ShadePlotMode::AsDisplayed => 0,
+            ShadePlotMode::Wireframe => 1,
+            ShadePlotMode::Hidden => 2,
+            ShadePlotMode::Rendered => 3,
+        },
+    );
+    out.pair(
+        77,
+        match plot.shade.resolution {
+            ShadeResolution::Draft => 0,
+            ShadeResolution::Preview => 1,
+            ShadeResolution::Normal => 2,
+            ShadeResolution::Presentation => 3,
+            ShadeResolution::Maximum => 4,
+            ShadeResolution::Custom => 5,
+        },
+    );
+    out.pair(78, i32::from(plot.shade.custom_dpi));
+    out.pair(147, standard_value);
+    out.pair(148, plot.paper_image_origin_mm.x);
+    out.pair(149, plot.paper_image_origin_mm.y);
     out.pair(100, "AcDbLayout");
     out.pair(1, name);
     out.pair(70, 1);
     out.pair(71, tab);
     out.pair(10, 0.0);
     out.pair(20, 0.0);
-    out.pair(11, width);
-    out.pair(21, height);
+    out.pair(11, plot.paper_width_mm);
+    out.pair(21, plot.paper_height_mm);
     out.point3(12, 0.0, 0.0, 0.0);
     out.point3(14, 1e20, 1e20, 1e20);
     out.point3(15, -1e20, -1e20, -1e20);
@@ -169,5 +233,16 @@ fn layout_object(
     out.pair(330, hex(record));
     if let Some(overall) = overall {
         out.pair(331, hex(overall));
+    }
+}
+
+fn plot_area_code(area: &PlotArea) -> i32 {
+    match area {
+        PlotArea::Display => 0,
+        PlotArea::Extents => 1,
+        PlotArea::Limits => 2,
+        PlotArea::View(_) => 3,
+        PlotArea::Window { .. } => 4,
+        PlotArea::Layout => 5,
     }
 }

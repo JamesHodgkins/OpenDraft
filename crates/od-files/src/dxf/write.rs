@@ -392,6 +392,12 @@ pub(super) fn write_r12(document: &Document) -> Result<Encoded, FileError> {
             "The insertion units are not part of this DXF version and were left out.".to_owned(),
         );
     }
+    if document.model_plot() != &od_core::PlotSettings::for_model() {
+        notes.push(
+            "The Model tab's plot settings are not part of this DXF version and were left out."
+                .to_owned(),
+        );
+    }
     Ok(Encoded {
         bytes: latin1(&out.text),
         notes,
@@ -624,6 +630,24 @@ mod tests {
                 ..units
             }
         );
+    }
+
+    #[test]
+    fn a_model_plot_setup_an_r12_file_cannot_hold_is_said_to_be_left_out() {
+        let mut document = Document::default();
+        assert!(!write(&document)
+            .unwrap()
+            .notes
+            .iter()
+            .any(|n| n.contains("plot settings")));
+        let mut plot = document.model_plot().clone();
+        plot.margins_mm = [5.0; 4];
+        document.set_model_plot(plot);
+        let encoded = write(&document).unwrap();
+        assert!(encoded
+            .notes
+            .iter()
+            .any(|n| n.contains("Model tab's plot settings")));
     }
 
     #[test]

@@ -78,6 +78,7 @@ fn main() {
         name: "Detail".into(),
         width: 200.0,
         height: 150.0,
+        plot: od_core::PlotSettings::for_layout(200.0, 150.0),
         viewports: vec![Viewport::framing(
             od_core::ViewportId(900),
             p(100.0, 75.0),

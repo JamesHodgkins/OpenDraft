@@ -30,6 +30,16 @@ impl Document {
         std::mem::replace(&mut self.layouts, layouts)
     }
 
+    /// How the Model tab plots.
+    pub fn model_plot(&self) -> &crate::PlotSettings {
+        &self.model_plot
+    }
+
+    /// Replace the Model tab's plot settings. Returns the old ones.
+    pub fn set_model_plot(&mut self, settings: crate::PlotSettings) -> crate::PlotSettings {
+        std::mem::replace(&mut self.model_plot, settings)
+    }
+
     pub fn allocate_layout_id(&mut self) -> LayoutId {
         let id = LayoutId(self.next_layout_id);
         self.next_layout_id = after(self.next_layout_id);
@@ -66,6 +76,7 @@ impl Document {
             name: name.into(),
             width,
             height,
+            plot: crate::PlotSettings::for_layout(width, height),
             viewports: vec![Viewport::framing(
                 ViewportId(viewport),
                 Point::new(width / 2.0, height / 2.0),
@@ -129,6 +140,7 @@ mod tests {
             name: name.into(),
             width: 297.0,
             height: 210.0,
+            plot: crate::PlotSettings::for_layout(297.0, 210.0),
             viewports: vec![Viewport::framing(
                 vp,
                 Point::new(148.0, 105.0),

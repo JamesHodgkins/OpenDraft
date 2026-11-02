@@ -7,7 +7,7 @@ use od_canvas::Camera;
 
 use super::state::MTextEditor;
 
-/// How near a grip a press must be, and the size drawn, in pixels.
+/// How near an edge or grip a press must be, and the size drawn, in pixels.
 const GRAB_PX: f32 = 8.0;
 const DRAWN_PX: f32 = 4.0;
 
@@ -40,6 +40,49 @@ fn spots(editor: &MTextEditor, camera: &Camera, canvas: Rect, pad: f64) -> [(Han
     ]
 }
 
+/// The two resize edges on screen: right first, then bottom. Keeping this in
+/// screen space gives a constant-size target at every zoom and makes the hit
+/// area follow rotated text correctly.
+fn edges(
+    editor: &MTextEditor,
+    camera: &Camera,
+    canvas: Rect,
+    pad: f64,
+) -> [(Handle, [Pos2; 2]); 2] {
+    let (pad, w, h) = extent(editor, pad);
+    let (text, layout) = (editor.text(), editor.layout());
+    let at = |x: f64, y: f64| camera.world_to_screen(text.world_point(layout, x, y), canvas);
+    [
+        (Handle::Width, [at(w + pad, pad), at(w + pad, -h - pad)]),
+        (Handle::Height, [at(-pad, -h - pad), at(w + pad, -h - pad)]),
+    ]
+}
+
+fn distance_to_segment(pos: Pos2, [a, b]: [Pos2; 2]) -> f32 {
+    let along = b - a;
+    let length_sq = along.length_sq();
+    if length_sq == 0.0 {
+        return pos.distance(a);
+    }
+    let t = ((pos - a).dot(along) / length_sq).clamp(0.0, 1.0);
+    pos.distance(a + t * along)
+}
+
+fn hit(editor: &MTextEditor, camera: &Camera, canvas: Rect, pad: f64, pos: Pos2) -> Option<Handle> {
+    let [(Handle::Width, right), (Handle::Height, bottom)] = edges(editor, camera, canvas, pad)
+    else {
+        unreachable!("the editor always has a right and bottom resize edge")
+    };
+    let right = distance_to_segment(pos, right);
+    let bottom = distance_to_segment(pos, bottom);
+    match (right <= GRAB_PX, bottom <= GRAB_PX) {
+        (true, true) => Some(Handle::Both),
+        (true, false) => Some(Handle::Width),
+        (false, true) => Some(Handle::Height),
+        (false, false) => None,
+    }
+}
+
 /// Take a press on a grip and follow its drag. Returns whether the pointer is
 /// on a grip or dragging one, so the box below it does not take the click.
 pub fn interact(
@@ -58,15 +101,9 @@ pub fn interact(
             i.pointer.interact_pos(),
         )
     });
-    let mut held: Option<Handle> = ctx.data(|d| d.get_temp(id)).filter(|_| down);
-    let near = |editor: &MTextEditor, pos: Pos2| {
-        spots(editor, camera, canvas, pad)
-            .into_iter()
-            .filter(|(_, p)| p.distance(pos) <= GRAB_PX)
-            .min_by(|a, b| a.1.distance(pos).total_cmp(&b.1.distance(pos)))
-            .map(|(h, _)| h)
-    };
-    let hover = pointer.and_then(|p| near(editor, p));
+    let stored: Option<Handle> = ctx.data(|d| d.get_temp(id));
+    let mut held = stored.filter(|_| down);
+    let hover = pointer.and_then(|p| hit(editor, camera, canvas, pad, p));
     if let (true, Some(h)) = (pressed, hover) {
         held = Some(h);
     }
@@ -88,6 +125,12 @@ pub fn interact(
         Some(h) => d.insert_temp(id, h),
         None => d.remove::<Handle>(id),
     });
+    // A handle is painted outside the text itself. Force a fresh overlay
+    // while it moves and once more on release, otherwise the old accent-
+    // coloured square can survive in a backend's unchanged damage region.
+    if held.is_some() || stored.is_some() {
+        ctx.request_repaint();
+    }
     match held.or(hover) {
         Some(Handle::Width) => ctx.set_cursor_icon(egui::CursorIcon::ResizeHorizontal),
         Some(Handle::Height) => ctx.set_cursor_icon(egui::CursorIcon::ResizeVertical),
@@ -113,6 +156,75 @@ pub fn paint(
             0.0,
             Stroke::new(1.0_f32, colour),
             egui::StrokeKind::Middle,
+        );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use od_core::{MText, Point, TextStyle, TextStyleId};
+
+    const CANVAS: Rect = Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(800.0, 600.0));
+
+    fn fixture(rotation: f64) -> (MTextEditor, Camera, f64) {
+        let mut text = MText::new(
+            Point::new(150.0, 100.0),
+            10.0,
+            "one two three",
+            TextStyleId::STANDARD,
+        );
+        text.reference_width = 80.0;
+        text.direction = Point::new(rotation.cos(), rotation.sin());
+        let editor = MTextEditor::new(text, TextStyle::standard());
+        (editor, Camera::default(), 3.0)
+    }
+
+    #[test]
+    fn every_point_on_the_right_and_bottom_edges_resizes() {
+        let (editor, camera, pad) = fixture(0.0);
+        let [(Handle::Width, right), (Handle::Height, bottom)] =
+            edges(&editor, &camera, CANVAS, pad)
+        else {
+            unreachable!()
+        };
+        for t in [0.15, 0.35, 0.65, 0.85] {
+            assert_eq!(
+                hit(&editor, &camera, CANVAS, pad, right[0].lerp(right[1], t)),
+                Some(Handle::Width)
+            );
+            assert_eq!(
+                hit(&editor, &camera, CANVAS, pad, bottom[0].lerp(bottom[1], t)),
+                Some(Handle::Height)
+            );
+        }
+        assert_eq!(
+            hit(&editor, &camera, CANVAS, pad, right[1]),
+            Some(Handle::Both)
+        );
+    }
+
+    #[test]
+    fn edge_hit_testing_follows_rotated_text() {
+        let (editor, camera, pad) = fixture(std::f64::consts::FRAC_PI_4);
+        let [(Handle::Width, right), (Handle::Height, bottom)] =
+            edges(&editor, &camera, CANVAS, pad)
+        else {
+            unreachable!()
+        };
+        assert_eq!(
+            hit(&editor, &camera, CANVAS, pad, right[0].lerp(right[1], 0.4)),
+            Some(Handle::Width)
+        );
+        assert_eq!(
+            hit(
+                &editor,
+                &camera,
+                CANVAS,
+                pad,
+                bottom[0].lerp(bottom[1], 0.4)
+            ),
+            Some(Handle::Height)
         );
     }
 }

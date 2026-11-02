@@ -245,6 +245,9 @@ struct DrawingDto {
         deserialize_with = "limits::table_rows"
     )]
     layouts: Vec<LayoutDto>,
+    /// How the Model tab plots.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    model_plot: Option<layout::PlotSettingsDto>,
     next_layout_id: u64,
     next_viewport_id: u64,
     #[serde(deserialize_with = "limits::table_rows")]
@@ -407,6 +410,9 @@ impl DrawingDto {
                 .iter()
                 .map(LayoutDto::from_layout)
                 .collect(),
+            model_plot: Some(layout::PlotSettingsDto::from_settings(
+                document.model_plot(),
+            )),
             next_layout_id,
             next_viewport_id,
             text_styles: document
@@ -1042,21 +1048,64 @@ mod tests {
     }
 
     #[test]
+    fn the_model_tabs_plot_settings_survive_a_round_trip() {
+        let mut document = Document::default();
+        let mut plot = document.model_plot().clone();
+        plot.paper_width_mm = 420.0;
+        plot.paper_height_mm = 297.0;
+        plot.margins_mm = [5.0, 6.0, 7.0, 8.0];
+        plot.area = od_core::PlotArea::Window {
+            first: od_core::Point::new(1.0, 2.0),
+            second: od_core::Point::new(30.0, 40.0),
+        };
+        plot.scale = od_core::PlotScale::Custom {
+            paper_units: 1.0,
+            drawing_units: 50.0,
+        };
+        document.set_model_plot(plot.clone());
+        let loaded = roundtrip(&document);
+        assert_eq!(loaded.model_plot(), &plot);
+        assert_eq!(
+            read(MINIMAL).unwrap().model_plot(),
+            &od_core::PlotSettings::for_model()
+        );
+    }
+
+    #[test]
     fn layouts_survive_a_round_trip_and_keep_ids_retired() {
         let mut document = rich();
         let vp = document.allocate_viewport_id();
         let gone = document.allocate_layout_id();
-        let layout = od_core::Layout {
+        let mut layout = od_core::Layout {
             id: document.allocate_layout_id(),
             name: "Sheet 1".into(),
             width: 420.0,
             height: 297.0,
+            plot: od_core::PlotSettings::for_layout(420.0, 297.0),
             viewports: vec![od_core::Viewport {
                 locked: true,
                 scale: 0.02,
                 ..od_core::Viewport::framing(vp, Point::new(210.0, 148.0), 380.0, 250.0, None)
             }],
         };
+        layout.plot.device_name = "Office Printer.pc3".into();
+        layout.plot.canonical_media_name = "ISO_A3_(420.00_x_297.00_MM)".into();
+        layout.plot.margins_mm = [5.0, 6.0, 7.0, 8.0];
+        layout.plot.origin_mm = Point::new(2.0, 3.0);
+        layout.plot.area = od_core::PlotArea::Window {
+            first: Point::new(10.0, 20.0),
+            second: Point::new(300.0, 200.0),
+        };
+        layout.plot.scale = od_core::PlotScale::Custom {
+            paper_units: 1.0,
+            drawing_units: 50.0,
+        };
+        layout.plot.rotation = od_core::PlotRotation::CounterClockwise90;
+        layout.plot.flags = od_core::plot_settings::flags::PRINT_LINEWEIGHTS;
+        layout.plot.style_sheet = "monochrome.ctb".into();
+        layout.plot.shade.resolution = od_core::ShadeResolution::Custom;
+        layout.plot.shade.custom_dpi = 600;
+        layout.plot.paper_image_origin_mm = Point::new(0.5, 1.5);
         document.set_layouts(vec![layout]);
         let mut loaded = roundtrip(&document);
         assert_eq!(loaded, document);
@@ -1075,6 +1124,7 @@ mod tests {
             name: "Sheet".into(),
             width: 297.0,
             height: 210.0,
+            plot: od_core::PlotSettings::for_layout(297.0, 210.0),
             viewports: vec![viewport],
         };
         document.set_layouts(vec![layout]);
@@ -1104,6 +1154,7 @@ mod tests {
             name: "Sheet".into(),
             width: 297.0,
             height: 210.0,
+            plot: od_core::PlotSettings::for_layout(297.0, 210.0),
             viewports: Vec::new(),
         };
         let id = layout.id;

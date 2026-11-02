@@ -45,7 +45,10 @@ pub mod overkill;
 pub mod pedit;
 pub mod plot;
 mod plot_hatch;
+pub mod plot_input;
 pub mod plot_model;
+pub mod plot_plan;
+pub mod plot_settings;
 mod plot_text;
 pub mod point_style;
 mod polycorner;
@@ -95,6 +98,10 @@ pub use leader::Leader;
 pub use linetype::{Linetype, LinetypeError, LinetypeId, LinetypeTable, StrokeElement};
 pub use mleader::{MLeader, MLeaderStyle, MLeaderStyleId};
 pub use mtext::MText;
+pub use plot_settings::{
+    PaperUnits, PlotArea, PlotRotation, PlotScale, PlotSettings, ShadePlotMode, ShadePlotSettings,
+    ShadeResolution, StandardScale,
+};
 pub use point_style::{PointMarks, PointStyle};
 pub use polycorner::{round_polyline, Path, Round, Rounded};
 pub use polyline::PolylineError;

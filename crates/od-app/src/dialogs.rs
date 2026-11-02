@@ -7,15 +7,31 @@ use od_core::drawing_properties::DrawingProperties;
 
 use crate::state::AppState;
 
+/// The print backend, shared with the threads that talk to it.
+#[derive(Clone)]
+pub struct PrintHandle(pub std::sync::Arc<dyn crate::print_backend::PrintBackend>);
+
+impl Default for PrintHandle {
+    fn default() -> Self {
+        Self(std::sync::Arc::from(crate::print_backend::system_backend()))
+    }
+}
+
 /// What the dialogs a command opens hold while they are open.
 #[derive(Default)]
 pub struct CommandDialogs {
+    /// Where paper plots go; the printers of this machine unless a test says otherwise.
+    pub print: PrintHandle,
     pub definition: Option<DefinitionDraft>,
     pub editor: Option<EditorDraft>,
     pub block: Option<BlockDraft>,
     pub field: Option<FieldDraft>,
     /// The Drawing Properties dialog, while it is open.
     pub properties: Option<DrawingProperties>,
+    /// The Plot dialog (`PLOT`, `PREVIEW`), while it is open.
+    pub plot: Option<crate::plot_job::PlotDialog>,
+    /// What finished -PLOT commands asked for.
+    pub plot_requests: crate::plot_line::PlotRequests,
 }
 
 impl AppState {
@@ -39,5 +55,10 @@ impl AppState {
             || self.mleader_dialogs.style
             || self.mleader_dialogs.manager
             || self.page_setup.is_some()
+            || self
+                .command_dialogs
+                .plot
+                .as_ref()
+                .is_some_and(|d| d.picking.is_none())
     }
 }

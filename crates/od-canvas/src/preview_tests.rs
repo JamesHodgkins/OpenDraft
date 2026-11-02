@@ -156,6 +156,7 @@ fn a_fill_covers_its_shape_not_its_hole_and_has_soft_edges() {
         height: 16.0,
         paths: Vec::new(),
         fills: vec![PlotFill {
+            after: usize::MAX,
             contours: vec![outer, hole],
             rgb: [200, 0, 0],
         }],
@@ -169,6 +170,7 @@ fn a_fill_covers_its_shape_not_its_hole_and_has_soft_edges() {
     assert_eq!(pixel(&preview, 20, 230), BACKGROUND, "outside, left");
     let sheet_half = PlotSheet {
         fills: vec![PlotFill {
+            after: usize::MAX,
             contours: vec![vec![
                 pt(0.0, 0.0),
                 pt(0.125, 0.0),

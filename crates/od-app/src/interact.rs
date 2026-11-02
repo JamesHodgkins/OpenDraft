@@ -179,6 +179,8 @@ impl AppState {
             self.select_ids(ids, remove);
         }
         self.take_block_requests();
+        self.take_plot_requests();
+        self.take_window_pick();
     }
 
     /// Wait for the running command to ask or end (tests).

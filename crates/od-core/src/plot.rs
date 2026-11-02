@@ -5,16 +5,20 @@
 //! frozen in it. The result knows nothing about file formats; the writers in
 //! `od-files` turn it into SVG or PDF.
 
-use crate::linetype::dash::{dash_path, Piece};
-use crate::linetype::paths::{curve_outlines, is_dashable};
 use crate::plot_hatch;
+use crate::plot_plan::{validate_plot, within_limits, PlotValidationError};
+use crate::plot_settings::flags;
 use crate::plot_text::{clip_polygon, object_fills};
 use crate::{Bounds, Color, Document, Entity, LayoutId, Point};
 
+mod model_space;
+mod outlines;
+mod settings;
+
+use outlines::dashed_outlines;
+
 /// How far a flattened curve may stray from the true one, in paper millimetres.
 pub(crate) const TOLERANCE_MM: f64 = 0.02;
-/// The thinnest line plotted, in millimetres (a lineweight of 0 is a hairline).
-const MIN_WIDTH_MM: f64 = 0.1;
 
 /// One stroked line of the plot.
 #[derive(Clone, Debug, PartialEq)]
@@ -32,6 +36,16 @@ pub struct PlotPath {
 pub struct PlotFill {
     pub contours: Vec<Vec<Point>>,
     pub rgb: [u8; 3],
+    /// How many paths are painted before this fill; the fills of a sheet are
+    /// in nondecreasing order of it.
+    pub after: usize,
+}
+
+/// One painted thing of a sheet, in paint order.
+#[derive(Clone, Copy, Debug)]
+pub enum Painted<'a> {
+    Path(&'a PlotPath),
+    Fill(&'a PlotFill),
 }
 
 /// A sheet ready to write.
@@ -46,6 +60,34 @@ pub struct PlotSheet {
     pub notes: Vec<String>,
 }
 
+impl PlotSheet {
+    /// Paths and fills as they are painted: a fill goes over the paths
+    /// before its `after`, and under the ones after it.
+    pub fn paint_order(&self) -> impl Iterator<Item = Painted<'_>> {
+        let mut fills = self.fills.iter().peekable();
+        let mut paths = self.paths.iter().enumerate().peekable();
+        std::iter::from_fn(move || {
+            let next_path = paths.peek().map(|(i, _)| *i);
+            match (fills.peek(), next_path) {
+                (Some(fill), Some(i)) if fill.after <= i => fills.next().map(Painted::Fill),
+                (Some(_), None) => fills.next().map(Painted::Fill),
+                (_, Some(_)) => paths.next().map(|(_, p)| Painted::Path(p)),
+                (None, None) => None,
+            }
+        })
+    }
+
+    /// A fill painted over everything pushed so far.
+    pub(crate) fn push_fill(&mut self, contours: Vec<Vec<Point>>, rgb: [u8; 3]) {
+        let after = self.paths.len();
+        self.fills.push(PlotFill {
+            contours,
+            rgb,
+            after,
+        });
+    }
+}
+
 /// Why a layout could not be plotted.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PlotError {
@@ -55,6 +97,12 @@ pub enum PlotError {
     TooDetailed,
     /// A hatch pattern would take more lines than the limits allow.
     HatchTooDense,
+    /// The requested area depends on an application view OpenDraft does not persist.
+    UnsupportedArea,
+    /// The page setup cannot be plotted as it stands.
+    Invalid(PlotValidationError),
+    /// The plot would hold more paths or points than the limits allow.
+    ResourceLimit,
 }
 
 impl std::fmt::Display for PlotError {
@@ -65,13 +113,34 @@ impl std::fmt::Display for PlotError {
                 "an ellipse is too large to plot within 0.02 mm; plot a smaller part of it"
             }
             Self::HatchTooDense => "a hatch pattern is too dense to plot; increase its scale",
+            Self::UnsupportedArea => {
+                "Display and named-view plot areas are not available; use Layout, Extents or Window"
+            }
+            Self::Invalid(e) => return e.fmt(f),
+            Self::ResourceLimit => "the plot is too large; plot a smaller area or fewer objects",
         })
+    }
+}
+
+/// What is plotted: the Model tab, or one of the layouts.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum PlotSpace {
+    Model,
+    Layout(LayoutId),
+}
+
+/// The Model tab or a layout, as a sheet made with its own page setup.
+pub fn plot_sheet(document: &Document, space: PlotSpace) -> Result<PlotSheet, PlotError> {
+    match space {
+        PlotSpace::Model => model_space::plot_model(document),
+        PlotSpace::Layout(id) => plot_layout(document, id),
     }
 }
 
 /// The layout as paths.
 pub fn plot_layout(document: &Document, layout: LayoutId) -> Result<PlotSheet, PlotError> {
     let layout = document.layout(layout).ok_or(PlotError::NoLayout)?;
+    validate_plot(&layout.plot).map_err(PlotError::Invalid)?;
     let mut sheet = PlotSheet {
         width: layout.width,
         height: layout.height,
@@ -79,7 +148,30 @@ pub fn plot_layout(document: &Document, layout: LayoutId) -> Result<PlotSheet, P
         fills: Vec::new(),
         notes: Vec::new(),
     };
-    let mut wide = false;
+    // The viewports go under the sheet's own objects unless the plot says
+    // "paper space last" the other way round.
+    if layout.plot.flags & flags::DRAW_VIEWPORTS_FIRST != 0 {
+        add_viewports(&mut sheet, document, layout)?;
+        add_paper(&mut sheet, document, layout)?;
+    } else {
+        add_paper(&mut sheet, document, layout)?;
+        add_viewports(&mut sheet, document, layout)?;
+    }
+    let sheet = settings::apply(sheet, &layout.plot)?;
+    if within_limits(&sheet) {
+        Ok(sheet)
+    } else {
+        Err(PlotError::ResourceLimit)
+    }
+}
+
+/// What each viewport shows of model space, and its border when the plot
+/// settings ask for borders.
+fn add_viewports(
+    sheet: &mut PlotSheet,
+    document: &Document,
+    layout: &crate::Layout,
+) -> Result<(), PlotError> {
     for vp in layout.viewports.iter().filter(|v| v.on && v.is_valid()) {
         let (frame, shown, tolerance) = (
             vp.paper_bounds(),
@@ -92,67 +184,74 @@ pub fn plot_layout(document: &Document, layout: LayoutId) -> Result<PlotSheet, P
         let pieces = objects.flat_map(|o| document.drawn(o));
         for object in pieces.filter(|o| !vp.is_frozen(o.attrs.layer)) {
             let to_paper = |p: Point| vp.model_to_paper(p);
-            wide |= add_viewed(
-                &mut sheet,
+            add_viewed(
+                sheet,
                 document,
                 &object,
                 tolerance,
                 (&to_paper, &frame, &shown),
             )?;
         }
+        if layout.plot.flags & flags::PLOT_VIEWPORT_BORDERS != 0 {
+            let (a, b) = (frame.min, frame.max);
+            sheet.paths.push(PlotPath {
+                points: vec![a, Point::new(b.x, a.y), b, Point::new(a.x, b.y)],
+                closed: true,
+                rgb: [0, 0, 0],
+                width: 0.0,
+            });
+        }
     }
-    let sheet_window =
-        Bounds::from_points(Point::new(0.0, 0.0), Point::new(sheet.width, sheet.height));
+    Ok(())
+}
+
+/// The sheet's own objects, as they are.
+fn add_paper(
+    sheet: &mut PlotSheet,
+    document: &Document,
+    layout: &crate::Layout,
+) -> Result<(), PlotError> {
+    // The sheet's own objects are not cut at its edge here (the page setup cuts
+    // them at the paper), but a dash pattern is laid inside it.
+    let window = Bounds::from_points(Point::new(0.0, 0.0), Point::new(sheet.width, sheet.height));
+    let frame = Bounds::from_points(Point::new(-1e12, -1e12), Point::new(1e12, 1e12));
+    let same = |p: Point| p;
     for object in document
         .visible_in(Some(layout.id))
         .flat_map(|o| document.drawn(o))
     {
-        wide |= has_width(&object.entity);
-        let (rgb, width) = look(document, &object);
-        for (points, closed) in dashed_outlines(document, &object, TOLERANCE_MM, &sheet_window)? {
-            sheet.paths.push(PlotPath {
-                points,
-                closed,
-                rgb,
-                width,
-            });
-        }
-        if let Entity::Hatch(h) = &object.entity {
-            if let Some(contours) = plot_hatch::fill(h, TOLERANCE_MM)? {
-                sheet.fills.push(PlotFill { contours, rgb });
-            }
-        }
-        for fill in object_fills(document, &object, TOLERANCE_MM, rgb) {
-            sheet.fills.push(PlotFill {
-                contours: fill.contours,
-                rgb: fill.rgb,
-            });
-        }
+        add_viewed(
+            sheet,
+            document,
+            &object,
+            TOLERANCE_MM,
+            (&same, &frame, &window),
+        )?;
     }
-    if wide {
-        sheet
-            .notes
-            .push("Wide polyline segments were plotted as single lines.".to_owned());
-    }
-    Ok(sheet)
+    Ok(())
 }
 
 /// One object seen through a window: its outlines, fills and text moved to
 /// the sheet by `to_paper` and clipped to `frame`. `tolerance` is in the
-/// object's own units. Returns whether it has wide polyline segments (which
-/// plot as single lines).
+/// object's own units.
 pub(crate) fn add_viewed(
     sheet: &mut PlotSheet,
     document: &Document,
     object: &crate::Object,
     tolerance: f64,
     view: (&dyn Fn(Point) -> Point, &Bounds, &Bounds),
-) -> Result<bool, PlotError> {
+) -> Result<(), PlotError> {
     // How the object's units map to the sheet, the sheet's frame, and the
     // window of the object's units that frame shows.
     let (to_paper, frame, window) = view;
     let (rgb, width) = look(document, object);
-    for (points, closed) in dashed_outlines(document, object, tolerance, window)? {
+    let ribbons = wide_ribbons(object, tolerance);
+    let outlines = if ribbons.as_ref().is_some_and(|r| r.covers_all) {
+        Vec::new()
+    } else {
+        dashed_outlines(document, object, tolerance, window)?
+    };
+    for (points, closed) in outlines {
         let paper: Vec<Point> = points.iter().map(|p| to_paper(*p)).collect();
         for (points, closed) in clip_polyline(&paper, closed, frame) {
             sheet.paths.push(PlotPath {
@@ -177,186 +276,80 @@ pub(crate) fn add_viewed(
         if let Some(solid) = plot_hatch::fill(h, tolerance)? {
             let contours = clipped(&solid);
             if !contours.is_empty() {
-                sheet.fills.push(PlotFill { contours, rgb });
+                sheet.push_fill(contours, rgb);
             }
+        }
+    }
+    if let Some(ribbons) = ribbons {
+        let contours = clipped(&ribbons.contours);
+        if !contours.is_empty() {
+            sheet.push_fill(contours, rgb);
         }
     }
     for fill in object_fills(document, object, tolerance, rgb) {
         let contours = clipped(&fill.contours);
         if !contours.is_empty() {
-            sheet.fills.push(PlotFill {
-                contours,
-                rgb: fill.rgb,
-            });
+            sheet.push_fill(contours, fill.rgb);
         }
     }
-    Ok(has_width(&object.entity))
+    Ok(())
+}
+
+/// The area of a wide polyline, as triangles all turned the same way (so
+/// overlaps add up under the non-zero rule).
+struct Ribbons {
+    contours: Vec<Vec<Point>>,
+    /// Whether every segment is wide, so no centre line is needed.
+    covers_all: bool,
+}
+
+fn wide_ribbons(object: &crate::Object, tolerance: f64) -> Option<Ribbons> {
+    let Entity::Polyline {
+        points,
+        bulges,
+        widths,
+        closed,
+    } = &object.entity
+    else {
+        return None;
+    };
+    let triangles = crate::width::triangles(points, bulges, widths, *closed, tolerance);
+    if triangles.is_empty() {
+        return None;
+    }
+    let segments = crate::bulge::segment_count(points.len(), *closed);
+    let covers_all = (0..segments).all(|i| {
+        let (a, b) = crate::width::at(widths, i);
+        a > 0.0 || b > 0.0
+    });
+    let contours = triangles
+        .into_iter()
+        .map(|[a, b, c]| {
+            let turn = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+            if turn < 0.0 {
+                vec![a, c, b]
+            } else {
+                vec![a, b, c]
+            }
+        })
+        .collect();
+    Some(Ribbons {
+        contours,
+        covers_all,
+    })
 }
 
 /// Colour and width of an object as plotted: black on white for the
-/// foreground colour and for white, the layer's lineweight in millimetres.
+/// foreground colour and for white, the layer's lineweight in millimetres
+/// (0 is a hairline: the thinnest line the device draws).
 fn look(document: &Document, object: &crate::Object) -> ([u8; 3], f64) {
     let rgb = match document.color_of(object) {
         Color::Foreground => [0, 0, 0],
         Color::Rgb(r, g, b) if r >= 240 && g >= 240 && b >= 240 => [0, 0, 0],
         Color::Rgb(r, g, b) => [r, g, b],
     };
-    let width = (f64::from(document.lineweight_of(object).0) / 100.0).max(MIN_WIDTH_MM);
+    let width = f64::from(document.lineweight_of(object).0) / 100.0;
     (rgb, width)
-}
-
-fn has_width(entity: &Entity) -> bool {
-    matches!(entity, Entity::Polyline { widths, .. } if widths.iter().any(|(a, b)| *a > 0.0 || *b > 0.0))
-}
-
-/// An object's outlines, cut into dashes and dots by its linetype. The pattern
-/// is laid in the units the outlines are in, so a viewport's scale applies to
-/// the dashes as it does to the drawing.
-fn dashed_outlines(
-    document: &Document,
-    object: &crate::Object,
-    tolerance: f64,
-    window: &Bounds,
-) -> Result<Vec<(Vec<Point>, bool)>, PlotError> {
-    if let Entity::Point { at } = &object.entity {
-        // What a point sized as a share of the screen is a share of.
-        return point_outlines(document, *at, tolerance, window.max.y - window.min.y);
-    }
-    // A construction line or ray is cut to the window (a little wider, so its
-    // end is not seen) and the pattern laid from its base point.
-    let infinite = object
-        .entity
-        .infinite_line()
-        .map(|line| crate::infinite::stand_in(line, document.dash_pattern(object), window));
-    let entity = match &infinite {
-        Some(None) => return Ok(Vec::new()),
-        Some(Some(line)) => line,
-        None => &object.entity,
-    };
-    let Some((elements, scale)) = document
-        .dash_pattern(object)
-        .filter(|_| is_dashable(entity))
-    else {
-        return match &infinite {
-            Some(_) => Ok(curve_outlines(entity, tolerance, false)
-                .map_err(|_| PlotError::TooDetailed)?
-                .unwrap_or_default()),
-            None => object_outlines(object, tolerance),
-        };
-    };
-    let outlines = curve_outlines(entity, tolerance, !object.attrs.continuous_generation)
-        .map_err(|_| PlotError::TooDetailed)?
-        .unwrap_or_default();
-    // A dot is a hair of line; the round cap makes it a dot.
-    let dot = tolerance * 0.1;
-    let mut out = Vec::new();
-    for (points, closed) in outlines {
-        match dash_path(&points, closed, elements, scale) {
-            None => out.push((points, closed)),
-            Some(pieces) => out.extend(pieces.into_iter().map(|piece| match piece {
-                Piece::Dash(run) => (run, false),
-                Piece::Dot { at, along } => (
-                    vec![at, Point::new(at.x + along.x * dot, at.y + along.y * dot)],
-                    false,
-                ),
-            })),
-        }
-    }
-    Ok(out)
-}
-
-/// A point as `PDMODE` and `PDSIZE` draw it: the dot as a hair of line, whose
-/// round cap makes it a dot, and the other marks as outlines.
-fn point_outlines(
-    document: &Document,
-    at: Point,
-    tolerance: f64,
-    view_height: f64,
-) -> Result<Vec<(Vec<Point>, bool)>, PlotError> {
-    let style = document.point_style();
-    let marks = style.marks(at, style.size_in_units(view_height));
-    let mut all = Vec::new();
-    if marks.dot {
-        all.push((vec![at, Point::new(at.x + tolerance * 0.1, at.y)], false));
-    }
-    for shape in &marks.shapes {
-        all.extend(outlines(shape, tolerance)?);
-    }
-    Ok(all)
-}
-
-/// A stored object as flattened outlines: a dimension from the picture the
-/// object remembers.
-fn object_outlines(
-    object: &crate::Object,
-    tolerance: f64,
-) -> Result<Vec<(Vec<Point>, bool)>, PlotError> {
-    match object.dimension_picture() {
-        Some(picture) => dimension_outlines(&picture, tolerance),
-        None => outlines(&object.entity, tolerance),
-    }
-}
-
-/// What a dimension draws (`picture`) as outlines.
-fn dimension_outlines(
-    picture: &[Entity],
-    tolerance: f64,
-) -> Result<Vec<(Vec<Point>, bool)>, PlotError> {
-    let mut all = Vec::new();
-    for piece in picture {
-        match piece {
-            // An arrowhead is a filled triangle on screen and its outline here.
-            Entity::Polyline { points, widths, .. }
-                if points.len() == 2 && widths.first().is_some_and(|w| w.0 > 0.0) =>
-            {
-                all.push((arrow_outline(points[0], points[1], widths[0].0), true));
-            }
-            other => all.extend(outlines(other, tolerance)?),
-        }
-    }
-    Ok(all)
-}
-
-/// An entity as flattened outlines (points, closed), curves within `tolerance`.
-fn outlines(entity: &Entity, tolerance: f64) -> Result<Vec<(Vec<Point>, bool)>, PlotError> {
-    let pieces = |parts: Vec<Entity>| -> Result<Vec<(Vec<Point>, bool)>, PlotError> {
-        let mut all = Vec::new();
-        for piece in &parts {
-            all.extend(outlines(piece, tolerance)?);
-        }
-        Ok(all)
-    };
-    Ok(match entity {
-        // Text is plotted as filled glyphs (`fills`), not strokes.
-        Entity::MText(_) | Entity::Text(_) => Vec::new(),
-        // A pattern is its strokes; a solid fill is in `fills`.
-        Entity::Hatch(h) => plot_hatch::strokes(h, tolerance)?,
-        // Callers expand blocks first (`Document::drawn`), so their pieces
-        // get their own colours; this is the fallback.
-        Entity::Insert(i) => pieces(i.picture())?,
-        Entity::Dimension(d) => dimension_outlines(&d.picture(), tolerance)?,
-        Entity::MLeader(m) => dimension_outlines(&m.picture(), tolerance)?,
-        Entity::Leader(l) => dimension_outlines(&l.picture(), tolerance)?,
-        // The curves are shared with the linetype code.
-        curve => curve_outlines(curve, tolerance, false)
-            .map_err(|_| PlotError::TooDetailed)?
-            .unwrap_or_default(),
-    })
-}
-
-/// The triangle of an arrowhead from its `tail` (of width `base`) to its `tip`.
-fn arrow_outline(tail: Point, tip: Point, base: f64) -> Vec<Point> {
-    let (dx, dy) = (tip.x - tail.x, tip.y - tail.y);
-    let len = dx.hypot(dy);
-    if len == 0.0 {
-        return vec![tail, tip];
-    }
-    let (nx, ny) = (-dy / len * base / 2.0, dx / len * base / 2.0);
-    vec![
-        Point::new(tail.x + nx, tail.y + ny),
-        tip,
-        Point::new(tail.x - nx, tail.y - ny),
-    ]
 }
 
 /// The parts of a polyline inside `frame`. A shape wholly inside comes back as
@@ -478,6 +471,7 @@ mod tests {
             name: "A".into(),
             width: 297.0,
             height: 210.0,
+            plot: crate::PlotSettings::for_layout(297.0, 210.0),
             viewports: vec![vp],
         };
         doc.set_layouts(vec![layout]);
@@ -728,7 +722,7 @@ mod tests {
         assert_eq!((paths[0].rgb, paths[0].width), ([0, 0, 0], 0.5));
         assert_eq!(
             (paths[1].rgb, paths[1].width),
-            ([0, 0, 0], MIN_WIDTH_MM),
+            ([0, 0, 0], 0.0),
             "white plots black, 0 is a hairline"
         );
         assert_eq!((paths[2].rgb, paths[2].width), ([200, 30, 30], 0.25));
@@ -867,8 +861,92 @@ mod tests {
         assert!(continuous.len() < per_segment.len() || corner_dashes(&continuous) < 4);
     }
 
+    fn with_flags(doc: &mut Document, id: LayoutId, f: impl FnOnce(&mut u16)) {
+        let mut layouts = doc.layouts().to_vec();
+        let layout = layouts.iter_mut().find(|l| l.id == id).unwrap();
+        f(&mut layout.plot.flags);
+        doc.set_layouts(layouts);
+    }
+
+    /// A sheet line at y = 5 and a model line the viewport shows.
+    fn sheet_and_model_line() -> (Document, LayoutId) {
+        let (mut doc, id) = plotted(&[line((4990.0, 4000.0), (5010.0, 4000.0))]);
+        doc.set_active_layout(Some(id));
+        doc.add(line((0.0, 5.0), (10.0, 5.0)));
+        (doc, id)
+    }
+
     #[test]
-    fn circles_arcs_and_polylines_are_flattened_and_widths_are_noted() {
+    fn paper_space_goes_over_the_viewports_unless_they_are_drawn_last() {
+        let (mut doc, id) = sheet_and_model_line();
+        let y_of_first = |doc: &Document| plot_layout(doc, id).unwrap().paths[0].points[0].y;
+        assert_eq!(y_of_first(&doc), 100.0, "viewports first by default");
+        with_flags(&mut doc, id, |f| *f &= !flags::DRAW_VIEWPORTS_FIRST);
+        assert_eq!(y_of_first(&doc), 5.0, "paper space first");
+    }
+
+    #[test]
+    fn viewport_borders_plot_only_when_asked() {
+        let (mut doc, id) = sheet_and_model_line();
+        let count = |doc: &Document| plot_layout(doc, id).unwrap().paths.len();
+        assert_eq!(count(&doc), 2);
+        with_flags(&mut doc, id, |f| *f |= flags::PLOT_VIEWPORT_BORDERS);
+        let sheet = plot_layout(&doc, id).unwrap();
+        assert_eq!(sheet.paths.len(), 3);
+        let border = sheet.paths.iter().find(|p| p.closed).unwrap();
+        assert_eq!(border.points[0], Point::new(50.0, 60.0));
+        assert_eq!(border.points[2], Point::new(150.0, 140.0));
+    }
+
+    #[test]
+    fn without_print_lineweights_every_line_is_a_hairline() {
+        let (mut doc, id) = sheet_and_model_line();
+        doc.set_active_layout(Some(id));
+        let widths = |doc: &Document| -> Vec<f64> {
+            plot_layout(doc, id)
+                .unwrap()
+                .paths
+                .iter()
+                .map(|p| p.width)
+                .collect()
+        };
+        with_flags(&mut doc, id, |f| *f |= flags::SCALE_LINEWEIGHTS);
+        assert!(widths(&doc).iter().all(|w| *w >= 0.0));
+        with_flags(&mut doc, id, |f| *f &= !flags::PRINT_LINEWEIGHTS);
+        assert!(widths(&doc).iter().all(|w| *w == 0.0));
+    }
+
+    #[test]
+    fn a_fill_is_painted_between_the_paths_around_it() {
+        let path = |x: f64| PlotPath {
+            points: vec![Point::new(x, 0.0), Point::new(x, 1.0)],
+            closed: false,
+            rgb: [0, 0, 0],
+            width: 0.1,
+        };
+        let mut sheet = PlotSheet {
+            width: 10.0,
+            height: 10.0,
+            paths: vec![path(1.0), path(2.0)],
+            fills: Vec::new(),
+            notes: Vec::new(),
+        };
+        sheet.paths.truncate(1);
+        sheet.push_fill(vec![vec![Point::new(0.0, 0.0)]], [0, 0, 0]);
+        sheet.paths.push(path(2.0));
+        sheet.push_fill(vec![vec![Point::new(0.0, 0.0)]], [1, 1, 1]);
+        let order: Vec<char> = sheet
+            .paint_order()
+            .map(|p| match p {
+                Painted::Path(_) => 'p',
+                Painted::Fill(_) => 'f',
+            })
+            .collect();
+        assert_eq!(order, ['p', 'f', 'p', 'f']);
+    }
+
+    #[test]
+    fn circles_arcs_and_polylines_are_flattened_and_wide_ones_are_filled() {
         let (mut doc, id) = plotted(&[]);
         doc.set_active_layout(Some(id));
         doc.add(Entity::Circle {
@@ -901,8 +979,17 @@ mod tests {
         assert!(on_circle);
         assert!(!sheet.paths[1].closed && sheet.paths[1].points.len() > 2);
         assert!(sheet.paths[2].closed && sheet.paths[2].points.len() == 4);
-        assert!(sheet.paths[3].points.len() > 4, "the bulge became a curve");
-        assert_eq!(sheet.notes.len(), 1);
+        assert_eq!(
+            sheet.paths.len(),
+            3,
+            "the wide polyline is an area, not a line"
+        );
+        assert_eq!(sheet.fills.len(), 1);
+        assert!(
+            sheet.fills[0].contours.len() > 2,
+            "the bulge became a curve"
+        );
+        assert!(sheet.notes.is_empty());
     }
 
     #[test]
