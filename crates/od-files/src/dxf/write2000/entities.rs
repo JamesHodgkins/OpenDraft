@@ -30,7 +30,12 @@ pub(super) fn write_viewports(
         out.pair(67, 1);
         out.pair(8, 0);
         out.pair(100, "AcDbViewport");
-        out.point3(10, finite(v.center.x)?, finite(v.center.y)?, 0.0);
+        out.point3(
+            10,
+            finite(v.center.x - layout.plot.margins_mm[0])?,
+            finite(v.center.y - layout.plot.margins_mm[1])?,
+            0.0,
+        );
         out.pair(40, finite(v.width)?);
         out.pair(41, finite(v.height)?);
         out.pair(68, status);

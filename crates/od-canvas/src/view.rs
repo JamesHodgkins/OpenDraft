@@ -23,6 +23,8 @@ mod crosshair;
 mod dash_paint;
 mod hatch_paint;
 mod infinite_paint;
+#[cfg(test)]
+mod input_tests;
 mod insert_paint;
 mod layout;
 mod paint;
@@ -293,7 +295,18 @@ impl View {
         }
         if selecting {
             // Drag a box: left-to-right is Window, right-to-left is Crossing.
-            if response.dragged_by(PointerButton::Primary) && !swallow && grip_pick.is_none() {
+            // The response covers the whole canvas, including UI overlays.
+            // Only the layer that owned the original press may start a drag;
+            // once started, it may continue beyond that layer or the canvas.
+            let accepted_origin = self.drag.is_some()
+                || ui
+                    .input(|i| i.pointer.press_origin())
+                    .is_some_and(|p| rect.contains(p) && !self.blocked(p));
+            if response.dragged_by(PointerButton::Primary)
+                && accepted_origin
+                && !swallow
+                && grip_pick.is_none()
+            {
                 let now = ui
                     .input(|i| i.pointer.latest_pos())
                     .unwrap_or(rect.center());

@@ -58,6 +58,8 @@ pub struct Document {
     dim_styles: Vec<DimStyle>,
     /// Sheets that show the drawing through viewports, in tab order.
     layouts: Vec<Layout>,
+    /// How the Model tab plots (its own page setup; a layout has its own).
+    model_plot: crate::PlotSettings,
     next_layout_id: u64,
     next_viewport_id: u64,
     /// The space being edited: new objects go there, and the object queries

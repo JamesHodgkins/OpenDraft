@@ -96,7 +96,8 @@ impl OpenDraftApp {
             ("Save As...", "file.save_as"),
             ("Save as Template...", "file.save_template"),
             ("Export DXF...", "file.export_dxf"),
-            ("Plot layout...", "file.plot"),
+            ("Page Setup...", "layout.page_setup"),
+            ("Plot...", "file.plot"),
         ];
         let theme = &self.theme;
         let recent = self.state.recent.paths();

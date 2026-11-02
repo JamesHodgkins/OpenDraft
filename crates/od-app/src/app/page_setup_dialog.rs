@@ -1,16 +1,17 @@
-//! The Page Setup dialog (PAGESETUP): a layout's name, paper size and
-//! orientation. It edits a draft held in `AppState::page_setup`; OK commits it
-//! as one undo step, Cancel / Escape / X drop it.
+//! Page Setup (PAGESETUP), editing a complete per-layout plot-settings draft.
 
 use eframe::egui;
-use od_core::{paper_size, paper_size_name, PAPER_SIZES};
 use od_ui::widgets;
 
 use super::OpenDraftApp;
 use crate::layouts::PageDraft;
 
-const WIDTH: f32 = 380.0;
-const CUSTOM: &str = "Custom";
+pub(in crate::app) mod boxes;
+mod preview;
+
+use boxes::{left_column, right_column};
+
+const WIDTH: f32 = 1040.0;
 
 enum Choice {
     Ok,
@@ -18,7 +19,6 @@ enum Choice {
 }
 
 impl OpenDraftApp {
-    /// The window opened by `layout.page_setup`.
     pub(super) fn page_setup_window(&mut self, ctx: &egui::Context) {
         let Some(mut draft) = self.state.page_setup.take() else {
             return;
@@ -28,15 +28,21 @@ impl OpenDraftApp {
         let error_id = egui::Id::new("page_setup_error");
         let error: Option<String> = ctx.data(|d| d.get_temp(error_id));
         widgets::dialog(ctx, theme, "Page Setup", &mut open, WIDTH, |ui| {
-            widgets::field_label(ui, theme, "Layout name:");
-            widgets::text_field(ui, theme, &mut draft.name, "Layout name");
+            ui.horizontal(|ui| {
+                widgets::field_label(ui, theme, "Layout name:");
+                ui.add_enabled_ui(draft.space != od_core::plot::PlotSpace::Model, |ui| {
+                    widgets::text_field(ui, theme, &mut draft.name, "Layout name");
+                });
+            });
             ui.add_space(6.0);
-            sheet_box(ui, theme, &mut draft);
+            ui.columns(3, |columns| {
+                left_column(&mut columns[0], theme, &mut draft);
+                right_column(&mut columns[1], theme, &mut draft);
+                preview_column(&mut columns[2], theme, &draft);
+            });
             if let Some(why) = &error {
-                ui.add_space(6.0);
                 ui.colored_label(theme.colors.accent, why);
             }
-            ui.add_space(12.0);
             ui.horizontal(|ui| {
                 if widgets::primary_button(ui, theme, "OK").clicked() {
                     choice = Some(Choice::Ok);
@@ -67,38 +73,56 @@ impl OpenDraftApp {
     }
 }
 
-/// Paper size, orientation and the size in millimetres.
-fn sheet_box(ui: &mut egui::Ui, theme: &od_ui::Theme, draft: &mut PageDraft) {
-    widgets::group_box(ui, theme, "Paper", |ui| {
-        let landscape = draft.width >= draft.height;
-        let current = paper_size_name(draft.width, draft.height).unwrap_or(CUSTOM);
-        let width = ui.available_width();
-        widgets::field_label(ui, theme, "Paper size:");
-        widgets::dropdown(ui, theme, "paper_size", current, width, |ui| {
-            for (name, ..) in PAPER_SIZES {
-                if ui.selectable_label(*name == current, *name).clicked() {
-                    if let Some((w, h)) = paper_size(name, landscape) {
-                        (draft.width, draft.height) = (w, h);
-                    }
-                }
-            }
-            if current == CUSTOM {
-                let _ = ui.selectable_label(true, CUSTOM);
-            }
-        });
-        ui.horizontal(|ui| {
-            if ui.radio(landscape, "Landscape").clicked() && !landscape {
-                std::mem::swap(&mut draft.width, &mut draft.height);
-            }
-            if ui.radio(!landscape, "Portrait").clicked() && landscape {
-                std::mem::swap(&mut draft.width, &mut draft.height);
-            }
-        });
-        ui.horizontal(|ui| {
-            widgets::field_label(ui, theme, "Width:");
-            widgets::number_field(ui, theme, &mut draft.width, "mm", 1.0);
-            widgets::field_label(ui, theme, "Height:");
-            widgets::number_field(ui, theme, &mut draft.height, "mm", 1.0);
-        });
+fn preview_column(ui: &mut egui::Ui, theme: &od_ui::Theme, draft: &PageDraft) {
+    widgets::group_box(ui, theme, "Live preview", |ui| {
+        let size = egui::vec2(ui.available_width(), 430.0);
+        let (canvas, _) = ui.allocate_exact_size(size, egui::Sense::hover());
+        let painter = ui.painter_at(canvas);
+        painter.rect_filled(canvas, 2.0, ui.visuals().extreme_bg_color);
+        let (pw, ph) = (draft.width.max(1.0) as f32, draft.height.max(1.0) as f32);
+        let scale = ((canvas.width() - 28.0) / pw)
+            .min((canvas.height() - 54.0) / ph)
+            .max(0.0);
+        let paper_size = egui::vec2(pw * scale, ph * scale);
+        let paper =
+            egui::Rect::from_center_size(canvas.center() - egui::vec2(0.0, 10.0), paper_size);
+        painter.rect_filled(paper, 1.0, egui::Color32::from_gray(242));
+        painter.rect_stroke(
+            paper,
+            1.0,
+            egui::Stroke::new(1.0_f32, egui::Color32::from_gray(100)),
+            egui::StrokeKind::Inside,
+        );
+        let m = draft.plot.margins_mm;
+        let printable = egui::Rect::from_min_max(
+            paper.min + egui::vec2(m[0] as f32 * scale, m[3] as f32 * scale),
+            paper.max - egui::vec2(m[2] as f32 * scale, m[1] as f32 * scale),
+        );
+        painter.rect_stroke(
+            printable,
+            0.0,
+            egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(80, 150, 170)),
+            egui::StrokeKind::Inside,
+        );
+        let content = preview::content_rect(draft, printable, scale);
+        painter.rect_filled(
+            content.intersect(printable),
+            0.0,
+            egui::Color32::from_rgba_unmultiplied(30, 155, 125, 65),
+        );
+        painter.rect_stroke(
+            content.intersect(printable),
+            0.0,
+            egui::Stroke::new(1.5_f32, egui::Color32::from_rgb(20, 135, 110)),
+            egui::StrokeKind::Inside,
+        );
+        painter.text(
+            egui::pos2(canvas.center().x, paper.max.y + 10.0),
+            egui::Align2::CENTER_TOP,
+            format!("{:.0} × {:.0} mm", draft.width, draft.height),
+            egui::FontId::proportional(12.0),
+            ui.visuals().text_color(),
+        );
+        ui.small("White: paper · blue: printable area · green: plotted area");
     });
 }

@@ -121,9 +121,18 @@ fn all() -> Vec<Command<AppState>> {
             s.save_as_template();
         }),
         cmd("file.plot", "Plot", |s| {
-            s.plot_layout();
+            s.open_plot_dialog(true);
         })
-        .when(|s| s.space().layout().is_some()),
+        .key("Ctrl+P")
+        .when(AppState::has_drawings),
+        cmd("file.plot_line", "-PLOT", |s| s.start_plot_line())
+            .checked(|s| s.is_running("-PLOT"))
+            .transparent()
+            .when(AppState::has_drawings),
+        cmd("file.plot_preview", "Plot Preview", |s| {
+            s.open_plot_dialog(true);
+        })
+        .when(AppState::has_drawings),
         cmd("file.close", "Close Drawing", |s| s.request_close(s.active))
             .key("Ctrl+W")
             .when(AppState::has_drawings),
@@ -283,7 +292,7 @@ fn all() -> Vec<Command<AppState>> {
         .transparent(),
         cmd("layout.vplock", "VPLOCK", |s| s.toggle_viewport_lock()),
         cmd("layout.page_setup", "Page Setup", |s| s.open_page_setup())
-            .when(|s| s.space().layout().is_some()),
+            .when(AppState::has_drawings),
         cmd("tools.setvar", "Set Variable", |s| s.begin_setvar()),
         cmd("format.units", "Units", |s| s.show_units = true),
         cmd("format.properties", "Drawing Properties", |s| {

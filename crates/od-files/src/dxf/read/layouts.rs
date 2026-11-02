@@ -14,6 +14,8 @@ use od_core::{Document, Layout, LayoutId, Point, Viewport, MIN_SHEET};
 
 use super::{decode, Importer, Record};
 
+mod plot_settings;
+
 /// Where an entity belongs.
 pub(super) enum Space {
     Model,
@@ -50,6 +52,7 @@ pub(super) struct Spaces {
     frozen: Vec<(LayoutId, usize, Vec<String>)>,
     unsupported_views: usize,
     clipped: usize,
+    unsupported_plot_settings: usize,
 }
 
 /// What a `LAYOUT` object says before the layouts are built.
@@ -58,7 +61,7 @@ struct Raw {
     tab: i64,
     record: String,
     size: Option<(f64, f64)>,
-    margins: (f64, f64),
+    plot: plot_settings::Parsed,
 }
 
 fn raw_layout(record: &Record) -> Raw {
@@ -67,7 +70,7 @@ fn raw_layout(record: &Record) -> Raw {
         tab: 0,
         record: String::new(),
         size: None,
-        margins: (0.0, 0.0),
+        plot: plot_settings::parse(record),
     };
     let mut sub = String::new();
     let (mut paper, mut limits) = ([None; 2], [None; 4]);
@@ -75,8 +78,6 @@ fn raw_layout(record: &Record) -> Raw {
         let number = group.value.parse::<f64>().ok().filter(|v| v.is_finite());
         match (sub.as_str(), group.code) {
             (_, 100) => sub.clone_from(&group.value),
-            ("AcDbPlotSettings", 40) => raw.margins.0 = number.unwrap_or(0.0),
-            ("AcDbPlotSettings", 41) => raw.margins.1 = number.unwrap_or(0.0),
             ("AcDbPlotSettings", 44) => paper[0] = number,
             ("AcDbPlotSettings", 45) => paper[1] = number,
             ("AcDbLayout", 1) => raw.name = decode(&group.value),
@@ -136,12 +137,24 @@ impl Spaces {
                 _ => {}
             }
         }
-        raws.retain(|r| {
+        let is_model = |r: &Raw| {
             block_names
                 .get(&r.record)
-                .is_none_or(|b| b != "*model_space")
-                && !r.name.eq_ignore_ascii_case("model")
-        });
+                .is_some_and(|b| b == "*model_space")
+                || r.name.eq_ignore_ascii_case("model")
+        };
+        // The Model layout is not a sheet, but its plot settings are the
+        // Model tab's.
+        if let Some(at) = raws.iter().position(&is_model) {
+            let model = raws.remove(at);
+            let (width, height) = model.size.unwrap_or(DEFAULT_SHEET);
+            let (plot, unsupported) = model.plot.finish(width, height);
+            spaces.unsupported_plot_settings += usize::from(unsupported);
+            if plot.is_valid() {
+                document.set_model_plot(plot);
+            }
+        }
+        raws.retain(|r| !is_model(r));
         raws.sort_by_key(|r| r.tab);
         if layout_objects == 0 && paper_entities > 0 {
             raws.push(Raw {
@@ -149,7 +162,7 @@ impl Spaces {
                 tab: 1,
                 record: String::new(),
                 size: None,
-                margins: (0.0, 0.0),
+                plot: Default::default(),
             });
         }
         for raw in raws {
@@ -163,12 +176,16 @@ impl Spaces {
                 name.push_str(" (2)");
             }
             let (width, height) = raw.size.unwrap_or(DEFAULT_SHEET);
+            let (plot, unsupported) = raw.plot.finish(width, height);
+            spaces.unsupported_plot_settings += usize::from(unsupported);
             spaces.by_name.insert(name.to_lowercase(), id);
             if let Some(block) = block_names.get(&raw.record) {
                 spaces.by_block.insert(block.clone(), id);
             }
             spaces.by_record.insert(raw.record.clone(), id);
-            spaces.offsets.insert(id, raw.margins);
+            spaces
+                .offsets
+                .insert(id, (plot.margins_mm[0], plot.margins_mm[1]));
             if spaces.first.is_none()
                 || block_names
                     .get(&raw.record)
@@ -181,6 +198,7 @@ impl Spaces {
                 name,
                 width,
                 height,
+                plot,
                 viewports: Vec::new(),
             });
         }
@@ -313,6 +331,17 @@ impl Spaces {
                 "{} viewport{} with a non-rectangular outline came in as rectangles.",
                 self.clipped,
                 if self.clipped == 1 { "" } else { "s" }
+            ));
+        }
+        if self.unsupported_plot_settings > 0 {
+            warnings.push(format!(
+                "{} layout{} had unsupported or damaged plot settings; safe defaults were used.",
+                self.unsupported_plot_settings,
+                if self.unsupported_plot_settings == 1 {
+                    ""
+                } else {
+                    "s"
+                }
             ));
         }
         warnings

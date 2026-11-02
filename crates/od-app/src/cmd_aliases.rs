@@ -212,4 +212,6 @@ pub const ALIASES: &[(&str, &str, &str)] = &[
     ("PAGESETUP", "PAGESETUP", "layout.page_setup"),
     ("PLOT", "PLOT", "file.plot"),
     ("PRINT", "PLOT", "file.plot"),
+    ("PREVIEW", "PREVIEW", "file.plot_preview"),
+    ("-PLOT", "-PLOT", "file.plot_line"),
 ];

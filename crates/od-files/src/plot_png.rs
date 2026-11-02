@@ -4,7 +4,7 @@
 //! printing: line widths never go below one pixel, so a fine line stays
 //! visible at the size of a screenshot.
 
-use od_core::plot::PlotSheet;
+use od_core::plot::{Painted, PlotSheet};
 use tiny_skia::{
     Color, FillRule, LineCap, LineJoin, Paint, PathBuilder, Pixmap, Stroke, Transform,
 };
@@ -57,47 +57,51 @@ pub fn png(sheet: &PlotSheet, width: u32, height: u32) -> Result<Vec<u8>, PngErr
     let to_pixels = Transform::from_row(scale, 0.0, 0.0, -scale, 0.0, height as f32);
     let one_pixel = 1.0 / scale;
 
-    for path in &sheet.paths {
-        let Some(first) = path.points.first() else {
-            continue;
-        };
-        let mut builder = PathBuilder::new();
-        builder.move_to(first.x as f32, first.y as f32);
-        for p in path.points.iter().skip(1) {
-            builder.line_to(p.x as f32, p.y as f32);
-        }
-        if path.points.len() == 1 {
-            // A point: a zero-length stroke with round caps is a dot.
-            builder.line_to(first.x as f32, first.y as f32);
-        }
-        if path.closed {
-            builder.close();
-        }
-        let Some(shape) = builder.finish() else {
-            continue;
-        };
-        let stroke = Stroke {
-            width: (path.width as f32).max(one_pixel),
-            line_cap: LineCap::Round,
-            line_join: LineJoin::Round,
-            ..Stroke::default()
-        };
-        pixmap.stroke_path(&shape, &ink(path.rgb), &stroke, to_pixels, None);
-    }
-    for fill in &sheet.fills {
-        let mut builder = PathBuilder::new();
-        for contour in &fill.contours {
-            let Some((first, rest)) = contour.split_first() else {
-                continue;
-            };
-            builder.move_to(first.x as f32, first.y as f32);
-            for p in rest {
-                builder.line_to(p.x as f32, p.y as f32);
+    for item in sheet.paint_order() {
+        match item {
+            Painted::Path(path) => {
+                let Some(first) = path.points.first() else {
+                    continue;
+                };
+                let mut builder = PathBuilder::new();
+                builder.move_to(first.x as f32, first.y as f32);
+                for p in path.points.iter().skip(1) {
+                    builder.line_to(p.x as f32, p.y as f32);
+                }
+                if path.points.len() == 1 {
+                    // A point: a zero-length stroke with round caps is a dot.
+                    builder.line_to(first.x as f32, first.y as f32);
+                }
+                if path.closed {
+                    builder.close();
+                }
+                let Some(shape) = builder.finish() else {
+                    continue;
+                };
+                let stroke = Stroke {
+                    width: (path.width as f32).max(one_pixel),
+                    line_cap: LineCap::Round,
+                    line_join: LineJoin::Round,
+                    ..Stroke::default()
+                };
+                pixmap.stroke_path(&shape, &ink(path.rgb), &stroke, to_pixels, None);
             }
-            builder.close();
-        }
-        if let Some(shape) = builder.finish() {
-            pixmap.fill_path(&shape, &ink(fill.rgb), FillRule::Winding, to_pixels, None);
+            Painted::Fill(fill) => {
+                let mut builder = PathBuilder::new();
+                for contour in &fill.contours {
+                    let Some((first, rest)) = contour.split_first() else {
+                        continue;
+                    };
+                    builder.move_to(first.x as f32, first.y as f32);
+                    for p in rest {
+                        builder.line_to(p.x as f32, p.y as f32);
+                    }
+                    builder.close();
+                }
+                if let Some(shape) = builder.finish() {
+                    pixmap.fill_path(&shape, &ink(fill.rgb), FillRule::Winding, to_pixels, None);
+                }
+            }
         }
     }
     encode(&pixmap)
@@ -214,6 +218,7 @@ mod tests {
             Point::new(60.0, 20.0),
         ];
         let fill = PlotFill {
+            after: usize::MAX,
             contours: vec![square, hole],
             rgb: [0, 0, 255],
         };

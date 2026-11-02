@@ -26,6 +26,8 @@ pub const TABLE: &[(&str, AutomationPolicy, CommandEffect)] = &[
     ("file.export_dxf", Denied, FileWrite),
     ("file.save_template", Denied, FileWrite),
     ("file.plot", Denied, FileWrite),
+    ("file.plot_preview", Denied, FileWrite),
+    ("file.plot_line", Denied, FileWrite),
     ("file.close", Denied, Lifecycle),
     ("file.exit", Denied, Lifecycle),
     // History acts on whatever is on top, the user's steps included: the

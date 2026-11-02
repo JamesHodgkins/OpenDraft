@@ -136,6 +136,13 @@ impl DrawingDto {
         document.set_properties(self.properties.into_properties()?);
         dim_styles.install(&mut document)?;
         document.set_layouts(into_layouts(self.layouts)?);
+        if let Some(dto) = self.model_plot {
+            let settings = dto.into_settings();
+            if !settings.is_valid() {
+                return invalid("the Model tab's plot settings are not usable".to_owned());
+            }
+            document.set_model_plot(settings);
+        }
         document.reserve_layout_ids(self.next_layout_id, self.next_viewport_id);
         document.finish_bulk_load();
         Ok(document)

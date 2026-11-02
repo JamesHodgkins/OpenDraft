@@ -6,7 +6,7 @@
 //! object: a viewport only maps coordinates (`model_to_paper`, `paper_to_model`).
 //! Views are plan views, so the mapping is a uniform scale and an offset.
 
-use crate::{Bounds, LayerId, Point};
+use crate::{Bounds, LayerId, PlotSettings, Point};
 
 /// Permanent identity of a layout. Never reused within a drawing.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -248,6 +248,8 @@ pub struct Layout {
     /// Sheet size in millimetres.
     pub width: f64,
     pub height: f64,
+    /// Device-independent settings used to plot this layout.
+    pub plot: PlotSettings,
     /// Viewports in stacking order, the last on top.
     pub viewports: Vec<Viewport>,
 }
@@ -288,6 +290,9 @@ impl Layout {
             && self.height.is_finite()
             && self.width > 0.0
             && self.height > 0.0
+            && self.plot.is_valid()
+            && (self.plot.paper_width_mm - self.width).abs() < 1e-9
+            && (self.plot.paper_height_mm - self.height).abs() < 1e-9
             && ids.len() == self.viewports.len()
     }
 }
@@ -494,6 +499,7 @@ mod tests {
             name: "A".into(),
             width: 297.0,
             height: 210.0,
+            plot: PlotSettings::for_layout(297.0, 210.0),
             viewports: vec![under, over, off],
         };
         assert_eq!(

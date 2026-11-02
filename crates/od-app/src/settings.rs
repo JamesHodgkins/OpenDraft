@@ -59,6 +59,10 @@ pub struct Settings {
     /// When data fields are brought up to date (`FIELDEVAL`): 1 on open,
     /// 2 on save, 4 on plot.
     pub field_eval: u8,
+    /// The Plot dialog's last output device by name (OpenDraft PDF, a printer...),
+    /// and the resolution of a sheet printed as a picture.
+    pub plot_device: String,
+    pub plot_dpi: u32,
     /// The experimental MCP automation endpoint is on. Off by default.
     pub automation_enabled: bool,
     /// Folders automation may open and write files in. Nothing outside
@@ -92,6 +96,8 @@ impl Default for Settings {
             zoom_speed: 100,
             autosave_minutes: 2,
             field_eval: FIELD_EVAL_ALL,
+            plot_device: String::new(),
+            plot_dpi: 300,
             automation_enabled: false,
             automation_roots: Vec::new(),
             templates_dir: None,
@@ -212,6 +218,10 @@ impl Settings {
             *value = (*value).clamp(min, max);
         }
         self.field_eval &= FIELD_EVAL_ALL;
+        self.plot_dpi = self.plot_dpi.clamp(72, 1200);
+        if !crate::print_backend::safe_name(&self.plot_device) {
+            self.plot_device.clear();
+        }
         // Never both: a saved file with both has ortho win.
         if self.ortho.enabled {
             self.tracking.polar = false;
@@ -341,6 +351,8 @@ mod tests {
             zoom_speed: 250,
             autosave_minutes: 10,
             field_eval: 2,
+            plot_device: "Office".into(),
+            plot_dpi: 600,
             automation_enabled: true,
             automation_roots: vec!["/tmp/a".into(), "C:\\Plans".into()],
             templates_dir: Some("D:\\Templates".into()),

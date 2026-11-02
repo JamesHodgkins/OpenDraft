@@ -10,6 +10,8 @@ use std::time::Duration;
 
 use od_commands::Session;
 
+use od_core::plot::PlotSpace;
+
 use crate::files::{display_name, same_file};
 use crate::io::Done;
 use crate::state::AppState;
@@ -28,7 +30,7 @@ impl AppState {
     }
 
     /// Like `submit`, for a job the user can give up on.
-    fn submit_cancellable(
+    pub(crate) fn submit_cancellable(
         &mut self,
         job: impl FnOnce(&AtomicBool) -> Done + Send + 'static,
     ) -> u64 {
@@ -107,6 +109,7 @@ impl AppState {
                 self.finish_export(&path, result);
                 self.file_ops.exported(&path, report);
             }
+            Done::Printed { printer, result } => self.finish_print(&printer, result),
             Done::FromTemplate { name, result } => self.finish_template(&name, *result),
             Done::Autosaved(results) => self.finish_autosave(results),
             Done::Finished => {}
@@ -312,11 +315,6 @@ impl AppState {
         })
     }
 
-    /// Write a layout of the active drawing as PDF or SVG, from a copy.
-    pub(crate) fn begin_plot(&mut self, path: &Path, layout: od_core::LayoutId) {
-        self.begin_plot_of(self.active, path, layout);
-    }
-
     /// Plot a layout of drawing `index`; returns the worker's job id.
     pub(crate) fn begin_plot_of(
         &mut self,
@@ -324,11 +322,27 @@ impl AppState {
         path: &Path,
         layout: od_core::LayoutId,
     ) -> u64 {
-        let copy = self.docs[index].drawing().document().clone();
+        self.begin_plot_with(index, path, PlotSpace::Layout(layout), None)
+    }
+
+    /// As [`Self::begin_plot_of`], with `draft` standing in for the layout's
+    /// page setup in the copy that is plotted. A draft that no longer fits
+    /// the drawing is ignored here; the dialog checked it before this.
+    pub(crate) fn begin_plot_with(
+        &mut self,
+        index: usize,
+        path: &Path,
+        space: PlotSpace,
+        draft: Option<&crate::layouts::PageDraft>,
+    ) -> u64 {
+        let document = self.docs[index].drawing().document();
+        let copy = draft
+            .and_then(|d| crate::plot_job::document_with_draft(document, d).ok())
+            .unwrap_or_else(|| document.clone());
         self.message = format!("Plotting {}...", display_name(path));
         let path = path.to_owned();
         self.submit_cancellable(move |cancelled| Done::Exported {
-            result: od_files::plot_cancellable(&path, &copy, layout, cancelled),
+            result: od_files::plot_cancellable(&path, &copy, space, cancelled),
             path,
         })
     }

@@ -33,6 +33,7 @@ mod mleader_style_tabs;
 mod overkill_dialog;
 mod page_setup_dialog;
 mod panels;
+mod plot_dialog;
 mod power_select_dialog;
 mod properties_dialog;
 mod purge_dialog;

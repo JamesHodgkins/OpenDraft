@@ -20,6 +20,7 @@ impl Default for Document {
             dim_style: DimStyle::default(),
             dim_styles: vec![DimStyle::default()],
             layouts: Vec::new(),
+            model_plot: crate::PlotSettings::for_model(),
             next_layout_id: 1,
             next_viewport_id: 1,
             active_layout: None,

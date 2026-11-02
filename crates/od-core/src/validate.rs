@@ -288,6 +288,9 @@ impl Document {
         if let Some(object) = orphan {
             return Err(DocumentError::MissingLayoutOf(object.id));
         }
+        if !self.model_plot().is_valid() {
+            return Err(DocumentError::BadLayout("Model".to_owned()));
+        }
         let (next_layout, next_viewport) = self.next_layout_ids();
         let mut ids = HashSet::new();
         let mut names = HashSet::new();

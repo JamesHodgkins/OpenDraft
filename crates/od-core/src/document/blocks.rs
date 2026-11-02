@@ -136,6 +136,7 @@ impl Document {
             dim_style: self.dim_style.clone(),
             dim_styles: self.dim_styles.clone(),
             layouts: self.layouts.clone(),
+            model_plot: self.model_plot.clone(),
             next_layout_id: self.next_layout_id,
             next_viewport_id: self.next_viewport_id,
             active_layout: self.active_layout,

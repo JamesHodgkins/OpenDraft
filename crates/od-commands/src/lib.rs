@@ -39,7 +39,7 @@ pub use dim_styles_action::SetDimStyles;
 pub use editor::{AttributeEditorAnswer, Editor, FieldAnswer};
 pub use history::{History, Provenance, Step, StepInfo};
 pub use layer_action::{AddLayer, ModifyLayers, RemoveLayer, SetCurrentLayer, SetNewObjectStyle};
-pub use layout_action::SetLayouts;
+pub use layout_action::{SetLayouts, SetModelPlot};
 pub use linetype_action::SetLinetypes;
 pub use mleader_style_action::SetMLeaderStyles;
 pub use paste_action::{PasteDrawing, WarningSink};

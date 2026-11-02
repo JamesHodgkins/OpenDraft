@@ -35,6 +35,11 @@ pub enum Done {
         path: PathBuf,
         result: Result<Vec<String>, FileError>,
     },
+    /// A sheet handed to a printer (or refused by it).
+    Printed {
+        printer: String,
+        result: Result<crate::print_backend::Receipt, crate::print_backend::PrintError>,
+    },
     /// A template file, read to start a new drawing from.
     FromTemplate {
         name: String,

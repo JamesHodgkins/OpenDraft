@@ -12,6 +12,7 @@ pub enum TabAction {
     Model,
     Layout(LayoutId),
     New,
+    PageSetup(LayoutId),
     Copy(LayoutId),
     Delete(LayoutId),
 }
@@ -39,6 +40,7 @@ pub fn show(ui: &mut Ui, theme: &Theme, document: &Document, space: Space) -> Op
             response.context_menu(|ui| {
                 for (label, act) in [
                     ("New layout", TabAction::New),
+                    ("Page Setup...", TabAction::PageSetup(layout.id)),
                     ("Copy", TabAction::Copy(layout.id)),
                     ("Delete", TabAction::Delete(layout.id)),
                 ] {
@@ -62,6 +64,10 @@ pub fn apply(state: &mut crate::state::AppState, action: TabAction) {
         TabAction::Model => state.enter_model(),
         TabAction::Layout(id) => state.enter_layout(id),
         TabAction::New => state.new_layout(),
+        TabAction::PageSetup(id) => {
+            state.enter_layout(id);
+            state.open_page_setup();
+        }
         TabAction::Copy(id) => state.duplicate_layout(id),
         TabAction::Delete(id) => state.delete_layout(id),
     }

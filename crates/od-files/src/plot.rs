@@ -8,34 +8,45 @@ use std::fmt::Write as _;
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
-use od_core::plot::{plot_layout, PlotError, PlotFill, PlotPath, PlotSheet};
-use od_core::{Document, LayoutId};
+use od_core::plot::{plot_sheet, Painted, PlotError, PlotFill, PlotPath, PlotSheet, PlotSpace};
+use od_core::Document;
 
 use crate::{write_atomically, FileError};
+
+/// What SVG draws for a hairline, which it has no width for, in millimetres.
+const HAIRLINE_MM: f64 = 0.05;
 
 /// Points per millimetre in a PDF.
 const POINTS_PER_MM: f64 = 72.0 / 25.4;
 
-/// The name and extensions of the plot files (PDF first, the default).
-pub fn plot_filter() -> (&'static str, &'static [&'static str]) {
-    ("Plot file (PDF, SVG)", &["pdf", "svg"])
+/// The name and extension of a PDF plot file.
+pub fn pdf_filter() -> (&'static str, &'static [&'static str]) {
+    ("PDF file", &["pdf"])
 }
 
-/// Write a layout to `path` as PDF or SVG, as its extension says. Returns
+/// The name and extension of an SVG plot file.
+pub fn svg_filter() -> (&'static str, &'static [&'static str]) {
+    ("SVG file", &["svg"])
+}
+
+/// Write the Model tab or a layout to `path` as PDF or SVG, as its extension says. Returns
 /// what the plot could not show faithfully.
 pub fn plot_cancellable(
     path: &Path,
     document: &Document,
-    layout: LayoutId,
+    space: PlotSpace,
     cancelled: &AtomicBool,
 ) -> Result<Vec<String>, FileError> {
     let extension = path
         .extension()
         .and_then(|e| e.to_str())
         .map(str::to_ascii_lowercase);
-    let sheet = plot_layout(document, layout).map_err(|e| match e {
-        PlotError::NoLayout => FileError::Invalid(e.to_string()),
-        PlotError::TooDetailed | PlotError::HatchTooDense => FileError::Unsupported(e.to_string()),
+    let sheet = plot_sheet(document, space).map_err(|e| match e {
+        PlotError::NoLayout | PlotError::Invalid(_) => FileError::Invalid(e.to_string()),
+        PlotError::TooDetailed
+        | PlotError::HatchTooDense
+        | PlotError::UnsupportedArea
+        | PlotError::ResourceLimit => FileError::Unsupported(e.to_string()),
     })?;
     let bytes = match extension.as_deref() {
         Some("pdf") => pdf(&sheet),
@@ -71,36 +82,40 @@ pub fn svg(sheet: &PlotSheet) -> String {
     );
     let _ = writeln!(out, "<rect width=\"{w}\" height=\"{h}\" fill=\"#ffffff\"/>");
     let _ = writeln!(out, "<g transform=\"translate(0 {h}) scale(1 -1)\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\">");
-    for path in &sheet.paths {
-        let points: Vec<String> = path
-            .points
-            .iter()
-            .map(|p| format!("{},{}", num(p.x), num(p.y)))
-            .collect();
-        let tag = if path.closed { "polygon" } else { "polyline" };
-        let _ = writeln!(
-            out,
-            "<{tag} points=\"{}\" stroke=\"{}\" stroke-width=\"{}\"/>",
-            points.join(" "),
-            hex(path.rgb),
-            num(path.width)
-        );
-    }
-    for fill in &sheet.fills {
-        let mut d = String::new();
-        for contour in &fill.contours {
-            for (i, p) in contour.iter().enumerate() {
-                let verb = if i == 0 { "M" } else { "L" };
-                let _ = write!(d, "{verb}{},{} ", num(p.x), num(p.y));
+    for item in sheet.paint_order() {
+        match item {
+            Painted::Path(path) => {
+                let points: Vec<String> = path
+                    .points
+                    .iter()
+                    .map(|p| format!("{},{}", num(p.x), num(p.y)))
+                    .collect();
+                let tag = if path.closed { "polygon" } else { "polyline" };
+                let _ = writeln!(
+                    out,
+                    "<{tag} points=\"{}\" stroke=\"{}\" stroke-width=\"{}\"/>",
+                    points.join(" "),
+                    hex(path.rgb),
+                    num(path.width.max(HAIRLINE_MM))
+                );
             }
-            d.push_str("Z ");
+            Painted::Fill(fill) => {
+                let mut d = String::new();
+                for contour in &fill.contours {
+                    for (i, p) in contour.iter().enumerate() {
+                        let verb = if i == 0 { "M" } else { "L" };
+                        let _ = write!(d, "{verb}{},{} ", num(p.x), num(p.y));
+                    }
+                    d.push_str("Z ");
+                }
+                let _ = writeln!(
+                    out,
+                    "<path d=\"{}\" fill=\"{}\" fill-rule=\"nonzero\" stroke=\"none\"/>",
+                    d.trim_end(),
+                    hex(fill.rgb)
+                );
+            }
         }
-        let _ = writeln!(
-            out,
-            "<path d=\"{}\" fill=\"{}\" fill-rule=\"nonzero\" stroke=\"none\"/>",
-            d.trim_end(),
-            hex(fill.rgb)
-        );
     }
     out.push_str("</g>\n</svg>\n");
     out
@@ -109,11 +124,11 @@ pub fn svg(sheet: &PlotSheet) -> String {
 /// The sheet as a one-page PDF.
 pub fn pdf(sheet: &PlotSheet) -> Vec<u8> {
     let mut content = format!("q\n{0:.6} 0 0 {0:.6} 0 0 cm\n1 J 1 j\n", POINTS_PER_MM);
-    for path in &sheet.paths {
-        content.push_str(&pdf_path(path));
-    }
-    for fill in &sheet.fills {
-        content.push_str(&pdf_fill(fill));
+    for item in sheet.paint_order() {
+        match item {
+            Painted::Path(path) => content.push_str(&pdf_path(path)),
+            Painted::Fill(fill) => content.push_str(&pdf_fill(fill)),
+        }
     }
     content.push_str("Q\n");
     let (w, h) = (sheet.width * POINTS_PER_MM, sheet.height * POINTS_PER_MM);
@@ -217,6 +232,7 @@ mod tests {
                 },
             ],
             fills: vec![PlotFill {
+                after: usize::MAX,
                 contours: vec![vec![
                     Point::new(0.0, 0.0),
                     Point::new(4.0, 0.0),
@@ -304,23 +320,34 @@ mod tests {
             name: "A".into(),
             width: 297.0,
             height: 210.0,
+            plot: od_core::PlotSettings::for_layout(297.0, 210.0),
             viewports: Vec::new(),
         }]);
         let never = AtomicBool::new(false);
         for name in ["sheet.pdf", "sheet.SVG"] {
             let path = dir.join(name);
             assert_eq!(
-                plot_cancellable(&path, &document, id, &never).unwrap(),
+                plot_cancellable(&path, &document, PlotSpace::Layout(id), &never).unwrap(),
                 Vec::<String>::new()
             );
             assert!(std::fs::metadata(&path).unwrap().len() > 100);
         }
         assert!(matches!(
-            plot_cancellable(&dir.join("sheet.png"), &document, id, &never),
+            plot_cancellable(
+                &dir.join("sheet.png"),
+                &document,
+                PlotSpace::Layout(id),
+                &never
+            ),
             Err(FileError::UnknownFormat(_))
         ));
         assert!(matches!(
-            plot_cancellable(&dir.join("x.pdf"), &document, LayoutId(99), &never),
+            plot_cancellable(
+                &dir.join("x.pdf"),
+                &document,
+                PlotSpace::Layout(od_core::LayoutId(99)),
+                &never
+            ),
             Err(FileError::Invalid(_))
         ));
         assert_eq!(
