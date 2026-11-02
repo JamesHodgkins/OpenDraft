@@ -84,7 +84,9 @@ pub enum PrintError {
     BackendUnavailable(&'static str),
     Capability(String),
     SpoolRejected(String),
-    /// The raster page would hold too many pixels.
+    /// The raster page would hold too many pixels. Only the Windows backend
+    /// prints a picture, so elsewhere nothing makes it.
+    #[cfg_attr(not(any(test, windows)), allow(dead_code))]
     RasterTooLarge,
     /// The job asks for something that cannot be printed.
     Invalid(&'static str),
