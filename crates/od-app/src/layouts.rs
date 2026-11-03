@@ -261,12 +261,15 @@ impl AppState {
         {
             return Ok(());
         }
+        let resized = (layout.width, layout.height) != (draft.width, draft.height);
         layout.name = name.to_owned();
         layout.width = draft.width;
         layout.height = draft.height;
         layout.plot = plot;
         self.perform(SetLayouts::new("Page setup", layouts));
-        self.docs[self.active].view.request_zoom_extents();
+        if resized {
+            self.docs[self.active].view.request_zoom_extents();
+        }
         self.message = "Page setup changed".to_owned();
         Ok(())
     }
