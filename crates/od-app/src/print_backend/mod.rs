@@ -20,6 +20,8 @@ use od_core::plot_plan::MAX_COPIES;
 #[cfg(any(test, not(windows)))]
 pub mod cups;
 #[cfg(test)]
+mod cups_live_tests;
+#[cfg(test)]
 pub mod fake;
 #[cfg(any(test, windows))]
 pub mod windows;
