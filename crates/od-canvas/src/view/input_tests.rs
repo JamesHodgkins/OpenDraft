@@ -56,6 +56,60 @@ fn frame(view: &mut View, ctx: &Context, events: Vec<Event>) -> CanvasOutput {
     result.expect("the canvas was shown")
 }
 
+/// A frame with a dialog-like window standing over the middle of the canvas.
+fn frame_under_window(view: &mut View, ctx: &Context, events: Vec<Event>) -> CanvasOutput {
+    let mut result = None;
+    let _ = ctx.run(
+        RawInput {
+            screen_rect: Some(SCREEN),
+            events,
+            ..RawInput::default()
+        },
+        |ctx| {
+            egui::CentralPanel::default()
+                .frame(egui::Frame::NONE)
+                .show(ctx, |ui| {
+                    result = Some(view.show(
+                        ui,
+                        &style(),
+                        &GridSettings {
+                            visible: false,
+                            spacing: 10.0,
+                        },
+                        &Document::default(),
+                        &BTreeSet::new(),
+                        &SnapModes::default(),
+                    ));
+                });
+            egui::Window::new("dialog")
+                .fixed_pos(pos2(250.0, 150.0))
+                .fixed_size(egui::vec2(100.0, 100.0))
+                .show(ctx, |ui| {
+                    ui.label("Plot");
+                });
+        },
+    );
+    result.expect("the canvas was shown")
+}
+
+#[test]
+fn the_canvas_has_no_cursor_under_a_window_above_it() {
+    let ctx = Context::default();
+    let mut view = View::default();
+    // The window is known to egui from the frame after it first appears.
+    frame_under_window(&mut view, &ctx, vec![]);
+    frame_under_window(&mut view, &ctx, vec![]);
+
+    let beside = frame_under_window(&mut view, &ctx, vec![Event::PointerMoved(pos2(50.0, 50.0))]);
+    assert!(beside.cursor.is_some(), "the open canvas still has one");
+    let under = frame_under_window(
+        &mut view,
+        &ctx,
+        vec![Event::PointerMoved(pos2(300.0, 200.0))],
+    );
+    assert!(under.cursor.is_none(), "the dialog owns the pointer there");
+}
+
 fn button(at: egui::Pos2, pressed: bool) -> Event {
     Event::PointerButton {
         pos: at,

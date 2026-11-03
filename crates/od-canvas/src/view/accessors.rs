@@ -32,6 +32,14 @@ impl View {
         self.wheel_through = through;
     }
 
+    /// Whether a dialog, menu or other window drawn above the drawing is at
+    /// `p`: the pointer there belongs to it, so there is no cursor, hover or
+    /// wheel on the canvas.
+    pub(super) fn covered(ctx: &egui::Context, p: Pos2) -> bool {
+        ctx.layer_id_at(p)
+            .is_some_and(|l| l.order != egui::Order::Background)
+    }
+
     /// With an editor over the drawing, its own area takes the drag from
     /// the canvas, so a middle drag that began on the drawing or the editor
     /// (not a toolbar or dialog above it) pans from the raw pointer.
