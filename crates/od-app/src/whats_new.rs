@@ -20,6 +20,15 @@ pub struct Note {
 
 const NOTES: &[Note] = &[
     Note {
+        version: "0.2.0",
+        title: "Printing and plotting, text fields and block attributes",
+        changes: &[
+            "Plot or print from one dialog (Ctrl+P): choose the paper, scale and area, see a preview, and send it to a PDF, an SVG or a printer. OpenDraft remembers your settings for next time. Printing is new, so tell us how it goes with your printer.",
+            "Single-line text, fields that fill in from your drawing's properties, and blocks with attributes you can edit.",
+            "While you draw a polyline, you can now snap to the segments you have already drawn.",
+        ],
+    },
+    Note {
         version: "0.1.4",
         title: "Opens on more Linux systems, and safer edits",
         changes: &[
