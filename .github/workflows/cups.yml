@@ -41,10 +41,13 @@ jobs:
           test -n "$MODEL"
           sudo lpadmin -p ODTEST -E -v cups-pdf:/ -m "$MODEL"
           sudo lpadmin -d ODTEST
-          # Where cups-pdf writes for the user running the job.
-          OUT="/var/spool/cups-pdf/$USER"
-          sudo mkdir -p "$OUT"
-          sudo chown "$USER" "$OUT"
+          # Where cups-pdf writes for the user running the job: the `Out` line
+          # of the installed configuration (this release says ${HOME}/PDF).
+          grep -E '^(Out|AnonDirName|Grp|Cut) ' /etc/cups/cups-pdf.conf || true
+          OUT=$(grep -E '^Out ' /etc/cups/cups-pdf.conf | head -n 1 | cut -d' ' -f2- | sed "s|\${HOME}|$HOME|; s|\${USER}|$USER|")
+          echo "output folder: $OUT"
+          test -n "$OUT"
+          mkdir -p "$OUT"
           echo "OD_CUPS_PRINTER=ODTEST" >> "$GITHUB_ENV"
           echo "OD_CUPS_OUT=$OUT" >> "$GITHUB_ENV"
           lpstat -t
@@ -57,12 +60,13 @@ jobs:
         if: failure()
         run: |
           lpstat -t || true
-          ls -la "${OD_CUPS_OUT:-/var/spool/cups-pdf}" || true
+          ls -la "$OD_CUPS_OUT" || true
+          sudo ls -laR /var/spool/cups-pdf || true
           sudo tail -n 40 /var/log/cups/error_log || true
           sudo tail -n 20 /var/log/cups/cups-pdf_log || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: cups-output
-          path: /var/spool/cups-pdf
+          path: ${{ env.OD_CUPS_OUT }}
           if-no-files-found: ignore
