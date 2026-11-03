@@ -62,6 +62,7 @@ Be careful how far to trust a green tick. These runs use a virtual display with 
 - **No real graphics hardware.** Drivers, GPUs, multi-monitor and variable refresh are untested. If your GPU stack is unusual, tell us.
 - **No real desktop environment.** X11 runs with no window manager; Wayland runs under `sway`. GNOME (mutter) and KDE (KWin) have their own window handling and decorations, and are not tested.
 - **Wayland input** (above), and **real file dialogs, the clipboard, drag and drop and input methods** on either session. These depend on the desktop and are untested.
+- **Printing to paper.** The Plot dialog sends a PDF to CUPS with `lp` (and reads printers and paper sizes with `lpstat` and `lpoptions`). Those calls are checked only against scripted answers; no job has been sent through a real CUPS queue, and no real printer or driver's paper list has been read. Plotting to PDF and SVG files does not use CUPS and is unaffected. If a printer's list or a job misbehaves, report the printer's make and model and what `lpstat -p -d` prints.
 - **Pixel-for-pixel appearance** is not compared; the tests check that the screen is drawn, not that it is identical to a reference.
 
 ## If something does not work
