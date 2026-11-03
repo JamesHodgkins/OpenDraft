@@ -251,10 +251,19 @@ impl AppState {
             .space()
             .layout()
             .map_or(PlotSpace::Model, PlotSpace::Layout);
-        let Some(draft) = PageDraft::of(self.session().document(), space) else {
+        let Some(mut draft) = PageDraft::of(self.session().document(), space) else {
             self.message = "That layout is gone".to_owned();
             return false;
         };
+        // A Model tab saved with an area it cannot plot (AutoCAD's own is
+        // Display, a DXF may say Layout) opens on Extents, in the draft only.
+        let plottable = matches!(
+            draft.plot.area,
+            od_core::PlotArea::Extents | od_core::PlotArea::Window { .. }
+        );
+        if draft.space == PlotSpace::Model && !plottable {
+            draft.plot.area = od_core::PlotArea::Extents;
+        }
         let (target, remembered) =
             initial_device(&draft.plot.device_name, &self.settings.plot_device);
         let backend = self.command_dialogs.print.0.clone();
@@ -467,6 +476,25 @@ mod tests {
         let dialog = state.command_dialogs.plot.as_ref().unwrap();
         assert_eq!(dialog.draft.space, od_core::plot::PlotSpace::Model);
         assert_eq!(&dialog.draft.plot, state.session().document().model_plot());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_model_tab_that_cannot_plot_its_area_opens_on_extents_without_changing_the_drawing() {
+        let (mut state, _, dir) = state();
+        state.enter_model();
+        for saved in [PlotArea::Layout, PlotArea::Display] {
+            let mut draft =
+                super::PageDraft::of(state.session().document(), od_core::plot::PlotSpace::Model)
+                    .unwrap();
+            draft.plot.area = saved.clone();
+            state.set_page_setup(&draft).unwrap();
+            assert!(state.open_plot_dialog(false));
+            let dialog = state.command_dialogs.plot.take().unwrap();
+            assert_eq!(dialog.draft.plot.area, PlotArea::Extents);
+            assert!(crate::plot_controls::control_state(&dialog.draft.plot, true).can_submit);
+            assert_eq!(state.session().document().model_plot().area, saved);
+        }
         let _ = std::fs::remove_dir_all(&dir);
     }
 
