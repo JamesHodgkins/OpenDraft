@@ -1,0 +1,68 @@
+name: cups
+# Sends a plot through a real CUPS with the backend the Plot dialog uses
+# (`lpstat`, `lpoptions`, `lp`), onto a cups-pdf queue, and checks the PDF that
+# comes out: one A4 page, and a 100 mm line still 100 mm (the job is not fitted
+# to the page). It shows the CUPS side works; it does not show a real printer,
+# its driver or a desktop print dialog. See docs/linux.md.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'crates/od-app/src/print_backend/**'
+      - 'crates/od-files/src/plot*'
+      - 'crates/od-core/src/plot*'
+      - 'scripts/check_cups_pdf.py'
+      - '.github/workflows/cups.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cups-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  cups:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: CUPS, cups-pdf, poppler, and the libraries od-app builds against
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cups cups-pdf poppler-utils libxkbcommon-dev libwayland-dev libx11-dev libxcb1-dev libgl1-mesa-dev
+          python3 -m pip install --user pypdf
+      - name: Start CUPS and make a PDF queue
+        run: |
+          sudo systemctl enable --now cups
+          # The model name is whatever this release of cups-pdf installs.
+          MODEL=$(lpinfo -m | grep -i 'cups-pdf' | head -n 1 | cut -d' ' -f1)
+          echo "model: $MODEL"
+          test -n "$MODEL"
+          sudo lpadmin -p ODTEST -E -v cups-pdf:/ -m "$MODEL"
+          sudo lpadmin -d ODTEST
+          # Where cups-pdf writes for the user running the job.
+          OUT="/var/spool/cups-pdf/$USER"
+          sudo mkdir -p "$OUT"
+          sudo chown "$USER" "$OUT"
+          echo "OD_CUPS_PRINTER=ODTEST" >> "$GITHUB_ENV"
+          echo "OD_CUPS_OUT=$OUT" >> "$GITHUB_ENV"
+          lpstat -t
+          lpoptions -p ODTEST -l | head -n 5
+      - name: Print through the app's CUPS backend
+        run: cargo test -p od-app a_job_goes_through_real_cups -- --ignored --nocapture
+      - name: Check the PDF that came out
+        run: python3 scripts/check_cups_pdf.py "$OD_CUPS_OUT"
+      - name: What CUPS says, when it went wrong
+        if: failure()
+        run: |
+          lpstat -t || true
+          ls -la "${OD_CUPS_OUT:-/var/spool/cups-pdf}" || true
+          sudo tail -n 40 /var/log/cups/error_log || true
+          sudo tail -n 20 /var/log/cups/cups-pdf_log || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cups-output
+          path: /var/spool/cups-pdf
+          if-no-files-found: ignore
