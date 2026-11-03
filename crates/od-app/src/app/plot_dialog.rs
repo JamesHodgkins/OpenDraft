@@ -46,7 +46,8 @@ impl OpenDraftApp {
         if matches!(dialog.printers, Printers::Asking(_)) {
             ctx.request_repaint_after(std::time::Duration::from_millis(100));
         }
-        let controls = control_state(&dialog.draft.plot, false);
+        let model = dialog.draft.space == od_core::plot::PlotSpace::Model;
+        let controls = control_state(&dialog.draft.plot, model);
         self.state.command_dialogs.plot = Some(dialog);
         if self.state.plot_dialog_tick(std::time::Instant::now()) {
             ctx.request_repaint_after(std::time::Duration::from_millis(60));
@@ -81,7 +82,15 @@ impl OpenDraftApp {
                         ui.vertical(|ui| {
                             let width = (WIDTH - LEFT - GAP - 36.0).max(300.0);
                             ui.set_width(width);
-                            preview_box(ui, theme, &dialog, texture.as_ref(), PREVIEW_HEIGHT);
+                            let blocked = dialog.error.is_some() || controls.reason.is_some();
+                            preview_box(
+                                ui,
+                                theme,
+                                &dialog,
+                                texture.as_ref(),
+                                PREVIEW_HEIGHT,
+                                blocked,
+                            );
                         });
                     });
                 });
@@ -90,7 +99,6 @@ impl OpenDraftApp {
                 ui.colored_label(theme.colors.accent, why);
             }
             ui.horizontal(|ui| {
-                let model = dialog.draft.space == od_core::plot::PlotSpace::Model;
                 ui.checkbox(
                     &mut dialog.save_changes,
                     if model {
@@ -157,13 +165,15 @@ fn preview_texture(ctx: &egui::Context, dialog: &PlotDialog) -> Option<egui::Tex
 }
 
 /// The wide picture of the plot, the printable area marked on the paper, and
-/// a reminder when the settings have moved on from what it shows.
+/// a reminder when the settings have moved on from what it shows. `blocked`
+/// is set when there is a reason (shown under the dialog) no picture comes.
 fn preview_box(
     ui: &mut egui::Ui,
     theme: &od_ui::Theme,
     dialog: &PlotDialog,
     texture: Option<&egui::TextureHandle>,
     height: f32,
+    blocked: bool,
 ) {
     widgets::group_box(ui, theme, "Preview", |ui| {
         let size = egui::vec2(ui.available_width(), height);
@@ -194,7 +204,11 @@ fn preview_box(
                 painter.text(
                     canvas.center(),
                     egui::Align2::CENTER_CENTER,
-                    "Drawing the preview...",
+                    if blocked {
+                        "No preview for these settings"
+                    } else {
+                        "Drawing the preview..."
+                    },
                     egui::FontId::proportional(13.0),
                     ui.visuals().weak_text_color(),
                 );

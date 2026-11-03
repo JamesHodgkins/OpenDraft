@@ -167,7 +167,7 @@ impl View {
         }
         let pointer = ui
             .input(|i| i.pointer.latest_pos())
-            .filter(|p| rect.contains(*p) && !self.blocked(*p));
+            .filter(|p| rect.contains(*p) && !self.blocked(*p) && !Self::covered(ui.ctx(), *p));
         // With an editor over the drawing the wheel still zooms, over the
         // editor too, but not over a toolbar, menu or dialog above it.
         let wheel_at = if self.wheel_through {
@@ -217,6 +217,7 @@ impl View {
                 .or_else(|| {
                     ui.input(|i| i.pointer.latest_pos())
                         .filter(|p| !self.input_exclusions.iter().any(|r| r.contains(*p)))
+                        .filter(|p| !Self::covered(ui.ctx(), *p))
                         .map(|p| self.camera.screen_to_world(p, rect))
                 })
                 .or(self.trailing)

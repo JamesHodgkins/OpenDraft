@@ -159,7 +159,9 @@ impl View {
             .cloned();
         let through = self.wheel_through;
         let pointer = ui.input(|i| i.pointer.latest_pos()).filter(|p| {
-            rect.contains(*p) && (through || !self.input_exclusions.iter().any(|r| r.contains(*p)))
+            rect.contains(*p)
+                && (through || !self.input_exclusions.iter().any(|r| r.contains(*p)))
+                && !Self::covered(ui.ctx(), *p)
         });
         let mut edited = false;
         match self.request.take() {
@@ -267,7 +269,8 @@ impl View {
         };
         let at = ui
             .input(|i| i.pointer.latest_pos())
-            .filter(|p| rect.contains(*p) && !self.input_exclusions.iter().any(|r| r.contains(*p)));
+            .filter(|p| rect.contains(*p) && !self.input_exclusions.iter().any(|r| r.contains(*p)))
+            .filter(|p| !Self::covered(ui.ctx(), *p));
         let Some(at) = at else { return };
         let paper = self.sheet.screen_to_world(at, rect);
         match self.space {

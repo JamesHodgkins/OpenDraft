@@ -251,10 +251,19 @@ impl AppState {
             .space()
             .layout()
             .map_or(PlotSpace::Model, PlotSpace::Layout);
-        let Some(draft) = PageDraft::of(self.session().document(), space) else {
+        let Some(mut draft) = PageDraft::of(self.session().document(), space) else {
             self.message = "That layout is gone".to_owned();
             return false;
         };
+        // A Model tab saved with an area it cannot plot (AutoCAD's own is
+        // Display, a DXF may say Layout) opens on Extents, in the draft only.
+        let plottable = matches!(
+            draft.plot.area,
+            od_core::PlotArea::Extents | od_core::PlotArea::Window { .. }
+        );
+        if draft.space == PlotSpace::Model && !plottable {
+            draft.plot.area = od_core::PlotArea::Extents;
+        }
         let (target, remembered) =
             initial_device(&draft.plot.device_name, &self.settings.plot_device);
         let backend = self.command_dialogs.print.0.clone();
@@ -275,7 +284,7 @@ impl AppState {
             remembered,
             printers,
             draft,
-            save_changes: false,
+            save_changes: true,
             preview: None,
             previewed: None,
             picking: None,
@@ -331,20 +340,15 @@ impl AppState {
     }
 
     /// Plot with the draft: ask for the file, then write it from a copy of
-    /// the drawing. With "Save changes to layout" the draft is written first.
+    /// the drawing. With "Save changes to layout" (on unless unticked) the
+    /// draft is written to the layout once the plot has started, so the next
+    /// plot opens on it and a cancelled one changes nothing.
     /// Closes the dialog when the plot starts.
     pub fn plot_dialog_run(&mut self) -> bool {
         let Some(mut dialog) = self.command_dialogs.plot.take() else {
             return false;
         };
         dialog.draft.plot.device_name = dialog.target.device_name();
-        if dialog.save_changes {
-            if let Err(why) = self.set_page_setup(&dialog.draft) {
-                dialog.error = Some(why);
-                self.command_dialogs.plot = Some(dialog);
-                return false;
-            }
-        }
         if let Err(why) = document_with_draft(self.session().document(), &dialog.draft) {
             dialog.error = Some(why);
             self.command_dialogs.plot = Some(dialog);
@@ -360,6 +364,14 @@ impl AppState {
             }
         };
         if started {
+            if dialog.save_changes {
+                // The plot's own status message stays.
+                let message = std::mem::take(&mut self.message);
+                self.message = match self.set_page_setup(&dialog.draft) {
+                    Ok(()) => message,
+                    Err(why) => why,
+                };
+            }
             return true;
         }
         self.command_dialogs.plot = Some(dialog);
@@ -471,6 +483,25 @@ mod tests {
     }
 
     #[test]
+    fn a_model_tab_that_cannot_plot_its_area_opens_on_extents_without_changing_the_drawing() {
+        let (mut state, _, dir) = state();
+        state.enter_model();
+        for saved in [PlotArea::Layout, PlotArea::Display] {
+            let mut draft =
+                super::PageDraft::of(state.session().document(), od_core::plot::PlotSpace::Model)
+                    .unwrap();
+            draft.plot.area = saved.clone();
+            state.set_page_setup(&draft).unwrap();
+            assert!(state.open_plot_dialog(false));
+            let dialog = state.command_dialogs.plot.take().unwrap();
+            assert_eq!(dialog.draft.plot.area, PlotArea::Extents);
+            assert!(crate::plot_controls::control_state(&dialog.draft.plot, true).can_submit);
+            assert_eq!(state.session().document().model_plot().area, saved);
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
     fn a_preview_is_a_picture_of_the_draft_and_changes_nothing() {
         let (mut state, _, dir) = state();
         state.open_plot_dialog(true);
@@ -577,12 +608,13 @@ mod tests {
     }
 
     #[test]
-    fn plotting_with_a_draft_leaves_the_layout_alone_unless_asked() {
+    fn plotting_with_a_draft_leaves_the_layout_alone_when_unticked() {
         let (mut state, script, dir) = state();
         let before = state.session().document().layouts()[0].plot.clone();
         state.open_plot_dialog(false);
         let dialog = state.command_dialogs.plot.as_mut().unwrap();
         dialog.draft.plot.margins_mm = [10.0; 4];
+        dialog.save_changes = false;
         script.will_save_to(Some(dir.join("a.pdf")));
         assert!(state.plot_dialog_run());
         assert!(state.command_dialogs.plot.is_none());
@@ -630,6 +662,43 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
+    #[test]
+    fn a_plot_remembers_its_setup_unless_unticked_or_cancelled() {
+        let (mut state, script, dir) = state();
+        let margins = |state: &AppState| state.session().document().layouts()[0].plot.margins_mm;
+        let change = |state: &mut AppState| {
+            let dialog = state.command_dialogs.plot.as_mut().unwrap();
+            dialog.draft.plot.margins_mm = [10.0; 4];
+            dialog.draft.plot.flags &= !od_core::plot_settings::flags::PLOT_CENTERED;
+        };
+        let before = margins(&state);
+        state.open_plot_dialog(false);
+        assert!(state.command_dialogs.plot.as_ref().unwrap().save_changes);
+        change(&mut state);
+        assert!(!state.plot_dialog_run(), "the picker answers cancelled");
+        assert_eq!(margins(&state), before, "a cancelled plot saves nothing");
+
+        state.command_dialogs.plot.as_mut().unwrap().save_changes = false;
+        script.will_save_to(Some(dir.join("once.pdf")));
+        assert!(state.plot_dialog_run());
+        assert_eq!(margins(&state), before, "unticked, it is a one-off plot");
+
+        state.open_plot_dialog(false);
+        change(&mut state);
+        script.will_save_to(Some(dir.join("kept.pdf")));
+        assert!(state.plot_dialog_run());
+        assert_eq!(margins(&state), [10.0; 4]);
+        state.open_plot_dialog(false);
+        let dialog = state.command_dialogs.plot.as_ref().unwrap();
+        assert_eq!(
+            dialog.draft.plot.margins_mm, [10.0; 4],
+            "the next one starts there"
+        );
+        state.undo();
+        assert_eq!(margins(&state), before, "one undo step takes it back");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
     fn with_fake(state: &mut AppState) -> std::sync::Arc<crate::print_backend::fake::FakeBackend> {
         let fake = std::sync::Arc::new(crate::print_backend::fake::FakeBackend::office());
         state.command_dialogs.print = crate::dialogs::PrintHandle(fake.clone());
@@ -672,7 +741,12 @@ mod tests {
             "{}",
             state.message
         );
-        assert_eq!(state.session().revision(), revision);
+        assert!(state.session().revision() > revision);
+        assert_eq!(
+            state.session().document().layouts()[0].plot.device_name,
+            "Office",
+            "the layout remembers its printer"
+        );
         assert!(state.command_dialogs.plot.is_none());
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -702,7 +776,9 @@ mod tests {
             super::Target::Printer(crate::print_backend::PrinterId("Office".into()))
         );
 
-        // A printer that is gone is not guessed at.
+        // A printer that is gone is not guessed at (the layout remembers
+        // Office from that plot, so take the plot's saved setup back).
+        state.undo();
         state.settings.plot_device = "Gone".into();
         state.open_plot_dialog(false);
         printers_of(&mut state);
