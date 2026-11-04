@@ -34,6 +34,7 @@ fn all_from(
         grid_step: None,
         modes,
         from,
+        defer: true,
         tracks: &[],
         track: None,
     };
@@ -135,6 +136,7 @@ fn points_in_the_aperture_come_first_then_nearest_then_the_grid() {
         grid_step: Some(2.0),
         modes: &modes,
         from: None,
+        defer: true,
         tracks: &[],
         track: None,
     };

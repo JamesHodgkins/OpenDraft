@@ -364,6 +364,10 @@ pub struct Probe<'a> {
     pub grid_step: Option<f64>,
     pub modes: &'a SnapModes,
     pub from: Option<Point>,
+    /// Offer deferred Perpendicular and Tangent when there is no `from`: only
+    /// a one-shot override (Shift+right-click menu) asks for them, never the
+    /// running snaps.
+    pub defer: bool,
     /// What the pointer has paused over and kept (Extension and Parallel).
     pub tracks: &'a [Track],
     /// The tracking and polar paths, when tracking is on.
@@ -447,7 +451,13 @@ pub fn snap_all<'a>(
         if modes.perpendicular || modes.tangent {
             let want = (modes.perpendicular, modes.tangent);
             found.extend(context::from_point(
-                &scene, &capture, cursor, tolerance, probe.from, want,
+                &scene,
+                &capture,
+                cursor,
+                tolerance,
+                probe.from,
+                probe.defer,
+                want,
             ));
         }
     }
@@ -533,6 +543,7 @@ pub fn snap<'a>(
         grid_step,
         modes,
         from: None,
+        defer: true,
         tracks: &[],
         track: None,
     };

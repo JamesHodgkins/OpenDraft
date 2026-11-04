@@ -52,6 +52,7 @@ impl Aim<'_> {
             grid_step: Some(self.step),
             modes: &self.modes,
             from: self.from,
+            defer: self.insist,
             tracks: &self.tracks,
             track: self.track.as_ref(),
         };
