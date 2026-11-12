@@ -37,7 +37,7 @@ Written 2026-10-31. Update it when something is done or the plan changes: tick t
 - [x] **Release artifacts tested (S).** The release workflow already installed the .deb and ran the AppImage on a bare Ubuntu 22.04; the .deb now also passes the whole smoke test.
 - [x] **Flatpak (M), built in CI.** `installer/linux/flatpak/` builds offline from `Cargo.lock`, has its files checked and starts under a virtual display, and `installer/linux/flatpak/flathub/` is the submission for release 0.1.4 (built in CI the way Flathub will). [ ] **Flathub (paused, 2026-10-31).** Flathub's rules (`AGENTS.md` and the submission template in `flathub/flathub`) do not allow AI-assisted packaging or submissions, and the manifest, scripts, metadata and CI here were written with AI help. Nothing has been submitted. Revisit by reading their generative AI policy, then either disclose honestly and submit by hand, or write the packaging again by hand. Their template also asks for a video and evidence of development history and real-world use, which a young project may not yet have.
 - [x] **Arch package (S), built in CI.** `installer/linux/arch/PKGBUILD` builds, installs and links in an Arch container, with the checksum of the 0.1.4 source. [ ] **Publish it to the AUR (waiting).** New AUR registrations were closed on 2026-10-31 (a wave of automated sign-ups; no date given). Do not script retries; watch the Arch news feed and `aur-general`. Check the AUR's own policy on AI-assisted packages first. Debian/Ubuntu, Fedora and nixpkgs as people ask.
-- [x] **Fix what the matrix finds.** Found and fixed: the program would not open at all where the graphics setup offered no multisampled configuration (Fedora, Arch, Ubuntu 24.04 and Tumbleweed under software rendering; Ubuntu 22.04 and Debian 12 were not affected); Open and Save As did nothing when there was no file dialog backend (the status bar now says what to install); the assistant connection needed `XDG_RUNTIME_DIR` (a private cache folder is used without it). Noticed and not changed: a drawing opened from DXF counts as unsaved at once, so closing it asks to save. That looks deliberate (it has no `.odx` file yet) but is worth a look.
+- [x] **Fix what the matrix finds.** Found and fixed: the program would not open at all where the graphics setup offered no multisampled configuration (Fedora, Arch, Ubuntu 24.04 and Tumbleweed under software rendering; Ubuntu 22.04 and Debian 12 were not affected); Open and Save As did nothing when there was no file dialog backend (the status bar now says what to install); the assistant connection needed `XDG_RUNTIME_DIR` (a private cache folder is used without it). Noticed and not changed: a drawing opened from DXF counts as unsaved at once, so closing it asks to save. That looks deliberate (it has no `.odraft` file yet) but is worth a look.
 
 **Not covered, and why:** opening a *DWG* and *saving* were part of the original exit test. CI opens a DXF, because the DWG sample drawings are private and cannot be committed; and saving needs a file dialog or an automation grant that only the user can give, so a headless test cannot do it. A small hand-made DWG fixture would close the first; the second would need a test-only way to grant permission, which would weaken the rule that only the user grants write access, so it waits for a better idea.
 
@@ -47,12 +47,12 @@ Written 2026-10-31. Update it when something is done or the plan changes: tick t
 
 *Why: "opens your drawings" has to be provable. All audiences.*
 
-- [ ] **Fuzz the readers (M).** `cargo-fuzz` targets for the DWG, DXF and `.odx` readers; a short run in CI and a longer run on a schedule. Fix what it finds.
-- [ ] **Golden-image tests (M).** `od-canvas::preview` renders a document to pixels without egui. Snapshot drawings that cover hatches, dimensions, dashed linetypes, text and blocks, so rendering regressions are caught by a test and not by eye.
+- [ ] **Fuzz the readers (M).** `cargo-fuzz` targets for the DWG, DXF and `.odraft` readers; a short run in CI and a longer run on a schedule. Fix what it finds.
+- [ ] **Golden-image tests (M).** `opendraft-canvas::preview` renders a document to pixels without egui. Snapshot drawings that cover hatches, dimensions, dashed linetypes, text and blocks, so rendering regressions are caught by a test and not by eye.
 - [ ] **Interoperability checks (M).** Open OpenDraft's DXF in LibreCAD, QCAD and FreeCAD, and in an independent DXF validator; open it in AutoCAD if it can be had (the dimension DXF has never been opened there). Keep the results and any sample files in the repo; fix what breaks.
 - [ ] **Sample drawings pack (S).** Original or CC0 drawings for tests and for new users. (The AutoCAD sample drawings in `private_material/` must never be committed.)
 - [ ] **Benchmarks in CI (M).** Run the existing benches against stored baselines so speed claims stay true.
-- [ ] **Property tests for geometry (M).** Offset and back, trim and extend, fillet invariants, in `od-core`.
+- [ ] **Property tests for geometry (M).** Offset and back, trim and extend, fillet invariants, in `opendraft-core`.
 
 **Exit test:** the readers survive a fixed amount of fuzzing, a documented set of drawings round-trips through other free CAD tools, and a rendering regression fails CI.
 
@@ -60,10 +60,10 @@ Written 2026-10-31. Update it when something is done or the plan changes: tick t
 
 *Why: audience 2. Files going out matter as much as files coming in.*
 
-**Correction (2026-10-31):** this phase first said PDF and SVG plotting were still to build. They are built (`PLOT` writes a layout to PDF or SVG at 1:1 in millimetres; `od_core::plot` and `od_files::plot`, checked in two PDF readers and a browser). What is missing is *proof on real fabrication and printing workflows*, and a few gaps listed in `ui_plan.md`.
+**Correction (2026-10-31):** this phase first said PDF and SVG plotting were still to build. They are built (`PLOT` writes a layout to PDF or SVG at 1:1 in millimetres; `opendraft_core::plot` and `opendraft_files::plot`, checked in two PDF readers and a browser). What is missing is *proof on real fabrication and printing workflows*, and a few gaps listed in `ui_plan.md`.
 
 - [ ] **Prove the plots on real workflows (M, needs real software and a printer).** Open OpenDraft's SVG in Inkscape and in the laser and cutter software people use (LightBurn, Glowforge, Silhouette, Cricut and similar); print the PDF at 100% and measure it with a ruler. Write down what was tried in the repository, and fix what breaks.
-- [x] **Plot gaps (M), done 03-11-2026 (PRs #105 and #108).** Margins, plot area (Layout, Limits, Extents, Window), plot scale, offset and centring, rotation, wide polylines (filled ribbons) and viewport borders are built and tested in `od_core::plot`/`plot_plan`, and set in the Plot dialog and Page Setup. Still refused, with a clear message: Display and named View areas (no persistent view state). Paper output through the Windows and CUPS backends is built; see the next item for what is still unproven.
+- [x] **Plot gaps (M), done 03-11-2026 (PRs #105 and #108).** Margins, plot area (Layout, Limits, Extents, Window), plot scale, offset and centring, rotation, wide polylines (filled ribbons) and viewport borders are built and tested in `opendraft_core::plot`/`plot_plan`, and set in the Plot dialog and Page Setup. Still refused, with a clear message: Display and named View areas (no persistent view state). Paper output through the Windows and CUPS backends is built; see the next item for what is still unproven.
 - [ ] **Layers to cut settings (S to M).** Laser software reads colour or layer as "cut", "engrave" and "score". Check that SVG and DXF carry layer names and colours in a way those tools use, and document the recipe.
 - [ ] **Clean DXF for fabrication (M).** Correct units, closed polylines, splines handled sensibly. OVERKILL and JOIN already help; add a checklist test of a typical laser-cutting file.
 - [ ] **DXF gaps (M).** TEXT import (skipped today: a DXF with one gives "Skipped 1 TEXT"), anonymous blocks, block export. Each is a known gap in `CLAUDE.md`.
@@ -87,12 +87,12 @@ Written 2026-10-31. Update it when something is done or the plan changes: tick t
 
 **Exit test:** someone who is not the author has made a merged contribution, and a new user can install, learn and report a bug without help.
 
-## Phase 5: Declare `.odx` stable
+## Phase 5: Declare `.odraft` stable
 
 *Why: people will not keep real work in a format that "changes between builds".*
 
-- [ ] Follow "Declaring .odx stable" in `CONTRIBUTING.md`, set `CURRENT_VERSION` to 1 as a deliberate release step, and from then on keep a conversion for every older version. Never as part of a feature.
-- [ ] Publish the schema (there is already `docs/odx-schema-audit.md`) and a round-trip test corpus.
+- [ ] Follow "Declaring .odraft stable" in `CONTRIBUTING.md`, set `CURRENT_VERSION` to 1 as a deliberate release step, and from then on keep a conversion for every older version. Never as part of a feature.
+- [ ] Publish the schema (there is already `docs/odraft-schema-audit.md`) and a round-trip test corpus.
 
 **Exit test:** a file saved by the first stable release opens in every later one.
 

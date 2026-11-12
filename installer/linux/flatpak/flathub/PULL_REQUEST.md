@@ -4,7 +4,7 @@ Text to paste into the Flathub pull request (title: `Add uk.openengineering.open
 
 ### App
 
-OpenDraft: a free, open-source (GPL-3.0-or-later) 2D CAD application written in Rust on egui. It opens DXF and DWG drawings, has an AutoCAD-style ribbon and command line, and keeps its own `.odx` format.
+OpenDraft: a free, open-source (GPL-3.0-or-later) 2D CAD application written in Rust on egui. It opens DXF and DWG drawings, has an AutoCAD-style ribbon and command line, and keeps its own `.odraft` format.
 
 - Homepage and source: https://github.com/JamesHodgkins/OpenDraft
 - I am the author and maintainer of the project and the submitter of this pull request.

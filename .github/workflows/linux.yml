@@ -25,7 +25,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Linux system libraries
         run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libwayland-dev libx11-dev libxcb1-dev libgl1-mesa-dev
-      - run: cargo build --release -p od-app -p od-mcp
+      - run: cargo build --release -p opendraft-app -p opendraft-mcp
       - name: Keep the programs (file modes are lost in an artifact, so tar them)
         run: tar -C target/release -cf linux-build.tar opendraft opendraft-mcp
       - uses: actions/upload-artifact@v4

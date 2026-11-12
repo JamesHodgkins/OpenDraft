@@ -26,12 +26,12 @@ sudo apt-get install -y libxkbcommon-dev libwayland-dev libx11-dev libxcb1-dev l
 Run the application:
 
 ```bash
-cargo run -p od-app
+cargo run -p opendraft-app
 ```
 
-A debug build on Windows keeps its console window so you can see output; a release build is a windowed program and records panics in `crash.log` in its data folder instead (see ARCHITECTURE.md, "Windows window and crash log"). A debug build keeps its settings, recent files and recovery copies in its own `OpenDraft Dev` folder, apart from an installed release's; `cargo run --release -p od-app` uses the release's. Set `OPENDRAFT_PROFILE=<name>` to use another separate set (for example for a test run).
+A debug build on Windows keeps its console window so you can see output; a release build is a windowed program and records panics in `crash.log` in its data folder instead (see ARCHITECTURE.md, "Windows window and crash log"). A debug build keeps its settings, recent files and recovery copies in its own `OpenDraft Dev` folder, apart from an installed release's; `cargo run --release -p opendraft-app` uses the release's. Set `OPENDRAFT_PROFILE=<name>` to use another separate set (for example for a test run).
 
-A debug build never checks for new versions. To try the update notice, serve a releases list locally (a JSON array like GitHub's `/releases`, with `tag_name`, `draft`, `prerelease` and `assets[].name` such as `OpenDraft-0.2.0-windows.zip`) and set `OD_UPDATES_URL=http://127.0.0.1:<port>/releases`; that also lets a debug build check. Click "Check automatically" on the Home page's Updates card.
+A debug build never checks for new versions. To try the update notice, serve a releases list locally (a JSON array like GitHub's `/releases`, with `tag_name`, `draft`, `prerelease` and `assets[].name` such as `OpenDraft-0.2.0-windows.zip`) and set `OPENDRAFT_UPDATES_URL=http://127.0.0.1:<port>/releases`; that also lets a debug build check. Click "Check automatically" on the Home page's Updates card.
 
 ## 3. Understand the project
 
@@ -39,12 +39,12 @@ The workspace is split into crates, and dependencies point downward:
 
 | Crate | Purpose |
 |---|---|
-| `od-core` | Document, entities and geometry |
-| `od-commands` | Command registry, undo history, sessions and the `Editor` used by commands |
-| `od-files` | File formats: native `.odx`, DXF, atomic save |
-| `od-canvas` | Camera, drawing view, hit-testing, snapping, selection |
-| `od-ui` | Theme, widgets, ribbon, icons, shortcuts |
-| `od-app` | The application: state, command table, panels, dock |
+| `opendraft-core` | Document, entities and geometry |
+| `opendraft-commands` | Command registry, undo history, sessions and the `Editor` used by commands |
+| `opendraft-files` | File formats: native `.odraft`, DXF, atomic save |
+| `opendraft-canvas` | Camera, drawing view, hit-testing, snapping, selection |
+| `opendraft-ui` | Theme, widgets, ribbon, icons, shortcuts |
+| `opendraft-app` | The application: state, command table, panels, dock |
 
 Read [ARCHITECTURE.md](./ARCHITECTURE.md) before writing code. It records the rules new code follows, and [ui_plan.md](./ui_plan.md) shows the interface plan and what is done.
 
@@ -58,13 +58,13 @@ git checkout -b feature/your-feature-name
 
 The main conventions (the full list is in ARCHITECTURE.md):
 
-- **Every user action is a command**, registered in `crates/od-app/src/commands.rs`. The ribbon, shortcuts, status bar and command line refer to commands by id.
+- **Every user action is a command**, registered in `crates/opendraft-app/src/commands.rs`. The ribbon, shortcuts, status bar and command line refer to commands by id.
 - **Every document change is an undoable action** run by the session. A command that makes several edits groups them in a transaction so they undo as one step.
 - **Logic is pure and tested; the UI only draws.** Put rules in functions over plain data, with unit tests.
 - **Keep files under about 400 lines of production code.** Tests do not count. A test enforces a hard limit.
 - **No `unwrap`, `todo!`, `dbg!` or prints in production code**, and `unsafe` is forbidden.
 - Match the style, naming and comment density of the code around you, and avoid unnecessary abstractions.
-- The `.odx` format is in development (version 0): change it freely and do not bump the version. Once it is declared stable (version 1), a new entity kind must bump the format version and older versions need a conversion. See the notes at the top of `crates/od-files/src/native.rs`.
+- The `.odraft` format is in development (version 0): change it freely and do not bump the version. Once it is declared stable (version 1), a new entity kind must bump the format version and older versions need a conversion. See the notes at the top of `crates/opendraft-files/src/native.rs`.
 - **A new dependency's licence must be on the list in `deny.toml`** (and the same list in `about.toml`). OpenDraft is GPL-3.0-or-later and ships its dependencies' notices in `THIRD-PARTY-LICENSES.txt`; CI runs `cargo deny check licenses` and makes that file, so a licence that is not on the list fails the build. To see it locally: `cargo install cargo-deny cargo-about --locked` (cargo-about also needs `--features cli`), then `cargo deny check licenses` and `bash scripts/third_party.sh out.txt`. A font or icon file that is not a Rust crate needs its licence file beside it and a line in `scripts/third_party.sh`.
 
 ## 6. Test your changes
@@ -99,12 +99,12 @@ Open a pull request against `main` of the original repository. Describe what you
 
 A maintainer will review your pull request and may ask for changes. Push further commits to the same branch to update it. Once approved and CI is green, it will be merged into `main`.
 
-### Declaring `.odx` stable
+### Declaring `.odraft` stable
 
-The `.odx` format stays at version 0 (development) until it is declared stable. Setting `CURRENT_VERSION` to 1 is one deliberate pull request, never a side effect of a feature, and it has to include:
+The `.odraft` format stays at version 0 (development) until it is declared stable. Setting `CURRENT_VERSION` to 1 is one deliberate pull request, never a side effect of a feature, and it has to include:
 
 1. A schema review: every field is required, deliberately optional, or removed (no untyped blobs, no defaults kept only for old development files), and references use ids, not names.
-2. A committed `.odx` fixture saved by the build that declares it, which a test must read back.
+2. A committed `.odraft` fixture saved by the build that declares it, which a test must read back.
 3. `CURRENT_VERSION` set to 1, the assertion in `a_pre_reset_file_is_refused_and_names_the_build_that_saved_it` updated, and the "Versioning" notes in `native.rs`, `ARCHITECTURE.md` and `CLAUDE.md` changed from development to stable.
 4. A "What's new" note and a line in the readme saying that drawings now keep opening.
 
@@ -124,9 +124,9 @@ A release is a version tag on `main`. Stable releases are `vX.Y.Z`; a version wi
 4. The `release` workflow then checks that the tag is `v` plus the `Cargo.toml` version and that the commit is on `main`, runs formatting, clippy and the tests on Windows and Linux, builds both packages, and publishes one release holding the Windows zip, the Linux tarball and `SHA256SUMS`. The release is created as a draft and made public only once every file is attached, so a failed run leaves nothing visible; push the fix and re-run it (a leftover draft for the tag is replaced, a published release is refused).
 5. Open the release page and check the files and the generated notes.
 
-A release that is not a prerelease also gets a Windows installer, `OpenDraft-<version>-windows-x64.msi`, built by `cargo packager` from `installer/windows/main.wxs` and the `[package.metadata.packager]` settings in `crates/od-app/Cargo.toml` (an MSI's version is numeric only, so a `-beta` tag gets the zip and tarball only). It installs per user, takes its version from Cargo, and upgrades older installs in place. **Do not change its `identifier` (`uk.openengineering.opendraft`)**: Windows Installer's upgrade code is derived from it, so a new one would leave the old version installed beside the new one. Its pictures are `installer/windows/banner.bmp` and `dialog.bmp`, made from the PNGs in `installer/windows/source/` by `python scripts/installer_images.py` (commit both; the script says where the installer draws its text). To try it locally: `cargo install cargo-packager --locked`, then `bash scripts/package.sh` (it builds both programs and leaves `dist/THIRD-PARTY-LICENSES.txt`, which the installer installs beside the programs with `LICENSE.txt`), then `cargo packager --release -f wix` (the file lands in `dist/packager`).
+A release that is not a prerelease also gets a Windows installer, `OpenDraft-<version>-windows-x64.msi`, built by `cargo packager` from `installer/windows/main.wxs` and the `[package.metadata.packager]` settings in `crates/opendraft-app/Cargo.toml` (an MSI's version is numeric only, so a `-beta` tag gets the zip and tarball only). It installs per user, takes its version from Cargo, and upgrades older installs in place. **Do not change its `identifier` (`uk.openengineering.opendraft`)**: Windows Installer's upgrade code is derived from it, so a new one would leave the old version installed beside the new one. Its pictures are `installer/windows/banner.bmp` and `dialog.bmp`, made from the PNGs in `installer/windows/source/` by `python scripts/installer_images.py` (commit both; the script says where the installer draws its text). To try it locally: `cargo install cargo-packager --locked`, then `bash scripts/package.sh` (it builds both programs and leaves `dist/THIRD-PARTY-LICENSES.txt`, which the installer installs beside the programs with `LICENSE.txt`), then `cargo packager --release -f wix` (the file lands in `dist/packager`).
 
-For Linux the same step builds `OpenDraft-<version>-linux-amd64.deb` and `OpenDraft-<version>-linux-x86_64.AppImage` (again for plain versions only; a Debian version with a hyphen would sort above the final release). The `.deb` is installed in a bare `ubuntu:22.04` container by `scripts/test_deb.sh` and OpenDraft is started under a virtual display, which checks the package's `Depends` line is enough; the AppImage is started the same way. The menu entry, MIME type and icons are in `installer/linux/` and `assets/app-icons/` (made by `cargo run -p od-app --example export_app_icon`); the window's app id (`opendraft`, from `profile::app_id`) must match `StartupWMClass` in the desktop entry. `cargo packager` does not build `.deb` on Windows, so this runs only in CI.
+For Linux the same step builds `OpenDraft-<version>-linux-amd64.deb` and `OpenDraft-<version>-linux-x86_64.AppImage` (again for plain versions only; a Debian version with a hyphen would sort above the final release). The `.deb` is installed in a bare `ubuntu:22.04` container by `scripts/test_deb.sh` and OpenDraft is started under a virtual display, which checks the package's `Depends` line is enough; the AppImage is started the same way. The menu entry, MIME type and icons are in `installer/linux/` and `assets/app-icons/` (made by `cargo run -p opendraft-app --example export_app_icon`); the window's app id (`opendraft`, from `profile::app_id`) must match `StartupWMClass` in the desktop entry. `cargo packager` does not build `.deb` on Windows, so this runs only in CI.
 
 Running the workflow by hand from the Actions tab builds and tests the packages without publishing anything.
 
@@ -134,7 +134,7 @@ After a release is published, the packages that are not built here need their ow
 
 The Linux packages are built on Ubuntu 22.04. The release workflow installs the `.deb` on a bare Ubuntu 22.04 and runs the whole smoke test (`scripts/linux_smoke.py`) against it; `docs/linux.md` says what that does and does not prove.
 
-Before tagging a release, decide what the Home page's "What's new" card says. `crates/od-app/src/whats_new.rs` holds one `Note` per version, keyed by the exact `CARGO_PKG_VERSION`: a short title and at most three plain-language changes users will notice (capabilities and workflow, not refactors or dependency updates). Add one when the release has changes worth announcing; leave it out when it does not, and the card simply does not show. The card's "View release notes" opens `https://github.com/JamesHodgkins/OpenDraft/releases/tag/v<version>`, so publish the release with that tag.
+Before tagging a release, decide what the Home page's "What's new" card says. `crates/opendraft-app/src/whats_new.rs` holds one `Note` per version, keyed by the exact `CARGO_PKG_VERSION`: a short title and at most three plain-language changes users will notice (capabilities and workflow, not refactors or dependency updates). Add one when the release has changes worth announcing; leave it out when it does not, and the card simply does not show. The card's "View release notes" opens `https://github.com/JamesHodgkins/OpenDraft/releases/tag/v<version>`, so publish the release with that tag.
 
 ## Getting help
 

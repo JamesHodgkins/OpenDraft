@@ -5,7 +5,7 @@ Run it inside a running display: scripts/linux_smoke.sh starts a virtual X
 server, scripts/linux_smoke_wayland.sh a headless Wayland compositor (sway). It
 starts the real program with a throwaway profile, home and runtime folder, and
 drives it the way a person would, then reads the result back through the
-automation socket (the same one the MCP server uses; OD_AUTOMATION=1 turns it
+automation socket (the same one the MCP server uses; OPENDRAFT_AUTOMATION=1 turns it
 on without ticking the box in Settings):
 
   1. the program starts and the automation socket appears;
@@ -66,8 +66,8 @@ class Report:
 # --------------------------------------------------------- automation client
 
 class Client:
-    """The framed JSON protocol of od-api: a 4-byte big-endian length, then
-    the message. See crates/od-api/src/frame.rs and handshake.rs."""
+    """The framed JSON protocol of opendraft-api: a 4-byte big-endian length, then
+    the message. See crates/opendraft-api/src/frame.rs and handshake.rs."""
 
     def __init__(self, descriptor):
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -432,7 +432,7 @@ def main():
     display = X11Session(args) if args.session == "x11" else WaylandSession(args)
     os.makedirs(args.out, exist_ok=True)
     report = Report()
-    work = tempfile.mkdtemp(prefix="od-smoke-")
+    work = tempfile.mkdtemp(prefix="opendraft-smoke-")
     home = os.path.join(work, "home")
     data = os.path.join(work, "data")
     runtime = os.path.join(work, "run")
@@ -454,7 +454,7 @@ def main():
         "RUST_BACKTRACE": "1",
         "RUST_LOG": "info",
         # Turns the automation socket on without ticking the box in Settings.
-        "OD_AUTOMATION": "1",
+        "OPENDRAFT_AUTOMATION": "1",
     })
     env.update(display.environment(args))
     # Without XDG_RUNTIME_DIR the program keeps its socket under the cache folder.

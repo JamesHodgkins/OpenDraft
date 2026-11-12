@@ -53,15 +53,15 @@ need(plain.get("Exec", "").split()[:1] == ["opendraft"] and "%F" in plain.get("E
      "the plain desktop file must run opendraft with the files %F")
 need(plain.get("Icon") == "opendraft", "the plain desktop file's icon must be opendraft")
 
-# The MIME file says what an .odx file is.
+# The MIME file says what an .odraft file is.
 mime = ET.parse(LINUX / "opendraft.xml").getroot()
 ns = "{http://www.freedesktop.org/standards/shared-mime-info}"
 types = {t.get("type"): [g.get("pattern") for g in t.findall(f"{ns}glob")]
          for t in mime.findall(f"{ns}mime-type")}
-need(types.get("application/x-opendraft-drawing") == ["*.odx"],
-     f"the MIME file must map *.odx to application/x-opendraft-drawing, found {types}")
+need(types.get("application/x-opendraft-drawing") == ["*.odraft"],
+     f"the MIME file must map *.odraft to application/x-opendraft-drawing, found {types}")
 need("application/x-opendraft-drawing" in semicolon_set(plain.get("MimeType", "")),
-     "the desktop file must list the .odx type")
+     "the desktop file must list the .odraft type")
 
 # The AppStream file.
 metainfo = ET.parse(LINUX / "share" / "uk.openengineering.opendraft.metainfo.xml").getroot()
@@ -83,7 +83,7 @@ for script in ("opendraft.sh", "opendraft-mcp.sh"):
     need((LINUX / "flatpak" / script).exists() and f"installer/linux/flatpak/{script}" in manifest,
          f"the Flatpak must install {script}")
     text = (LINUX / "flatpak" / script).read_text() if (LINUX / "flatpak" / script).exists() else ""
-    need("OD_AUTOMATION_DIR" in text and "FLATPAK_ID" in text,
+    need("OPENDRAFT_AUTOMATION_DIR" in text and "FLATPAK_ID" in text,
          f"{script} must point the automation socket at the folder the sandbox shares with the host")
 
 # The Flathub manifest is the in-repo one with a different first source: nothing

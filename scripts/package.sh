@@ -7,7 +7,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-version=$(cargo pkgid -p od-app | sed 's/.*[#@]//')
+version=$(cargo pkgid -p opendraft-app | sed 's/.*[#@]//')
 case "$(uname -s)" in
   MINGW* | MSYS* | CYGWIN*) os=windows; ext=.exe ;;
   Linux) os=linux; ext= ;;
@@ -15,13 +15,13 @@ case "$(uname -s)" in
 esac
 name="OpenDraft-${version}-${os}"
 
-cargo build --release -p od-app -p od-mcp
+cargo build --release -p opendraft-app -p opendraft-mcp
 
 rm -rf "dist/${name}"
 mkdir -p "dist/${name}"
 cp "target/release/opendraft${ext}" "target/release/opendraft-mcp${ext}" "dist/${name}/"
 cp LICENSE "dist/${name}/LICENSE"
-cp readme.md "dist/${name}/README.md"
+cp README.md "dist/${name}/README.md"
 cp docs/mcp.md "dist/${name}/MCP.md"
 cp -r assets/icons "dist/${name}/icons"
 # Also left in dist/ for the Windows installer, which reads it from there.

@@ -65,7 +65,7 @@ body:
       description: Select the main format involved in the problem.
       options:
         - Not file-related
-        - ODX
+        - ODRAFT
         - DXF
         - DWG
         - Other

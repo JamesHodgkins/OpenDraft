@@ -38,7 +38,7 @@ modules:
     buildsystem: simple
     build-commands:
       - cargo --offline fetch --manifest-path Cargo.toml --verbose
-      - cargo --offline build --release --verbose -p od-app -p od-mcp
+      - cargo --offline build --release --verbose -p opendraft-app -p opendraft-mcp
 
       # The programs live in libexec; the two scripts in bin put the automation
       # socket in the one folder the sandbox and the host both see.

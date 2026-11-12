@@ -1,6 +1,6 @@
 """Export the app's icons as a library of SVG files to redraw by hand.
 
-Every icon named in crates/od-ui/src/icons.rs becomes assets/icons/<name>.svg
+Every icon named in crates/opendraft-ui/src/icons.rs becomes assets/icons/<name>.svg
 (DRAW_LINE is draw-line.svg). Icons are named after the command or part of the
 window they are for, so each can be redrawn on its own. The app reads that folder each time it
 starts and draws a file in place of the icon's glyph, so an edited file shows
@@ -25,9 +25,9 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-ICONS_RS = ROOT / "crates/od-ui/src/icons.rs"
-FONT = ROOT / "crates/od-ui/assets/fonts/lucide.ttf"
-LICENSE = ROOT / "crates/od-ui/assets/fonts/LICENSE-Lucide.txt"
+ICONS_RS = ROOT / "crates/opendraft-ui/src/icons.rs"
+FONT = ROOT / "crates/opendraft-ui/assets/fonts/lucide.ttf"
+LICENSE = ROOT / "crates/opendraft-ui/assets/fonts/LICENSE-Lucide.txt"
 OUT = ROOT / "assets/icons"
 SOURCES = [ROOT / "crates"]
 # The same release from two mirrors, tried in turn.
@@ -158,7 +158,7 @@ def main():
         "",
         "Each file is drawn in the app in place of the icon's glyph, and the same",
         "drawings are built into the program (a rebuild picks up an edit). A debug",
-        "build run from the source, a folder named by `OD_ICONS`, or an `icons`",
+        "build run from the source, a folder named by `OPENDRAFT_ICONS`, or an `icons`",
         "folder beside the program is read every time the app starts, so an edited",
         "file shows on the next launch, with no rebuild, and replaces the built-in",
         "drawing. A file that cannot be read keeps the built-in drawing, and the",
@@ -178,7 +178,7 @@ def main():
         "  the ribbon is dark.",
         "- Each file is named after the command (`draw-line.svg` is Line, `modify-move.svg`",
         "  is Move) or the part of the window (`layer-panel-frozen.svg`) it is for, and",
-        "  is used only there. To add an icon, add a line to `crates/od-ui/src/icons.rs`",
+        "  is used only there. To add an icon, add a line to `crates/opendraft-ui/src/icons.rs`",
         "  and run the script again.",
         "",
         "The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).",

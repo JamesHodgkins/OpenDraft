@@ -1,0 +1,51 @@
+//! The app's side of the in-app assistant: what the harness (`opendraft-agent`) is
+//! given to reach the drawings, and how the user is asked.
+//!
+//! The harness only asks and is told. It reaches a drawing through
+//! [`AppHost`], which sends every request through the in-app connection to
+//! the automation core, so the checks, limits and undo provenance are those
+//! of any outside program. The permissions it holds are given here, below
+//! the harness: a task's scopes, one approval for one exact request, and
+//! nothing the user did not say yes to.
+//!
+//! The dialogs and the panel come later. [`Prompter`] is what they will
+//! implement; the tests use a scripted one.
+
+// Not used until the panel is built; the tests drive it.
+#![allow(dead_code)]
+
+mod chat;
+mod describe;
+mod host;
+mod keystore;
+mod level;
+mod panel;
+mod prompter;
+mod undo;
+
+#[cfg(test)]
+mod chat_tests;
+#[cfg(test)]
+mod dev_run;
+#[cfg(test)]
+mod edit_tests;
+#[cfg(test)]
+mod host_tests;
+#[cfg(test)]
+mod key_tests;
+#[cfg(test)]
+mod run_tests;
+#[cfg(test)]
+mod support;
+
+#[allow(unused_imports)]
+pub use chat::{mistral, Ask, Assistant, Chat, Drawings, Entry, Kind, Progress, Reply, Waker};
+#[allow(unused_imports)]
+pub use host::{AppHost, Reach};
+#[allow(unused_imports)]
+pub use keystore::{os_key_store, KeyStore, NoStore};
+#[allow(unused_imports)]
+pub use level::{ApprovalLevel, AUTO_APPROVE_CEILING};
+pub use panel::show as show_panel;
+#[allow(unused_imports)]
+pub use prompter::{ChangeRequest, Decision, Prompter};

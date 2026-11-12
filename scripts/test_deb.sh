@@ -23,11 +23,11 @@ ls /usr/share/icons/hicolor/*/apps/opendraft.png
 desktop-file-validate /usr/share/applications/opendraft.desktop
 cat /usr/share/applications/opendraft.desktop
 
-# The desktop knows what an .odx file is: the package's file lands in the type
+# The desktop knows what an .odraft file is: the package's file lands in the type
 # database that file managers read (the package manager runs this on install; it
 # is run again here so the check does not depend on that).
 update-mime-database /usr/share/mime
-grep -F 'application/x-opendraft-drawing:*.odx' /usr/share/mime/globs2
+grep -F 'application/x-opendraft-drawing:*.odraft' /usr/share/mime/globs2
 
 # Every library the program is linked against must be found (the ones it opens at
 # run time are covered by starting it below).
@@ -52,7 +52,7 @@ fi
 # mouse input, draws and undoes a line, runs opendraft-mcp --check and quits. It
 # needs the repository's scripts and test drawing, mounted at /repo.
 here=$(cd "$(dirname "$0")" && pwd)
-if [ -f "$here/linux_smoke.sh" ] && [ -f "$here/../crates/od-files/tests/fixtures/ezdxf_sample.dxf" ]; then
+if [ -f "$here/linux_smoke.sh" ] && [ -f "$here/../crates/opendraft-files/tests/fixtures/ezdxf_sample.dxf" ]; then
   apt-get install -y --no-install-recommends xdotool python3 fonts-dejavu-core
   bash "$here/linux_smoke.sh" /usr/bin /tmp/smoke "" deb
 else

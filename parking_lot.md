@@ -4,20 +4,20 @@ Things we looked at and chose to leave for later. Move an item into `ui_plan.md`
 
 ## Non-rectangular viewport clips
 
-Today a viewport is always a rectangle (`center`, `width`, `height` in `od-core/src/layout.rs`). DXF files with other outlines import as rectangles with a warning.
+Today a viewport is always a rectangle (`center`, `width`, `height` in `opendraft-core/src/layout.rs`). DXF files with other outlines import as rectangles with a warning.
 
 Plan (medium size, about 8-10 files):
 
 - **Model:** add `Viewport::clip: Option<Vec<Point>>`, a closed polygon on the sheet. `None` keeps the rectangle. `center`, `width` and `height` stay as the polygon's bounding box, so scale, zoom, pan and MVIEW keep working. Add point-in-polygon `contains_paper` and `Viewport::outline()`.
-- **Plot (`od-core/src/plot.rs`):** clip each segment against the polygon edges and keep the inside pieces (works for concave outlines). Tests: triangle, concave L, circle.
+- **Plot (`opendraft-core/src/plot.rs`):** clip each segment against the polygon edges and keep the inside pieces (works for concave outlines). Tests: triangle, concave L, circle.
 - **Screen:** egui can only clip to rectangles, so clip each flattened path against the polygon with the same function as the plot. Filled shapes would break, but there are no solids or hatches yet.
 - **Interaction:** picking and "inside the viewport" use point-in-polygon; draw the outline as the border.
-- **Files:** `.odx` gets an optional field (no version bump). DXF write: clip entity (340 handle) with a closed `LWPOLYLINE`. DXF read: read it instead of warning. Check against an ezdxf-built file.
+- **Files:** `.odraft` gets an optional field (no version bump). DXF write: clip entity (340 handle) with a closed `LWPOLYLINE`. DXF read: read it instead of warning. Check against an ezdxf-built file.
 - **Commands:** VPCLIP (clip with a closed polyline or circle; Delete option goes back to a rectangle).
 
 Suggested order:
 
-1. Clipping end to end: model, screen, plot, picking, `.odx`, DXF, VPCLIP.
+1. Clipping end to end: model, screen, plot, picking, `.odraft`, DXF, VPCLIP.
 2. Later: MVIEW Polygonal and Object options, and grips to drag the outline's vertices (fiddly, least needed).
 
 Not included: a clipped viewport inside a nested viewport; clipping of filled shapes (wait for hatches).
@@ -50,9 +50,9 @@ First slice is built (aligned, linear, radius, diameter, arc length; see `ui_pla
 
 ## Hatch gradients
 
-Gradient hatches are read, kept and written (`HatchFill::Gradient`: raw name, angle, shift, one or two colours, tint; DXF 450-470 tail; `.odx` v11) but drawn as one flat colour, the first stop (`od-canvas/src/view/hatch_paint.rs`, `solid_color`). A solid hatch that carries a gradient tail with `450 = 0` loses the tail on import.
+Gradient hatches are read, kept and written (`HatchFill::Gradient`: raw name, angle, shift, one or two colours, tint; DXF 450-470 tail; `.odraft` v11) but drawn as one flat colour, the first stop (`opendraft-canvas/src/view/hatch_paint.rs`, `solid_color`). A solid hatch that carries a gradient tail with `450 = 0` loses the tail on import.
 
-Plan (medium size, mostly in `od-canvas`):
+Plan (medium size, mostly in `opendraft-canvas`):
 
 - **Colour per vertex:** the solid mesh (`hatch_cache.rs`, `SolidMesh`) is already triangulated relative to the hatch's middle. Add a gradient coordinate `g` per vertex from the hatch's extent and the gradient angle, and colour each vertex from it. egui interpolates linearly between vertices, so a coarse mesh draws curved profiles badly: subdivide the triangles (or add a grid of interior points) when the kind is not linear.
 - **Kinds to draw:** LINEAR first (two colours, `shift` moves the centre, one-colour gradients blend toward white or black by `tint`), then CYLINDER, INVCYLINDER, SPHERICAL, INVSPHERICAL, HEMISPHERICAL, INVHEMISPHERICAL, CURVED, INVCURVED. The specification says not to map them all to linear. The profiles need AutoCAD output to calibrate (see below); until then they should say they are approximate.
@@ -67,7 +67,7 @@ Not included: transparency (needs a document-wide attribute) and mesh/gradient f
 
 The table, dashed drawing, scales, DXF/DWG patterns and the Linetype Manager are built (see `ui_plan.md`, "Linetypes", and `private_material/autocad_linetype_reference_guide.md`, which is the rulebook). Load in the Manager offers only our stock library. Left for later:
 
-- **`.lin` loading (next, self-contained):** a pure parser in `od-core/src/linetype/lin.rs` (header `*NAME,description`, pattern line `A,len,len,...`, `;` comments, 2 to 12 elements, first not a gap, 47-character description, names unique ignoring case) that returns records or per-entry problems, tested on text only. Then a file picker on the Manager's Load button (list the file's linetypes, pick, load; an existing name is replaced, as AutoCAD's reload does) and a `-LINETYPE` Load option. Test against the user's own `acad.lin` and `acadiso.lin`, which also settles the metric and ISO numbers (the guide still marks those as checked only against a 2017 snapshot). Complex entries (`["GAS",STANDARD,S=.1,...]`, shapes from `.shx`) are read as their dashes and reported, as DXF import does. Export (`.lin` out) and Reload/Rename in the Manager belong here too.
+- **`.lin` loading (next, self-contained):** a pure parser in `opendraft-core/src/linetype/lin.rs` (header `*NAME,description`, pattern line `A,len,len,...`, `;` comments, 2 to 12 elements, first not a gap, 47-character description, names unique ignoring case) that returns records or per-entry problems, tested on text only. Then a file picker on the Manager's Load button (list the file's linetypes, pick, load; an existing name is replaced, as AutoCAD's reload does) and a `-LINETYPE` Load option. Test against the user's own `acad.lin` and `acadiso.lin`, which also settles the metric and ISO numbers (the guide still marks those as checked only against a 2017 snapshot). Complex entries (`["GAS",STANDARD,S=.1,...]`, shapes from `.shx`) are read as their dashes and reported, as DXF import does. Export (`.lin` out) and Reload/Rename in the Manager belong here too.
 - **Current linetype (`CELTYPE`):** new objects are always ByLayer. Needs a current linetype in the editor or document and every object-creation site to take it; also `CELTSCALE` and `PLINEGEN` as the defaults for new objects (today new objects have scale 1 and generation off). The Linetype Manager would get Current and a Set current button.
 - **ByBlock (built 31-10-2026, see `ui_plan.md`, "ByBlock"):** left over: ByBlock in the DXF/DWG layer and style tables, MLEADER styles that apply it, dimensions' own colour/linetype/lineweight, and `CECOLOR`/`CELTYPE`/`CELWEIGHT` taking ByBlock.
 - **Complex linetypes:** text and shape elements are dropped (drawn as plain dashes with a warning). Keeping them for a round trip needs a decoration on each pattern element (`ComplexDecoration`, raw flags) and DXF groups 74/75/340/46/50/44/45/9; drawing them needs the text and shape engines. DWG decodes the complex flag but not the extra fields.

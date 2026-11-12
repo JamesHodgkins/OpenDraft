@@ -13,7 +13,7 @@
 
   This installs for the current user (no administrator prompt) in
   %LOCALAPPDATA%\Programs\OpenDraft: opendraft.exe, opendraft-mcp.exe, a Start
-  menu shortcut, and the .odx file type (OpenDraft.Drawing). Every component's
+  menu shortcut, and the .odraft file type (OpenDraft.Drawing). Every component's
   key path is a per-user registry value, as Windows Installer requires for files
   in a user's profile (ICE38), and uninstalling removes all of it.
 -->
@@ -120,12 +120,12 @@
                 <RegistryValue Root="HKCU" Key="Software\\{{manufacturer}}\\{{product_name}}" Name="Licences" Type="integer" Value="1" KeyPath="yes"/>
             </Component>
 
-            <!-- The .odx file type. Non-advertised, so it is plain per-user registry entries
+            <!-- The .odraft file type. Non-advertised, so it is plain per-user registry entries
                  (Software\Classes) that uninstalling removes. -->
             <Component Id="CMP_FileAssociation" Guid="*">
                 <RegistryValue Root="HKCU" Key="Software\\{{manufacturer}}\\{{product_name}}" Name="FileAssociation" Type="integer" Value="1" KeyPath="yes"/>
                 <ProgId Id="OpenDraft.Drawing" Description="OpenDraft drawing" Advertise="no" Icon="Path" IconIndex="0">
-                    <Extension Id="odx" Advertise="no">
+                    <Extension Id="odraft" Advertise="no">
                         <Verb Id="open" Command="Open" TargetFile="Path" Argument="&quot;%1&quot;"/>
                     </Extension>
                 </ProgId>

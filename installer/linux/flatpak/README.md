@@ -51,7 +51,7 @@ flatpak run --command=opendraft-mcp uk.openengineering.opendraft
 ```
 
 or, if the assistant runs outside the sandbox and you have `opendraft-mcp` installed
-on the host, run that with `OD_AUTOMATION_DIR=$XDG_RUNTIME_DIR/app/uk.openengineering.opendraft/automation`.
+on the host, run that with `OPENDRAFT_AUTOMATION_DIR=$XDG_RUNTIME_DIR/app/uk.openengineering.opendraft/automation`.
 
 The path on the Automation page is the path inside the sandbox; use the command above.
 
