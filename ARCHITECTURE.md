@@ -19,6 +19,8 @@ A 2D CAD app on egui/eframe. This file records the rules new code follows.
 
 This table is a test: `opendraft-app/tests/crate_rules.rs` reads each crate's declared dependencies (`cargo metadata --no-deps`, offline) and fails if one depends upward, on a crate of ours it may not, or on what it must never depend on, and if a crate has no rule. Change a rule by editing this table and that test together. The `opendraft-agent` crate (see "Embedded assistant") may depend on `opendraft-api` and no other crate of ours, and never on `rmcp`, `interprocess`, `egui` or `eframe`, so the assistant can reach a drawing only through the operations outside programs use.
 
+**Naming (shared with OpenCalc and OpenPath).** A crate is `opendraft-<role>`, always with the full product name, never a short prefix such as `od-` (a later app, OpenDraw say, would collide): `-core` is the model with no UI, `-ui` the theme and widget library, `-app` the program (binary `opendraft`), and a format crate is named after its format (`-dwg`). Environment variables are `OPENDRAFT_*`. Drawings are `.odraft` and templates `.odraftt` ("o" plus the product word, as OpenCalc's `.ocalc` and OpenPath's `.opath`). The bundled stroke font keeps its name, OD Roman.
+
 ## Rules
 
 1. **Every user action is a command** in `opendraft-app/src/commands.rs`, built with
