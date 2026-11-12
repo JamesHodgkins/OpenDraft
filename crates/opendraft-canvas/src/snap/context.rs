@@ -248,6 +248,7 @@ pub(super) fn from_point(
     cursor: Point,
     tolerance: f64,
     from: Option<Point>,
+    defer: bool,
     want: (bool, bool),
 ) -> Vec<Ranked> {
     let (perpendicular, tangent) = want;
@@ -278,7 +279,7 @@ pub(super) fn from_point(
                     add(piece.tangents(from), SnapKind::Tangent, false);
                 }
             }
-            None => {
+            None if defer => {
                 let at = vec![piece.nearest(cursor)];
                 if perpendicular {
                     add(at.clone(), SnapKind::Perpendicular, true);
@@ -287,6 +288,7 @@ pub(super) fn from_point(
                     add(at, SnapKind::Tangent, true);
                 }
             }
+            None => {}
         }
     }
     found

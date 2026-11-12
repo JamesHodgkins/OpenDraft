@@ -58,6 +58,7 @@ fn all(
         grid_step: None,
         modes,
         from,
+        defer: true,
         tracks: &[],
         track: None,
     };
@@ -261,6 +262,7 @@ fn the_extension_of_a_kept_end_meets_another_object() {
         grid_step: None,
         modes: &modes,
         from: None,
+        defer: true,
         tracks: &[track],
         track: None,
     };
@@ -279,4 +281,21 @@ fn the_extension_of_a_kept_end_meets_another_object() {
         ..probe
     };
     assert!(snap_all(document.objects(), &probe).is_empty());
+}
+
+/// Running Perpendicular and Tangent wait for a last point: only a one-shot
+/// override may defer them.
+#[test]
+fn running_snaps_do_not_defer_without_a_last_point() {
+    let probe = Probe {
+        cursor: p(5.0, 5.2),
+        tolerance: 1.0,
+        grid_step: None,
+        modes: &only(SnapKind::Perpendicular),
+        from: None,
+        defer: false,
+        tracks: &[],
+        track: None,
+    };
+    assert!(snap_all(&objs(&[cap()]), &probe).is_empty());
 }
