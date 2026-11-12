@@ -213,7 +213,7 @@ fn a_toggle_command_flips_once_per_key() {
 
 #[test]
 fn a_repeated_save_as_is_one_operation() {
-    let dir = std::env::temp_dir().join(format!("od-keys-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("opendraft-keys-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(dir.join("approved")).unwrap();
     let mut state = AppState::new();

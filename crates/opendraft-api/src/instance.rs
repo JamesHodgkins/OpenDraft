@@ -197,7 +197,7 @@ mod tests {
     #[test]
     fn a_runtime_folder_that_is_not_there_or_not_absolute_is_not_trusted() {
         let home = here();
-        let gone = std::env::temp_dir().join("od-no-such-run-dir");
+        let gone = std::env::temp_dir().join("opendraft-no-such-run-dir");
         let gone_text = gone.to_string_lossy().into_owned();
         let found = unix_base(env(&[("XDG_RUNTIME_DIR", &gone_text), ("HOME", &home)]));
         assert_eq!(found, Some(PathBuf::from(&home).join(".cache")));
@@ -215,7 +215,7 @@ mod tests {
     #[test]
     fn the_descriptor_folder_is_made_for_the_user_alone() {
         use std::os::unix::fs::PermissionsExt;
-        let top = std::env::temp_dir().join(format!("od-private-{}", std::process::id()));
+        let top = std::env::temp_dir().join(format!("opendraft-private-{}", std::process::id()));
         let _ = fs::remove_dir_all(&top);
         let dir = top.join("a/b");
         create_private_dir(&dir).unwrap();

@@ -178,7 +178,7 @@ mod tests {
 
     #[test]
     fn a_new_beta_starts_from_the_releases_settings_and_never_overwrites_its_own() {
-        let root = std::env::temp_dir().join(format!("od-profile-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("opendraft-profile-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let (release, beta) = (root.join("release"), root.join("beta"));
         std::fs::create_dir_all(&release).unwrap();

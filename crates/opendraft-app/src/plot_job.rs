@@ -269,7 +269,7 @@ impl AppState {
         let backend = self.command_dialogs.print.0.clone();
         let (send, answer) = channel();
         let asked = std::thread::Builder::new()
-            .name("od-printers".into())
+            .name("opendraft-printers".into())
             .spawn(move || {
                 let _ = send.send(backend.printers());
             });

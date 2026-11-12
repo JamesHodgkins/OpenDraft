@@ -189,7 +189,8 @@ mod tests {
 
     impl Area {
         fn new(name: &str) -> Self {
-            let dir = std::env::temp_dir().join(format!("od-paths-{name}-{}", std::process::id()));
+            let dir =
+                std::env::temp_dir().join(format!("opendraft-paths-{name}-{}", std::process::id()));
             let _ = fs::remove_dir_all(&dir);
             fs::create_dir_all(dir.join("approved/sub")).unwrap();
             fs::create_dir_all(dir.join("approved-evil")).unwrap();
