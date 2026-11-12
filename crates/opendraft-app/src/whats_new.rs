@@ -20,6 +20,14 @@ pub struct Note {
 
 const NOTES: &[Note] = &[
     Note {
+        version: "0.3.0",
+        title: "Drawings are now .odraft files",
+        changes: &[
+            "OpenDraft drawings are saved as .odraft (they were .odx), and templates as .odraftt. To open an older drawing, rename it from .odx to .odraft; nothing inside the file changes.",
+            "Running Perpendicular and Tangent snaps now wait until there is a previous point, instead of offering a snap that cannot apply.",
+        ],
+    },
+    Note {
         version: "0.2.0",
         title: "Printing and plotting, text fields and block attributes",
         changes: &[
