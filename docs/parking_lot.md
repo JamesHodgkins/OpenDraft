@@ -75,3 +75,7 @@ The table, dashed drawing, scales, DXF/DWG patterns and the Linetype Manager are
 - **Scale rules:** `PSLTSCALE` and `MSLTSCALE` (need layout viewports and annotative scales); DWG polyline Linetype Generation flag (LWPOLYLINE flag 256) is not decoded.
 - **Fitting arithmetic:** how end dashes take up slack, and how a closed shape is phased, is our own choice meeting AutoCAD's documented rules. Lock it down with AutoCAD fixtures at several lengths (lines, arcs, circles, closed polylines), as the guide's acceptance tests describe.
 - **Performance:** dashes are rebuilt every paint; cache per object if a large dashed drawing feels slow (the hatch cache is the model).
+
+## Automation endpoint name
+
+On Windows the automation endpoint is a named pipe called `od-<instance id>` (`opendraft-app/src/automation/host.rs`, `endpoint_for`); on Linux it is a `<instance id>.sock` file, so the prefix does not appear there. Clients read the endpoint from the instance descriptor rather than building the name, so a rename touches `endpoint_for` and the fake endpoint in `opendraft-mcp/tests/support/mod.rs`. It is a runtime name, not a file or crate name, so the family naming rules did not require changing it.
