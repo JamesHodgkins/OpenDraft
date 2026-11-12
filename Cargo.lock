@@ -2628,7 +2628,7 @@ checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 
 [[package]]
 name = "opendraft-agent"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "opendraft-api",
  "serde",
@@ -2638,7 +2638,7 @@ dependencies = [
 
 [[package]]
 name = "opendraft-api"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "opendraft-core",
  "schemars",
@@ -2648,7 +2648,7 @@ dependencies = [
 
 [[package]]
 name = "opendraft-app"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "arboard",
  "base64 0.23.1",
@@ -2679,7 +2679,7 @@ dependencies = [
 
 [[package]]
 name = "opendraft-canvas"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "egui",
  "lyon_tessellation",
@@ -2689,14 +2689,14 @@ dependencies = [
 
 [[package]]
 name = "opendraft-commands"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "opendraft-core",
 ]
 
 [[package]]
 name = "opendraft-core"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "rstar",
  "rustybuzz",
@@ -2704,11 +2704,11 @@ dependencies = [
 
 [[package]]
 name = "opendraft-dwg"
-version = "0.2.0"
+version = "0.3.0"
 
 [[package]]
 name = "opendraft-files"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "dxf",
  "opendraft-core",
@@ -2721,7 +2721,7 @@ dependencies = [
 
 [[package]]
 name = "opendraft-mcp"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "interprocess",
  "opendraft-api",
@@ -2734,7 +2734,7 @@ dependencies = [
 
 [[package]]
 name = "opendraft-ui"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "eframe",
  "egui",
