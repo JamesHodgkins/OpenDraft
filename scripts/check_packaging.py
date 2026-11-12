@@ -53,15 +53,15 @@ need(plain.get("Exec", "").split()[:1] == ["opendraft"] and "%F" in plain.get("E
      "the plain desktop file must run opendraft with the files %F")
 need(plain.get("Icon") == "opendraft", "the plain desktop file's icon must be opendraft")
 
-# The MIME file says what an .odx file is.
+# The MIME file says what an .odraft file is.
 mime = ET.parse(LINUX / "opendraft.xml").getroot()
 ns = "{http://www.freedesktop.org/standards/shared-mime-info}"
 types = {t.get("type"): [g.get("pattern") for g in t.findall(f"{ns}glob")]
          for t in mime.findall(f"{ns}mime-type")}
-need(types.get("application/x-opendraft-drawing") == ["*.odx"],
-     f"the MIME file must map *.odx to application/x-opendraft-drawing, found {types}")
+need(types.get("application/x-opendraft-drawing") == ["*.odraft"],
+     f"the MIME file must map *.odraft to application/x-opendraft-drawing, found {types}")
 need("application/x-opendraft-drawing" in semicolon_set(plain.get("MimeType", "")),
-     "the desktop file must list the .odx type")
+     "the desktop file must list the .odraft type")
 
 # The AppStream file.
 metainfo = ET.parse(LINUX / "share" / "uk.openengineering.opendraft.metainfo.xml").getroot()
@@ -83,7 +83,7 @@ for script in ("opendraft.sh", "opendraft-mcp.sh"):
     need((LINUX / "flatpak" / script).exists() and f"installer/linux/flatpak/{script}" in manifest,
          f"the Flatpak must install {script}")
     text = (LINUX / "flatpak" / script).read_text() if (LINUX / "flatpak" / script).exists() else ""
-    need("OD_AUTOMATION_DIR" in text and "FLATPAK_ID" in text,
+    need("OPENDRAFT_AUTOMATION_DIR" in text and "FLATPAK_ID" in text,
          f"{script} must point the automation socket at the folder the sandbox shares with the host")
 
 # The Flathub manifest is the in-repo one with a different first source: nothing
@@ -93,7 +93,12 @@ def manifest_without_sources(text):
 
 
 flathub_manifest = (LINUX / "flatpak" / "flathub" / "uk.openengineering.opendraft.yml").read_text()
-body = lambda text: [line for line in manifest_without_sources(text).splitlines() if not line.lstrip().startswith("#")]
+# The Flathub copy builds a pinned release tag. Until the first release made after the
+# crates were renamed od-* -> opendraft-*, that tag still has the od-* names, so the
+# package names in the build line are compared as if they were the same. Delete
+# `renamed` (and use the old lambda) when the Flathub copy is pinned to a renamed release.
+renamed = lambda line: line.replace("-p od-", "-p opendraft-")
+body = lambda text: [renamed(line) for line in manifest_without_sources(text).splitlines() if not line.lstrip().startswith("#")]
 need(body(manifest) == body(flathub_manifest),
      "flatpak/flathub/uk.openengineering.opendraft.yml differs from the in-repo manifest outside its sources")
 

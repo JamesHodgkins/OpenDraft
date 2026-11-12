@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Checks the PDF that cups-pdf wrote for the job in
-crates/od-app/src/print_backend/cups_live_tests.rs: one A4 page, and the
+crates/opendraft-app/src/print_backend/cups_live_tests.rs: one A4 page, and the
 100 mm line on it still 100 mm long, so the job was printed at its own size
 and not fitted to the page.
 

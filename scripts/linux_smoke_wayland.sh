@@ -56,7 +56,7 @@ fi
 export SWAYSOCK=$sock WAYLAND_DISPLAY=$wl
 swaymsg -t get_outputs | head -c 400 || true
 
-sample="$repo/crates/od-files/tests/fixtures/ezdxf_sample.dxf"
+sample="$repo/crates/opendraft-files/tests/fixtures/ezdxf_sample.dxf"
 status=0
 python3 "$here/linux_smoke.py" --session wayland --binary "$bin/opendraft" --mcp "$bin/opendraft-mcp" \
   --sample "$sample" --out "$out" --label "$label" --scenario drawing || status=1

@@ -5,7 +5,7 @@ the SVG files are not (unless `--force`).
 
 Each file is drawn in the app in place of the icon's glyph, and the same
 drawings are built into the program (a rebuild picks up an edit). A debug
-build run from the source, a folder named by `OD_ICONS`, or an `icons`
+build run from the source, a folder named by `OPENDRAFT_ICONS`, or an `icons`
 folder beside the program is read every time the app starts, so an edited
 file shows on the next launch, with no rebuild, and replaces the built-in
 drawing. A file that cannot be read keeps the built-in drawing, and the
@@ -25,7 +25,7 @@ Drawing rules:
   the ribbon is dark.
 - Each file is named after the command (`draw-line.svg` is Line, `modify-move.svg`
   is Move) or the part of the window (`layer-panel-frozen.svg`) it is for, and
-  is used only there. To add an icon, add a line to `crates/od-ui/src/icons.rs`
+  is used only there. To add an icon, add a line to `crates/opendraft-ui/src/icons.rs`
   and run the script again.
 
 The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
@@ -138,9 +138,9 @@ The starting drawings are Lucide's (ISC licence, `LICENSE-Lucide.txt`).
 | ![](format-linetype.svg) | `format-linetype.svg` | ellipsis | Linetypes |
 | ![](format-properties.svg) | `format-properties.svg` | file-text | Properties |
 | ![](format-units.svg) | `format-units.svg` | ruler | Units |
-| ![](gallery-landscape.svg) | `gallery-landscape.svg` | rectangle-horizontal | crates/od-ui/examples/gallery.rs |
-| ![](gallery-portrait.svg) | `gallery-portrait.svg` | rectangle-vertical | crates/od-ui/examples/gallery.rs |
-| ![](gallery-preset.svg) | `gallery-preset.svg` | image | crates/od-ui/examples/gallery.rs |
+| ![](gallery-landscape.svg) | `gallery-landscape.svg` | rectangle-horizontal | crates/opendraft-ui/examples/gallery.rs |
+| ![](gallery-portrait.svg) | `gallery-portrait.svg` | rectangle-vertical | crates/opendraft-ui/examples/gallery.rs |
+| ![](gallery-preset.svg) | `gallery-preset.svg` | image | crates/opendraft-ui/examples/gallery.rs |
 | ![](group-bounding-box.svg) | `group-bounding-box.svg` | square-dashed | Group Bounding Box |
 | ![](group-edit.svg) | `group-edit.svg` | square-pen | Group Edit |
 | ![](group-group.svg) | `group-group.svg` | group | Group |

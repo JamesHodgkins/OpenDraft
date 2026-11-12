@@ -8,10 +8,10 @@ OpenDraft is a native Linux program: it needs no interpreter and no runtime, and
 |---|---|---|
 | **Flatpak** | Any distribution | `installer/linux/flatpak/` (see its README). Sandboxed; the assistant connection needs the one extra step described there |
 | **AppImage** | Any distribution, no root | One file from the [releases](https://github.com/JamesHodgkins/OpenDraft/releases). Make it executable and run it |
-| **.deb** | Debian, Ubuntu, Mint | `sudo apt install ./OpenDraft-<version>-linux-amd64.deb`. Adds the menu entry, icons and the `.odx` file type |
+| **.deb** | Debian, Ubuntu, Mint | `sudo apt install ./OpenDraft-<version>-linux-amd64.deb`. Adds the menu entry, icons and the `.odraft` file type |
 | **Arch (AUR)** | Arch and derivatives | The `PKGBUILD` is in `installer/linux/arch/` |
 | **Archive** | Anything else | `OpenDraft-<version>-linux.tar.gz`: `opendraft` and `opendraft-mcp` side by side. Needs the libraries below |
-| **From source** | Developers | `cargo build --release -p od-app -p od-mcp` |
+| **From source** | Developers | `cargo build --release -p opendraft-app -p opendraft-mcp` |
 
 The programs in the .deb, AppImage and archive are built on Ubuntu 22.04, so they need glibc 2.35 or newer.
 
@@ -80,7 +80,7 @@ Be careful how far to trust a green tick. These runs use a virtual display with 
 
 **The menu entry has a generic icon on Wayland.** The window's id must match the desktop file's name. OpenDraft's is `opendraft` (and `uk.openengineering.opendraft` inside the Flatpak); a custom launcher needs `StartupWMClass=opendraft`.
 
-**The assistant (MCP) connection.** It is off by default; turn it on in Settings, Automation. The program and `opendraft-mcp` find each other through a socket in `$XDG_RUNTIME_DIR/OpenDraft/automation`. If your session has no `XDG_RUNTIME_DIR` (a plain `ssh` or `su` login, some containers), the folder `~/.cache/OpenDraft/automation` is used instead. `opendraft-mcp --check` says whether it can reach the program. `OD_AUTOMATION=1` turns the connection on without the setting, and `OD_AUTOMATION_DIR` moves the socket's folder (give both programs the same value).
+**The assistant (MCP) connection.** It is off by default; turn it on in Settings, Automation. The program and `opendraft-mcp` find each other through a socket in `$XDG_RUNTIME_DIR/OpenDraft/automation`. If your session has no `XDG_RUNTIME_DIR` (a plain `ssh` or `su` login, some containers), the folder `~/.cache/OpenDraft/automation` is used instead. `opendraft-mcp --check` says whether it can reach the program. `OPENDRAFT_AUTOMATION=1` turns the connection on without the setting, and `OPENDRAFT_AUTOMATION_DIR` moves the socket's folder (give both programs the same value).
 
 **Where things are kept.** Settings, recent files, autosave copies and `crash.log` are in `~/.local/share/opendraft` (`$XDG_DATA_HOME/opendraft`). Delete the folder to start afresh. A crash report there is worth attaching to a bug report.
 

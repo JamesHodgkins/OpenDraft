@@ -50,7 +50,7 @@ build() {
   cd "$_srcdir"
   export RUSTUP_TOOLCHAIN=stable
   export CARGO_TARGET_DIR=target
-  cargo build --frozen --release -p od-app -p od-mcp
+  cargo build --frozen --release -p opendraft-app -p opendraft-mcp
 }
 
 package() {
@@ -68,6 +68,6 @@ package() {
   done
 
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
-  install -Dm644 readme.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+  install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
   install -Dm644 docs/mcp.md "$pkgdir/usr/share/doc/$pkgname/MCP.md"
 }

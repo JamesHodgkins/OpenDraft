@@ -2621,27 +2621,33 @@ dependencies = [
 ]
 
 [[package]]
-name = "od-agent"
+name = "once_cell"
+version = "1.21.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
+
+[[package]]
+name = "opendraft-agent"
 version = "0.2.0"
 dependencies = [
- "od-api",
+ "opendraft-api",
  "serde",
  "serde_json",
  "ureq",
 ]
 
 [[package]]
-name = "od-api"
+name = "opendraft-api"
 version = "0.2.0"
 dependencies = [
- "od-core",
+ "opendraft-core",
  "schemars",
  "serde",
  "serde_json",
 ]
 
 [[package]]
-name = "od-app"
+name = "opendraft-app"
 version = "0.2.0"
 dependencies = [
  "arboard",
@@ -2653,13 +2659,13 @@ dependencies = [
  "getrandom 0.3.4",
  "interprocess",
  "keyring",
- "od-agent",
- "od-api",
- "od-canvas",
- "od-commands",
- "od-core",
- "od-files",
- "od-ui",
+ "opendraft-agent",
+ "opendraft-api",
+ "opendraft-canvas",
+ "opendraft-commands",
+ "opendraft-core",
+ "opendraft-files",
+ "opendraft-ui",
  "png",
  "rfd",
  "ron",
@@ -2672,24 +2678,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "od-canvas"
+name = "opendraft-canvas"
 version = "0.2.0"
 dependencies = [
  "egui",
  "lyon_tessellation",
- "od-core",
+ "opendraft-core",
  "serde",
 ]
 
 [[package]]
-name = "od-commands"
+name = "opendraft-commands"
 version = "0.2.0"
 dependencies = [
- "od-core",
+ "opendraft-core",
 ]
 
 [[package]]
-name = "od-core"
+name = "opendraft-core"
 version = "0.2.0"
 dependencies = [
  "rstar",
@@ -2697,16 +2703,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "od-dwg"
+name = "opendraft-dwg"
 version = "0.2.0"
 
 [[package]]
-name = "od-files"
+name = "opendraft-files"
 version = "0.2.0"
 dependencies = [
  "dxf",
- "od-core",
- "od-dwg",
+ "opendraft-core",
+ "opendraft-dwg",
  "png",
  "serde",
  "serde_json",
@@ -2714,11 +2720,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "od-mcp"
+name = "opendraft-mcp"
 version = "0.2.0"
 dependencies = [
  "interprocess",
- "od-api",
+ "opendraft-api",
  "rmcp",
  "schemars",
  "serde",
@@ -2727,7 +2733,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "od-ui"
+name = "opendraft-ui"
 version = "0.2.0"
 dependencies = [
  "eframe",
@@ -2735,12 +2741,6 @@ dependencies = [
  "resvg",
  "serde",
 ]
-
-[[package]]
-name = "once_cell"
-version = "1.21.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 
 [[package]]
 name = "orbclient"

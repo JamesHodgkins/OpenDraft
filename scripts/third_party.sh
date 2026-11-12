@@ -21,8 +21,8 @@ append() {
   } >> "$out"
 }
 
-append "Inter (the interface font), crates/od-ui/assets/fonts" crates/od-ui/assets/fonts/LICENSE-Inter.txt
+append "Inter (the interface font), crates/opendraft-ui/assets/fonts" crates/opendraft-ui/assets/fonts/LICENSE-Inter.txt
 append "Lucide (the icon font and icon drawings), assets/icons" assets/icons/LICENSE-Lucide.txt
-append "DejaVu Sans (the text font for drawings), crates/od-core/assets/fonts" crates/od-core/assets/fonts/LICENSE-DejaVu.txt
+append "DejaVu Sans (the text font for drawings), crates/opendraft-core/assets/fonts" crates/opendraft-core/assets/fonts/LICENSE-DejaVu.txt
 
 echo "$out"

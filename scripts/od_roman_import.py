@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the runtime font crates/od-core/assets/fonts/od_roman.odf from the
+"""Build the runtime font crates/opendraft-core/assets/fonts/od_roman.odf from the
 glyph files in fonts/od_roman/glyphs/ (one SVG per glyph, see od_roman_svg.py
 for what counts as the glyph) and fonts/od_roman/font.cfg.
 
@@ -40,7 +40,7 @@ def num(v):
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     folder = Path(args[0]) if args else ROOT / "fonts" / "od_roman"
-    out = Path(args[1]) if len(args) > 1 else ROOT / "crates/od-core/assets/fonts/od_roman.odf"
+    out = Path(args[1]) if len(args) > 1 else ROOT / "crates/opendraft-core/assets/fonts/od_roman.odf"
     cfg = read_config(folder / "font.cfg")
     cap, baseline, pen = cfg["cap_height"], cfg["baseline"], cfg["pen"]
     half_pen_units = cfg["weight"] / 2.0

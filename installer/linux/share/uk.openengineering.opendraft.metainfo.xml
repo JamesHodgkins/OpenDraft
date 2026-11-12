@@ -20,12 +20,12 @@
     </p>
     <p>Features:</p>
     <ul>
-      <li>Opens DXF and DWG drawings (including files saved by AutoCAD 2010 to 2018), saves DXF, and has its own .odx format</li>
+      <li>Opens DXF and DWG drawings (including files saved by AutoCAD 2010 to 2018), saves DXF, and has its own .odraft format</li>
       <li>Layers, linetypes, blocks, hatches, dimensions, multiline text and layouts</li>
       <li>Every change is one undo step; saves are atomic, with autosave and crash recovery</li>
       <li>An optional, off-by-default connection that lets an AI assistant inspect and draw in open drawings, with every change undoable</li>
     </ul>
-    <p>OpenDraft is in early development: features and the .odx format may still change.</p>
+    <p>OpenDraft is in early development: features and the .odraft format may still change.</p>
   </description>
   <launchable type="desktop-id">uk.openengineering.opendraft.desktop</launchable>
   <screenshots>

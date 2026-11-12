@@ -1,16 +1,16 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/od-app",
-    "crates/od-ui",
-    "crates/od-core",
-    "crates/od-commands",
-    "crates/od-canvas",
-    "crates/od-files",
-    "crates/od-dwg",
-    "crates/od-api",
-    "crates/od-mcp",
-    "crates/od-agent",
+    "crates/opendraft-app",
+    "crates/opendraft-ui",
+    "crates/opendraft-core",
+    "crates/opendraft-commands",
+    "crates/opendraft-canvas",
+    "crates/opendraft-files",
+    "crates/opendraft-dwg",
+    "crates/opendraft-api",
+    "crates/opendraft-mcp",
+    "crates/opendraft-agent",
 ]
 
 [workspace.lints.rust]
@@ -31,14 +31,14 @@ license = "GPL-3.0-or-later"
 [workspace.dependencies]
 # accesskit is off: its Windows adapter panics when the dock rearranges panels.
 eframe = { version = "0.31", default-features = false, features = ["persistence", "glow", "default_fonts", "wayland", "x11"] }
-od-ui = { path = "crates/od-ui" }
-od-core = { path = "crates/od-core" }
-od-commands = { path = "crates/od-commands" }
-od-canvas = { path = "crates/od-canvas" }
-od-files = { path = "crates/od-files" }
-od-dwg = { path = "crates/od-dwg" }
-od-api = { path = "crates/od-api" }
-od-agent = { path = "crates/od-agent" }
+opendraft-ui = { path = "crates/opendraft-ui" }
+opendraft-core = { path = "crates/opendraft-core" }
+opendraft-commands = { path = "crates/opendraft-commands" }
+opendraft-canvas = { path = "crates/opendraft-canvas" }
+opendraft-files = { path = "crates/opendraft-files" }
+opendraft-dwg = { path = "crates/opendraft-dwg" }
+opendraft-api = { path = "crates/opendraft-api" }
+opendraft-agent = { path = "crates/opendraft-agent" }
 
 # Dependencies (egui especially) are slow unoptimised; our own crates keep fast
 # incremental debug builds.
