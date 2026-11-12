@@ -475,7 +475,7 @@ mod tests {
 
     #[test]
     fn a_file_in_the_folder_replaces_the_built_in_drawing_and_a_bad_one_is_reported() {
-        let folder = std::env::temp_dir().join(format!("od_icons_{}", std::process::id()));
+        let folder = std::env::temp_dir().join(format!("opendraft_icons_{}", std::process::id()));
         std::fs::create_dir_all(&folder).unwrap();
         std::fs::write(folder.join("draw-circle-radius.svg"), RING).unwrap();
         std::fs::write(folder.join("draw-rectangle.svg"), "not a drawing").unwrap();

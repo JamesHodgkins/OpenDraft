@@ -8,7 +8,8 @@ struct Area(PathBuf);
 
 impl Area {
     fn new(name: &str) -> Self {
-        let dir = std::env::temp_dir().join(format!("od-previews-{name}-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("opendraft-previews-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         Area(dir)

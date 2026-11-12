@@ -206,7 +206,7 @@ mod tests {
 
     #[test]
     fn crash_log_command_needs_an_existing_file() {
-        let dir = std::env::temp_dir().join(format!("od_crash_cmd_{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("opendraft_crash_cmd_{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let log = dir.join(FILE);
         assert!(to_reveal(Some(&log)).is_err(), "no file yet");

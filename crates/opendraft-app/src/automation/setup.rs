@@ -60,7 +60,7 @@ mod tests {
 
     #[test]
     fn the_sidecar_is_found_only_beside_the_app() {
-        let dir = std::env::temp_dir().join(format!("od-setup-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("opendraft-setup-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let app = dir.join(format!("opendraft{}", std::env::consts::EXE_SUFFIX));
