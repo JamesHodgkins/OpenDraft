@@ -20,6 +20,7 @@ A command is `fn(&mut Editor) -> Result<(), Cancelled>` running on its own threa
 - Entities are referred to by `EntityId`, never list position. Arc entity is CCW radians. Polyline `bulges` is empty or one per point (`bulges[i]` shapes segment i to i+1); always use `opendraft_core::bulge`, never assume straight segments.
 - No `unwrap`, `todo!`, `dbg!`, prints in production code; `unsafe` forbidden (tests may unwrap).
 - Files stay under about 400 production lines; `opendraft-app/tests/file_sizes.rs` enforces 450 and lists `dxf/read.rs` as still too big (it may not grow).
+- Keep the family consistent: when you change lints, CI, licence lists or policy files, make the same change in the siblings and in `../OpenAppTemplate` (the scaffold new apps start from).
 - `.odraft` has a development phase and a stable phase (see the module notes in `opendraft-files/src/native.rs`). Now it is development: `CURRENT_VERSION` is 0 and schema changes (new entity kinds, renamed fields) are made in place with NO version bump and no conversion. Never raise `CURRENT_VERSION` as part of a feature; setting it to 1 is a deliberate release step the user takes when the format is declared stable. Only from then on: a new entity kind bumps it (unknown kinds are refused, never skipped), an optional field does not, and each older version gets a conversion.
 - Use `text::plural` for counts. Match the surrounding code's comment density and naming.
 
