@@ -38,7 +38,7 @@ modules:
     buildsystem: simple
     build-commands:
       - cargo --offline fetch --manifest-path Cargo.toml --verbose
-      - cargo --offline build --release --verbose -p od-app -p od-mcp
+      - cargo --offline build --release --verbose -p opendraft-app -p opendraft-mcp
 
       # The programs live in libexec; the two scripts in bin put the automation
       # socket in the one folder the sandbox and the host both see.
@@ -63,7 +63,7 @@ modules:
       # The release this submission is for.
       - type: git
         url: https://github.com/JamesHodgkins/OpenDraft.git
-        tag: v0.1.4
-        commit: 65989e43327a44e662614aa8d641b994bd6f7c2f
+        tag: v0.3.0
+        commit: 52cae6f7571daa8aee189e9411d9498df9829685
       # Generated from that release's Cargo.lock by flatpak-cargo-generator.
       - cargo-sources.json

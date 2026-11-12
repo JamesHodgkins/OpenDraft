@@ -93,12 +93,7 @@ def manifest_without_sources(text):
 
 
 flathub_manifest = (LINUX / "flatpak" / "flathub" / "uk.openengineering.opendraft.yml").read_text()
-# The Flathub copy builds a pinned release tag. Until the first release made after the
-# crates were renamed od-* -> opendraft-*, that tag still has the od-* names, so the
-# package names in the build line are compared as if they were the same. Delete
-# `renamed` (and use the old lambda) when the Flathub copy is pinned to a renamed release.
-renamed = lambda line: line.replace("-p od-", "-p opendraft-")
-body = lambda text: [renamed(line) for line in manifest_without_sources(text).splitlines() if not line.lstrip().startswith("#")]
+body = lambda text: [line for line in manifest_without_sources(text).splitlines() if not line.lstrip().startswith("#")]
 need(body(manifest) == body(flathub_manifest),
      "flatpak/flathub/uk.openengineering.opendraft.yml differs from the in-repo manifest outside its sources")
 
