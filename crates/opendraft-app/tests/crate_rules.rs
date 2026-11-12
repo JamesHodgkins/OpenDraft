@@ -1,4 +1,4 @@
-//! ARCHITECTURE.md, "Crates (dependencies point downward)": the table is a
+//! docs/ARCHITECTURE.md, "Crates (dependencies point downward)": the table is a
 //! test. Each crate has a level, may depend only on crates of a lower level,
 //! and has what it must never depend on. It reads each crate's declared
 //! dependencies with `cargo metadata --no-deps` (offline), so a change that
@@ -6,7 +6,7 @@
 //! or lets the wire contract pull in a UI library, fails here rather than
 //! passing review by accident.
 //!
-//! Changing a rule is a decision: edit the table in ARCHITECTURE.md and the
+//! Changing a rule is a decision: edit the table in docs/ARCHITECTURE.md and the
 //! table below together.
 //!
 //! The `opendraft-agent` crate (the in-app assistant's harness) may depend on
@@ -137,7 +137,7 @@ fn violations(metadata: &Value) -> Vec<String> {
         };
         let Some(rule) = rules.get(name) else {
             found.push(format!(
-                "{name} has no rule: add it to the table in ARCHITECTURE.md and to crate_rules.rs"
+                "{name} has no rule: add it to the table in docs/ARCHITECTURE.md and to crate_rules.rs"
             ));
             continue;
         };
@@ -200,7 +200,7 @@ fn the_crates_depend_only_downward_and_only_on_what_they_may() {
     let found = violations(&workspace_metadata());
     assert!(
         found.is_empty(),
-        "the crate rules in ARCHITECTURE.md are broken:\n  {}",
+        "the crate rules in docs/ARCHITECTURE.md are broken:\n  {}",
         found.join("\n  ")
     );
 }

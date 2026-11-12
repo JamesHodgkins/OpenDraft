@@ -1,5 +1,5 @@
 //! Editing commands written against the `Editor`: straight-line code that
-//! asks and waits. See "Commands and the Editor" in ARCHITECTURE.md.
+//! asks and waits. See "Commands and the Editor" in docs/ARCHITECTURE.md.
 
 use opendraft_commands::{Answer, Cancelled, Editor, Options, PointOptions};
 use opendraft_core::{Entity, EntityId, Object, Point};

@@ -29,7 +29,7 @@ Run the application:
 cargo run -p opendraft-app
 ```
 
-A debug build on Windows keeps its console window so you can see output; a release build is a windowed program and records panics in `crash.log` in its data folder instead (see ARCHITECTURE.md, "Windows window and crash log"). A debug build keeps its settings, recent files and recovery copies in its own `OpenDraft Dev` folder, apart from an installed release's; `cargo run --release -p opendraft-app` uses the release's. Set `OPENDRAFT_PROFILE=<name>` to use another separate set (for example for a test run).
+A debug build on Windows keeps its console window so you can see output; a release build is a windowed program and records panics in `crash.log` in its data folder instead (see docs/ARCHITECTURE.md, "Windows window and crash log"). A debug build keeps its settings, recent files and recovery copies in its own `OpenDraft Dev` folder, apart from an installed release's; `cargo run --release -p opendraft-app` uses the release's. Set `OPENDRAFT_PROFILE=<name>` to use another separate set (for example for a test run).
 
 A debug build never checks for new versions. To try the update notice, serve a releases list locally (a JSON array like GitHub's `/releases`, with `tag_name`, `draft`, `prerelease` and `assets[].name` such as `OpenDraft-0.2.0-windows.zip`) and set `OPENDRAFT_UPDATES_URL=http://127.0.0.1:<port>/releases`; that also lets a debug build check. Click "Check automatically" on the Home page's Updates card.
 
@@ -46,7 +46,7 @@ The workspace is split into crates, and dependencies point downward:
 | `opendraft-ui` | Theme, widgets, ribbon, icons, shortcuts |
 | `opendraft-app` | The application: state, command table, panels, dock |
 
-Read [ARCHITECTURE.md](./ARCHITECTURE.md) before writing code. It records the rules new code follows, and [ui_plan.md](./ui_plan.md) shows the interface plan and what is done.
+Read [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) before writing code. It records the rules new code follows, and [ui_plan.md](./ui_plan.md) shows the interface plan and what is done.
 
 ## 4. Create a branch
 
@@ -56,7 +56,7 @@ git checkout -b feature/your-feature-name
 
 ## 5. Make your changes
 
-The main conventions (the full list is in ARCHITECTURE.md):
+The main conventions (the full list is in docs/ARCHITECTURE.md):
 
 - **Every user action is a command**, registered in `crates/opendraft-app/src/commands.rs`. The ribbon, shortcuts, status bar and command line refer to commands by id.
 - **Every document change is an undoable action** run by the session. A command that makes several edits groups them in a transaction so they undo as one step.
@@ -105,7 +105,7 @@ The `.odraft` format stays at version 0 (development) until it is declared stabl
 
 1. A schema review: every field is required, deliberately optional, or removed (no untyped blobs, no defaults kept only for old development files), and references use ids, not names.
 2. A committed `.odraft` fixture saved by the build that declares it, which a test must read back.
-3. `CURRENT_VERSION` set to 1, the assertion in `a_pre_reset_file_is_refused_and_names_the_build_that_saved_it` updated, and the "Versioning" notes in `native.rs`, `ARCHITECTURE.md` and `CLAUDE.md` changed from development to stable.
+3. `CURRENT_VERSION` set to 1, the assertion in `a_pre_reset_file_is_refused_and_names_the_build_that_saved_it` updated, and the "Versioning" notes in `native.rs`, `docs/ARCHITECTURE.md` and `CLAUDE.md` changed from development to stable.
 4. A "What's new" note and a line in the readme saying that drawings now keep opening.
 
 From then on a new entity kind or any change an older reader would misread bumps the version, with a conversion in `read` and a fixture of the old version. Do not write a conversion before there is a version to convert from.

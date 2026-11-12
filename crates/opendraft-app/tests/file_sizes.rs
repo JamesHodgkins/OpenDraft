@@ -1,4 +1,4 @@
-//! ARCHITECTURE.md rule 5: files stay under about 400 lines of production
+//! docs/ARCHITECTURE.md rule 5: files stay under about 400 lines of production
 //! code (everything before the `mod tests` block). Files already over the
 //! limit are listed with their current size and may not grow; split them and
 //! remove them from the list.

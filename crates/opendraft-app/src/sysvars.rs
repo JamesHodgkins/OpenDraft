@@ -4,7 +4,7 @@
 //!
 //! Variables that mirror a setting are saved with the user's settings, so
 //! they persist with no extra code. Variables saved in the drawing are not
-//! built yet (see "System variables" in ARCHITECTURE.md).
+//! built yet (see "System variables" in docs/ARCHITECTURE.md).
 
 use std::sync::OnceLock;
 

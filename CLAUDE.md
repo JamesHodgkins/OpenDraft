@@ -3,15 +3,15 @@
 OpenDraft: a 2D-only CAD app in Rust on egui/eframe, with an AutoCAD-2020-style ribbon, dockable panels and a command line. Windows and Linux are both targets (Linux has been run only on Linux Mint, with the 0.1.0-beta.1 and 0.1.0 tarballs, on 24-10-2026). Licence GPL-3.0-or-later. Repo: https://github.com/JamesHodgkins/OpenDraft, branch `main`.
 
 ## Read first
-- `ARCHITECTURE.md`: the rules new code follows (crates, commands, Editor, files, geometry). Authoritative.
-- `ROADMAP.md`: the ordered plan (phases, sizes, exit tests) for trust, reach and depth; tick items and date them when done.
+- `docs/ARCHITECTURE.md`: the rules new code follows (crates, commands, Editor, files, geometry). Authoritative.
+- `docs/ROADMAP.md`: the ordered plan (phases, sizes, exit tests) for trust, reach and depth; tick items and date them when done.
 - `ui_plan.md`: history of what was built and why; its last section, "Where we are and what next", is the to-do list.
 - `2d_commands_reference.md`: the AutoCAD command list we work through as a roadmap.
 - `Command_specifications.md` is the user's untracked scratch file: never stage it.
 - `private_material/` is git-ignored (specs, PDFs, screenshots, scratch notes and the AutoCAD sample drawings): nothing in code or tests may depend on it, except the optional `bench_features` example, which skips files it cannot find. The sample drawings carry a work login in their headers, so they are never committed; tests use small hand-made data (or the ezdxf fixtures in `opendraft-files/tests/fixtures/`) instead.
 
 ## Crates (dependencies point down)
-`opendraft-core` (document, entities, pure geometry) <- `opendraft-commands` (registry, undo, Session, Editor, no egui) <- `opendraft-files` (`.odraft` JSON, DXF) / `opendraft-canvas` (camera, hit, snap, grips, paint) / `opendraft-ui` (theme, widgets, ribbon, icons) <- `opendraft-app` (binary `opendraft`: AppState, command table, panels, `automation/` host). `opendraft-api` (wire contract for outside callers, depends only on `opendraft-core`) and `opendraft-mcp` (binary `opendraft-mcp`, the MCP server; depends on `opendraft-api`, never on the app) and `opendraft-agent` (the in-app assistant's loop; depends only on `opendraft-api`, knows no model vendor or drawing) sit beside them; see ARCHITECTURE.md "Automation and MCP" and `docs/mcp.md`.
+`opendraft-core` (document, entities, pure geometry) <- `opendraft-commands` (registry, undo, Session, Editor, no egui) <- `opendraft-files` (`.odraft` JSON, DXF) / `opendraft-canvas` (camera, hit, snap, grips, paint) / `opendraft-ui` (theme, widgets, ribbon, icons) <- `opendraft-app` (binary `opendraft`: AppState, command table, panels, `automation/` host). `opendraft-api` (wire contract for outside callers, depends only on `opendraft-core`) and `opendraft-mcp` (binary `opendraft-mcp`, the MCP server; depends on `opendraft-api`, never on the app) and `opendraft-agent` (the in-app assistant's loop; depends only on `opendraft-api`, knows no model vendor or drawing) sit beside them; see docs/ARCHITECTURE.md "Automation and MCP" and `docs/mcp.md`.
 
 ## How a command is built
 A command is `fn(&mut Editor) -> Result<(), Cancelled>` running on its own thread; it asks (`ask_point`, `get_point`, `ask_object`, `ask_selection`, `pickset_or_select`...) and edits through `ed.transaction("Name", |tx| ...)` (one undo step). Maths goes in `opendraft-core` as pure, tested functions; the command only asks and records. To add one: geometry + tests in `opendraft-core`, a file in `opendraft-app/src`, an `editor_command!` line in `commands.rs`, an alias in `cmdline.rs`, a ribbon item in `ribbon_def.rs` (Home tab: `ribbon_def/home.rs`, and take the id off its `NOT_BUILT` list if it is there), an icon codepoint in `opendraft-ui/src/icons.rs` (then `python scripts/export_icons.py` adds its SVG to `assets/icons`; icons are drawn through `opendraft_ui::icon_set`, never the icon font directly), a section in `ui_plan.md`. Recent examples to copy: `join.rs`, `offset.rs`, `edges.rs`.
@@ -34,7 +34,7 @@ Gate commits on the real exit codes (don't pipe cargo into grep and then commit)
 ## Working with the user (James)
 - Commit as James <133605871+JamesHodgkins@users.noreply.github.com> with NO Co-Authored-By trailer and never list Claude as a contributor.
 - `main` is protected by a ruleset (pull request required, no force-push, no deletion) and Claude is not a bypass actor: work on a feature branch, push it when asked, and open a PR; the `check` jobs must pass before it merges. Push only when asked; the user usually says yes after each finished feature. Stage with `git add -u` plus explicitly named new files, never `git add -A`; check `git status` first.
-- Keep `ARCHITECTURE.md` and `ui_plan.md` updated in the same change as a feature.
+- Keep `docs/ARCHITECTURE.md` and `ui_plan.md` updated in the same change as a feature.
 - Follow AutoCAD behaviour and wording for commands unless told otherwise. If a selection exists when a command starts, skip its first selection stage.
 - Finish with a short report: what changed, what is not done, and what to take next. Do not start new feature work without confirmation.
 

@@ -38,7 +38,7 @@ Fix: named enums (`attachment: "top_left"`), `Option` instead of the -1 sentinel
 
 ## 4. References by name instead of id
 
-`LayerDto.linetype: String`, `ObjectDto.linetype: AttrDto<String>`, `block.rs`, `new_style.rs` refer to linetypes by name; text styles, layers, layouts and blocks use ids. `ARCHITECTURE.md` already lists `EntityLinetype { ByLayer, ByBlock, Named(id) }` as a later slice. Names make rename a file-wide edit and forced the case-insensitive lookup rule. **Decide:** do the id move before version 1 (recommended; it changes `Layer`, `Attributes` and the linetype commands too, so it is its own piece of work). Note `ARCHITECTURE.md` also says `CONTINUOUS`/`BYLAYER`/`BYBLOCK` are ids 1 to 3, so the target shape already exists in `opendraft-core`.
+`LayerDto.linetype: String`, `ObjectDto.linetype: AttrDto<String>`, `block.rs`, `new_style.rs` refer to linetypes by name; text styles, layers, layouts and blocks use ids. `docs/ARCHITECTURE.md` already lists `EntityLinetype { ByLayer, ByBlock, Named(id) }` as a later slice. Names make rename a file-wide edit and forced the case-insensitive lookup rule. **Decide:** do the id move before version 1 (recommended; it changes `Layer`, `Attributes` and the linetype commands too, so it is its own piece of work). Note `docs/ARCHITECTURE.md` also says `CONTINUOUS`/`BYLAYER`/`BYBLOCK` are ids 1 to 3, so the target shape already exists in `opendraft-core`.
 
 ## 5. `#[serde(default)]` that should be required
 
@@ -72,7 +72,7 @@ Done: arrowheads, length and angle formats (dimension styles, units), the second
 
 ## References by id (section 4): done
 
-Layers, objects, block objects, the new-object default and multileader styles refer to linetypes by id in memory and in the file. The reader refuses an id the file's table lacks, a name, and `BYLAYER`/`BYBLOCK`. See `ARCHITECTURE.md`, "Linetypes".
+Layers, objects, block objects, the new-object default and multileader styles refer to linetypes by id in memory and in the file. The reader refuses an id the file's table lacks, a name, and `BYLAYER`/`BYBLOCK`. See `docs/ARCHITECTURE.md`, "Linetypes".
 
 ## Required fields (section 5): done
 
