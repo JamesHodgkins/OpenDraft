@@ -23,7 +23,7 @@ use crate::recent::RecentId;
 /// Bumped when the renderer's output changes on purpose, so old pictures are
 /// not shown.
 pub const RENDERER_VERSION: u32 = 4;
-/// What the cache folder may hold, measured on real drawings (see `ui_plan.md`).
+/// What the cache folder may hold, measured on real drawings (see `docs/ui_plan.md`).
 const MAX_FILES: usize = 64;
 const MAX_BYTES: u64 = 16 * 1024 * 1024;
 /// A picture larger than this is not kept (the card shows its placeholder).

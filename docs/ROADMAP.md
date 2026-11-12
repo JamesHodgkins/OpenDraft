@@ -1,6 +1,6 @@
 # Roadmap
 
-How OpenDraft gets from "a capable early project" to "actually, that's quite an impressive project". This is the plan for trust, reach and depth. The command-by-command to-do list is in `ui_plan.md`; this file decides what to do first and why.
+How OpenDraft gets from "a capable early project" to "actually, that's quite an impressive project". This is the plan for trust, reach and depth. The command-by-command to-do list is in `docs/ui_plan.md`; this file decides what to do first and why.
 
 Written 2026-10-31. Update it when something is done or the plan changes: tick the box, add the date and the PR.
 
@@ -60,7 +60,7 @@ Written 2026-10-31. Update it when something is done or the plan changes: tick t
 
 *Why: audience 2. Files going out matter as much as files coming in.*
 
-**Correction (2026-10-31):** this phase first said PDF and SVG plotting were still to build. They are built (`PLOT` writes a layout to PDF or SVG at 1:1 in millimetres; `opendraft_core::plot` and `opendraft_files::plot`, checked in two PDF readers and a browser). What is missing is *proof on real fabrication and printing workflows*, and a few gaps listed in `ui_plan.md`.
+**Correction (2026-10-31):** this phase first said PDF and SVG plotting were still to build. They are built (`PLOT` writes a layout to PDF or SVG at 1:1 in millimetres; `opendraft_core::plot` and `opendraft_files::plot`, checked in two PDF readers and a browser). What is missing is *proof on real fabrication and printing workflows*, and a few gaps listed in `docs/ui_plan.md`.
 
 - [ ] **Prove the plots on real workflows (M, needs real software and a printer).** Open OpenDraft's SVG in Inkscape and in the laser and cutter software people use (LightBurn, Glowforge, Silhouette, Cricut and similar); print the PDF at 100% and measure it with a ruler. Write down what was tried in the repository, and fix what breaks.
 - [x] **Plot gaps (M), done 03-11-2026 (PRs #105 and #108).** Margins, plot area (Layout, Limits, Extents, Window), plot scale, offset and centring, rotation, wide polylines (filled ribbons) and viewport borders are built and tested in `opendraft_core::plot`/`plot_plan`, and set in the Plot dialog and Page Setup. Still refused, with a clear message: Display and named View areas (no persistent view state). Paper output through the Windows and CUPS backends is built; see the next item for what is still unproven.
@@ -124,6 +124,6 @@ Dynamic blocks, 3D, a cloud or collaboration layer, macOS (unless a contributor 
 
 ## Related files
 
-- `ui_plan.md`: what was built and why, and the detailed to-do list.
-- `code_review_findings.md`: the engineering review and its current status. Only OD-007 (modal flags) is open.
-- `parking_lot.md`: things looked at and left for later.
+- `docs/ui_plan.md`: what was built and why, and the detailed to-do list.
+- `docs/code_review_findings.md`: the engineering review and its current status. Only OD-007 (modal flags) is open.
+- `docs/parking_lot.md`: things looked at and left for later.

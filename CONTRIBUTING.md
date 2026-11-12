@@ -46,7 +46,7 @@ The workspace is split into crates, and dependencies point downward:
 | `opendraft-ui` | Theme, widgets, ribbon, icons, shortcuts |
 | `opendraft-app` | The application: state, command table, panels, dock |
 
-Read [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) before writing code. It records the rules new code follows, and [ui_plan.md](./ui_plan.md) shows the interface plan and what is done.
+Read [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) before writing code. It records the rules new code follows, and [docs/ui_plan.md](./docs/ui_plan.md) shows the interface plan and what is done.
 
 ## 4. Create a branch
 

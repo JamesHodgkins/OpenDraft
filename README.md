@@ -213,11 +213,11 @@ Warnings are errors in CI (`RUSTFLAGS=-D warnings`). `unsafe` is forbidden, and 
 | `opendraft-mcp` | `opendraft-mcp`, the MCP server program that talks to the running app |
 | `opendraft-app` | The application: state, command table, panels, dock, the automation host |
 
-Dependencies point downward: the document knows nothing about the UI. Read [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) for the rules new code follows, and [ui_plan.md](./ui_plan.md) for the interface plan and what is done.
+Dependencies point downward: the document knows nothing about the UI. Read [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) for the rules new code follows, and [docs/ui_plan.md](./docs/ui_plan.md) for the interface plan and what is done.
 
 ## 📍 Roadmap
 
-Work follows the standard 2D drafting command set; `ui_plan.md` has the detailed to-do list. [`docs/ROADMAP.md`](./docs/ROADMAP.md) is the plan for what comes first and why: Linux as a first-class platform, trust in files, what makers need, and community.
+Work follows the standard 2D drafting command set; `docs/ui_plan.md` has the detailed to-do list. [`docs/ROADMAP.md`](./docs/ROADMAP.md) is the plan for what comes first and why: Linux as a first-class platform, trust in files, what makers need, and community.
 
 - Next: the remaining draw commands (Point, Donut, Boundary, Construction line, Ray), Distance and Area, Overkill and associative arrays
 - Spline editing (trim, extend, break, join, offset)
@@ -229,7 +229,7 @@ Work follows the standard 2D drafting command set; `ui_plan.md` has the detailed
 
 ## 🤝 Contributing
 
-Contributions are welcome, from bug reports to whole commands. Every command is a small function that asks for input and records one undo step, so adding one is a good first project: [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) walks through it, and `ui_plan.md` lists what is next. Please read the [contribution guidelines](./CONTRIBUTING.md) and our [Code of Conduct](./CODE_OF_CONDUCT.md), and open an issue to discuss larger changes first. Changes must pass `cargo fmt`, `cargo clippy` and `cargo test`.
+Contributions are welcome, from bug reports to whole commands. Every command is a small function that asks for input and records one undo step, so adding one is a good first project: [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) walks through it, and `docs/ui_plan.md` lists what is next. Please read the [contribution guidelines](./CONTRIBUTING.md) and our [Code of Conduct](./CODE_OF_CONDUCT.md), and open an issue to discuss larger changes first. Changes must pass `cargo fmt`, `cargo clippy` and `cargo test`.
 
 ## 💬 Feedback and support
 

@@ -1,6 +1,6 @@
 //! WCAG 2.2 contrast of the theme's text and focus colours on the surfaces
 //! they are drawn on, in both palettes. Normal text needs 4.5:1, and what
-//! marks keyboard focus 3:1. The measured ratios are in `ui_plan.md`.
+//! marks keyboard focus 3:1. The measured ratios are in `docs/ui_plan.md`.
 
 use egui::Color32;
 

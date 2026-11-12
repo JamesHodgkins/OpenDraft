@@ -1,6 +1,6 @@
 # Parking lot
 
-Things we looked at and chose to leave for later. Move an item into `ui_plan.md` when work starts.
+Things we looked at and chose to leave for later. Move an item into `docs/ui_plan.md` when work starts.
 
 ## Non-rectangular viewport clips
 
@@ -33,7 +33,7 @@ Not included: a clipped viewport inside a nested viewport; clipping of filled sh
 
 ## Dimensions: outstanding
 
-First slice is built (aligned, linear, radius, diameter, arc length; see `ui_plan.md`, "Dimensions"). Left for later, roughly in order of value:
+First slice is built (aligned, linear, radius, diameter, arc length; see `docs/ui_plan.md`, "Dimensions"). Left for later, roughly in order of value:
 
 - **Style table and dialog:** named `DimStyle`s in the drawing (today there is one current style, copied into each dimension), a DIMSTYLE dialog, and an option to update existing dimensions when a style changes.
 - **DIMEDIT / editing text** of an existing dimension (new text, reset text position via `Dimension::reset_text`), and a Properties row for the text override.
@@ -44,7 +44,7 @@ First slice is built (aligned, linear, radius, diameter, arc length; see `ui_pla
 - **Annotative scales** and paper/model trans-space dimensions (needs text).
 - **DXF:** write real `DIMENSION` entities (anonymous `*D` blocks, `DIMSTYLE` table, `ACAD` XDATA overrides, `DIMASSOC`) instead of exploding; read them (import currently skips dimensions). Check output in AutoCAD, not only ezdxf. The DWG/RealDWG adapter from the spec is not planned.
 - **Plot:** arrowheads plot as outlines, not filled (plotting flattens wide polylines to single lines).
-- **Performance (see `ui_plan.md` "Performance"):** the bounds of a dimension are now remembered, but `Dimension::picture()` is still rebuilt each frame the dimension is on screen (2,000 in view: 14 ms). Cache the picture per object if a drawing with very many dimensions feels slow.
+- **Performance (see `docs/ui_plan.md` "Performance"):** the bounds of a dimension are now remembered, but `Dimension::picture()` is still rebuilt each frame the dimension is on screen (2,000 in view: 14 ms). Cache the picture per object if a drawing with very many dimensions feels slow.
 - **Arc dimension text:** the symbol and text are laid on the tangent, so long text on a small radius looks stiff; consider text following the arc.
 - **Verify in the real app:** radius, diameter, arc length and grip editing were only unit-tested (aligned and linear were seen on screen).
 
@@ -65,11 +65,11 @@ Not included: transparency (needs a document-wide attribute) and mesh/gradient f
 
 ## Linetypes: `.lin` files and what follows
 
-The table, dashed drawing, scales, DXF/DWG patterns and the Linetype Manager are built (see `ui_plan.md`, "Linetypes", and `private_material/autocad_linetype_reference_guide.md`, which is the rulebook). Load in the Manager offers only our stock library. Left for later:
+The table, dashed drawing, scales, DXF/DWG patterns and the Linetype Manager are built (see `docs/ui_plan.md`, "Linetypes", and `private_material/autocad_linetype_reference_guide.md`, which is the rulebook). Load in the Manager offers only our stock library. Left for later:
 
 - **`.lin` loading (next, self-contained):** a pure parser in `opendraft-core/src/linetype/lin.rs` (header `*NAME,description`, pattern line `A,len,len,...`, `;` comments, 2 to 12 elements, first not a gap, 47-character description, names unique ignoring case) that returns records or per-entry problems, tested on text only. Then a file picker on the Manager's Load button (list the file's linetypes, pick, load; an existing name is replaced, as AutoCAD's reload does) and a `-LINETYPE` Load option. Test against the user's own `acad.lin` and `acadiso.lin`, which also settles the metric and ISO numbers (the guide still marks those as checked only against a 2017 snapshot). Complex entries (`["GAS",STANDARD,S=.1,...]`, shapes from `.shx`) are read as their dashes and reported, as DXF import does. Export (`.lin` out) and Reload/Rename in the Manager belong here too.
 - **Current linetype (`CELTYPE`):** new objects are always ByLayer. Needs a current linetype in the editor or document and every object-creation site to take it; also `CELTSCALE` and `PLINEGEN` as the defaults for new objects (today new objects have scale 1 and generation off). The Linetype Manager would get Current and a Set current button.
-- **ByBlock (built 31-10-2026, see `ui_plan.md`, "ByBlock"):** left over: ByBlock in the DXF/DWG layer and style tables, MLEADER styles that apply it, dimensions' own colour/linetype/lineweight, and `CECOLOR`/`CELTYPE`/`CELWEIGHT` taking ByBlock.
+- **ByBlock (built 31-10-2026, see `docs/ui_plan.md`, "ByBlock"):** left over: ByBlock in the DXF/DWG layer and style tables, MLEADER styles that apply it, dimensions' own colour/linetype/lineweight, and `CECOLOR`/`CELTYPE`/`CELWEIGHT` taking ByBlock.
 - **Complex linetypes:** text and shape elements are dropped (drawn as plain dashes with a warning). Keeping them for a round trip needs a decoration on each pattern element (`ComplexDecoration`, raw flags) and DXF groups 74/75/340/46/50/44/45/9; drawing them needs the text and shape engines. DWG decodes the complex flag but not the extra fields.
 - **Not yet dashed:** block contents, dimensions and hatch outlines draw solid (`HPLINETYPE` governs hatches in AutoCAD).
 - **Scale rules:** `PSLTSCALE` and `MSLTSCALE` (need layout viewports and annotative scales); DWG polyline Linetype Generation flag (LWPOLYLINE flag 256) is not decoded.
