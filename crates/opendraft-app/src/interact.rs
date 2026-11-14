@@ -70,9 +70,9 @@ impl AppState {
             self.note_command_end(Outcome::Cancelled);
             let last = self.docs.len() - 1;
             self.docs[self.run_doc.min(last)].dynamic_input.clear();
-            self.docs[self.run_doc.min(last)]
-                .view
-                .set_point_prompt(None);
+            let view = &mut self.docs[self.run_doc.min(last)].view;
+            view.set_point_prompt(None);
+            view.set_selecting_objects(false);
         }
     }
 
@@ -129,6 +129,7 @@ impl AppState {
             Some(outcome) => {
                 doc.dynamic_input.clear();
                 doc.view.set_point_prompt(None);
+                doc.view.set_selecting_objects(false);
                 self.once.clear();
                 self.runner = None;
                 self.note_command_end(outcome);
@@ -169,6 +170,8 @@ impl AppState {
                     p.base = Some(at);
                 }
                 doc.view.set_point_prompt(prompt);
+                let selecting = runner.prompt().is_some_and(|a| a.wants == Wants::Selection);
+                doc.view.set_selecting_objects(selecting);
             }
         }
         for line in said {
@@ -473,6 +476,25 @@ mod tests {
             pick_locked: false,
             esc_backs: false,
         }
+    }
+
+    #[test]
+    fn the_canvas_knows_when_a_command_waits_for_a_selection() {
+        let mut state = AppState::new();
+        state.perform(opendraft_commands::AddEntity::new(Entity::Line {
+            start: p(0.0, 0.0),
+            end: p(10.0, 0.0),
+        }));
+        state.start_command("Move", crate::modify::move_objects);
+        state.settle_command();
+        assert!(state.docs[0].view.is_selecting_objects(), "Select objects");
+        state.select_all();
+        state.answer_enter();
+        state.settle_command();
+        assert!(state.waiting().is_some_and(|a| a.wants == Wants::Point));
+        assert!(!state.docs[0].view.is_selecting_objects(), "base point");
+        state.cancel_command();
+        assert!(!state.docs[0].view.is_selecting_objects());
     }
 
     #[test]

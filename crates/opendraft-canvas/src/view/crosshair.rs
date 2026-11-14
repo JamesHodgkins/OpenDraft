@@ -22,8 +22,22 @@ pub(super) enum CursorShape {
     Crosshair,
     /// Nothing running: the crosshair with the pickbox on it.
     Both,
-    /// Waiting for an object to be clicked: the pickbox alone.
+    /// Waiting for an object to be clicked, or for objects to be selected:
+    /// the pickbox alone.
     PickBox,
+}
+
+impl CursorShape {
+    /// The shape AutoCAD shows: a point prompt has the crosshair alone, an
+    /// object or selection prompt the pickbox alone, and no command both.
+    pub(super) fn for_state(prompting: bool, picking: bool, selecting_objects: bool) -> Self {
+        match (prompting, picking) {
+            (true, true) => Self::PickBox,
+            (true, false) => Self::Crosshair,
+            _ if selecting_objects => Self::PickBox,
+            _ => Self::Both,
+        }
+    }
 }
 
 /// How far each arm reaches from the centre. A size of 100 spans the whole
@@ -164,5 +178,15 @@ mod tests {
             canvas,
             "reaches either edge from anywhere"
         );
+    }
+
+    #[test]
+    fn the_cursor_shape_follows_what_the_command_waits_for() {
+        use CursorShape::*;
+        // (prompting for a point or object, picking an object, selecting)
+        assert_eq!(CursorShape::for_state(false, false, false), Both);
+        assert_eq!(CursorShape::for_state(true, false, false), Crosshair);
+        assert_eq!(CursorShape::for_state(true, true, false), PickBox);
+        assert_eq!(CursorShape::for_state(false, false, true), PickBox);
     }
 }
