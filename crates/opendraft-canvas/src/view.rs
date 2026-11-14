@@ -90,6 +90,8 @@ pub struct View {
     request: Option<Request>,
     /// Set while a running command waits for a point.
     point_prompt: Option<PointPrompt>,
+    /// Set while a running command waits for objects to be selected.
+    selecting_objects: bool,
     /// Tab cycling between the snap points under the pointer.
     snap_cycle: snap_choice::Cycle,
     /// What the pointer paused over (Extension and Parallel).
@@ -383,11 +385,7 @@ impl View {
         }
         self.paint_selection_box(&painter, style);
         if let (true, Some(at)) = (response.hovered(), pointer) {
-            let shape = match (prompting, picking) {
-                (true, true) => CursorShape::PickBox,
-                (true, false) => CursorShape::Crosshair,
-                _ => CursorShape::Both,
-            };
+            let shape = CursorShape::for_state(prompting, picking, self.selecting_objects);
             let boxed = prompting && !picking && snap_modes.aperture_box;
             self.paint_aperture_box(&painter, at, style, boxed);
             let at = self.pulled_to(rect, at, snapped, snap_modes);

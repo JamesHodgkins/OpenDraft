@@ -73,6 +73,17 @@ impl View {
         self.point_prompt.is_some()
     }
 
+    /// Tell the canvas whether a running command waits for objects to be
+    /// selected ("Select objects"), so the cursor is the pickbox alone.
+    pub fn set_selecting_objects(&mut self, selecting: bool) {
+        self.selecting_objects = selecting;
+    }
+
+    /// Whether a running command waits for objects to be selected.
+    pub fn is_selecting_objects(&self) -> bool {
+        self.selecting_objects
+    }
+
     pub fn last_point(&self) -> Option<Point> {
         self.last_point
     }
