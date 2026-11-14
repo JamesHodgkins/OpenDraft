@@ -138,6 +138,25 @@ fn a_drag_that_begins_in_an_input_exclusion_does_not_select() {
 }
 
 #[test]
+fn the_release_of_a_press_that_ended_a_command_is_not_a_click() {
+    let ctx = Context::default();
+    let mut view = View::default();
+    let at = pos2(100.0, 100.0);
+    view.set_point_prompt(Some(crate::PointPrompt::default()));
+    frame(&mut view, &ctx, vec![Event::PointerMoved(at)]);
+    let pressed = frame(&mut view, &ctx, vec![button(at, true)]);
+    assert!(pressed.prompted.is_some(), "the press placed the point");
+    // That point was the command's last: by the release it has ended.
+    view.set_point_prompt(None);
+    let released = frame(&mut view, &ctx, vec![button(at, false)]);
+    assert!(released.click.is_none(), "nothing under it is selected");
+    // The next click, with no command running, selects as usual.
+    frame(&mut view, &ctx, vec![button(at, true)]);
+    let clicked = frame(&mut view, &ctx, vec![button(at, false)]);
+    assert!(clicked.click.is_some());
+}
+
+#[test]
 fn an_unblocked_canvas_drag_still_selects() {
     let ctx = Context::default();
     let mut view = View::default();
