@@ -99,10 +99,19 @@ impl CommandLine {
     /// commands that make something are kept, newest first, once each.
     pub fn note_recent(&mut self, id: &'static str) {
         const KEPT: usize = 6;
-        // Enter repeats the last drawing or editing command.
-        if ["draw.", "select.", "modify."]
-            .iter()
-            .any(|prefix| id.starts_with(prefix))
+        // Enter repeats the last drawing, editing, annotation, dimension,
+        // block or inquiry command (TEXT, DIMLINEAR, INSERT, DIST...).
+        if [
+            "draw.",
+            "select.",
+            "modify.",
+            "annotate.",
+            "dim.",
+            "block.",
+            "inquiry.",
+        ]
+        .iter()
+        .any(|prefix| id.starts_with(prefix))
         {
             self.last_command = Some(id);
         }
@@ -395,6 +404,24 @@ mod tests {
         line.browse_history(false, &mut input);
         assert_eq!(input, "", "Down past the newest empties the line");
         assert_eq!(line.history_at, None);
+    }
+
+    #[test]
+    fn enter_repeats_the_last_text_dimension_block_or_inquiry_command() {
+        let mut line = CommandLine::default();
+        for id in [
+            "annotate.text",
+            "dim.linear",
+            "block.insert",
+            "inquiry.distance",
+        ] {
+            line.note_recent("draw.line");
+            line.note_recent(id);
+            assert_eq!(line.last_command, Some(id));
+        }
+        // Settings and view changes leave the command to repeat alone.
+        line.note_recent("view.grid");
+        assert_eq!(line.last_command, Some("inquiry.distance"));
     }
 
     #[test]
