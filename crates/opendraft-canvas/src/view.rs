@@ -96,9 +96,11 @@ pub struct View {
     snap_acquire: acquire::Acquire,
     /// Grips picked with Shift, waiting for one of them to be pressed.
     warm: Vec<GripHit>,
-    /// A grip was pressed and the button is still down: its release is not a
-    /// click on the drawing, and moving is not a box selection.
-    grip_press: bool,
+    /// A grip was pressed, or a prompt's point placed, and the button is
+    /// still down: its release is not a click on the drawing, and moving is
+    /// not a box selection. A command that ends on that press has stopped
+    /// prompting by the release, which would otherwise select what is there.
+    press_taken: bool,
     /// Last point given by a click or typed entry; the origin for relative
     /// typed coordinates.
     last_point: Option<Point>,
@@ -260,12 +262,12 @@ impl View {
             .filter(|_| selecting && self.drag.is_none())
             .and_then(|c| grip_at(document, selection, c, self.sizes.grip / self.camera.zoom));
         keep_selected(&mut self.warm, selection);
-        let swallow = self.grip_press;
-        if grip_pick.is_some() {
-            self.grip_press = true;
+        let swallow = self.press_taken;
+        if grip_pick.is_some() || (prompting && pressed_at.is_some()) {
+            self.press_taken = true;
         }
         if !ui.input(|i| i.pointer.primary_down()) {
-            self.grip_press = false;
+            self.press_taken = false;
         }
         let grips = grip_pick
             .and_then(|pick| press_grip(&mut self.warm, pick, shift))

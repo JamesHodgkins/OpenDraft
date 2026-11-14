@@ -42,7 +42,7 @@ Gate commits on the real exit codes (don't pipe cargo into grep and then commit)
 ## Tooling notes (Windows)
 - Shell is Git Bash/PowerShell. Avoid two heredocs in one Bash call; for multi-line Python edit scripts use the Write tool. Files may be CRLF in the working tree (git normalises); edits via the Edit tool work.
 - Lucide icon font: `crates/opendraft-ui/assets/fonts/lucide.ttf`; find a glyph's codepoint with fontTools (`getBestCmap`).
-- Testing in the real app: `cargo build -p opendraft-app` (always rebuild first), then drive the exe with PowerShell (launch, keys, clicks, screenshots). A click on a selected object's grip starts a grip edit, so pick selection points away from grips. Finishing a drawing click also selects the new object.
+- Testing in the real app: `cargo build -p opendraft-app` (always rebuild first), then drive the exe with PowerShell (launch, keys, clicks, screenshots). A click on a selected object's grip starts a grip edit, so pick selection points away from grips.
 - Unit tests drive commands with `AppState`: `start_command`, `settle_command`, `answer_object`, `answer_enter`, `select_all` (see `edges.rs` and `join.rs` tests).
 
 ## Known gaps (details in `docs/ui_plan.md`)
