@@ -33,10 +33,11 @@ impl AppState {
         };
         let units = self.units();
         // A distance alone, typed while the pointer follows a path, is
-        // measured along the path from where it starts.
+        // measured along the path from where it starts. With no base point
+        // the first field is X, so a lone number there is that distance too.
         let input = &self.docs[self.active].dynamic_input;
         let along = (ask.wants == Wants::Point
-            && input.active == Some(Field::Distance)
+            && matches!(input.active, Some(Field::Distance | Field::X))
             && input.locks.is_empty())
         .then(|| parse_field(Field::Distance, &input.draft, &units))
         .flatten()

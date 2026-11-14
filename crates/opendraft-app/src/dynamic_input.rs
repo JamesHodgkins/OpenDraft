@@ -429,6 +429,62 @@ mod tests {
             opendraft_core::Entity::Circle { radius, .. } if *radius == 10.0));
     }
 
+    /// CIRCLE waiting for its centre, with `90` typed in the X field.
+    fn circle_centre_with_x_typed(cursor: Point) -> AppState {
+        let mut state = AppState::new();
+        state.start_command("Circle", crate::circle::draw_circle);
+        state.settle_command();
+        let ask = state.waiting().unwrap().clone();
+        let settings = state.settings.dynamic_input.clone();
+        let input = &mut state.docs[0].dynamic_input;
+        input.cursor = Some(cursor);
+        assert_eq!(input.fields(&ask, &settings), [Field::X, Field::Y]);
+        input.begin(Field::X);
+        input.draft = "90".into();
+        state
+    }
+
+    fn circle_centre(state: &AppState) -> Point {
+        match &state.session().document().objects()[0].entity {
+            opendraft_core::Entity::Circle { center, .. } => *center,
+            other => panic!("not a circle: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn a_number_in_the_x_field_follows_a_tracking_path() {
+        let mut state = circle_centre_with_x_typed(Point::new(160.0, 50.0));
+        // Following the horizontal path from a circle's centre at (100, 50).
+        let mut snap = opendraft_canvas::SnapPoint::new(
+            Point::new(160.0, 50.0),
+            opendraft_canvas::SnapKind::Tracking,
+        );
+        snap.guides = [
+            Some(opendraft_canvas::Guide {
+                origin: Point::new(100.0, 50.0),
+                dir: Point::new(1.0, 0.0),
+                kind: Some(opendraft_canvas::SnapKind::Center),
+            }),
+            None,
+        ];
+        state.snap_now = Some(snap);
+        state.commit_dynamic_input();
+        state.settle_command();
+        state.answer_dynamic("10").unwrap();
+        state.settle_command();
+        assert_eq!(circle_centre(&state), Point::new(190.0, 50.0));
+    }
+
+    #[test]
+    fn a_number_in_the_x_field_with_no_path_stays_a_coordinate() {
+        let mut state = circle_centre_with_x_typed(Point::new(5.0, 7.0));
+        state.commit_dynamic_input();
+        state.settle_command();
+        state.answer_dynamic("10").unwrap();
+        state.settle_command();
+        assert_eq!(circle_centre(&state), Point::new(90.0, 7.0));
+    }
+
     #[test]
     fn undo_first_line_point_does_not_undo_an_existing_object() {
         let mut state = AppState::new();
