@@ -40,18 +40,32 @@ pub fn trim_plan(
     if pieces.len() < 2 {
         return Err("Object cannot be trimmed there.");
     }
-    let nearest = pieces
-        .iter()
-        .enumerate()
-        .min_by(|a, b| a.1.distance_to(at).total_cmp(&b.1.distance_to(at)))
-        .map(|(i, _)| i)
-        .ok_or("Object cannot be trimmed there.")?;
+    let nearest = nearest_piece(&pieces, at).ok_or("Object cannot be trimmed there.")?;
+    // Cut again only at the crossings that bound the clicked piece, so the
+    // rest stays whole: a line trimmed at one end is shortened, not broken
+    // at every other crossing as well (and can be trimmed there next).
+    let tolerance = 1e-9 * (1.0 + at.x.abs().max(at.y.abs()));
+    let bounds: Vec<Point> = crossings
+        .into_iter()
+        .filter(|c| pieces[nearest].distance_to(*c) <= tolerance)
+        .collect();
+    let pieces = target.split_at(&bounds);
+    let nearest = nearest_piece(&pieces, at).ok_or("Object cannot be trimmed there.")?;
     Ok(pieces
         .into_iter()
         .enumerate()
         .filter(|(i, _)| *i != nearest)
         .map(|(_, piece)| piece)
         .collect())
+}
+
+/// The index of the piece nearest `at`.
+fn nearest_piece(pieces: &[Entity], at: Point) -> Option<usize> {
+    pieces
+        .iter()
+        .enumerate()
+        .min_by(|a, b| a.1.distance_to(at).total_cmp(&b.1.distance_to(at)))
+        .map(|(i, _)| i)
 }
 
 /// What extending `target` at the end nearest `at` does against `boundaries`:
@@ -296,14 +310,29 @@ mod tests {
                 line(p(7.0, 0.0), p(10.0, 0.0))
             ]
         );
-        // Click an end: it shortens.
+        // Click an end: it shortens, still one line.
         assert_eq!(
             trim_plan(&target, &cutters, p(9.0, 0.0)).unwrap(),
-            [
-                line(p(0.0, 0.0), p(3.0, 0.0)),
-                line(p(3.0, 0.0), p(7.0, 0.0))
-            ]
+            [line(p(0.0, 0.0), p(7.0, 0.0))]
         );
+    }
+
+    #[test]
+    fn a_line_through_a_circle_is_trimmed_on_both_sides_in_turn() {
+        let circle = Entity::Circle {
+            center: p(0.0, 0.0),
+            radius: 5.0,
+        };
+        let target = line(p(-10.0, 0.0), p(10.0, 0.0));
+        let left = trim_plan(&target, std::slice::from_ref(&circle), p(-8.0, 0.0)).unwrap();
+        let [shorter] = left.as_slice() else {
+            panic!("one line, got {left:?}")
+        };
+        let right = trim_plan(shorter, std::slice::from_ref(&circle), p(8.0, 0.0)).unwrap();
+        let [Entity::Line { start, end }] = right.as_slice() else {
+            panic!("one line, got {right:?}")
+        };
+        assert!((start.x + 5.0).abs() < 1e-9 && (end.x - 5.0).abs() < 1e-9);
     }
 
     #[test]
