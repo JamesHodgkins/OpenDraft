@@ -484,14 +484,16 @@ mod tests {
             state.selection().iter().copied().collect::<Vec<_>>(),
             [a, b]
         );
-        // Clicking a selected entity again keeps it; empty space is a no-op.
+        // Clicking a selected entity again keeps it; a shift-click on empty
+        // space changes nothing.
         state.click_select(Some(a), false);
-        state.click_select(None, false);
+        state.click_select(None, true);
         assert_eq!(state.selection().len(), 2);
         state.click_select(Some(a), true);
         assert_eq!(state.selection().iter().copied().collect::<Vec<_>>(), [b]);
-        state.click_select(None, true);
-        assert_eq!(state.selection().len(), 1);
+        // A plain click on empty space clears it, as Esc does.
+        state.click_select(None, false);
+        assert!(state.selection().is_empty());
     }
 
     fn state_with_circles(radii: &[f64]) -> AppState {

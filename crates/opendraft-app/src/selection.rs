@@ -123,9 +123,13 @@ fn select_by_points(ed: &mut Editor, kind: Kind) -> Result<(), Cancelled> {
 
 impl crate::state::AppState {
     /// Apply a canvas click. Selection is sticky: a plain click adds the
-    /// entity, shift-click removes it, and clicking empty space changes
-    /// nothing (Esc deselects everything).
+    /// entity and shift-click removes it. A plain click on empty space
+    /// clears the selection, as Esc does, but only with no command running:
+    /// a selection being made for a command is never lost to a near miss.
+    /// (With the window and lasso selection style such a click starts a window
+    /// instead, and never arrives here.)
     pub fn click_select(&mut self, entity: Option<opendraft_core::EntityId>, remove: bool) {
+        let idle = !self.command_running();
         let selection = &mut self.docs[self.active].selection;
         match (entity, remove) {
             (Some(i), false) => {
@@ -134,6 +138,7 @@ impl crate::state::AppState {
             (Some(i), true) => {
                 selection.remove(&i);
             }
+            (None, false) if idle => selection.clear(),
             (None, _) => {}
         }
     }
@@ -303,6 +308,31 @@ mod tests {
         state.cancel();
         assert!(state.selection().is_empty());
         assert_eq!(state.cmdline.log.last().unwrap(), "*Cancel*");
+    }
+
+    /// Asks for objects and leaves them selected.
+    fn select_objects(ed: &mut Editor) -> Result<(), Cancelled> {
+        let ids = ed.get_selection("Select objects")?;
+        ed.select(ids);
+        Ok(())
+    }
+
+    #[test]
+    fn a_click_on_empty_space_clears_only_with_no_command_running() {
+        let mut state = state();
+        let first = state.session().document().objects()[0].id;
+        state.click_select(Some(first), false);
+        state.start_command("Test", select_objects);
+        state.settle_command();
+        assert!(state.command_running(), "at Select objects");
+        // A near miss while objects are being chosen keeps them.
+        state.click_select(None, false);
+        assert_eq!(selected(&state), [0.0]);
+        state.cancel();
+        state.click_select(Some(first), false);
+        assert!(!state.command_running());
+        state.click_select(None, false);
+        assert!(state.selection().is_empty());
     }
 
     #[test]

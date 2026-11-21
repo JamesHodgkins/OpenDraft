@@ -19,37 +19,6 @@ const CENTRE_HINT_ARM: f32 = 5.0;
 const WARM_GRIP: egui::Color32 = egui::Color32::from_rgb(230, 80, 80);
 
 impl View {
-    /// Rubber band for a box selection drag.
-    pub(super) fn paint_selection_box(&self, painter: &egui::Painter, style: &CanvasStyle) {
-        let Some((start, end)) = self.drag else {
-            return;
-        };
-        let band = Rect::from_two_pos(start, end);
-        let crossing = end.x < start.x;
-        let color = if crossing {
-            style.crossing
-        } else {
-            style.window
-        };
-        painter.rect_filled(band, 0.0, color.gamma_multiply(0.15));
-        if crossing {
-            painter.extend(egui::Shape::dashed_line(
-                &[
-                    band.left_top(),
-                    band.right_top(),
-                    band.right_bottom(),
-                    band.left_bottom(),
-                    band.left_top(),
-                ],
-                Stroke::new(1.0_f32, color),
-                6.0,
-                4.0,
-            ));
-        } else {
-            painter.rect_stroke(band, 0.0, Stroke::new(1.0_f32, color), StrokeKind::Inside);
-        }
-    }
-
     /// A command's ghost at the pointer, with a rubber band from its base.
     pub(super) fn paint_prompt_preview(
         &self,

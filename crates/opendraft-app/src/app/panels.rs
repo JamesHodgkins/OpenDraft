@@ -301,6 +301,8 @@ impl PanelViewer<'_> {
                 .set_input_exclusions(vec![ui.available_rect_before_wrap()]);
         }
         doc.view.set_pointer_sizes(sizes);
+        doc.view
+            .set_selection_style(self.state.settings.selection_style);
         // The picture of the plain entities is kept while the drawing is the
         // same (see `opendraft_canvas::layer_cache`).
         doc.view.set_document_token(Some(doc.session.draw_token()));

@@ -8,9 +8,9 @@ use opendraft_core::Document;
 use super::{CanvasOutput, CanvasStyle, GridSettings, View};
 use crate::snap::SnapModes;
 
-const SCREEN: Rect = Rect::from_min_max(pos2(0.0, 0.0), pos2(600.0, 400.0));
+pub(super) const SCREEN: Rect = Rect::from_min_max(pos2(0.0, 0.0), pos2(600.0, 400.0));
 
-fn style() -> CanvasStyle {
+pub(super) fn style() -> CanvasStyle {
     CanvasStyle {
         background: Color32::BLACK,
         grid_minor: Color32::DARK_GRAY,
@@ -110,7 +110,7 @@ fn the_canvas_has_no_cursor_under_a_window_above_it() {
     assert!(under.cursor.is_none(), "the dialog owns the pointer there");
 }
 
-fn button(at: egui::Pos2, pressed: bool) -> Event {
+pub(super) fn button(at: egui::Pos2, pressed: bool) -> Event {
     Event::PointerButton {
         pos: at,
         button: PointerButton::Primary,

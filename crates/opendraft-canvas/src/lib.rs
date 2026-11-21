@@ -33,7 +33,7 @@ pub use snap::{
 pub use snap_axis::Ortho;
 pub use view::{
     paint_text, CanvasOutput, CanvasStyle, Click, Crosshair, Ghost, GhostStyle, GridSettings,
-    PointPrompt, PointerSizes, RegionSelect, Space, View,
+    PointPrompt, PointerSizes, RegionSelect, SelectionStyle, Space, View,
 };
 
 /// Helpers shared by the unit tests.

@@ -111,6 +111,8 @@ fn display_right(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
         });
     });
     ui.add_space(6.0);
+    selection(ui, theme, draft);
+    ui.add_space(6.0);
     widgets::group_box(ui, theme, "Interface scale", |ui| {
         widgets::field_label(ui, theme, "Scale user interface elements to");
         let width = ui.available_width().min(160.0);
@@ -192,6 +194,34 @@ fn ortho(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
                 .size(theme.font_size_small)
                 .color(theme.colors.text_weak),
         );
+    });
+}
+
+/// What a click on empty space and a drag do.
+fn selection(ui: &mut egui::Ui, theme: &Theme, draft: &mut Settings) {
+    use opendraft_canvas::SelectionStyle;
+    widgets::group_box(ui, theme, "Selection", |ui| {
+        for (style, label, description) in [
+            (
+                SelectionStyle::ClickClears,
+                "Click to clear",
+                "A click on empty space clears the selection. Drag right to select what is inside a box, left for what it touches.",
+            ),
+            (
+                SelectionStyle::WindowLasso,
+                "Click for a window, drag for a lasso",
+                "Click on empty space, then click again to select by box. Drag to draw a lasso; Space while dragging changes its mode.",
+            ),
+        ] {
+            ui.radio_value(&mut draft.selection_style, style, label);
+            ui.indent(label, |ui| {
+                ui.label(
+                    egui::RichText::new(description)
+                        .size(theme.font_size_small)
+                        .color(theme.colors.text_weak),
+                );
+            });
+        }
     });
 }
 

@@ -3,7 +3,7 @@
 //! a range, a line in `sanitized`) and a control in `settings_ui.rs`; nothing
 //! to add for saving. Fields missing from a save take their default.
 
-use opendraft_canvas::{Ortho, SnapModes, Tracking};
+use opendraft_canvas::{Ortho, SelectionStyle, SnapModes, Tracking};
 use opendraft_ui::Palette;
 use serde::{Deserialize, Serialize};
 
@@ -41,6 +41,9 @@ pub struct Settings {
     pub ortho: Ortho,
     /// Object snap tracking (F11) and polar tracking (F10).
     pub tracking: Tracking,
+    /// What a click on empty space and a drag do: clear the selection and
+    /// make a box (the default), or start a window and draw a lasso.
+    pub selection_style: SelectionStyle,
     /// Radius, in screen points, within which a click picks an object
     /// (`PICKBOX`).
     pub pick_size: u32,
@@ -93,6 +96,7 @@ impl Default for Settings {
             snap: SnapModes::default(),
             ortho: Ortho::default(),
             tracking: Tracking::default(),
+            selection_style: SelectionStyle::default(),
             pick_size: 4,
             snap_aperture: 12,
             grip_size: 7,
@@ -351,6 +355,7 @@ mod tests {
                 path_display: 2,
                 tooltips: false,
             },
+            selection_style: SelectionStyle::WindowLasso,
             pick_size: 9,
             snap_aperture: 20,
             grip_size: 12,

@@ -220,7 +220,7 @@ impl OpenDraftApp {
     /// prompt (finishes Copy, accepts a default) or repeats the last command.
     fn route_typing_to_command_line(&mut self, ctx: &egui::Context) {
         // First, because dynamic input handles the frame and returns early.
-        self.watch_ctrl(ctx);
+        self.watch_keys(ctx);
         if self.route_dynamic_input(ctx) || self.browse_command_history(ctx) {
             return;
         }

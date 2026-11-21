@@ -13,7 +13,6 @@ use crate::grips::{grip_at, keep_selected, press_grip, with_shared, GripHit};
 use crate::hatch_cache::HatchCache;
 use crate::hit::{pick_here, pick_visible_here};
 use crate::layer_cache::{CacheConfig, LayerCaches};
-use crate::select::Region;
 use crate::snap::SnapModes;
 use crate::snap_axis::Ortho;
 use crosshair::CursorShape;
@@ -39,6 +38,10 @@ mod paint;
 mod path_stroke;
 mod point_paint;
 mod previous;
+mod select_gesture;
+#[cfg(test)]
+mod select_gesture_tests;
+mod select_paint;
 mod snap_choice;
 mod snap_marker;
 mod sweep;
@@ -51,6 +54,7 @@ mod types;
 
 use layout::LayoutInput;
 pub use layout::Space;
+pub use select_gesture::SelectionStyle;
 pub use types::{
     CanvasOutput, CanvasStyle, Click, Crosshair, Ghost, GhostStyle, GridSettings, PointPrompt,
     PointerSizes, RegionSelect,
@@ -98,6 +102,10 @@ pub struct View {
     trailing: Option<Point>,
     /// Screen start and current position of a selection box drag.
     drag: Option<(Pos2, Pos2)>,
+    /// What a click on nothing and a drag do (see `select_gesture.rs`).
+    selection_style: SelectionStyle,
+    /// An implied window or lasso under way (window and lasso selection style).
+    pending: Option<select_gesture::Pending>,
     /// Screen path of a press in empty space at a sweep prompt, while the
     /// button is down (see `sweep.rs`).
     sweep: Option<Vec<Pos2>>,
@@ -284,7 +292,7 @@ impl View {
         self.snap_acquire.clear_if(placed.is_some());
         // A press on a grip of a selected object takes it instead of selecting.
         let grip_pick = pressed_at
-            .filter(|_| grips_on)
+            .filter(|_| grips_on && self.pending.is_none())
             .and_then(|at| grip_at(document, selection, at, self.sizes.grip / self.camera.zoom));
         let grip_hover = cursor
             .filter(|_| grips_on && self.drag.is_none())
@@ -301,15 +309,6 @@ impl View {
             .and_then(|pick| press_grip(&mut self.warm, pick, shift))
             .map(|hot| with_shared(document, selection, hot))
             .unwrap_or_default();
-        let click = (primary && selecting && grip_pick.is_none() && !swallow)
-            .then(|| {
-                cursor.map(|c| Click {
-                    entity: pick_here(document, c, tolerance),
-                    remove: shift,
-                })
-            })
-            .flatten();
-        let mut select = None;
         let mut prompted = None;
         let mut picked = None;
         let mut path = None;
@@ -330,54 +329,29 @@ impl View {
         } else {
             context_menu = self.right_released(ui, rect).0;
         }
+        let mut selected = select_gesture::Selected::default();
         if selecting {
-            // Drag a box: left-to-right is Window, right-to-left is Crossing.
-            // The response covers the whole canvas, including UI overlays.
-            // Only the layer that owned the original press may start a drag;
-            // once started, it may continue beyond that layer or the canvas.
-            let accepted_origin = self.drag.is_some()
-                || ui
-                    .input(|i| i.pointer.press_origin())
-                    .is_some_and(|p| rect.contains(p) && !self.blocked(p));
-            if response.dragged_by(PointerButton::Primary)
-                && accepted_origin
-                && !swallow
-                && grip_pick.is_none()
-            {
-                let now = ui
-                    .input(|i| i.pointer.latest_pos())
-                    .unwrap_or(rect.center());
-                let start = self
-                    .drag
-                    .map(|(start, _)| start)
-                    .or_else(|| ui.input(|i| i.pointer.press_origin()))
-                    .unwrap_or(now);
-                self.drag = Some((start, now));
-            }
-            if response.drag_stopped_by(PointerButton::Primary) {
-                if let Some((start, end)) = self.drag.take() {
-                    if (end - start).abs().max_elem() > BOX_MIN_PX {
-                        let (a, b) = (
-                            self.camera.screen_to_world(start, rect),
-                            self.camera.screen_to_world(end, rect),
-                        );
-                        let corners = Region::rect_corners(a, b);
-                        let region = if end.x >= start.x {
-                            Region::Window(corners)
-                        } else {
-                            Region::Crossing(corners)
-                        };
-                        select = Some(RegionSelect {
-                            region,
-                            remove: shift,
-                        });
-                    }
-                }
-            }
+            let press = select_gesture::Press {
+                cursor,
+                tolerance,
+                shift,
+                taken: swallow || grip_pick.is_some(),
+            };
+            selected = self.select_frame(ui, &response, rect, document, press);
+        } else {
+            self.pending = None;
+            self.drag = None;
         }
 
         if in_layout && !prompting {
             self.layout_clicks(ui, &response, rect, document, &mut layout_input);
+            // A click on a viewport's border takes the viewport alone.
+            if primary && self.selected_viewport.is_some() {
+                selected.click = None;
+                if selected.started_window {
+                    self.drop_new_window();
+                }
+            }
         }
         if in_layout {
             self.paint_layout(&painter, rect, style, grid, document, selection, hover);
@@ -393,7 +367,7 @@ impl View {
             Some(clip) => painter.with_clip_rect(clip.intersect(rect)),
             None => painter,
         };
-        if grips_on && self.drag.is_none() {
+        if grips_on && self.drag.is_none() && self.pending.is_none() {
             let marks = paint::GripMarks {
                 hovered: grip_hover,
                 warm: &self.warm,
@@ -408,7 +382,8 @@ impl View {
         if let Some(snapped) = snapped {
             self.paint_snap_marker(&painter, rect, style, snap_modes, snapped, cursor);
         }
-        self.paint_selection_box(&painter, style);
+        let latest = ui.input(|i| i.pointer.latest_pos());
+        self.paint_selection(&painter, rect, style, latest);
         self.paint_sweep(&painter, style);
         if let (true, Some(at)) = (response.hovered(), pointer) {
             let shape = CursorShape::for_state(prompting, picking, self.selecting_objects);
@@ -428,9 +403,9 @@ impl View {
             rect: Some(rect),
             preview_cursor,
             cursor,
-            click,
+            click: selected.click,
             double_click,
-            select,
+            select: selected.region,
             grips,
             prompted,
             picked,
